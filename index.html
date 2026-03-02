@@ -1153,14 +1153,362 @@
         text-decoration: underline;
       }
 
+      .side-nav-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .admin-nav-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 20px;
+        padding: 0 7px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.22), rgba(245, 158, 11, 0.18));
+        color: #fff;
+        font-size: 0.62rem;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .stat-card {
+        padding: 12px 14px;
+        border-radius: 18px;
+      }
+
+      .stat-card strong {
+        margin-top: 8px;
+        font-size: 1.1rem;
+      }
+
+      .stat-card small,
+      .stat-card span {
+        font-size: 0.72rem;
+      }
+
+      .dashboard-stack {
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .panel-shell {
+        padding: 14px;
+        border-radius: 18px;
+      }
+
+      .panel-head {
+        margin-bottom: 10px;
+      }
+
+      .panel-head h3 {
+        font-size: 0.92rem;
+      }
+
+      .panel-head p {
+        font-size: 0.76rem;
+      }
+
+      .search-layout {
+        grid-template-columns: minmax(0, 2fr) minmax(140px, 0.8fr) minmax(140px, 0.8fr);
+        gap: 8px;
+      }
+
+      .field-input,
+      .field-select,
+      .field-textarea {
+        min-height: 42px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-size: 0.82rem;
+      }
+
+      .field-textarea {
+        min-height: 72px;
+      }
+
+      .button-primary,
+      .button-secondary,
+      .button-ghost,
+      .mini-button {
+        min-height: 40px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+      }
+
+      .students-grid {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 10px;
+      }
+
+      .student-card {
+        padding: 12px;
+        border-radius: 18px;
+      }
+
+      .student-headline {
+        gap: 8px;
+      }
+
+      .student-profile {
+        gap: 10px;
+      }
+
+      .student-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        font-size: 0.9rem;
+      }
+
+      .student-profile h4 {
+        font-size: 0.92rem;
+      }
+
+      .student-meta,
+      .helper-text {
+        font-size: 0.7rem;
+      }
+
+      .pill-row {
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .pill,
+      .tag-badge,
+      .tag-option span {
+        min-height: 24px;
+        padding: 0 8px;
+        font-size: 0.66rem;
+      }
+
+      .student-facts {
+        margin-top: 10px;
+        gap: 6px;
+      }
+
+      .fact-box {
+        padding: 8px 10px;
+        border-radius: 12px;
+      }
+
+      .fact-box strong,
+      .fact-box span {
+        font-size: 0.7rem;
+      }
+
+      .student-block {
+        margin-top: 10px;
+      }
+
+      .block-head {
+        margin-bottom: 8px;
+      }
+
+      .block-head h5,
+      .block-head small,
+      .log-author,
+      .log-time,
+      .log-text {
+        font-size: 0.72rem;
+      }
+
+      .log-stream {
+        gap: 6px;
+        max-height: 150px;
+        overflow: auto;
+        padding-right: 2px;
+      }
+
+      .log-card {
+        padding: 9px 10px;
+        border-radius: 12px;
+      }
+
+      .log-form {
+        gap: 8px;
+        padding: 10px;
+        border-radius: 14px;
+      }
+
+      .compact-control-bar {
+        display: grid;
+        grid-template-columns: minmax(0, 1.8fr) repeat(2, minmax(120px, 0.8fr));
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .permission-dense-layout {
+        display: grid;
+        grid-template-columns: minmax(340px, 1.1fr) minmax(320px, 0.9fr);
+        gap: 12px;
+        min-height: 420px;
+      }
+
+      .dense-table-shell,
+      .dense-side-shell {
+        padding: 12px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.68);
+        border: 1px solid rgba(214, 226, 247, 0.9);
+      }
+
+      .scroll-shell {
+        max-height: 460px;
+        overflow: auto;
+      }
+
+      .data-table-wrap {
+        border-radius: 14px;
+        border: 1px solid rgba(214, 226, 247, 0.92);
+        overflow: auto;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 540px;
+      }
+
+      .data-table th,
+      .data-table td {
+        padding: 9px 10px;
+        border-bottom: 1px solid rgba(226, 234, 248, 0.92);
+        text-align: left;
+        font-size: 0.76rem;
+        vertical-align: top;
+      }
+
+      .data-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: rgba(240, 245, 255, 0.96);
+        color: var(--text-soft);
+        font-weight: 800;
+      }
+
+      .data-table tr.selected td {
+        background: rgba(36, 86, 214, 0.08);
+      }
+
+      .table-row-button {
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        color: inherit;
+        padding: 0;
+      }
+
+      .dense-side-shell h4 {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 800;
+      }
+
+      .dense-meta {
+        margin-top: 4px;
+        color: var(--text-soft);
+        font-size: 0.72rem;
+        line-height: 1.6;
+      }
+
+      .compact-check-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        margin-top: 10px;
+        max-height: 280px;
+        overflow: auto;
+      }
+
+      .compact-check {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(214, 226, 247, 0.88);
+      }
+
+      .compact-check input {
+        width: 14px;
+        height: 14px;
+        accent-color: var(--brand);
+      }
+
+      .compact-check strong,
+      .compact-check span {
+        display: block;
+        font-size: 0.72rem;
+        line-height: 1.35;
+      }
+
+      .dense-summary-list {
+        display: grid;
+        gap: 6px;
+        margin-top: 10px;
+      }
+
+      .dense-summary-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        background: rgba(248, 251, 255, 0.8);
+        border: 1px solid rgba(214, 226, 247, 0.88);
+        font-size: 0.72rem;
+      }
+
+      .dense-form-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(120px, auto);
+        gap: 8px;
+        align-items: end;
+      }
+
+      .material-search-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(120px, 0.8fr));
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .material-table-cell-link {
+        color: var(--brand-deep);
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .material-table-cell-link:hover {
+        text-decoration: underline;
+      }
+
       .mobile-nav {
         display: none;
       }
 
       @media (max-width: 1180px) {
         .search-layout,
-        .split-grid {
+        .split-grid,
+        .compact-control-bar,
+        .permission-dense-layout,
+        .material-search-row,
+        .dense-form-grid {
           grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
       }
 
@@ -1207,6 +1555,14 @@
         }
 
         .student-facts {
+          grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .compact-check-grid {
           grid-template-columns: 1fr;
         }
 
@@ -1340,7 +1696,7 @@
           </button>
           <button type="button" id="permissionNavButton" class="side-nav-button" data-view="permissions">
             <span class="nav-indicator"></span>
-            <span>권한 관리</span>
+            <span class="side-nav-label">권한 관리 <span class="admin-nav-badge">관리자 전용</span></span>
           </button>
           <button type="button" class="side-nav-button" data-view="materials">
             <span class="nav-indicator"></span>
@@ -1418,98 +1774,73 @@
         </section>
 
         <section id="view-permissions" class="dashboard-view">
-          <div id="permissionLocked" class="panel-shell glass-panel empty-state hidden">
-            이 메뉴는 관리자 전용입니다.<br>
-            강사 계정은 학생 카드에서 수업 일지와 학생 정보만 확인할 수 있습니다.
-          </div>
-
-          <div id="permissionAdminArea" class="split-grid hidden">
-            <section class="panel-shell glass-panel">
-              <div class="panel-head">
-                <div>
-                  <h3>학생별 열람 권한 지정</h3>
-                  <p>활성 학생을 선택한 뒤 허용 강사를 체크하면 즉시 반영됩니다.</p>
-                </div>
+          <section class="panel-shell glass-panel">
+            <div class="panel-head">
+              <div>
+                <h3>권한 관리</h3>
+                <p>학생명을 검색하고, 원/학년으로 좁힌 뒤 학생을 선택하면 우측에서 강사 열람 권한을 빠르게 관리할 수 있습니다.</p>
               </div>
-              <div class="form-grid">
-                <div class="field-shell">
-                  <label class="field-label" for="permissionStudentSelect">학생 선택</label>
-                  <select id="permissionStudentSelect" class="field-select"></select>
-                </div>
-                <div class="field-shell">
-                  <label class="field-label">허용 강사</label>
-                  <div id="instructorChecklist" class="list-grid"></div>
-                </div>
-                <button id="savePermissionButton" type="button" class="button-primary">권한 저장</button>
-              </div>
-            </section>
-
-            <section class="panel-shell glass-panel">
-              <div class="panel-head">
-                <div>
-                  <h3>현재 권한 매핑</h3>
-                  <p>학생별로 연결된 강사를 카드로 확인합니다.</p>
-                </div>
-              </div>
-              <div id="permissionMatrix" class="list-grid"></div>
-            </section>
-          </div>
+            </div>
+            <div class="compact-control-bar">
+              <input id="permissionSearchInput" class="field-input" type="text" placeholder="학생명 검색">
+              <select id="permissionSchoolFilter" class="field-select"></select>
+              <select id="permissionGradeFilter" class="field-select"></select>
+            </div>
+            <div class="permission-dense-layout">
+              <section class="dense-table-shell">
+                <div class="scroll-shell" id="permissionStudentTableWrap"></div>
+              </section>
+              <section class="dense-side-shell">
+                <div id="permissionDetailPanel"></div>
+                <button id="savePermissionButton" type="button" class="button-primary" style="margin-top:10px; width:100%;">권한 저장</button>
+              </section>
+            </div>
+          </section>
         </section>
 
         <section id="view-materials" class="dashboard-view">
-          <div class="split-grid">
-            <section class="panel-shell glass-panel">
-              <div class="panel-head">
-                <div>
-                  <h3>자료 등록</h3>
-                  <p>학교, 대상 년도, 과목, 링크를 등록해 기출문제 및 학습 자료를 저장합니다.</p>
-                </div>
-              </div>
-              <form id="materialForm" class="form-grid">
-                <div class="field-shell">
-                  <label class="field-label" for="materialSchoolInput">학교</label>
-                  <input id="materialSchoolInput" class="field-input" type="text" placeholder="예: 반포고">
-                </div>
-                <div class="field-shell">
-                  <label class="field-label" for="materialYearInput">대상 년도</label>
-                  <input id="materialYearInput" class="field-input" type="text" placeholder="예: 2026">
-                </div>
-                <div class="field-shell">
-                  <label class="field-label" for="materialSubjectInput">과목</label>
-                  <input id="materialSubjectInput" class="field-input" type="text" placeholder="예: 수학">
-                </div>
-                <div class="field-shell">
-                  <label class="field-label" for="materialLinkInput">링크</label>
-                  <input id="materialLinkInput" class="field-input" type="url" placeholder="https://...">
-                </div>
-                <button type="submit" class="button-primary">자료 저장</button>
-              </form>
-            </section>
-
-            <section class="panel-shell glass-panel">
-              <div class="panel-head">
-                <div>
-                  <h3>자료 검색</h3>
-                  <p>학교, 년도, 과목, 등록자 기준으로 즉시 필터링됩니다.</p>
-                </div>
-              </div>
-              <div class="form-grid">
-                <input id="materialKeywordInput" class="field-input" type="text" placeholder="예: 반포고, 2026, 수학">
-                <select id="materialSchoolFilter" class="field-select"></select>
-                <select id="materialYearFilter" class="field-select"></select>
-                <select id="materialSubjectFilter" class="field-select"></select>
-              </div>
-            </section>
-          </div>
-
-          <section class="panel-shell glass-panel" style="margin-top:18px;">
+          <section class="panel-shell glass-panel">
             <div class="panel-head">
               <div>
-                <h3>자료 목록</h3>
-                <p>조건에 맞는 자료만 카드 형태로 정리해 표시합니다.</p>
+                <h3>자료 등록</h3>
+                <p>입력 필드를 한 줄 그리드로 배치해 빠르게 연속 등록할 수 있습니다.</p>
               </div>
             </div>
-            <div id="materialsTableWrap" class="students-grid"></div>
+            <form id="materialForm" class="dense-form-grid">
+              <div class="field-shell">
+                <label class="field-label" for="materialSchoolInput">학교</label>
+                <input id="materialSchoolInput" class="field-input" type="text" placeholder="반포고">
+              </div>
+              <div class="field-shell">
+                <label class="field-label" for="materialYearInput">대상 년도</label>
+                <input id="materialYearInput" class="field-input" type="text" placeholder="2026">
+              </div>
+              <div class="field-shell">
+                <label class="field-label" for="materialSubjectInput">과목</label>
+                <input id="materialSubjectInput" class="field-input" type="text" placeholder="수학">
+              </div>
+              <div class="field-shell">
+                <label class="field-label" for="materialLinkInput">링크</label>
+                <input id="materialLinkInput" class="field-input" type="url" placeholder="https://...">
+              </div>
+              <button type="submit" class="button-primary">자료 저장</button>
+            </form>
+          </section>
+
+          <section class="panel-shell glass-panel" style="margin-top:12px;">
+            <div class="panel-head">
+              <div>
+                <h3>자료 검색 및 목록</h3>
+                <p>검색어는 학교, 년도, 과목, 등록자, 링크 전체 필드에서 부분 일치로 작동합니다.</p>
+              </div>
+            </div>
+            <div class="material-search-row">
+              <input id="materialKeywordInput" class="field-input" type="text" placeholder="예: 반포고, 2026, 수학">
+              <select id="materialSchoolFilter" class="field-select"></select>
+              <select id="materialYearFilter" class="field-select"></select>
+              <select id="materialSubjectFilter" class="field-select"></select>
+            </div>
+            <div id="materialsTableWrap"></div>
           </section>
         </section>
       </main>
@@ -1578,6 +1909,7 @@
         visibleStudents: [],
         activeStudents: [],
         totalActiveStudentCount: 0,
+        selectedPermissionStudentId: '',
         instructors: [],
         permissions: [],
         materials: []
@@ -1621,7 +1953,13 @@
         document.getElementById('topLogoutButton').addEventListener('click', handleLogout);
         document.getElementById('refreshButton').addEventListener('click', refreshDashboard);
         document.getElementById('topRefreshButton').addEventListener('click', refreshDashboard);
-        document.getElementById('openPermissionModalButton').addEventListener('click', openPermissionModal);
+        document.getElementById('openPermissionModalButton').addEventListener('click', function() {
+          if (!APP_STATE.isAdmin) {
+            setNotice('권한 관리 메뉴는 관리자만 사용할 수 있습니다.', 'warning');
+            return;
+          }
+          switchView('permissions');
+        });
         document.getElementById('closePermissionModalButton').addEventListener('click', closePermissionModal);
         document.getElementById('permissionModal').addEventListener('click', handlePermissionModalBackdropClick);
 
@@ -1631,7 +1969,10 @@
 
         document.getElementById('studentList').addEventListener('click', handleStudentListClick);
 
-        document.getElementById('permissionStudentSelect').addEventListener('change', renderPermissionChecklist);
+        document.getElementById('permissionSearchInput').addEventListener('input', renderPermissionView);
+        document.getElementById('permissionSchoolFilter').addEventListener('change', renderPermissionView);
+        document.getElementById('permissionGradeFilter').addEventListener('change', renderPermissionView);
+        document.getElementById('permissionStudentTableWrap').addEventListener('click', handlePermissionListClick);
         document.getElementById('savePermissionButton').addEventListener('click', handlePermissionSave);
         document.getElementById('modalPermissionStudentSelect').addEventListener('change', renderPermissionModalChecklist);
         document.getElementById('modalSavePermissionButton').addEventListener('click', handlePermissionModalSave);
@@ -1819,6 +2160,11 @@
         document.getElementById('permissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('mobilePermissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('openPermissionModalButton').classList.toggle('hidden', !APP_STATE.isAdmin);
+        document.getElementById('view-permissions').classList.toggle('hidden', !APP_STATE.isAdmin);
+
+        if (!APP_STATE.isAdmin && APP_STATE.currentView === 'permissions') {
+          APP_STATE.currentView = 'students';
+        }
       }
 
       function renderStats() {
@@ -2101,75 +2447,162 @@
       }
 
       function renderPermissionView() {
-        var locked = document.getElementById('permissionLocked');
-        var area = document.getElementById('permissionAdminArea');
-
         if (!APP_STATE.isAdmin) {
-          locked.classList.remove('hidden');
-          area.classList.add('hidden');
           if (APP_STATE.currentView === 'permissions') {
             APP_STATE.currentView = 'students';
           }
           return;
         }
 
-        locked.classList.add('hidden');
-        area.classList.remove('hidden');
-        renderPermissionStudentOptions();
-        renderPermissionChecklist();
-        renderPermissionMatrix();
-        renderPermissionModalOptions();
-        renderPermissionModalChecklist();
+        populatePermissionFilters();
+        syncSelectedPermissionStudent_();
+        renderPermissionStudentTable();
+        renderPermissionDetailPanel();
       }
 
-      function renderPermissionStudentOptions() {
-        var select = document.getElementById('permissionStudentSelect');
-        var current = select.value;
+      function populatePermissionFilters() {
+        fillSelectWithOptions('permissionSchoolFilter', APP_STATE.activeStudents.map(function(student) {
+          return student.school;
+        }), '전체 원');
 
-        if (!APP_STATE.activeStudents.length) {
-          select.innerHTML = '<option value="">활성 학생이 없습니다.</option>';
+        fillSelectWithOptions('permissionGradeFilter', APP_STATE.activeStudents.map(function(student) {
+          return student.grade ? String(student.grade) : '';
+        }), '전체 학년');
+      }
+
+      function getFilteredPermissionStudents_() {
+        var keyword = normalizeSearchText(document.getElementById('permissionSearchInput').value);
+        var school = document.getElementById('permissionSchoolFilter').value;
+        var grade = document.getElementById('permissionGradeFilter').value;
+
+        return APP_STATE.activeStudents.filter(function(student) {
+          var searchText = normalizeSearchText([
+            student.studentName,
+            student.school,
+            student.grade,
+            student.studentId
+          ].join(' '));
+
+          var matchesKeyword = !keyword || searchText.indexOf(keyword) !== -1;
+          var matchesSchool = !school || student.school === school;
+          var matchesGrade = !grade || String(student.grade || '') === grade;
+          return matchesKeyword && matchesSchool && matchesGrade;
+        });
+      }
+
+      function syncSelectedPermissionStudent_() {
+        var students = getFilteredPermissionStudents_();
+        var hasCurrent = students.some(function(student) {
+          return student.studentId === APP_STATE.selectedPermissionStudentId;
+        });
+
+        if (!students.length) {
+          APP_STATE.selectedPermissionStudentId = '';
           return;
         }
 
-        select.innerHTML = APP_STATE.activeStudents.map(function(student) {
-          return '<option value="' + escapeHtml(student.studentId) + '">' +
-            escapeHtml(student.studentName + ' (' + student.studentId + ')') +
-            '</option>';
-        }).join('');
-
-        if (current && APP_STATE.activeStudents.some(function(student) { return student.studentId === current; })) {
-          select.value = current;
+        if (!hasCurrent) {
+          APP_STATE.selectedPermissionStudentId = students[0].studentId;
         }
       }
 
-      function renderPermissionChecklist() {
-        if (!APP_STATE.isAdmin) {
+      function renderPermissionStudentTable() {
+        var wrap = document.getElementById('permissionStudentTableWrap');
+        var students = getFilteredPermissionStudents_();
+        var permissionMap = getPermissionMap();
+
+        if (!students.length) {
+          wrap.innerHTML = '<div class="empty-state">조건에 맞는 학생이 없습니다.<br>학생명, 원, 학년 필터를 조정해 주세요.</div>';
           return;
         }
 
-        var wrap = document.getElementById('instructorChecklist');
-        var studentId = document.getElementById('permissionStudentSelect').value;
-        var selected = APP_STATE.permissions
-          .filter(function(item) { return item.studentId === studentId; })
-          .map(function(item) { return item.instructorId; });
+        wrap.innerHTML = [
+          '<div class="data-table-wrap">',
+          '  <table class="data-table">',
+          '    <thead><tr><th>학생명</th><th>원</th><th>학년</th><th>연결 강사</th></tr></thead>',
+          '    <tbody>',
+          students.map(function(student) {
+            var count = (permissionMap[student.studentId] || []).length;
+            var selectedClass = student.studentId === APP_STATE.selectedPermissionStudentId ? ' class="selected"' : '';
+            return [
+              '<tr' + selectedClass + '>',
+              '  <td><button type="button" class="table-row-button" data-student-id="' + escapeAttribute(student.studentId) + '">' + escapeHtml(student.studentName) + '</button></td>',
+              '  <td>' + escapeHtml(student.school || '-') + '</td>',
+              '  <td>' + escapeHtml(student.grade ? String(student.grade) : '-') + '</td>',
+              '  <td>' + escapeHtml(String(count)) + '명</td>',
+              '</tr>'
+            ].join('');
+          }).join(''),
+          '    </tbody>',
+          '  </table>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderPermissionDetailPanel() {
+        var wrap = document.getElementById('permissionDetailPanel');
+        var student = getSelectedPermissionStudent_();
+        var permissionMap = getPermissionMap();
+
+        if (!student) {
+          wrap.innerHTML = '<div class="empty-state">좌측 목록에서 학생을 선택하면 강사 권한을 설정할 수 있습니다.</div>';
+          return;
+        }
 
         if (!APP_STATE.instructors.length) {
           wrap.innerHTML = '<div class="empty-state">Teachers 시트에 강사 계정을 먼저 등록해주세요.</div>';
           return;
         }
 
-        wrap.innerHTML = APP_STATE.instructors.map(function(instructor) {
-          var checked = selected.indexOf(instructor.userId) !== -1 ? ' checked' : '';
-          return [
-            '<label class="check-card">',
-            '  <input type="checkbox" data-instructor-id="' + escapeHtml(instructor.userId) + '"' + checked + '>',
-            '  <div>',
-            '    <div style="font-weight:800;">' + escapeHtml(instructor.name) + '</div>',
-            '    <div style="margin-top:4px;color:var(--text-soft);font-size:0.78rem;">' + escapeHtml(instructor.userId) + '</div>',
-            '  </div>',
-            '</label>'
-          ].join('');
-        }).join('');
+        var selected = permissionMap[student.studentId] || [];
+        var summary = selected.length
+          ? selected.map(function(id) {
+              var matched = APP_STATE.instructors.find(function(item) { return item.userId === id; });
+              return matched ? matched.name : id;
+            })
+          : [];
+
+        wrap.innerHTML = [
+          '<h4>' + escapeHtml(student.studentName) + '</h4>',
+          '<div class="dense-meta">원: ' + escapeHtml(student.school || '-') + ' · 학년: ' + escapeHtml(student.grade ? String(student.grade) : '-') + ' · 학생 ID: ' + escapeHtml(student.studentId) + '</div>',
+          '<div class="compact-check-grid">',
+          APP_STATE.instructors.map(function(instructor) {
+            var checked = selected.indexOf(instructor.userId) !== -1 ? ' checked' : '';
+            return [
+              '<label class="compact-check">',
+              '  <input type="checkbox" data-instructor-id="' + escapeAttribute(instructor.userId) + '"' + checked + '>',
+              '  <div>',
+              '    <strong>' + escapeHtml(instructor.name) + '</strong>',
+              '    <span>' + escapeHtml(instructor.userId) + '</span>',
+              '  </div>',
+              '</label>'
+            ].join('');
+          }).join(''),
+          '</div>',
+          '<div class="dense-summary-list">',
+          '  <div class="dense-summary-item"><span>현재 허용 강사 수</span><strong>' + escapeHtml(String(selected.length)) + '명</strong></div>',
+          '  <div class="dense-summary-item"><span>허용 강사 목록</span><strong>' + escapeHtml(summary.length ? summary.join(', ') : '없음') + '</strong></div>',
+          '</div>'
+        ].join('');
+      }
+
+      function getSelectedPermissionStudent_() {
+        var selectedId = APP_STATE.selectedPermissionStudentId;
+        var students = APP_STATE.activeStudents.filter(function(student) {
+          return student.studentId === selectedId;
+        });
+        return students.length ? students[0] : null;
+      }
+
+      function handlePermissionListClick(event) {
+        var button = event.target.closest('[data-student-id]');
+        if (!button) {
+          return;
+        }
+
+        APP_STATE.selectedPermissionStudentId = button.getAttribute('data-student-id');
+        renderPermissionStudentTable();
+        renderPermissionDetailPanel();
       }
 
       function renderPermissionModalOptions() {
@@ -2178,7 +2611,7 @@
         }
 
         var select = document.getElementById('modalPermissionStudentSelect');
-        var current = select.value || document.getElementById('permissionStudentSelect').value;
+        var current = select.value || APP_STATE.selectedPermissionStudentId;
 
         if (!APP_STATE.activeStudents.length) {
           select.innerHTML = '<option value="">활성 학생이 없습니다.</option>';
@@ -2226,37 +2659,6 @@
         }).join('');
       }
 
-      function renderPermissionMatrix() {
-        if (!APP_STATE.isAdmin) {
-          return;
-        }
-
-        var grouped = getPermissionMap();
-        var wrap = document.getElementById('permissionMatrix');
-
-        if (!APP_STATE.activeStudents.length) {
-          wrap.innerHTML = '<div class="empty-state">활성 학생이 없어서 권한을 지정할 수 없습니다.</div>';
-          return;
-        }
-
-        wrap.innerHTML = APP_STATE.activeStudents.map(function(student) {
-          var rows = grouped[student.studentId] || [];
-          var teacherText = rows.length
-            ? rows.map(function(row) { return row.instructorName || row.instructorId; }).join(', ')
-            : '지정된 강사가 없습니다.';
-          var updatedAt = rows.length ? (rows[0].updatedAt || '-') : '-';
-
-          return [
-            '<article class="info-card">',
-            '  <strong>' + escapeHtml(student.studentName) + '</strong>',
-            '  <p>학생 ID: ' + escapeHtml(student.studentId) + '</p>',
-            '  <p>허용 강사: ' + escapeHtml(teacherText) + '</p>',
-            '  <p>최근 수정: ' + escapeHtml(updatedAt) + '</p>',
-            '</article>'
-          ].join('');
-        }).join('');
-      }
-
       function getPermissionMap() {
         var map = {};
         APP_STATE.permissions.forEach(function(item) {
@@ -2274,14 +2676,14 @@
           return;
         }
 
-        var studentId = document.getElementById('permissionStudentSelect').value;
+        var studentId = APP_STATE.selectedPermissionStudentId;
         if (!studentId) {
           setNotice('학생을 먼저 선택해주세요.', 'warning');
           return;
         }
 
         var instructorIds = Array.prototype.slice.call(
-          document.querySelectorAll('#instructorChecklist input[type="checkbox"]:checked')
+          document.querySelectorAll('#permissionDetailPanel input[type="checkbox"]:checked')
         ).map(function(input) {
           return input.getAttribute('data-instructor-id');
         });
@@ -2296,8 +2698,6 @@
             hydrateStudentDataOnly(result);
             renderAll();
             switchView('permissions');
-            document.getElementById('permissionStudentSelect').value = studentId;
-            renderPermissionChecklist();
             setNotice(result.message || '학생 열람 권한이 저장되었습니다.', 'success');
           })
           .catch(handleApiError_)
@@ -2310,9 +2710,7 @@
           return;
         }
 
-        renderPermissionModalOptions();
-        renderPermissionModalChecklist();
-        document.getElementById('permissionModal').classList.remove('hidden');
+        switchView('permissions');
       }
 
       function closePermissionModal() {
@@ -2352,10 +2750,9 @@
           .then(function(result) {
             hydrateStudentDataOnly(result);
             renderAll();
-            switchView('students');
-            document.getElementById('permissionStudentSelect').value = studentId;
+            APP_STATE.selectedPermissionStudentId = studentId;
+            switchView('permissions');
             document.getElementById('modalPermissionStudentSelect').value = studentId;
-            renderPermissionChecklist();
             renderPermissionModalChecklist();
             closePermissionModal();
             setNotice(result.message || '학생 열람 권한이 저장되었습니다.', 'success');
@@ -2399,7 +2796,8 @@
             item.school,
             item.year,
             item.subject,
-            item.createdBy
+            item.createdBy,
+            item.link
           ].join(' '));
 
           var matchesKeyword = !keyword || searchText.indexOf(keyword) !== -1;
@@ -2415,17 +2813,25 @@
           return;
         }
 
-        wrap.innerHTML = filtered.map(function(item) {
-          return [
-            '<article class="info-card">',
-            '  <strong>' + escapeHtml(item.school || '-') + ' · ' + escapeHtml(item.subject || '-') + '</strong>',
-            '  <p>대상 년도: ' + escapeHtml(item.year || '-') + '</p>',
-            '  <p>등록자: ' + escapeHtml(item.createdBy || '-') + '</p>',
-            '  <p>등록일시: ' + escapeHtml(item.createdAt || '-') + '</p>',
-            '  <a class="material-link" href="' + escapeAttribute(item.link) + '" target="_blank" rel="noopener noreferrer">자료 열기</a>',
-            '</article>'
-          ].join('');
-        }).join('');
+        wrap.innerHTML = [
+          '<div class="data-table-wrap">',
+          '  <table class="data-table">',
+          '    <thead><tr><th>학교</th><th>대상 년도</th><th>과목</th><th>링크</th></tr></thead>',
+          '    <tbody>',
+          filtered.map(function(item) {
+            return [
+              '<tr>',
+              '  <td>' + escapeHtml(item.school || '-') + '</td>',
+              '  <td>' + escapeHtml(item.year || '-') + '</td>',
+              '  <td>' + escapeHtml(item.subject || '-') + '</td>',
+              '  <td><a class="material-table-cell-link" href="' + escapeAttribute(item.link) + '" target="_blank" rel="noopener noreferrer">열기</a></td>',
+              '</tr>'
+            ].join('');
+          }).join(''),
+          '    </tbody>',
+          '  </table>',
+          '</div>'
+        ].join('');
       }
 
       function populateMaterialFilters() {
@@ -2488,6 +2894,7 @@
         APP_STATE.visibleStudents = [];
         APP_STATE.activeStudents = [];
         APP_STATE.totalActiveStudentCount = 0;
+        APP_STATE.selectedPermissionStudentId = '';
         APP_STATE.instructors = [];
         APP_STATE.permissions = [];
         APP_STATE.materials = [];
