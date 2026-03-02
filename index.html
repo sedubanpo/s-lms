@@ -602,9 +602,13 @@
       .top-actions {
         display: flex;
         gap: 10px;
+        align-items: center;
       }
 
       .mini-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         min-height: 48px;
         padding: 0 16px;
         border-radius: 16px;
@@ -613,6 +617,8 @@
         box-shadow: var(--shadow-md);
         color: var(--text);
         font-weight: 800;
+        line-height: 1;
+        white-space: nowrap;
       }
 
       .dashboard-notice {
@@ -1236,9 +1242,15 @@
       .button-secondary,
       .button-ghost,
       .mini-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         min-height: 40px;
+        padding: 0 14px;
         border-radius: 12px;
         font-size: 0.8rem;
+        line-height: 1.2;
+        white-space: nowrap;
       }
 
       .students-grid {
@@ -1335,6 +1347,14 @@
         gap: 8px;
         padding: 10px;
         border-radius: 14px;
+      }
+
+      .log-form [data-action="save-log"] {
+        min-width: 72px;
+        padding: 8px 12px;
+        line-height: 1.25;
+        white-space: normal;
+        text-align: center;
       }
 
       .compact-control-bar {
@@ -1634,7 +1654,7 @@
             <div class="story-brand" style="margin-top:22px;">
               <img id="loginLogo" src="https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png" alt="S-LMS 로고">
               <h1 id="loginTitle">S-LMS (에스-엘엠에스)</h1>
-              <p>학생 관리, 수업 일지, 권한 제어, 자료 공유를 하나의 운영 대시보드에서 연결하는 학원 전용 SaaS 스타일 워크스페이스입니다.</p>
+              <p>학생 관리, 수업 계획, 권한 제어, 자료 공유를 하나의 운영 대시보드에서 연결하는 학원 전용 SaaS 스타일 워크스페이스입니다.</p>
             </div>
           </div>
           <div class="story-metrics">
@@ -1647,7 +1667,7 @@
               <strong>허용된 학생만 열람</strong>
             </div>
             <div class="story-card">
-              <span>수업 일지</span>
+              <span>수업 계획</span>
               <strong>태그 기반 관리</strong>
             </div>
             <div class="story-card">
@@ -1748,7 +1768,7 @@
               <small>학생과 강사 사이의 허용 연결 수</small>
             </article>
             <article class="stat-card glass-panel">
-              <span>수업 일지</span>
+              <span>수업 계획</span>
               <strong id="logCount">0건</strong>
               <small>현재 화면에 표시되는 전체 로그 수</small>
             </article>
@@ -1759,7 +1779,7 @@
               <div class="panel-head">
                 <div>
                   <h3>학생 검색</h3>
-                  <p>이름, 원, 수업 일지 태그와 내용까지 함께 검색합니다. 이름 앞 슬래시(`/`)는 자동으로 제거되어 검색됩니다.</p>
+                  <p>이름, 원, 수업 계획 태그와 내용까지 함께 검색합니다. 이름 앞 슬래시(`/`)는 자동으로 제거되어 검색됩니다.</p>
                 </div>
               </div>
               <div class="search-layout">
@@ -2154,8 +2174,8 @@
         document.getElementById('userMetaText').textContent =
           (user.userId ? '계정 ID: ' + user.userId + ' | ' : '') +
           (APP_STATE.isAdmin
-            ? '관리자 로그는 강조 표시되며, 전체 활성 학생과 권한 매핑을 관리할 수 있습니다.'
-            : '강사 로그에는 작성자명이 노출되며, 허용된 학생만 조회됩니다.');
+            ? '관리자 작성 계획은 강조 표시되며, 전체 활성 학생과 권한 매핑을 관리할 수 있습니다.'
+            : '강사 작성 계획에는 작성자명이 노출되며, 허용된 학생만 조회됩니다.');
 
         document.getElementById('permissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('mobilePermissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
@@ -2277,7 +2297,7 @@
           }
         }
 
-        return '<div class="empty-state">조건에 맞는 학생이 없습니다.<br>이름, 원, 수업 일지 태그까지 함께 검색되며, 이름 앞 슬래시는 자동으로 무시됩니다.</div>';
+        return '<div class="empty-state">조건에 맞는 학생이 없습니다.<br>이름, 원, 수업 계획 태그까지 함께 검색되며, 이름 앞 슬래시는 자동으로 무시됩니다.</div>';
       }
 
       function renderStudentCard(student) {
@@ -2315,22 +2335,22 @@
           '  <div class="student-facts">' + facts.join('') + '</div>',
           '  <section class="student-block">',
           '    <div class="block-head">',
-          '      <h5>수업 일지 및 데이터</h5>',
+          '      <h5>수업 계획 및 데이터</h5>',
           '      <small>총 ' + ((student.logs || []).length) + '건</small>',
           '    </div>',
                renderLogList(student.logs || []),
           '  </section>',
           '  <section class="student-block">',
           '    <div class="block-head">',
-          '      <h5>새 수업 일지 작성</h5>',
+          '      <h5>새 수업 계획 작성</h5>',
           '      <small>태그를 눌러 선택 후 저장</small>',
           '    </div>',
           '    <div class="log-form">',
-          '      <textarea class="field-textarea" data-role="log-content" placeholder="수업 진행 상황, 과제, 보충 필요 여부, 테스트 결과 등을 기록하세요."></textarea>',
+          '      <textarea class="field-textarea" data-role="log-content" placeholder="수업 진행 계획, 과제, 보충 필요 여부, 테스트 결과 등을 기록하세요."></textarea>',
           '      <div class="tag-selector">' + renderLogTagSelector(student.studentId) + '</div>',
           '      <div class="log-form-foot">',
-          '        <div class="helper-text">관리자 작성 로그는 강조 표시되며, 강사 로그는 작성자명이 함께 표시됩니다.</div>',
-          '        <button type="button" class="button-primary" data-action="save-log">일지 저장</button>',
+          '        <div class="helper-text">관리자 작성 계획은 강조 표시되며, 강사 작성 계획은 작성자명이 함께 표시됩니다.</div>',
+          '        <button type="button" class="button-primary" data-action="save-log">계획 저장</button>',
           '      </div>',
           '    </div>',
           '  </section>',
@@ -2349,7 +2369,7 @@
 
       function renderLogList(logs) {
         if (!logs.length) {
-          return '<div class="empty-state">아직 등록된 수업 일지가 없습니다.<br>바로 아래 입력창에서 첫 기록을 남길 수 있습니다.</div>';
+          return '<div class="empty-state">아직 등록된 수업 계획이 없습니다.<br>바로 아래 입력창에서 첫 계획을 남길 수 있습니다.</div>';
         }
 
         return '<div class="log-stream">' + logs.map(function(log) {
@@ -2425,11 +2445,11 @@
         });
 
         if (!content) {
-          setNotice('수업 일지 내용을 입력해주세요.', 'warning');
+          setNotice('수업 계획 내용을 입력해주세요.', 'warning');
           return;
         }
 
-        setLoading('수업 일지를 저장하는 중입니다.');
+        setLoading('수업 계획을 저장하는 중입니다.');
         apiRequest('addStudentLog', {
           token: APP_STATE.token,
           studentId: studentId,
@@ -2440,7 +2460,7 @@
             hydrateStudentDataOnly(result);
             renderAll();
             switchView('students');
-            setNotice(result.message || '수업 일지가 저장되었습니다.', 'success');
+            setNotice(result.message || '수업 계획이 저장되었습니다.', 'success');
           })
           .catch(handleApiError_)
           .finally(clearLoading);
