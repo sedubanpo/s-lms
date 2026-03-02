@@ -658,7 +658,13 @@
       }
 
       .dashboard-notice {
-        margin-bottom: 18px;
+        position: fixed;
+        top: 22px;
+        right: 22px;
+        z-index: 85;
+        min-width: 320px;
+        max-width: min(540px, calc(100vw - 32px));
+        box-shadow: var(--shadow-xl);
       }
 
       .permission-trigger {
@@ -685,6 +691,10 @@
         background: rgba(255, 255, 255, 0.92);
         border: 1px solid rgba(255, 255, 255, 0.72);
         box-shadow: var(--shadow-xl);
+      }
+
+      .detail-modal-card {
+        width: min(680px, 100%);
       }
 
       .modal-top {
@@ -1058,6 +1068,20 @@
         white-space: pre-wrap;
       }
 
+      .log-preview {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .log-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
       .tag-cloud {
         display: flex;
         flex-wrap: wrap;
@@ -1203,6 +1227,21 @@
         background: rgba(239, 68, 68, 0.08);
         border: 1px solid rgba(239, 68, 68, 0.16);
         color: #b91c1c;
+        font-size: 0.68rem;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .log-detail-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: rgba(36, 86, 214, 0.08);
+        border: 1px solid rgba(36, 86, 214, 0.16);
+        color: var(--brand-deep);
         font-size: 0.68rem;
         font-weight: 800;
         white-space: nowrap;
@@ -1609,6 +1648,189 @@
         padding: 0;
       }
 
+      .events-shell {
+        display: grid;
+        grid-template-columns: minmax(300px, 350px) minmax(0, 1fr);
+        gap: 12px;
+      }
+
+      .events-side {
+        padding: 14px;
+        border-radius: 18px;
+      }
+
+      .events-main {
+        min-width: 0;
+      }
+
+      .mini-calendar-top,
+      .events-board-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .mini-calendar-wrap {
+        padding: 10px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(214, 226, 247, 0.88);
+        margin-bottom: 12px;
+      }
+
+      .calendar-grid,
+      .mini-calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .calendar-weekday {
+        padding: 4px 0;
+        text-align: center;
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: var(--text-soft);
+      }
+
+      .mini-day,
+      .calendar-day {
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid rgba(214, 226, 247, 0.82);
+      }
+
+      .mini-day {
+        min-height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.74rem;
+        font-weight: 700;
+      }
+
+      .mini-day.has-event,
+      .calendar-day.has-event {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(36, 86, 214, 0.12));
+        border-color: rgba(99, 102, 241, 0.22);
+      }
+
+      .mini-day.today,
+      .calendar-day.today {
+        box-shadow: inset 0 0 0 2px rgba(36, 86, 214, 0.22);
+      }
+
+      .mini-day.muted,
+      .calendar-day.muted {
+        opacity: 0.42;
+      }
+
+      .event-form-grid {
+        display: grid;
+        gap: 8px;
+      }
+
+      .event-calendar-wrap {
+        display: grid;
+        gap: 8px;
+      }
+
+      .calendar-day {
+        min-height: 110px;
+        padding: 8px;
+        display: grid;
+        gap: 6px;
+        align-content: start;
+      }
+
+      .calendar-day-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
+        background: rgba(243, 246, 255, 0.9);
+        font-size: 0.76rem;
+        font-weight: 800;
+      }
+
+      .calendar-event-chip {
+        padding: 5px 7px;
+        border-radius: 10px;
+        font-size: 0.66rem;
+        font-weight: 700;
+        line-height: 1.4;
+      }
+
+      .calendar-event-chip.primary {
+        background: rgba(99, 102, 241, 0.14);
+        color: #4338ca;
+      }
+
+      .calendar-event-chip.secondary {
+        background: rgba(20, 184, 166, 0.14);
+        color: #0f766e;
+      }
+
+      .calendar-more {
+        font-size: 0.64rem;
+        font-weight: 800;
+        color: var(--text-soft);
+      }
+
+      .month-switch {
+        display: inline-flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .event-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .event-item {
+        display: grid;
+        grid-template-columns: 86px minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: start;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.76);
+        border: 1px solid rgba(214, 226, 247, 0.88);
+      }
+
+      .event-date-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 30px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: rgba(36, 86, 214, 0.1);
+        color: var(--brand-deep);
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .event-item strong {
+        display: block;
+        font-size: 0.84rem;
+      }
+
+      .event-item p {
+        margin: 2px 0 0;
+        font-size: 0.74rem;
+        color: var(--text-soft);
+      }
+
+      #materialsCreatePanel.hidden + section {
+        margin-top: 0 !important;
+      }
+
       .dense-side-shell h4 {
         margin: 0;
         font-size: 0.9rem;
@@ -1711,7 +1933,8 @@
         .compact-control-bar,
         .permission-dense-layout,
         .material-search-row,
-        .dense-form-grid {
+        .dense-form-grid,
+        .events-shell {
           grid-template-columns: 1fr;
         }
 
@@ -1788,7 +2011,7 @@
           bottom: 14px;
           z-index: 40;
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 8px;
           padding: 10px;
           border-radius: 24px;
@@ -1800,6 +2023,10 @@
 
         .students-grid {
           grid-template-columns: 1fr;
+        }
+
+        .calendar-day {
+          min-height: 90px;
         }
 
         .mobile-nav .side-nav-button {
@@ -1912,6 +2139,10 @@
             <span class="nav-indicator"></span>
             <span class="side-nav-label">권한 관리 <span class="admin-nav-badge">관리자 전용</span></span>
           </button>
+          <button type="button" class="side-nav-button" data-view="events">
+            <span class="nav-indicator"></span>
+            <span>주요일정</span>
+          </button>
           <button type="button" class="side-nav-button" data-view="materials">
             <span class="nav-indicator"></span>
             <span>기출문제 및 학습 자료</span>
@@ -2022,8 +2253,73 @@
           </section>
         </section>
 
+        <section id="view-events" class="dashboard-view">
+          <section class="events-shell">
+            <div class="events-side glass-panel">
+              <div class="panel-head">
+                <div>
+                  <h3>미니 캘린더</h3>
+                  <p>월 이동 후 일정을 빠르게 훑어볼 수 있습니다.</p>
+                </div>
+              </div>
+              <div class="mini-calendar-top">
+                <button type="button" class="icon-button" data-action="prev-month" aria-label="이전 달">‹</button>
+                <strong id="miniCalendarLabel">2026년 03월</strong>
+                <button type="button" class="icon-button" data-action="next-month" aria-label="다음 달">›</button>
+              </div>
+              <div id="miniCalendarWrap" class="mini-calendar-wrap"></div>
+              <form id="eventForm" class="event-form-grid">
+                <div class="field-shell">
+                  <label class="field-label" for="eventDateInput">날짜</label>
+                  <input id="eventDateInput" class="field-input" type="date">
+                </div>
+                <div class="field-shell">
+                  <label class="field-label" for="eventTargetInput">대상</label>
+                  <input id="eventTargetInput" class="field-input" type="text" placeholder="신반포중학교">
+                </div>
+                <div class="field-shell">
+                  <label class="field-label" for="eventTitleInput">이벤트명</label>
+                  <input id="eventTitleInput" class="field-input" type="text" placeholder="개학">
+                </div>
+                <div class="field-shell">
+                  <label class="field-label" for="eventNoteInput">비고</label>
+                  <input id="eventNoteInput" class="field-input" type="text" placeholder="메모를 입력하세요">
+                </div>
+                <button type="submit" class="button-primary">일정 저장</button>
+              </form>
+            </div>
+
+            <div class="events-main">
+              <section class="panel-shell glass-panel">
+                <div class="events-board-top">
+                  <div>
+                    <h3 id="eventMonthTitle">주요일정</h3>
+                    <p id="eventMonthDescription">월별 일정과 등록 내역을 한눈에 확인합니다.</p>
+                  </div>
+                  <div class="month-switch">
+                    <button type="button" class="mini-button" data-action="prev-month">이전 달</button>
+                    <button type="button" class="mini-button" data-action="go-today">이번 달</button>
+                    <button type="button" class="mini-button" data-action="next-month">다음 달</button>
+                  </div>
+                </div>
+                <div id="eventCalendarWrap" class="event-calendar-wrap"></div>
+              </section>
+
+              <section class="panel-shell glass-panel" style="margin-top:12px;">
+                <div class="panel-head">
+                  <div>
+                    <h3>월별 일정 목록</h3>
+                    <p>선택한 달에 등록된 일정을 날짜순으로 정리합니다.</p>
+                  </div>
+                </div>
+                <div id="eventListWrap"></div>
+              </section>
+            </div>
+          </section>
+        </section>
+
         <section id="view-materials" class="dashboard-view">
-          <section class="panel-shell glass-panel">
+          <section id="materialsCreatePanel" class="panel-shell glass-panel">
             <div class="panel-head">
               <div>
                 <h3>자료 등록</h3>
@@ -2083,6 +2379,10 @@
           <span class="nav-indicator"></span>
           <span>권한</span>
         </button>
+        <button type="button" class="side-nav-button" data-view="events">
+          <span class="nav-indicator"></span>
+          <span>일정</span>
+        </button>
         <button type="button" class="side-nav-button" data-view="materials">
           <span class="nav-indicator"></span>
           <span>자료</span>
@@ -2111,6 +2411,19 @@
           </div>
           <button id="modalSavePermissionButton" type="button" class="button-primary">권한 저장</button>
         </div>
+      </div>
+    </div>
+
+    <div id="teachingLogDetailModal" class="modal-backdrop hidden">
+      <div class="modal-card detail-modal-card">
+        <div class="modal-top">
+          <div>
+            <h3>티칭로그 상세보기</h3>
+            <p>선택한 티칭로그의 전체 내용을 확인합니다.</p>
+          </div>
+          <button id="closeTeachingLogDetailButton" type="button" class="icon-button" aria-label="티칭로그 상세창 닫기">×</button>
+        </div>
+        <div id="teachingLogDetailContent" class="modal-body"></div>
       </div>
     </div>
 
@@ -2164,7 +2477,11 @@
         permissionInstructorKeyword: '',
         instructors: [],
         permissions: [],
-        materials: []
+        materials: [],
+        events: [],
+        calendarYear: new Date().getFullYear(),
+        calendarMonth: new Date().getMonth(),
+        selectedLogRow: ''
       };
 
       var VIEW_META = {
@@ -2176,11 +2493,16 @@
           title: '권한 관리',
           description: '관리자가 학생별로 강사 접근 권한을 설정하는 관리자 전용 영역입니다.'
         },
+        events: {
+          title: '주요일정',
+          description: '월별 일정과 학원 이벤트를 달력과 목록으로 함께 관리합니다.'
+        },
         materials: {
           title: '기출문제 및 학습 자료',
           description: '학교, 대상 년도, 과목 기준으로 자료를 저장하고 빠르게 탐색합니다.'
         }
       };
+      var NOTICE_TIMER = null;
 
       document.addEventListener('DOMContentLoaded', bootstrap);
 
@@ -2217,12 +2539,15 @@
         });
         document.getElementById('closePermissionModalButton').addEventListener('click', closePermissionModal);
         document.getElementById('permissionModal').addEventListener('click', handlePermissionModalBackdropClick);
+        document.getElementById('closeTeachingLogDetailButton').addEventListener('click', closeTeachingLogDetailModal);
+        document.getElementById('teachingLogDetailModal').addEventListener('click', handleTeachingLogDetailBackdropClick);
 
         document.getElementById('studentSearchInput').addEventListener('input', renderStudents);
         document.getElementById('studentSchoolFilter').addEventListener('change', renderStudents);
         document.getElementById('studentTagFilter').addEventListener('change', renderStudents);
 
         document.getElementById('studentList').addEventListener('click', handleStudentListClick);
+        document.getElementById('view-events').addEventListener('click', handleEventsViewClick);
 
         document.getElementById('permissionSearchInput').addEventListener('input', renderPermissionView);
         document.getElementById('permissionSchoolFilter').addEventListener('change', renderPermissionView);
@@ -2234,6 +2559,7 @@
         document.getElementById('modalSavePermissionButton').addEventListener('click', handlePermissionModalSave);
 
         document.getElementById('materialForm').addEventListener('submit', handleMaterialSave);
+        document.getElementById('eventForm').addEventListener('submit', handleEventSave);
         document.getElementById('materialKeywordInput').addEventListener('input', renderMaterials);
         document.getElementById('materialSchoolFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialGradeFilter').addEventListener('change', renderMaterials);
@@ -2329,23 +2655,32 @@
       }
 
       function setNotice(message, tone) {
-        var bars = [
-          document.getElementById('noticeBar'),
-          document.getElementById('loginNoticeBar')
-        ];
-
+        var dashboardBar = document.getElementById('noticeBar');
+        var loginBar = document.getElementById('loginNoticeBar');
+        clearTimeout(NOTICE_TIMER);
         if (!message) {
-          bars.forEach(function(bar) {
-            bar.className = 'notice-bar notice-info hidden';
-            bar.textContent = '';
-          });
+          [dashboardBar, loginBar].forEach(resetNoticeBar_);
           return;
         }
 
-        bars.forEach(function(bar) {
-          bar.textContent = message;
-          bar.className = 'notice-bar notice-' + (tone || 'info');
-        });
+        var isLoginVisible = !document.getElementById('loginScreen').classList.contains('hidden');
+        var targetBar = isLoginVisible ? loginBar : dashboardBar;
+        var inactiveBar = isLoginVisible ? dashboardBar : loginBar;
+        resetNoticeBar_(inactiveBar);
+
+        targetBar.textContent = message;
+        targetBar.className = (targetBar.id === 'noticeBar' ? 'dashboard-notice ' : '') + 'notice-bar notice-' + (tone || 'info');
+
+        if (!isLoginVisible) {
+          NOTICE_TIMER = setTimeout(function() {
+            resetNoticeBar_(dashboardBar);
+          }, 3600);
+        }
+      }
+
+      function resetNoticeBar_(bar) {
+        bar.className = (bar.id === 'noticeBar' ? 'dashboard-notice ' : '') + 'notice-bar notice-info hidden';
+        bar.textContent = '';
       }
 
       function handleLogin(event) {
@@ -2383,13 +2718,14 @@
           return Promise.resolve();
         }
 
-        setLoading('학생 데이터와 자료를 동기화하는 중입니다.');
+        setLoading('학생 데이터, 자료, 일정을 동기화하는 중입니다.');
         return Promise.all([
           apiRequest('getStudents', { token: APP_STATE.token }),
-          apiRequest('getMaterials', { token: APP_STATE.token })
+          apiRequest('getMaterials', { token: APP_STATE.token }),
+          apiRequest('getEvents', { token: APP_STATE.token })
         ])
           .then(function(results) {
-            hydrateDashboard(results[0], results[1]);
+            hydrateDashboard(results[0], results[1], results[2]);
             renderAll();
             showAppOnly();
           })
@@ -2397,7 +2733,7 @@
           .finally(clearLoading);
       }
 
-      function hydrateDashboard(studentData, materialData) {
+      function hydrateDashboard(studentData, materialData, eventData) {
         APP_STATE.user = studentData.user || APP_STATE.user;
         APP_STATE.isAdmin = Boolean(studentData.isAdmin);
         APP_STATE.visibleStudents = studentData.visibleStudents || [];
@@ -2406,6 +2742,7 @@
         APP_STATE.instructors = studentData.instructors || [];
         APP_STATE.permissions = studentData.permissions || [];
         APP_STATE.materials = materialData && materialData.materials ? materialData.materials : [];
+        APP_STATE.events = eventData && eventData.events ? eventData.events : [];
         APP_STATE.appName = studentData.appName || APP_STATE.appName;
         APP_STATE.logoUrl = studentData.logoUrl || APP_STATE.logoUrl;
         writeStoredSession();
@@ -2431,6 +2768,7 @@
         renderStats();
         renderStudents();
         renderPermissionView();
+        renderEvents();
         renderMaterials();
         switchView(APP_STATE.currentView);
       }
@@ -2451,6 +2789,7 @@
         document.getElementById('mobilePermissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('openPermissionModalButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('view-permissions').classList.toggle('hidden', !APP_STATE.isAdmin);
+        document.getElementById('materialsCreatePanel').classList.toggle('hidden', !APP_STATE.isAdmin);
 
         if (!APP_STATE.isAdmin && APP_STATE.currentView === 'permissions') {
           APP_STATE.currentView = 'students';
@@ -2481,7 +2820,7 @@
 
       function getTotalLogCount() {
         return APP_STATE.visibleStudents.reduce(function(total, student) {
-          return total + ((student.logs || []).length);
+          return total + getDisplayedTeachingLogs_(student, getStudentLogTab_(student.studentId)).length;
         }, 0);
       }
 
@@ -2583,7 +2922,7 @@
 
       function renderStudentCard(student) {
         var activeTab = getStudentLogTab_(student.studentId);
-        var visibleLogs = getFilteredTeachingLogsByTab_(student, activeTab);
+        var visibleLogs = getDisplayedTeachingLogs_(student, activeTab);
         var pills = [];
         if (student.school) {
           pills.push('<span class="pill pill-blue">' + escapeHtml(student.school) + '</span>');
@@ -2668,15 +3007,19 @@
           : '<span>' + escapeHtml((log.createdByName || '강사') + ' 강사') + '</span>';
         var compactDate = formatTeachingLogDateTime(log.createdAt);
         var canDelete = APP_STATE.isAdmin || (APP_STATE.user && APP_STATE.user.userId === log.createdById);
+        var previewText = truncateText_(log.content || '', 54);
 
         return [
           '<div class="log-card ' + (isAdmin ? 'admin' : '') + '">',
           '  <div class="log-top">',
           '    <div class="log-author">' + authorHtml + '</div>',
           '    <div class="log-time">' + escapeHtml(compactDate) + '</div>',
-          canDelete ? '    <button type="button" class="log-delete-button" data-action="delete-log" data-log-row="' + escapeAttribute(log.rowNumber) + '">삭제</button>' : '',
+          '    <div class="log-actions">',
+          '      <button type="button" class="log-detail-button" data-action="show-log-detail" data-log-row="' + escapeAttribute(log.rowNumber) + '">상세보기</button>',
+                 canDelete ? '<button type="button" class="log-delete-button" data-action="delete-log" data-log-row="' + escapeAttribute(log.rowNumber) + '">삭제</button>' : '',
+          '    </div>',
           '  </div>',
-          '  <div class="log-text">' + escapeHtml(log.content || '') + '</div>',
+          '  <div class="log-text log-preview">' + escapeHtml(previewText) + '</div>',
                renderLogTags(log.tags || []),
           '</div>'
         ].join('');
@@ -2741,6 +3084,10 @@
         });
       }
 
+      function getDisplayedTeachingLogs_(student, activeTab) {
+        return getFilteredTeachingLogsByTab_(student, activeTab).slice(0, 10);
+      }
+
       function sanitizeId(value) {
         return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '');
       }
@@ -2792,6 +3139,12 @@
         var deleteButton = event.target.closest('[data-action="delete-log"]');
         if (deleteButton) {
           handleTeachingLogDelete(deleteButton);
+          return;
+        }
+
+        var detailButton = event.target.closest('[data-action="show-log-detail"]');
+        if (detailButton) {
+          openTeachingLogDetailModal(detailButton.getAttribute('data-log-row'));
           return;
         }
 
@@ -2854,6 +3207,49 @@
           })
           .catch(handleApiError_)
           .finally(clearLoading);
+      }
+
+      function openTeachingLogDetailModal(logRowNumber) {
+        var log = findTeachingLogByRow_(logRowNumber);
+        if (!log) {
+          setNotice('티칭로그 상세 내용을 찾을 수 없습니다.', 'warning');
+          return;
+        }
+
+        APP_STATE.selectedLogRow = String(logRowNumber);
+        document.getElementById('teachingLogDetailContent').innerHTML = [
+          '<div class="fact-box"><strong>작성자</strong><span>' + escapeHtml(log.createdByName || '-') + '</span></div>',
+          '<div class="fact-box"><strong>작성 시각</strong><span>' + escapeHtml(log.createdAt || '-') + '</span></div>',
+          '<div class="fact-box"><strong>태그</strong><span>' + escapeHtml((log.tags || []).join(', ') || '-') + '</span></div>',
+          '<div class="fact-box"><strong>내용</strong><span style="white-space:pre-wrap;line-height:1.7;">' + escapeHtml(log.content || '-') + '</span></div>'
+        ].join('');
+        document.getElementById('teachingLogDetailModal').classList.remove('hidden');
+      }
+
+      function closeTeachingLogDetailModal() {
+        APP_STATE.selectedLogRow = '';
+        document.getElementById('teachingLogDetailModal').classList.add('hidden');
+      }
+
+      function handleTeachingLogDetailBackdropClick(event) {
+        if (event.target.id === 'teachingLogDetailModal') {
+          closeTeachingLogDetailModal();
+        }
+      }
+
+      function findTeachingLogByRow_(logRowNumber) {
+        var target = String(logRowNumber || '');
+        var matchedLog = null;
+        APP_STATE.visibleStudents.some(function(student) {
+          return (student.logs || []).some(function(log) {
+            if (String(log.rowNumber) === target) {
+              matchedLog = log;
+              return true;
+            }
+            return false;
+          });
+        });
+        return matchedLog;
       }
 
       function renderPermissionView() {
@@ -3214,6 +3610,204 @@
           .finally(clearLoading);
       }
 
+      function handleEventSave(event) {
+        event.preventDefault();
+
+        setLoading('주요일정을 저장하는 중입니다.');
+        apiRequest('addEvent', {
+          token: APP_STATE.token,
+          date: document.getElementById('eventDateInput').value,
+          target: document.getElementById('eventTargetInput').value.trim(),
+          title: document.getElementById('eventTitleInput').value.trim(),
+          note: document.getElementById('eventNoteInput').value.trim()
+        })
+          .then(function(result) {
+            APP_STATE.events = result.events || [];
+            document.getElementById('eventForm').reset();
+            renderEvents();
+            switchView('events');
+            setNotice(result.message || '주요일정이 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function handleEventsViewClick(event) {
+        var actionButton = event.target.closest('[data-action]');
+        if (!actionButton) {
+          return;
+        }
+
+        var action = actionButton.getAttribute('data-action');
+        if (action === 'prev-month') {
+          shiftCalendarMonth_(-1);
+          return;
+        }
+        if (action === 'next-month') {
+          shiftCalendarMonth_(1);
+          return;
+        }
+        if (action === 'go-today') {
+          var today = new Date();
+          APP_STATE.calendarYear = today.getFullYear();
+          APP_STATE.calendarMonth = today.getMonth();
+          renderEvents();
+        }
+      }
+
+      function shiftCalendarMonth_(delta) {
+        var next = new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth + delta, 1);
+        APP_STATE.calendarYear = next.getFullYear();
+        APP_STATE.calendarMonth = next.getMonth();
+        renderEvents();
+      }
+
+      function renderEvents() {
+        var monthLabel = formatCalendarMonthLabel_(APP_STATE.calendarYear, APP_STATE.calendarMonth);
+        if (!document.getElementById('eventDateInput').value) {
+          document.getElementById('eventDateInput').value = formatDateKey_(new Date());
+        }
+        document.getElementById('miniCalendarLabel').textContent = monthLabel;
+        document.getElementById('eventMonthTitle').textContent = monthLabel + ' 주요일정';
+        document.getElementById('eventMonthDescription').textContent = '선택한 달의 일정을 달력과 목록으로 함께 확인합니다.';
+        document.getElementById('miniCalendarWrap').innerHTML = renderMiniCalendar_();
+        document.getElementById('eventCalendarWrap').innerHTML = renderMonthCalendar_();
+        document.getElementById('eventListWrap').innerHTML = renderEventList_();
+      }
+
+      function renderMiniCalendar_() {
+        return '<div class="mini-calendar-grid">' + renderCalendarCells_(true).join('') + '</div>';
+      }
+
+      function renderMonthCalendar_() {
+        var weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+        return [
+          '<div class="calendar-grid">',
+          weekdays.map(function(day) {
+            return '<div class="calendar-weekday">' + day + '</div>';
+          }).join(''),
+          renderCalendarCells_(false).join(''),
+          '</div>'
+        ].join('');
+      }
+
+      function renderCalendarCells_(isMini) {
+        var firstDay = new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth, 1);
+        var startOffset = firstDay.getDay();
+        var gridStart = new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth, 1 - startOffset);
+        var cells = [];
+        for (var i = 0; i < 35; i += 1) {
+          var date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+          var isoDate = formatDateKey_(date);
+          var isCurrentMonth = date.getMonth() === APP_STATE.calendarMonth;
+          var dayEvents = getEventsByDate_(isoDate);
+          var classNames = [isMini ? 'mini-day' : 'calendar-day'];
+          if (!isCurrentMonth) {
+            classNames.push('muted');
+          }
+          if (dayEvents.length) {
+            classNames.push('has-event');
+          }
+          if (isToday_(date)) {
+            classNames.push('today');
+          }
+
+          if (isMini) {
+            cells.push('<div class="' + classNames.join(' ') + '">' + escapeHtml(String(date.getDate())) + '</div>');
+            continue;
+          }
+
+          cells.push([
+            '<div class="' + classNames.join(' ') + '">',
+            '  <span class="calendar-day-number">' + escapeHtml(String(date.getDate())) + '</span>',
+               dayEvents.slice(0, 2).map(function(item, index) {
+                 return '<div class="calendar-event-chip ' + (index === 0 ? 'primary' : 'secondary') + '">' + escapeHtml(item.title) + '</div>';
+               }).join(''),
+               dayEvents.length > 2 ? '<div class="calendar-more">+' + escapeHtml(String(dayEvents.length - 2)) + '건 더보기</div>' : '',
+            '</div>'
+          ].join(''));
+        }
+        return cells;
+      }
+
+      function renderEventList_() {
+        var items = getEventsForCurrentMonth_();
+        if (!items.length) {
+          return '<div class="empty-state">선택한 달에 등록된 일정이 없습니다.<br>좌측 입력창에서 바로 새 일정을 추가할 수 있습니다.</div>';
+        }
+
+        return '<div class="event-list">' + items.map(function(item) {
+          return [
+            '<div class="event-item">',
+            '  <span class="event-date-chip">' + escapeHtml(formatEventDateLabel_(item.isoDate || item.date)) + '</span>',
+            '  <div><strong>' + escapeHtml(item.title) + '</strong><p>' + escapeHtml([item.target || '-', item.note || '메모 없음'].join(' · ')) + '</p></div>',
+            '  <div class="helper-text">' + escapeHtml(item.submitter || '작성자 미상') + '</div>',
+            '</div>'
+          ].join('');
+        }).join('') + '</div>';
+      }
+
+      function getEventsForCurrentMonth_() {
+        return (APP_STATE.events || []).filter(function(item) {
+          var parsed = parseEventDateForClient_(item.isoDate || item.date);
+          return parsed && parsed.getFullYear() === APP_STATE.calendarYear && parsed.getMonth() === APP_STATE.calendarMonth;
+        });
+      }
+
+      function getEventsByDate_(isoDate) {
+        return getEventsForCurrentMonth_().filter(function(item) {
+          return (item.isoDate || '') === isoDate;
+        });
+      }
+
+      function formatCalendarMonthLabel_(year, month) {
+        return year + '년 ' + String(month + 1).padStart(2, '0') + '월';
+      }
+
+      function formatEventDateLabel_(value) {
+        var parsed = parseEventDateForClient_(value);
+        if (!parsed) {
+          return value || '-';
+        }
+        return String(parsed.getMonth() + 1).padStart(2, '0') + '.' + String(parsed.getDate()).padStart(2, '0');
+      }
+
+      function parseEventDateForClient_(value) {
+        var text = String(value || '').trim();
+        if (!text) {
+          return null;
+        }
+        var normalized = text.replace(/[년.\/-]/g, ' ').replace(/월/g, ' ').replace(/일/g, ' ').replace(/\s+/g, ' ').trim();
+        var parts = normalized.split(' ');
+        if (parts.length >= 3) {
+          var year = parseInt(parts[0], 10);
+          var month = parseInt(parts[1], 10);
+          var day = parseInt(parts[2], 10);
+          if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+            return new Date(year, month - 1, day);
+          }
+        }
+        var parsed = new Date(text);
+        return isNaN(parsed.getTime()) ? null : new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+      }
+
+      function formatDateKey_(date) {
+        return [
+          date.getFullYear(),
+          '-',
+          String(date.getMonth() + 1).padStart(2, '0'),
+          '-',
+          String(date.getDate()).padStart(2, '0')
+        ].join('');
+      }
+
+      function isToday_(date) {
+        var today = new Date();
+        return date.getFullYear() === today.getFullYear() &&
+          date.getMonth() === today.getMonth() &&
+          date.getDate() === today.getDate();
+      }
+
       function renderMaterials() {
         populateMaterialFilters();
 
@@ -3360,8 +3954,11 @@
         APP_STATE.instructors = [];
         APP_STATE.permissions = [];
         APP_STATE.materials = [];
+        APP_STATE.events = [];
+        APP_STATE.selectedLogRow = '';
         clearStoredSession();
         closePermissionModal();
+        closeTeachingLogDetailModal();
         renderAll();
         showLoginOnly();
         setNotice('로그아웃되었습니다.', 'info');
@@ -3427,6 +4024,14 @@
           return error;
         }
         return error.message || '알 수 없는 오류가 발생했습니다.';
+      }
+
+      function truncateText_(value, length) {
+        var text = String(value || '');
+        if (text.length <= length) {
+          return text;
+        }
+        return text.slice(0, Math.max(0, length - 1)).trim() + '…';
       }
 
       function escapeHtml(value) {
