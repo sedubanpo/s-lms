@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg: #eef3fb;
+        --surface: rgba(255, 255, 255, 0.92);
+        --surface-strong: #ffffff;
+        --line: #d8e0ee;
+        --text: #1f2937;
+        --muted: #64748b;
+        --brand: #0b57d0;
+        --brand-soft: #e8f0fe;
+        --brand-deep: #093b8d;
+        --accent: #14b8a6;
+        --warn: #f59e0b;
+        --danger: #dc2626;
+        --shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Noto Sans KR', sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top right, rgba(11, 87, 208, 0.14), transparent 32%),
+          radial-gradient(circle at bottom left, rgba(20, 184, 166, 0.11), transparent 28%),
+          var(--bg);
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .login-screen {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      .login-card {
+        width: min(460px, 100%);
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-radius: 28px;
+        padding: 30px;
+        backdrop-filter: blur(16px);
+        box-shadow: 0 30px 80px rgba(9, 59, 141, 0.16);
+      }
+
+      .login-brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      .login-brand img {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        object-fit: cover;
+        background: #fff;
+        padding: 8px;
+        box-shadow: 0 10px 24px rgba(11, 87, 208, 0.15);
+      }
+
+      .brand-copy h1 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+
+      .brand-copy p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .login-guide {
+        margin: 0 0 18px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(11, 87, 208, 0.08), rgba(20, 184, 166, 0.06));
+        color: #334155;
+        line-height: 1.6;
+        font-size: 0.92rem;
+      }
+
+      .field-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+
+      .field-input,
+      .field-select {
+        width: 100%;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        padding: 14px 16px;
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .field-input:focus,
+      .field-select:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 4px rgba(11, 87, 208, 0.08);
+      }
+
+      .field-stack {
+        display: grid;
+        gap: 14px;
+      }
+
+      .primary-button,
+      .secondary-button,
+      .ghost-button {
+        border: 0;
+        cursor: pointer;
+        border-radius: 16px;
+        padding: 13px 16px;
+        font-weight: 700;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+      }
+
+      .primary-button:hover,
+      .secondary-button:hover,
+      .ghost-button:hover {
+        transform: translateY(-1px);
+      }
+
+      .primary-button {
+        background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+        color: #fff;
+        box-shadow: 0 14px 28px rgba(11, 87, 208, 0.2);
+      }
+
+      .secondary-button {
+        background: var(--brand-soft);
+        color: var(--brand-deep);
+      }
+
+      .ghost-button {
+        background: #fff;
+        color: var(--text);
+        border: 1px solid var(--line);
+      }
+
+      .button-row {
+        display: flex;
+        gap: 10px;
+      }
+
+      .button-row > button {
+        flex: 1;
+      }
+
+      .app-shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 280px 1fr;
+      }
+
+      .sidebar {
+        padding: 24px 18px;
+        border-right: 1px solid rgba(216, 224, 238, 0.8);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(245, 249, 255, 0.98));
+        backdrop-filter: blur(10px);
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(216, 224, 238, 0.7);
+      }
+
+      .sidebar-brand img {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        object-fit: cover;
+        background: #fff;
+        padding: 8px;
+      }
+
+      .sidebar-brand strong {
+        display: block;
+        font-size: 1rem;
+        font-weight: 800;
+      }
+
+      .sidebar-brand span {
+        display: block;
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .nav-group {
+        display: grid;
+        gap: 8px;
+      }
+
+      .nav-button {
+        border: 0;
+        width: 100%;
+        text-align: left;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: transparent;
+        color: #334155;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .nav-button.active {
+        background: linear-gradient(135deg, rgba(11, 87, 208, 0.13), rgba(20, 184, 166, 0.08));
+        color: var(--brand-deep);
+      }
+
+      .user-panel {
+        margin-top: auto;
+        padding: 16px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(216, 224, 238, 0.8);
+        box-shadow: var(--shadow);
+      }
+
+      .user-name {
+        font-size: 1rem;
+        font-weight: 800;
+      }
+
+      .role-badge {
+        display: inline-flex;
+        margin-top: 8px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--brand-soft);
+        color: var(--brand-deep);
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .user-meta {
+        margin: 10px 0 14px;
+        color: var(--muted);
+        font-size: 0.84rem;
+        line-height: 1.6;
+      }
+
+      .workspace {
+        padding: 24px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .title-stack h2 {
+        margin: 0;
+        font-size: 1.45rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+
+      .title-stack p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .notice-bar {
+        margin-bottom: 18px;
+        padding: 12px 16px;
+        border-radius: 16px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border: 1px solid transparent;
+      }
+
+      .notice-info {
+        background: #eef6ff;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+      }
+
+      .notice-success {
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+        color: #047857;
+      }
+
+      .notice-warning {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #b45309;
+      }
+
+      .notice-error {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #b91c1c;
+      }
+
+      .view {
+        display: none;
+      }
+
+      .view.active {
+        display: block;
+      }
+
+      .grid-two {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .grid-three {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .panel {
+        background: var(--surface);
+        border: 1px solid rgba(216, 224, 238, 0.75);
+        border-radius: 24px;
+        padding: 20px;
+        box-shadow: var(--shadow);
+      }
+
+      .panel-title {
+        margin: 0 0 14px;
+        font-size: 1rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .metric-card {
+        padding: 18px;
+        border-radius: 22px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.92));
+        border: 1px solid rgba(216, 224, 238, 0.85);
+        box-shadow: var(--shadow);
+      }
+
+      .metric-label {
+        color: var(--muted);
+        font-size: 0.86rem;
+        font-weight: 700;
+      }
+
+      .metric-value {
+        margin-top: 8px;
+        font-size: 1.6rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+
+      .toolbar .field-input,
+      .toolbar .field-select {
+        min-width: 180px;
+        flex: 1;
+      }
+
+      .student-list,
+      .mapping-list {
+        display: grid;
+        gap: 14px;
+      }
+
+      .student-card {
+        border: 1px solid rgba(216, 224, 238, 0.9);
+        border-radius: 22px;
+        padding: 18px;
+        background: rgba(255, 255, 255, 0.94);
+      }
+
+      .student-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .student-name {
+        font-size: 1.05rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .student-id {
+        margin-top: 4px;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+
+      .chip-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+
+      .chip {
+        display: inline-flex;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .chip.blue {
+        background: #e8f0fe;
+        color: #174ea6;
+      }
+
+      .chip.green {
+        background: #ecfdf5;
+        color: #047857;
+      }
+
+      .chip.orange {
+        background: #fff7ed;
+        color: #c2410c;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .detail-row {
+        padding: 10px 12px;
+        border-radius: 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+      }
+
+      .detail-row strong {
+        display: block;
+        font-size: 0.76rem;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+
+      .detail-row span {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #334155;
+        word-break: break-word;
+      }
+
+      .check-list {
+        display: grid;
+        gap: 10px;
+        max-height: 320px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+
+      .check-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+      }
+
+      .check-item input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--brand);
+      }
+
+      .mapping-card {
+        border: 1px solid rgba(216, 224, 238, 0.85);
+        border-radius: 18px;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.94);
+      }
+
+      .mapping-card strong {
+        display: block;
+        font-size: 0.96rem;
+        margin-bottom: 8px;
+      }
+
+      .mapping-meta {
+        color: var(--muted);
+        font-size: 0.84rem;
+        line-height: 1.6;
+      }
+
+      .materials-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .materials-table th,
+      .materials-table td {
+        padding: 14px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: left;
+        vertical-align: top;
+        font-size: 0.9rem;
+      }
+
+      .materials-table th {
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 800;
+      }
+
+      .table-link {
+        color: var(--brand);
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .table-link:hover {
+        text-decoration: underline;
+      }
+
+      .empty-state {
+        padding: 28px 16px;
+        border-radius: 18px;
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        color: var(--muted);
+        text-align: center;
+        line-height: 1.7;
+      }
+
+      .locked-box {
+        padding: 28px;
+        border-radius: 22px;
+        border: 1px dashed #cbd5e1;
+        background: rgba(255, 255, 255, 0.78);
+        color: var(--muted);
+        line-height: 1.8;
+      }
+
+      .loading-overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(239, 243, 251, 0.82);
+        backdrop-filter: blur(6px);
+        z-index: 2000;
+      }
+
+      .loading-card {
+        min-width: 240px;
+        padding: 22px 24px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(216, 224, 238, 0.9);
+        box-shadow: var(--shadow);
+        text-align: center;
+      }
+
+      .loading-spinner {
+        width: 32px;
+        height: 32px;
+        margin: 0 auto 12px;
+        border-radius: 50%;
+        border: 3px solid rgba(11, 87, 208, 0.18);
+        border-top-color: var(--brand);
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 1080px) {
+        .app-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          border-right: 0;
+          border-bottom: 1px solid rgba(216, 224, 238, 0.8);
+        }
+
+        .grid-two,
+        .grid-three {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .workspace {
+          padding: 16px;
+        }
+
+        .topbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .detail-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .button-row {
+          flex-direction: column;
+        }
+
+        .toolbar {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loadingOverlay" class="loading-overlay hidden">
+      <div class="loading-card">
+        <div class="loading-spinner"></div>
+        <div id="loadingMessage">데이터를 불러오는 중입니다.</div>
+      </div>
+    </div>
+
+    <section id="loginScreen" class="login-screen">
+      <div class="login-card">
+        <div class="login-brand">
+          <img id="loginLogo" src="https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png" alt="S-LMS 로고">
+          <div class="brand-copy">
+            <h1 id="loginTitle">S-LMS (에스-엘엠에스)</h1>
+            <p>교사 인증, 학생 권한, 자료 아카이브를 한 화면에서 관리합니다.</p>
+          </div>
+        </div>
+        <p class="login-guide">
+          로그인 기준은 <strong>Teachers</strong> 시트입니다.<br>
+          A열은 아이디, G열은 비밀번호, H열은 권한(ADMIN / INSTRUCTOR)로 사용합니다.
+        </p>
+        <form id="loginForm" class="field-stack">
+          <div>
+            <label class="field-label" for="userIdInput">아이디</label>
+            <input id="userIdInput" class="field-input" type="text" placeholder="Teachers 시트 A열 아이디 입력" autocomplete="username">
+          </div>
+          <div>
+            <label class="field-label" for="passwordInput">비밀번호</label>
+            <input id="passwordInput" class="field-input" type="password" placeholder="Teachers 시트 G열 비밀번호 입력" autocomplete="current-password">
+          </div>
+          <button class="primary-button" type="submit">로그인</button>
+        </form>
+      </div>
+    </section>
+
+    <div id="appShell" class="app-shell hidden">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <img id="sidebarLogo" src="https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png" alt="S-LMS 로고">
+          <div>
+            <strong id="sidebarTitle">S-LMS (에스-엘엠에스)</strong>
+            <span>학습 관리 및 데이터 공유 대시보드</span>
+          </div>
+        </div>
+
+        <div class="nav-group">
+          <button type="button" class="nav-button active" data-view="students">학생 데이터</button>
+          <button type="button" class="nav-button" id="permissionNavButton" data-view="permissions">권한 관리</button>
+          <button type="button" class="nav-button" data-view="materials">기출문제 및 학습 자료</button>
+        </div>
+
+        <div class="user-panel">
+          <div class="user-name" id="userNameText">로그인 필요</div>
+          <div class="role-badge" id="userRoleText">권한 없음</div>
+          <div class="user-meta" id="userMetaText">
+            관리자와 강사는 동일한 화면을 쓰지만 조회 범위는 권한에 따라 다르게 제한됩니다.
+          </div>
+          <div class="button-row">
+            <button id="refreshButton" type="button" class="secondary-button">새로고침</button>
+            <button id="logoutButton" type="button" class="ghost-button">로그아웃</button>
+          </div>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <div class="topbar">
+          <div class="title-stack">
+            <h2 id="pageTitle">학생 데이터</h2>
+            <p id="pageDescription">등록 상태가 TRUE인 학생만 노출되며, 강사는 허용된 학생만 확인합니다.</p>
+          </div>
+        </div>
+
+        <div id="noticeBar" class="notice-bar notice-info hidden"></div>
+
+        <section id="view-students" class="view active">
+          <div class="grid-three">
+            <div class="metric-card">
+              <div class="metric-label" id="metricVisibleLabel">내가 볼 수 있는 학생</div>
+              <div class="metric-value" id="visibleStudentCount">0명</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label" id="metricActiveLabel">전체 활성 학생</div>
+              <div class="metric-value" id="activeStudentCount">0명</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label" id="metricPermissionLabel">권한이 설정된 매핑</div>
+              <div class="metric-value" id="permissionCount">0건</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3 class="panel-title">학생 검색</h3>
+            <div class="toolbar">
+              <input id="studentSearchInput" class="field-input" type="text" placeholder="학생명, 학교, 과목으로 검색">
+            </div>
+            <div id="studentList" class="student-list"></div>
+          </div>
+        </section>
+
+        <section id="view-permissions" class="view">
+          <div id="permissionLocked" class="locked-box hidden">
+            이 메뉴는 관리자 전용입니다.<br>
+            강사 계정은 관리자에게 허용된 학생만 학생 데이터 메뉴에서 확인할 수 있습니다.
+          </div>
+
+          <div id="permissionAdminArea" class="grid-two hidden">
+            <div class="panel">
+              <h3 class="panel-title">강사별 학생 열람 권한 지정</h3>
+              <div class="field-stack">
+                <div>
+                  <label class="field-label" for="permissionStudentSelect">학생 선택</label>
+                  <select id="permissionStudentSelect" class="field-select"></select>
+                </div>
+                <div>
+                  <label class="field-label">열람 허용 강사</label>
+                  <div id="instructorChecklist" class="check-list"></div>
+                </div>
+                <button id="savePermissionButton" type="button" class="primary-button">권한 저장</button>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h3 class="panel-title">현재 권한 매핑</h3>
+              <div id="permissionMatrix" class="mapping-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-materials" class="view">
+          <div class="grid-two">
+            <div class="panel">
+              <h3 class="panel-title">자료 등록</h3>
+              <form id="materialForm" class="field-stack">
+                <div>
+                  <label class="field-label" for="materialSchoolInput">학교</label>
+                  <input id="materialSchoolInput" class="field-input" type="text" placeholder="예: 반포고">
+                </div>
+                <div>
+                  <label class="field-label" for="materialYearInput">대상 년도</label>
+                  <input id="materialYearInput" class="field-input" type="text" placeholder="예: 2026">
+                </div>
+                <div>
+                  <label class="field-label" for="materialSubjectInput">과목</label>
+                  <input id="materialSubjectInput" class="field-input" type="text" placeholder="예: 수학">
+                </div>
+                <div>
+                  <label class="field-label" for="materialLinkInput">링크</label>
+                  <input id="materialLinkInput" class="field-input" type="url" placeholder="https://...">
+                </div>
+                <button class="primary-button" type="submit">자료 저장</button>
+              </form>
+            </div>
+
+            <div class="panel">
+              <h3 class="panel-title">자료 검색</h3>
+              <div class="field-stack">
+                <input id="materialKeywordInput" class="field-input" type="text" placeholder="학교, 대상 년도, 과목, 등록자로 통합 검색">
+                <select id="materialSchoolFilter" class="field-select"></select>
+                <select id="materialYearFilter" class="field-select"></select>
+                <select id="materialSubjectFilter" class="field-select"></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-top: 18px;">
+            <h3 class="panel-title">자료 목록</h3>
+            <div id="materialsTableWrap"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      // 여기에 배포된 GAS 웹 앱의 /exec URL을 넣으세요.
+      const API_URL = 'https://script.google.com/macros/s/AKfycbytTEpagqxe_BShl5LYON51FWTbb1vp9UeqY28Jf-5FviS7cbVbveYRTiKjartU2Ob9/exec';
+      const APP_NAME = 'S-LMS (에스-엘엠에스)';
+      const LOGO_URL = 'https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png';
+      const SESSION_STORAGE_KEY = 'slms_api_session';
+
+      var APP_STATE = {
+        token: '',
+        appName: APP_NAME,
+        logoUrl: LOGO_URL,
+        currentView: 'students',
+        user: null,
+        isAdmin: false,
+        visibleStudents: [],
+        activeStudents: [],
+        instructors: [],
+        permissions: [],
+        materials: []
+      };
+
+      var VIEW_META = {
+        students: {
+          title: '학생 데이터',
+          description: '등록 상태가 TRUE인 학생만 노출되며, 강사는 허용된 학생만 확인합니다.'
+        },
+        permissions: {
+          title: '권한 관리',
+          description: '관리자가 활성 학생별 열람 가능한 강사를 지정합니다.'
+        },
+        materials: {
+          title: '기출문제 및 학습 자료',
+          description: '학교, 대상 년도, 과목 기준으로 자료를 등록하고 검색합니다.'
+        }
+      };
+
+      document.addEventListener('DOMContentLoaded', bootstrap);
+
+      function bootstrap() {
+        bindEvents();
+        syncBranding();
+
+        if (!isApiConfigured()) {
+          setNotice('스크립트 상단의 API_URL에 배포된 GAS 웹 앱 주소를 입력해주세요.', 'warning');
+        }
+
+        var savedSession = readStoredSession();
+        if (savedSession && savedSession.token) {
+          APP_STATE.token = savedSession.token;
+          APP_STATE.user = savedSession.user || null;
+          loadDashboard();
+          return;
+        }
+
+        showLoginOnly();
+      }
+
+      function bindEvents() {
+        document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        document.getElementById('logoutButton').addEventListener('click', handleLogout);
+        document.getElementById('refreshButton').addEventListener('click', refreshDashboard);
+        document.getElementById('studentSearchInput').addEventListener('input', renderStudents);
+        document.getElementById('permissionStudentSelect').addEventListener('change', renderPermissionChecklist);
+        document.getElementById('savePermissionButton').addEventListener('click', handlePermissionSave);
+        document.getElementById('materialForm').addEventListener('submit', handleMaterialSave);
+        document.getElementById('materialKeywordInput').addEventListener('input', renderMaterials);
+        document.getElementById('materialSchoolFilter').addEventListener('change', renderMaterials);
+        document.getElementById('materialYearFilter').addEventListener('change', renderMaterials);
+        document.getElementById('materialSubjectFilter').addEventListener('change', renderMaterials);
+
+        Array.prototype.slice.call(document.querySelectorAll('.nav-button')).forEach(function(button) {
+          button.addEventListener('click', function() {
+            var viewName = button.getAttribute('data-view');
+            if (viewName === 'permissions' && !APP_STATE.isAdmin) {
+              setNotice('권한 관리 메뉴는 관리자만 사용할 수 있습니다.', 'warning');
+            }
+            switchView(viewName);
+          });
+        });
+      }
+
+      function syncBranding() {
+        document.getElementById('loginTitle').textContent = APP_STATE.appName;
+        document.getElementById('sidebarTitle').textContent = APP_STATE.appName;
+        document.getElementById('loginLogo').src = APP_STATE.logoUrl;
+        document.getElementById('sidebarLogo').src = APP_STATE.logoUrl;
+      }
+
+      function isApiConfigured() {
+        return API_URL && API_URL.indexOf('YOUR_GAS_WEB_APP_URL') === -1;
+      }
+
+      function readStoredSession() {
+        try {
+          var raw = localStorage.getItem(SESSION_STORAGE_KEY);
+          return raw ? JSON.parse(raw) : null;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function writeStoredSession() {
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+          token: APP_STATE.token,
+          user: APP_STATE.user
+        }));
+      }
+
+      function clearStoredSession() {
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+      }
+
+      function showLoginOnly() {
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('appShell').classList.add('hidden');
+      }
+
+      function showAppOnly() {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('appShell').classList.remove('hidden');
+      }
+
+      function setLoading(message) {
+        document.getElementById('loadingMessage').textContent = message || '데이터를 불러오는 중입니다.';
+        document.getElementById('loadingOverlay').classList.remove('hidden');
+      }
+
+      function clearLoading() {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+      }
+
+      function setNotice(message, tone) {
+        var bar = document.getElementById('noticeBar');
+        if (!message) {
+          bar.className = 'notice-bar notice-info hidden';
+          bar.textContent = '';
+          return;
+        }
+
+        bar.textContent = message;
+        bar.className = 'notice-bar notice-' + (tone || 'info');
+      }
+
+      function handleLogin(event) {
+        event.preventDefault();
+
+        if (!isApiConfigured()) {
+          setNotice('스크립트 상단의 API_URL을 먼저 설정해주세요.', 'warning');
+          return;
+        }
+
+        var userId = document.getElementById('userIdInput').value.trim();
+        var password = document.getElementById('passwordInput').value.trim();
+
+        setLoading('로그인 정보를 확인하는 중입니다.');
+        apiRequest('login', {
+          userId: userId,
+          password: password
+        })
+          .then(function(result) {
+            APP_STATE.token = result.token;
+            APP_STATE.user = result.user || null;
+            APP_STATE.appName = result.appName || APP_STATE.appName;
+            APP_STATE.logoUrl = result.logoUrl || APP_STATE.logoUrl;
+            writeStoredSession();
+            syncBranding();
+            setNotice(result.message || '로그인되었습니다.', 'success');
+            return loadDashboard();
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function refreshDashboard() {
+        if (!APP_STATE.token) {
+          return;
+        }
+        loadDashboard();
+      }
+
+      function loadDashboard() {
+        if (!APP_STATE.token) {
+          showLoginOnly();
+          return Promise.resolve();
+        }
+        if (!isApiConfigured()) {
+          setNotice('스크립트 상단의 API_URL을 먼저 설정해주세요.', 'warning');
+          showLoginOnly();
+          return Promise.resolve();
+        }
+
+        setLoading('시트 데이터를 동기화하는 중입니다.');
+        return Promise.all([
+          apiRequest('getStudents', { token: APP_STATE.token }),
+          apiRequest('getMaterials', { token: APP_STATE.token })
+        ])
+          .then(function(results) {
+            hydrateDashboard(results[0], results[1]);
+            renderAll();
+            showAppOnly();
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function hydrateDashboard(studentData, materialData) {
+        APP_STATE.user = studentData.user || APP_STATE.user;
+        APP_STATE.isAdmin = Boolean(studentData.isAdmin);
+        APP_STATE.visibleStudents = studentData.visibleStudents || [];
+        APP_STATE.activeStudents = studentData.activeStudents || [];
+        APP_STATE.instructors = studentData.instructors || [];
+        APP_STATE.permissions = studentData.permissions || [];
+        APP_STATE.materials = materialData && materialData.materials ? materialData.materials : (APP_STATE.materials || []);
+        APP_STATE.appName = studentData.appName || APP_STATE.appName;
+        APP_STATE.logoUrl = studentData.logoUrl || APP_STATE.logoUrl;
+        writeStoredSession();
+        syncBranding();
+      }
+
+      function hydrateStudentDataOnly(studentData) {
+        APP_STATE.user = studentData.user || APP_STATE.user;
+        APP_STATE.isAdmin = Boolean(studentData.isAdmin);
+        APP_STATE.visibleStudents = studentData.visibleStudents || [];
+        APP_STATE.activeStudents = studentData.activeStudents || [];
+        APP_STATE.instructors = studentData.instructors || [];
+        APP_STATE.permissions = studentData.permissions || [];
+        APP_STATE.appName = studentData.appName || APP_STATE.appName;
+        APP_STATE.logoUrl = studentData.logoUrl || APP_STATE.logoUrl;
+        writeStoredSession();
+        syncBranding();
+      }
+
+      function renderAll() {
+        renderUserPanel();
+        renderMetrics();
+        renderStudents();
+        renderPermissionArea();
+        renderMaterials();
+        switchView(APP_STATE.currentView);
+      }
+
+      function renderUserPanel() {
+        var user = APP_STATE.user || {};
+        document.getElementById('userNameText').textContent = user.name || '로그인 필요';
+        document.getElementById('userRoleText').textContent = user.roleLabel || '권한 없음';
+        document.getElementById('userMetaText').textContent =
+          (user.userId ? '계정 ID: ' + user.userId + ' | ' : '') +
+          (APP_STATE.isAdmin ? '전체 활성 학생을 조회하고 권한을 지정할 수 있습니다.' : '허용된 학생만 조회할 수 있습니다.');
+
+        document.getElementById('permissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
+      }
+
+      function renderMetrics() {
+        document.getElementById('metricVisibleLabel').textContent = APP_STATE.isAdmin ? '내가 볼 수 있는 학생' : '내 권한 학생';
+        document.getElementById('metricActiveLabel').textContent = APP_STATE.isAdmin ? '전체 활성 학생' : '권한 부여 학생';
+        document.getElementById('metricPermissionLabel').textContent = APP_STATE.isAdmin ? '권한이 설정된 매핑' : '내 권한 매핑';
+        document.getElementById('visibleStudentCount').textContent = APP_STATE.visibleStudents.length + '명';
+        document.getElementById('activeStudentCount').textContent = APP_STATE.activeStudents.length + '명';
+        document.getElementById('permissionCount').textContent = APP_STATE.permissions.length + '건';
+      }
+
+      function getPermissionMap() {
+        var map = {};
+        APP_STATE.permissions.forEach(function(item) {
+          if (!map[item.studentId]) {
+            map[item.studentId] = [];
+          }
+          map[item.studentId].push(item);
+        });
+        return map;
+      }
+
+      function renderStudents() {
+        var wrap = document.getElementById('studentList');
+        var keyword = document.getElementById('studentSearchInput').value.trim().toLowerCase();
+        var permissionMap = getPermissionMap();
+        var filtered = APP_STATE.visibleStudents.filter(function(student) {
+          if (!keyword) {
+            return true;
+          }
+          var source = [
+            student.studentName,
+            student.school,
+            student.grade,
+            student.subject,
+            student.phone,
+            student.note
+          ].join(' ').toLowerCase();
+          return source.indexOf(keyword) !== -1;
+        });
+
+        if (!filtered.length) {
+          wrap.innerHTML = '<div class="empty-state">조건에 맞는 학생이 없습니다.<br>강사 계정이라면 관리자가 권한을 부여했는지 확인해주세요.</div>';
+          return;
+        }
+
+        wrap.innerHTML = filtered.map(function(student) {
+          var mapping = permissionMap[student.studentId] || [];
+          var chips = [];
+          if (student.school) {
+            chips.push('<span class="chip blue">' + escapeHtml(student.school) + '</span>');
+          }
+          if (student.grade) {
+            chips.push('<span class="chip green">' + escapeHtml(student.grade) + '</span>');
+          }
+          if (student.subject) {
+            chips.push('<span class="chip orange">' + escapeHtml(student.subject) + '</span>');
+          }
+
+          var detailRows = [];
+          if (student.phone) {
+            detailRows.push(detailBoxHtml('연락처', student.phone));
+          }
+          if (student.note) {
+            detailRows.push(detailBoxHtml('비고', student.note));
+          }
+          (student.details || []).forEach(function(detail) {
+            if (!detail || !detail.label || !detail.value) {
+              return;
+            }
+            if (['연락처', '비고'].indexOf(detail.label) !== -1) {
+              return;
+            }
+            if (detailRows.length < 6) {
+              detailRows.push(detailBoxHtml(detail.label, detail.value));
+            }
+          });
+
+          var grantedText = APP_STATE.isAdmin
+            ? (mapping.length ? mapping.map(function(item) { return item.instructorName || item.instructorId; }).join(', ') : '지정된 강사 없음')
+            : (mapping.length ? '관리자 허용 완료' : '권한 없음');
+
+          return [
+            '<article class="student-card">',
+            '  <div class="student-head">',
+            '    <div>',
+            '      <div class="student-name">' + escapeHtml(student.studentName) + '</div>',
+            '      <div class="student-id">학생 ID: ' + escapeHtml(student.studentId) + '</div>',
+            '    </div>',
+            '    <div class="chip blue">' + (APP_STATE.isAdmin ? '관리자 보기' : '강사 보기') + '</div>',
+            '  </div>',
+            '  <div class="chip-row">' + chips.join('') + '</div>',
+            '  <div class="detail-grid">' + detailRows.join('') + '</div>',
+            '  <div class="detail-row" style="margin-top: 14px;">',
+            '    <strong>열람 권한</strong>',
+            '    <span>' + escapeHtml(grantedText) + '</span>',
+            '  </div>',
+            '</article>'
+          ].join('');
+        }).join('');
+      }
+
+      function detailBoxHtml(label, value) {
+        return [
+          '<div class="detail-row">',
+          '  <strong>' + escapeHtml(label) + '</strong>',
+          '  <span>' + escapeHtml(value) + '</span>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderPermissionArea() {
+        var locked = document.getElementById('permissionLocked');
+        var adminArea = document.getElementById('permissionAdminArea');
+
+        if (!APP_STATE.isAdmin) {
+          locked.classList.remove('hidden');
+          adminArea.classList.add('hidden');
+          if (APP_STATE.currentView === 'permissions') {
+            APP_STATE.currentView = 'students';
+          }
+          return;
+        }
+
+        locked.classList.add('hidden');
+        adminArea.classList.remove('hidden');
+        renderPermissionStudentOptions();
+        renderPermissionChecklist();
+        renderPermissionMatrix();
+      }
+
+      function renderPermissionStudentOptions() {
+        var select = document.getElementById('permissionStudentSelect');
+        var currentValue = select.value;
+
+        if (!APP_STATE.activeStudents.length) {
+          select.innerHTML = '<option value="">활성 학생이 없습니다.</option>';
+          return;
+        }
+
+        select.innerHTML = APP_STATE.activeStudents.map(function(student) {
+          return '<option value="' + escapeHtml(student.studentId) + '">' +
+            escapeHtml(student.studentName + ' (' + student.studentId + ')') +
+            '</option>';
+        }).join('');
+
+        if (currentValue && APP_STATE.activeStudents.some(function(student) { return student.studentId === currentValue; })) {
+          select.value = currentValue;
+        }
+      }
+
+      function renderPermissionChecklist() {
+        if (!APP_STATE.isAdmin) {
+          return;
+        }
+
+        var wrap = document.getElementById('instructorChecklist');
+        var select = document.getElementById('permissionStudentSelect');
+        var studentId = select.value;
+        var selectedPermissions = APP_STATE.permissions
+          .filter(function(item) { return item.studentId === studentId; })
+          .map(function(item) { return item.instructorId; });
+
+        if (!APP_STATE.instructors.length) {
+          wrap.innerHTML = '<div class="empty-state">Teachers 시트에 강사 계정을 먼저 등록해주세요.</div>';
+          return;
+        }
+
+        wrap.innerHTML = APP_STATE.instructors.map(function(instructor) {
+          var checked = selectedPermissions.indexOf(instructor.userId) !== -1 ? ' checked' : '';
+          return [
+            '<label class="check-item">',
+            '  <input type="checkbox" data-instructor-id="' + escapeHtml(instructor.userId) + '"' + checked + '>',
+            '  <div>',
+            '    <div style="font-weight: 700;">' + escapeHtml(instructor.name) + '</div>',
+            '    <div style="font-size: 0.82rem; color: #64748b;">' + escapeHtml(instructor.userId) + '</div>',
+            '  </div>',
+            '</label>'
+          ].join('');
+        }).join('');
+      }
+
+      function renderPermissionMatrix() {
+        if (!APP_STATE.isAdmin) {
+          return;
+        }
+
+        var wrap = document.getElementById('permissionMatrix');
+        var grouped = getPermissionMap();
+        var cards = APP_STATE.activeStudents.map(function(student) {
+          var rows = grouped[student.studentId] || [];
+          var instructorText = rows.length
+            ? rows.map(function(item) { return item.instructorName || item.instructorId; }).join(', ')
+            : '지정된 강사가 없습니다.';
+
+          var lastUpdated = rows.length ? rows[0].updatedAt || '-' : '-';
+          return [
+            '<div class="mapping-card">',
+            '  <strong>' + escapeHtml(student.studentName) + '</strong>',
+            '  <div class="mapping-meta">학생 ID: ' + escapeHtml(student.studentId) + '</div>',
+            '  <div class="mapping-meta">허용 강사: ' + escapeHtml(instructorText) + '</div>',
+            '  <div class="mapping-meta">최근 수정: ' + escapeHtml(lastUpdated) + '</div>',
+            '</div>'
+          ].join('');
+        });
+
+        if (!cards.length) {
+          wrap.innerHTML = '<div class="empty-state">활성 학생이 없어서 권한을 지정할 수 없습니다.</div>';
+          return;
+        }
+
+        wrap.innerHTML = cards.join('');
+      }
+
+      function handlePermissionSave() {
+        if (!APP_STATE.isAdmin) {
+          setNotice('관리자만 권한을 저장할 수 있습니다.', 'warning');
+          return;
+        }
+
+        var studentId = document.getElementById('permissionStudentSelect').value;
+        if (!studentId) {
+          setNotice('학생을 먼저 선택해주세요.', 'warning');
+          return;
+        }
+
+        var instructorIds = Array.prototype.slice.call(
+          document.querySelectorAll('#instructorChecklist input[type="checkbox"]:checked')
+        ).map(function(input) {
+          return input.getAttribute('data-instructor-id');
+        });
+
+        setLoading('학생 열람 권한을 저장하는 중입니다.');
+        apiRequest('savePermissions', {
+          token: APP_STATE.token,
+          studentId: studentId,
+          instructorIds: JSON.stringify(instructorIds)
+        })
+          .then(function(result) {
+            hydrateStudentDataOnly(result);
+            renderAll();
+            switchView('permissions');
+            document.getElementById('permissionStudentSelect').value = studentId;
+            renderPermissionChecklist();
+            setNotice(result.message || '학생 열람 권한이 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function handleMaterialSave(event) {
+        event.preventDefault();
+
+        setLoading('자료를 저장하는 중입니다.');
+        apiRequest('addMaterial', {
+          token: APP_STATE.token,
+          school: document.getElementById('materialSchoolInput').value.trim(),
+          year: document.getElementById('materialYearInput').value.trim(),
+          subject: document.getElementById('materialSubjectInput').value.trim(),
+          link: document.getElementById('materialLinkInput').value.trim()
+        })
+          .then(function(result) {
+            APP_STATE.materials = result.materials || [];
+            document.getElementById('materialForm').reset();
+            renderMaterials();
+            switchView('materials');
+            setNotice(result.message || '자료가 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function renderMaterials() {
+        populateMaterialFilters();
+
+        var keyword = document.getElementById('materialKeywordInput').value.trim().toLowerCase();
+        var school = document.getElementById('materialSchoolFilter').value;
+        var year = document.getElementById('materialYearFilter').value;
+        var subject = document.getElementById('materialSubjectFilter').value;
+
+        var filtered = APP_STATE.materials.filter(function(item) {
+          var matchesKeyword = !keyword || [
+            item.school,
+            item.year,
+            item.subject,
+            item.createdBy
+          ].join(' ').toLowerCase().indexOf(keyword) !== -1;
+          var matchesSchool = !school || item.school === school;
+          var matchesYear = !year || item.year === year;
+          var matchesSubject = !subject || item.subject === subject;
+          return matchesKeyword && matchesSchool && matchesYear && matchesSubject;
+        });
+
+        var wrap = document.getElementById('materialsTableWrap');
+        if (!filtered.length) {
+          wrap.innerHTML = '<div class="empty-state">검색 조건에 맞는 자료가 없습니다.</div>';
+          return;
+        }
+
+        wrap.innerHTML = [
+          '<table class="materials-table">',
+          '  <thead>',
+          '    <tr>',
+          '      <th>학교</th>',
+          '      <th>대상 년도</th>',
+          '      <th>과목</th>',
+          '      <th>링크</th>',
+          '      <th>등록자</th>',
+          '      <th>등록일시</th>',
+          '    </tr>',
+          '  </thead>',
+          '  <tbody>',
+          filtered.map(function(item) {
+            return [
+              '<tr>',
+              '  <td>' + escapeHtml(item.school) + '</td>',
+              '  <td>' + escapeHtml(item.year) + '</td>',
+              '  <td>' + escapeHtml(item.subject) + '</td>',
+              '  <td><a class="table-link" href="' + escapeAttribute(item.link) + '" target="_blank" rel="noopener noreferrer">자료 열기</a></td>',
+              '  <td>' + escapeHtml(item.createdBy || '-') + '</td>',
+              '  <td>' + escapeHtml(item.createdAt || '-') + '</td>',
+              '</tr>'
+            ].join('');
+          }).join(''),
+          '  </tbody>',
+          '</table>'
+        ].join('');
+      }
+
+      function populateMaterialFilters() {
+        fillSelectWithOptions('materialSchoolFilter', APP_STATE.materials.map(function(item) { return item.school; }), '전체 학교');
+        fillSelectWithOptions('materialYearFilter', APP_STATE.materials.map(function(item) { return item.year; }), '전체 년도');
+        fillSelectWithOptions('materialSubjectFilter', APP_STATE.materials.map(function(item) { return item.subject; }), '전체 과목');
+      }
+
+      function fillSelectWithOptions(selectId, values, defaultLabel) {
+        var select = document.getElementById(selectId);
+        var currentValue = select.value;
+        var uniqueValues = values
+          .filter(Boolean)
+          .filter(function(value, index, source) { return source.indexOf(value) === index; })
+          .sort();
+
+        select.innerHTML = ['<option value="">' + escapeHtml(defaultLabel) + '</option>']
+          .concat(uniqueValues.map(function(value) {
+            return '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>';
+          }))
+          .join('');
+
+        if (currentValue && uniqueValues.indexOf(currentValue) !== -1) {
+          select.value = currentValue;
+        }
+      }
+
+      function switchView(viewName) {
+        if (viewName === 'permissions' && !APP_STATE.isAdmin) {
+          viewName = 'students';
+        }
+        APP_STATE.currentView = viewName;
+
+        Array.prototype.slice.call(document.querySelectorAll('.view')).forEach(function(view) {
+          view.classList.toggle('active', view.id === 'view-' + viewName);
+        });
+
+        Array.prototype.slice.call(document.querySelectorAll('.nav-button')).forEach(function(button) {
+          button.classList.toggle('active', button.getAttribute('data-view') === viewName);
+        });
+
+        var meta = VIEW_META[viewName];
+        document.getElementById('pageTitle').textContent = meta.title;
+        document.getElementById('pageDescription').textContent = meta.description;
+      }
+
+      function handleLogout() {
+        APP_STATE.token = '';
+        APP_STATE.user = null;
+        APP_STATE.isAdmin = false;
+        APP_STATE.visibleStudents = [];
+        APP_STATE.activeStudents = [];
+        APP_STATE.instructors = [];
+        APP_STATE.permissions = [];
+        APP_STATE.materials = [];
+        clearStoredSession();
+        renderAll();
+        showLoginOnly();
+        setNotice('로그아웃되었습니다.', 'info');
+      }
+
+      function apiRequest(action, payload, method) {
+        if (!isApiConfigured()) {
+          return Promise.reject(new Error('API_URL이 설정되지 않았습니다.'));
+        }
+
+        var requestMethod = method || 'POST';
+        var params = new URLSearchParams();
+        params.append('action', action);
+
+        Object.keys(payload || {}).forEach(function(key) {
+          var value = payload[key];
+          if (value === null || value === undefined) {
+            return;
+          }
+          params.append(key, String(value));
+        });
+
+        var fetchOptions = {
+          method: requestMethod,
+          redirect: 'follow'
+        };
+
+        var requestUrl = API_URL;
+        if (requestMethod === 'GET') {
+          requestUrl += (API_URL.indexOf('?') === -1 ? '?' : '&') + params.toString();
+        } else {
+          // 커스텀 헤더를 두지 않고 URLSearchParams를 body로 보내면 단순 요청으로 처리되어 CORS preflight를 줄일 수 있습니다.
+          fetchOptions.body = params;
+        }
+
+        return fetch(requestUrl, fetchOptions)
+          .then(function(response) {
+            return response.text();
+          })
+          .then(function(text) {
+            var data;
+            try {
+              data = JSON.parse(text);
+            } catch (error) {
+              throw new Error('API 응답이 JSON 형식이 아닙니다.');
+            }
+
+            if (!data.ok) {
+              var apiError = new Error(data.message || '요청 처리에 실패했습니다.');
+              apiError.errorCode = data.errorCode || 'REQUEST_FAILED';
+              throw apiError;
+            }
+
+            return data;
+          });
+      }
+
+      function handleApiError_(error) {
+        if (error && error.errorCode === 'SESSION_EXPIRED') {
+          handleLogout();
+          setNotice('로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+          return;
+        }
+
+        if (!APP_STATE.token) {
+          showLoginOnly();
+        }
+        setNotice(getErrorMessage(error), 'error');
+      }
+
+      function getErrorMessage(error) {
+        if (!error) {
+          return '알 수 없는 오류가 발생했습니다.';
+        }
+        if (typeof error === 'string') {
+          return error;
+        }
+        return error.message || '알 수 없는 오류가 발생했습니다.';
+      }
+
+      function escapeHtml(value) {
+        return String(value === null || value === undefined ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function escapeAttribute(value) {
+        return escapeHtml(value);
+      }
+    </script>
+  </body>
+</html>
