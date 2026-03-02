@@ -974,8 +974,8 @@
 
       .log-top {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: center;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        align-items: start;
         gap: 8px;
         margin-bottom: 8px;
       }
@@ -1042,6 +1042,62 @@
         font-weight: 800;
       }
 
+      .tag-badge.tag-status,
+      .tag-option.tag-status input:checked + span {
+        background: rgba(59, 130, 246, 0.12);
+        border-color: rgba(59, 130, 246, 0.24);
+        color: #1d4ed8;
+      }
+
+      .tag-badge.tag-first,
+      .tag-option.tag-first input:checked + span {
+        background: rgba(99, 102, 241, 0.12);
+        border-color: rgba(99, 102, 241, 0.24);
+        color: #4338ca;
+      }
+
+      .tag-badge.tag-makeup,
+      .tag-option.tag-makeup input:checked + span {
+        background: rgba(245, 158, 11, 0.14);
+        border-color: rgba(245, 158, 11, 0.22);
+        color: #b45309;
+      }
+
+      .tag-badge.tag-homework,
+      .tag-option.tag-homework input:checked + span {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.22);
+        color: #b91c1c;
+      }
+
+      .tag-badge.tag-focus,
+      .tag-option.tag-focus input:checked + span {
+        background: rgba(217, 70, 239, 0.12);
+        border-color: rgba(217, 70, 239, 0.24);
+        color: #a21caf;
+      }
+
+      .tag-badge.tag-test,
+      .tag-option.tag-test input:checked + span {
+        background: rgba(16, 185, 129, 0.12);
+        border-color: rgba(16, 185, 129, 0.24);
+        color: #047857;
+      }
+
+      .tag-badge.tag-parent,
+      .tag-option.tag-parent input:checked + span {
+        background: rgba(249, 115, 22, 0.12);
+        border-color: rgba(249, 115, 22, 0.22);
+        color: #c2410c;
+      }
+
+      .tag-badge.tag-student,
+      .tag-option.tag-student input:checked + span {
+        background: rgba(20, 184, 166, 0.12);
+        border-color: rgba(20, 184, 166, 0.22);
+        color: #0f766e;
+      }
+
       .log-form {
         display: grid;
         gap: 12px;
@@ -1099,6 +1155,25 @@
         font-size: 0.75rem;
         color: var(--text-soft);
         line-height: 1.6;
+      }
+
+      .log-delete-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.16);
+        color: #b91c1c;
+        font-size: 0.68rem;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .permission-instructor-search {
+        margin-top: 10px;
       }
 
       .empty-state {
@@ -1360,8 +1435,9 @@
       }
 
       .log-form [data-action="save-log"] {
-        min-width: 88px;
-        padding: 0 14px;
+        flex: 0 0 auto;
+        min-width: 116px;
+        padding: 0 16px;
         line-height: 1;
         white-space: nowrap;
         text-align: center;
@@ -1743,7 +1819,7 @@
         <section class="sidebar-user">
           <strong id="userNameText">로그인 필요</strong>
           <span id="userRoleText" class="role-badge">권한 없음</span>
-          <p id="userMetaText">강사 계정은 허용된 학생만 보고, 관리자 계정은 권한과 로그 흐름을 함께 관리합니다.</p>
+          <p id="userMetaText">강사 계정은 허용된 학생만 보고, 관리자 계정은 권한과 티칭로그 흐름을 함께 관리합니다.</p>
           <div class="sidebar-actions">
             <button id="refreshButton" type="button" class="button-secondary">실시간 동기화</button>
             <button id="logoutButton" type="button" class="button-ghost">로그아웃</button>
@@ -1786,7 +1862,7 @@
             <article class="stat-card glass-panel">
               <span>티칭로그</span>
               <strong id="logCount">0건</strong>
-              <small>현재 화면에 표시되는 전체 로그 수</small>
+              <small>현재 화면에 표시되는 전체 티칭로그 수</small>
             </article>
           </div>
 
@@ -1932,7 +2008,9 @@
         '보충필요',
         '과제미흡',
         '집중관리',
-        '테스트결과'
+        '테스트결과',
+        '학부모상담',
+        '학생상담'
       ];
 
       var APP_STATE = {
@@ -1946,6 +2024,7 @@
         activeStudents: [],
         totalActiveStudentCount: 0,
         selectedPermissionStudentId: '',
+        permissionInstructorKeyword: '',
         instructors: [],
         permissions: [],
         materials: []
@@ -2009,6 +2088,7 @@
         document.getElementById('permissionSchoolFilter').addEventListener('change', renderPermissionView);
         document.getElementById('permissionGradeFilter').addEventListener('change', renderPermissionView);
         document.getElementById('permissionStudentTableWrap').addEventListener('click', handlePermissionListClick);
+        document.getElementById('permissionDetailPanel').addEventListener('input', handlePermissionInstructorSearch);
         document.getElementById('savePermissionButton').addEventListener('click', handlePermissionSave);
         document.getElementById('modalPermissionStudentSelect').addEventListener('change', renderPermissionModalChecklist);
         document.getElementById('modalSavePermissionButton').addEventListener('click', handlePermissionModalSave);
@@ -2325,7 +2405,7 @@
           pills.push('<span class="pill pill-mint">' + escapeHtml(student.grade + '학년') + '</span>');
         }
         if ((student.logs || []).length) {
-          pills.push('<span class="pill pill-slate">로그 ' + ((student.logs || []).length) + '건</span>');
+          pills.push('<span class="pill pill-slate">티칭로그 ' + ((student.logs || []).length) + '건</span>');
         }
 
         var facts = [
@@ -2399,12 +2479,14 @@
           ? '<span class="admin-mark">ADMIN</span><span>' + escapeHtml(log.createdByName || '관리자') + '</span>'
           : '<span>' + escapeHtml((log.createdByName || '강사') + ' 강사') + '</span>';
         var compactDate = formatTeachingLogDateTime(log.createdAt);
+        var canDelete = APP_STATE.isAdmin || (APP_STATE.user && APP_STATE.user.userId === log.createdById);
 
         return [
           '<div class="log-card ' + (isAdmin ? 'admin' : '') + '">',
           '  <div class="log-top">',
           '    <div class="log-author">' + authorHtml + '</div>',
           '    <div class="log-time">' + escapeHtml(compactDate) + '</div>',
+          canDelete ? '    <button type="button" class="log-delete-button" data-action="delete-log" data-log-row="' + escapeAttribute(log.rowNumber) + '">삭제</button>' : '',
           '  </div>',
           '  <div class="log-text">' + escapeHtml(log.content || '') + '</div>',
                renderLogTags(log.tags || []),
@@ -2418,7 +2500,7 @@
         }
 
         return '<div class="tag-cloud">' + tags.map(function(tag) {
-          return '<span class="tag-badge">' + escapeHtml(tag) + '</span>';
+          return '<span class="tag-badge ' + escapeAttribute(getLogTagToneClass(tag)) + '">' + escapeHtml(tag) + '</span>';
         }).join('') + '</div>';
       }
 
@@ -2426,12 +2508,26 @@
         return LOG_TAG_OPTIONS.map(function(tag, index) {
           var inputId = 'tag-' + sanitizeId(studentId) + '-' + index;
           return [
-            '<label class="tag-option" for="' + escapeAttribute(inputId) + '">',
+            '<label class="tag-option ' + escapeAttribute(getLogTagToneClass(tag)) + '" for="' + escapeAttribute(inputId) + '">',
             '  <input id="' + escapeAttribute(inputId) + '" data-role="log-tag" type="checkbox" value="' + escapeAttribute(tag) + '">',
             '  <span>' + escapeHtml(tag) + '</span>',
             '</label>'
           ].join('');
         }).join('');
+      }
+
+      function getLogTagToneClass(tag) {
+        var map = {
+          '수업현황': 'tag-status',
+          '첫수업 정보': 'tag-first',
+          '보충필요': 'tag-makeup',
+          '과제미흡': 'tag-homework',
+          '집중관리': 'tag-focus',
+          '테스트결과': 'tag-test',
+          '학부모상담': 'tag-parent',
+          '학생상담': 'tag-student'
+        };
+        return map[tag] || 'tag-status';
       }
 
       function sanitizeId(value) {
@@ -2475,6 +2571,12 @@
       }
 
       function handleStudentListClick(event) {
+        var deleteButton = event.target.closest('[data-action="delete-log"]');
+        if (deleteButton) {
+          handleTeachingLogDelete(deleteButton);
+          return;
+        }
+
         var button = event.target.closest('[data-action="save-log"]');
         if (!button) {
           return;
@@ -2509,6 +2611,28 @@
             renderAll();
             switchView('students');
             setNotice(result.message || '티칭로그가 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function handleTeachingLogDelete(button) {
+        var logRowNumber = button.getAttribute('data-log-row');
+        if (!logRowNumber) {
+          setNotice('삭제할 티칭로그를 찾을 수 없습니다.', 'warning');
+          return;
+        }
+
+        setLoading('티칭로그를 삭제하는 중입니다.');
+        apiRequest('deleteStudentLog', {
+          token: APP_STATE.token,
+          logRowNumber: logRowNumber
+        })
+          .then(function(result) {
+            hydrateStudentDataOnly(result);
+            renderAll();
+            switchView('students');
+            setNotice(result.message || '티칭로그가 삭제되었습니다.', 'success');
           })
           .catch(handleApiError_)
           .finally(clearLoading);
@@ -2623,6 +2747,14 @@
         }
 
         var selected = permissionMap[student.studentId] || [];
+        var instructorKeyword = normalizeSearchText(APP_STATE.permissionInstructorKeyword);
+        var visibleInstructors = APP_STATE.instructors.filter(function(instructor) {
+          if (!instructorKeyword) {
+            return true;
+          }
+          var searchText = normalizeSearchText([instructor.name, instructor.userId].join(' '));
+          return searchText.indexOf(instructorKeyword) !== -1;
+        });
         var summary = selected.length
           ? selected.map(function(id) {
               var matched = APP_STATE.instructors.find(function(item) { return item.userId === id; });
@@ -2633,8 +2765,9 @@
         wrap.innerHTML = [
           '<h4>' + escapeHtml(student.studentName) + '</h4>',
           '<div class="dense-meta">원: ' + escapeHtml(student.school || '-') + ' · 학년: ' + escapeHtml(student.grade ? String(student.grade) : '-') + ' · 학생 ID: ' + escapeHtml(student.studentId) + '</div>',
+          '<input class="field-input permission-instructor-search" data-role="instructor-search" type="text" placeholder="강사 검색" value="' + escapeAttribute(APP_STATE.permissionInstructorKeyword) + '">',
           '<div class="compact-check-grid">',
-          APP_STATE.instructors.map(function(instructor) {
+          visibleInstructors.map(function(instructor) {
             var checked = selected.indexOf(instructor.userId) !== -1 ? ' checked' : '';
             return [
               '<label class="compact-check">',
@@ -2669,7 +2802,18 @@
         }
 
         APP_STATE.selectedPermissionStudentId = button.getAttribute('data-student-id');
+        APP_STATE.permissionInstructorKeyword = '';
         renderPermissionStudentTable();
+        renderPermissionDetailPanel();
+      }
+
+      function handlePermissionInstructorSearch(event) {
+        var input = event.target.closest('[data-role="instructor-search"]');
+        if (!input) {
+          return;
+        }
+
+        APP_STATE.permissionInstructorKeyword = input.value || '';
         renderPermissionDetailPanel();
       }
 
