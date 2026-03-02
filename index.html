@@ -619,6 +619,79 @@
         margin-bottom: 18px;
       }
 
+      .permission-trigger {
+        display: inline-flex;
+      }
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 90;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 22px;
+        background: rgba(12, 22, 48, 0.34);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      .modal-card {
+        width: min(760px, 100%);
+        padding: 24px;
+        border-radius: 30px;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        box-shadow: var(--shadow-xl);
+      }
+
+      .modal-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .modal-top h3 {
+        margin: 0;
+        font-size: 1.16rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+
+      .modal-top p {
+        margin: 7px 0 0;
+        color: var(--text-soft);
+        font-size: 0.84rem;
+        line-height: 1.65;
+      }
+
+      .icon-button {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: rgba(36, 86, 214, 0.08);
+        color: var(--brand-deep);
+        font-size: 1.24rem;
+        font-weight: 700;
+      }
+
+      .modal-body {
+        display: grid;
+        gap: 16px;
+      }
+
+      .hint-box {
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(36, 86, 214, 0.08);
+        border: 1px solid rgba(36, 86, 214, 0.12);
+        color: var(--brand-deep);
+        font-size: 0.82rem;
+        line-height: 1.7;
+      }
+
       .dashboard-view {
         display: none;
       }
@@ -1130,7 +1203,7 @@
 
         .top-actions {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         .student-facts {
@@ -1172,6 +1245,19 @@
         .mobile-nav .side-nav-button.active {
           color: var(--brand-deep);
           background: rgba(36, 86, 214, 0.1);
+        }
+
+        .modal-backdrop {
+          padding: 14px;
+          align-items: flex-end;
+        }
+
+        .modal-card {
+          width: 100%;
+          max-height: 84vh;
+          overflow: auto;
+          padding: 18px;
+          border-radius: 26px 26px 20px 20px;
         }
       }
     </style>
@@ -1281,6 +1367,7 @@
           </div>
           <div class="top-actions">
             <button id="topRefreshButton" type="button" class="mini-button">실시간 동기화</button>
+            <button id="openPermissionModalButton" type="button" class="mini-button permission-trigger hidden">권한 설정</button>
             <button id="topLogoutButton" type="button" class="mini-button">세션 종료</button>
           </div>
         </header>
@@ -1443,6 +1530,30 @@
       </nav>
     </div>
 
+    <div id="permissionModal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-top">
+          <div>
+            <h3>강사 학생 열람 권한 설정</h3>
+            <p>활성 학생을 선택한 뒤, 해당 학생을 열람할 수 있는 강사를 체크해 저장하세요. 저장 즉시 강사 계정 화면에 반영됩니다.</p>
+          </div>
+          <button id="closePermissionModalButton" type="button" class="icon-button" aria-label="권한 설정창 닫기">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="hint-box">강사 계정에서 학생이 0명으로 표시되면 아직 권한이 연결되지 않은 상태일 수 있습니다. 이 설정창에서 학생과 강사를 연결해 주세요.</div>
+          <div class="field-shell">
+            <label class="field-label" for="modalPermissionStudentSelect">학생 선택</label>
+            <select id="modalPermissionStudentSelect" class="field-select"></select>
+          </div>
+          <div class="field-shell">
+            <label class="field-label">허용 강사</label>
+            <div id="modalInstructorChecklist" class="list-grid"></div>
+          </div>
+          <button id="modalSavePermissionButton" type="button" class="button-primary">권한 저장</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       const API_URL = 'https://script.google.com/macros/s/AKfycbytTEpagqxe_BShl5LYON51FWTbb1vp9UeqY28Jf-5FviS7cbVbveYRTiKjartU2Ob9/exec';
       const APP_NAME = 'S-LMS (에스-엘엠에스)';
@@ -1466,6 +1577,7 @@
         isAdmin: false,
         visibleStudents: [],
         activeStudents: [],
+        totalActiveStudentCount: 0,
         instructors: [],
         permissions: [],
         materials: []
@@ -1509,6 +1621,9 @@
         document.getElementById('topLogoutButton').addEventListener('click', handleLogout);
         document.getElementById('refreshButton').addEventListener('click', refreshDashboard);
         document.getElementById('topRefreshButton').addEventListener('click', refreshDashboard);
+        document.getElementById('openPermissionModalButton').addEventListener('click', openPermissionModal);
+        document.getElementById('closePermissionModalButton').addEventListener('click', closePermissionModal);
+        document.getElementById('permissionModal').addEventListener('click', handlePermissionModalBackdropClick);
 
         document.getElementById('studentSearchInput').addEventListener('input', renderStudents);
         document.getElementById('studentSchoolFilter').addEventListener('change', renderStudents);
@@ -1518,6 +1633,8 @@
 
         document.getElementById('permissionStudentSelect').addEventListener('change', renderPermissionChecklist);
         document.getElementById('savePermissionButton').addEventListener('click', handlePermissionSave);
+        document.getElementById('modalPermissionStudentSelect').addEventListener('change', renderPermissionModalChecklist);
+        document.getElementById('modalSavePermissionButton').addEventListener('click', handlePermissionModalSave);
 
         document.getElementById('materialForm').addEventListener('submit', handleMaterialSave);
         document.getElementById('materialKeywordInput').addEventListener('input', renderMaterials);
@@ -1656,6 +1773,7 @@
         APP_STATE.isAdmin = Boolean(studentData.isAdmin);
         APP_STATE.visibleStudents = studentData.visibleStudents || [];
         APP_STATE.activeStudents = studentData.activeStudents || [];
+        APP_STATE.totalActiveStudentCount = Number(studentData.totalActiveStudentCount || 0);
         APP_STATE.instructors = studentData.instructors || [];
         APP_STATE.permissions = studentData.permissions || [];
         APP_STATE.materials = materialData && materialData.materials ? materialData.materials : [];
@@ -1670,6 +1788,7 @@
         APP_STATE.isAdmin = Boolean(studentData.isAdmin);
         APP_STATE.visibleStudents = studentData.visibleStudents || [];
         APP_STATE.activeStudents = studentData.activeStudents || [];
+        APP_STATE.totalActiveStudentCount = Number(studentData.totalActiveStudentCount || 0);
         APP_STATE.instructors = studentData.instructors || [];
         APP_STATE.permissions = studentData.permissions || [];
         APP_STATE.appName = studentData.appName || APP_STATE.appName;
@@ -1699,15 +1818,16 @@
 
         document.getElementById('permissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('mobilePermissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
+        document.getElementById('openPermissionModalButton').classList.toggle('hidden', !APP_STATE.isAdmin);
       }
 
       function renderStats() {
-        document.getElementById('metricVisibleLabel').textContent = APP_STATE.isAdmin ? '표시 학생' : '내 권한 학생';
-        document.getElementById('metricActiveLabel').textContent = APP_STATE.isAdmin ? '전체 활성 학생' : '권한 부여 학생';
+        document.getElementById('metricVisibleLabel').textContent = APP_STATE.isAdmin ? '표시 학생' : '내 열람 가능 학생';
+        document.getElementById('metricActiveLabel').textContent = '전체 활성 학생';
         document.getElementById('metricPermissionLabel').textContent = APP_STATE.isAdmin ? '권한 매핑' : '내 권한 매핑';
 
         document.getElementById('visibleStudentCount').textContent = APP_STATE.visibleStudents.length + '명';
-        document.getElementById('activeStudentCount').textContent = APP_STATE.activeStudents.length + '명';
+        document.getElementById('activeStudentCount').textContent = APP_STATE.totalActiveStudentCount + '명';
         document.getElementById('permissionCount').textContent = APP_STATE.permissions.length + '건';
         document.getElementById('logCount').textContent = getTotalLogCount() + '건';
       }
@@ -1775,7 +1895,7 @@
         var students = getFilteredStudents();
 
         if (!students.length) {
-          wrap.innerHTML = '<div class="empty-state">조건에 맞는 학생이 없습니다.<br>이름, 원, 수업 일지 태그까지 함께 검색되며, 이름 앞 슬래시는 자동으로 무시됩니다.</div>';
+          wrap.innerHTML = getStudentEmptyStateHtml();
           return;
         }
 
@@ -1798,6 +1918,20 @@
           });
         });
         fillSelectWithOptions('studentTagFilter', allTags, '전체 태그');
+      }
+
+      function getStudentEmptyStateHtml() {
+        if (!APP_STATE.visibleStudents.length) {
+          if (!APP_STATE.isAdmin && APP_STATE.totalActiveStudentCount > 0) {
+            return '<div class="empty-state">현재 활성 학생은 ' + escapeHtml(String(APP_STATE.totalActiveStudentCount)) + '명입니다.<br>하지만 이 강사 계정에는 아직 학생 열람 권한이 연결되지 않았습니다.<br>관리자 계정에서 상단의 권한 설정 버튼을 눌러 학생과 강사를 연결해주세요.</div>';
+          }
+
+          if (APP_STATE.totalActiveStudentCount === 0) {
+            return '<div class="empty-state">등록 상태가 TRUE인 학생이 아직 없습니다.<br>student 시트의 등록 상태 열을 확인한 뒤 다시 동기화해주세요.</div>';
+          }
+        }
+
+        return '<div class="empty-state">조건에 맞는 학생이 없습니다.<br>이름, 원, 수업 일지 태그까지 함께 검색되며, 이름 앞 슬래시는 자동으로 무시됩니다.</div>';
       }
 
       function renderStudentCard(student) {
@@ -1984,6 +2118,8 @@
         renderPermissionStudentOptions();
         renderPermissionChecklist();
         renderPermissionMatrix();
+        renderPermissionModalOptions();
+        renderPermissionModalChecklist();
       }
 
       function renderPermissionStudentOptions() {
@@ -2013,6 +2149,60 @@
 
         var wrap = document.getElementById('instructorChecklist');
         var studentId = document.getElementById('permissionStudentSelect').value;
+        var selected = APP_STATE.permissions
+          .filter(function(item) { return item.studentId === studentId; })
+          .map(function(item) { return item.instructorId; });
+
+        if (!APP_STATE.instructors.length) {
+          wrap.innerHTML = '<div class="empty-state">Teachers 시트에 강사 계정을 먼저 등록해주세요.</div>';
+          return;
+        }
+
+        wrap.innerHTML = APP_STATE.instructors.map(function(instructor) {
+          var checked = selected.indexOf(instructor.userId) !== -1 ? ' checked' : '';
+          return [
+            '<label class="check-card">',
+            '  <input type="checkbox" data-instructor-id="' + escapeHtml(instructor.userId) + '"' + checked + '>',
+            '  <div>',
+            '    <div style="font-weight:800;">' + escapeHtml(instructor.name) + '</div>',
+            '    <div style="margin-top:4px;color:var(--text-soft);font-size:0.78rem;">' + escapeHtml(instructor.userId) + '</div>',
+            '  </div>',
+            '</label>'
+          ].join('');
+        }).join('');
+      }
+
+      function renderPermissionModalOptions() {
+        if (!APP_STATE.isAdmin) {
+          return;
+        }
+
+        var select = document.getElementById('modalPermissionStudentSelect');
+        var current = select.value || document.getElementById('permissionStudentSelect').value;
+
+        if (!APP_STATE.activeStudents.length) {
+          select.innerHTML = '<option value="">활성 학생이 없습니다.</option>';
+          return;
+        }
+
+        select.innerHTML = APP_STATE.activeStudents.map(function(student) {
+          return '<option value="' + escapeHtml(student.studentId) + '">' +
+            escapeHtml(student.studentName + ' (' + student.studentId + ')') +
+            '</option>';
+        }).join('');
+
+        if (current && APP_STATE.activeStudents.some(function(student) { return student.studentId === current; })) {
+          select.value = current;
+        }
+      }
+
+      function renderPermissionModalChecklist() {
+        if (!APP_STATE.isAdmin) {
+          return;
+        }
+
+        var wrap = document.getElementById('modalInstructorChecklist');
+        var studentId = document.getElementById('modalPermissionStudentSelect').value;
         var selected = APP_STATE.permissions
           .filter(function(item) { return item.studentId === studentId; })
           .map(function(item) { return item.instructorId; });
@@ -2108,6 +2298,66 @@
             switchView('permissions');
             document.getElementById('permissionStudentSelect').value = studentId;
             renderPermissionChecklist();
+            setNotice(result.message || '학생 열람 권한이 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function openPermissionModal() {
+        if (!APP_STATE.isAdmin) {
+          setNotice('관리자만 권한 설정창을 열 수 있습니다.', 'warning');
+          return;
+        }
+
+        renderPermissionModalOptions();
+        renderPermissionModalChecklist();
+        document.getElementById('permissionModal').classList.remove('hidden');
+      }
+
+      function closePermissionModal() {
+        document.getElementById('permissionModal').classList.add('hidden');
+      }
+
+      function handlePermissionModalBackdropClick(event) {
+        if (event.target.id === 'permissionModal') {
+          closePermissionModal();
+        }
+      }
+
+      function handlePermissionModalSave() {
+        if (!APP_STATE.isAdmin) {
+          setNotice('관리자만 권한을 저장할 수 있습니다.', 'warning');
+          return;
+        }
+
+        var studentId = document.getElementById('modalPermissionStudentSelect').value;
+        if (!studentId) {
+          setNotice('학생을 먼저 선택해주세요.', 'warning');
+          return;
+        }
+
+        var instructorIds = Array.prototype.slice.call(
+          document.querySelectorAll('#modalInstructorChecklist input[type="checkbox"]:checked')
+        ).map(function(input) {
+          return input.getAttribute('data-instructor-id');
+        });
+
+        setLoading('학생 열람 권한을 저장하는 중입니다.');
+        apiRequest('savePermissions', {
+          token: APP_STATE.token,
+          studentId: studentId,
+          instructorIds: JSON.stringify(instructorIds)
+        })
+          .then(function(result) {
+            hydrateStudentDataOnly(result);
+            renderAll();
+            switchView('students');
+            document.getElementById('permissionStudentSelect').value = studentId;
+            document.getElementById('modalPermissionStudentSelect').value = studentId;
+            renderPermissionChecklist();
+            renderPermissionModalChecklist();
+            closePermissionModal();
             setNotice(result.message || '학생 열람 권한이 저장되었습니다.', 'success');
           })
           .catch(handleApiError_)
@@ -2237,10 +2487,12 @@
         APP_STATE.isAdmin = false;
         APP_STATE.visibleStudents = [];
         APP_STATE.activeStudents = [];
+        APP_STATE.totalActiveStudentCount = 0;
         APP_STATE.instructors = [];
         APP_STATE.permissions = [];
         APP_STATE.materials = [];
         clearStoredSession();
+        closePermissionModal();
         renderAll();
         showLoginOnly();
         setNotice('로그아웃되었습니다.', 'info');
