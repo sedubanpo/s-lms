@@ -1483,21 +1483,24 @@
           return Promise.reject(new Error('API_URL이 설정되지 않았습니다.'));
         }
 
-        var requestBody = { action: action };
+        var requestData = { action: action };
         Object.keys(payload || {}).forEach(function(key) {
           var value = payload[key];
           if (value === null || value === undefined) {
             return;
           }
-          requestBody[key] = value;
+          requestData[key] = value;
         });
 
-        return fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
-          },
-          body: JSON.stringify(requestBody),
+        var params = new URLSearchParams();
+        Object.keys(requestData).forEach(function(key) {
+          params.append(key, String(requestData[key]));
+        });
+
+        var requestUrl = API_URL + (API_URL.indexOf('?') === -1 ? '?' : '&') + params.toString();
+
+        return fetch(requestUrl, {
+          method: 'GET',
           redirect: 'follow'
         })
           .then(function(response) {
