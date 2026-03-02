@@ -1240,6 +1240,38 @@
         box-shadow: 0 8px 16px rgba(36, 86, 214, 0.18);
       }
 
+      .teachinglog-tab.tag-status.active {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      }
+
+      .teachinglog-tab.tag-first.active {
+        background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+      }
+
+      .teachinglog-tab.tag-makeup.active {
+        background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);
+      }
+
+      .teachinglog-tab.tag-homework.active {
+        background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+      }
+
+      .teachinglog-tab.tag-focus.active {
+        background: linear-gradient(135deg, #d946ef 0%, #a21caf 100%);
+      }
+
+      .teachinglog-tab.tag-test.active {
+        background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+      }
+
+      .teachinglog-tab.tag-parent.active {
+        background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+      }
+
+      .teachinglog-tab.tag-student.active {
+        background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+      }
+
       .empty-state {
         padding: 34px 20px;
         border-radius: 24px;
@@ -1804,7 +1836,7 @@
     <div id="loadingOverlay" class="loading-overlay hidden">
       <div class="loading-card">
         <div class="book-loader"><span></span></div>
-        <div id="loadingMessage">데이터를 불러오는 중입니다.</div>
+        <div id="loadingMessage">구글 스프레드시트와 열심히 밀당하는 중... 💻</div>
       </div>
     </div>
 
@@ -1842,17 +1874,17 @@
         <section class="login-access">
           <div class="access-panel">
             <span class="eyebrow">Secure Login</span>
-            <h2>교사 계정 접속</h2>
-            <p>Teachers 시트 기준으로 로그인합니다. A열은 아이디, G열은 비밀번호, H열은 권한(ADMIN / INSTRUCTOR)입니다.</p>
+            <h2>강사 계정 접속</h2>
+            <p>등록된 휴대전화 번호로 로그인합니다. 휴대전화 번호는 하이픈 없이 입력해도 되고, 뒤 8자리만 입력해도 접속할 수 있습니다. 비밀번호가 설정되지 않은 계정은 휴대전화 번호와 동일하게 로그인됩니다.</p>
             <div id="loginNoticeBar" class="notice-bar notice-info hidden" style="margin-bottom:16px;"></div>
             <form id="loginForm" class="form-grid">
               <div class="field-shell">
                 <label class="field-label" for="userIdInput">아이디</label>
-                <input id="userIdInput" class="field-input" type="text" placeholder="Teachers 시트 A열 아이디">
+                <input id="userIdInput" class="field-input" type="text" placeholder="휴대전화 번호 또는 뒤 8자리">
               </div>
               <div class="field-shell">
                 <label class="field-label" for="passwordInput">비밀번호</label>
-                <input id="passwordInput" class="field-input" type="password" placeholder="Teachers 시트 G열 비밀번호">
+                <input id="passwordInput" class="field-input" type="password" placeholder="비밀번호 또는 휴대전화 번호">
               </div>
               <button type="submit" class="button-primary">로그인</button>
             </form>
@@ -2097,6 +2129,25 @@
         '학부모상담',
         '학생상담'
       ];
+      const LOADING_MESSAGES = [
+        '급하게 카페인 수혈하는 중... ☕',
+        '채점용 빨간펜 잉크 채우는 중... 🖊️',
+        '당 떨어졌습니다. 초콜릿 까먹는 중... 🍫',
+        '오늘 저녁 메뉴 진지하게 고민하는 중... 🍕',
+        '강사실 커피 머신 예열하는 중... ♨️',
+        '수업 전 목 푸는 중... 아-아- 마이크 테스트 🎤',
+        '지각생의 화려한 변명 예측하는 중... 🤔',
+        '구글 스프레드시트와 열심히 밀당하는 중... 💻',
+        '흩어진 학생 데이터 영혼까지 끌어모으는 중... 🌪️',
+        '에스-로그(S-Log) 예쁘게 포장하는 중... 🎁',
+        '기출문제 보물창고 문 여는 중... 🗝️',
+        '0과 1 사이를 땀나게 달리는 중... 🏃‍♂️💨',
+        '\'아 맞다, 교재 안 가져왔어요\' 대처법 생각하는 중... 🤦',
+        '\'선생님 숙제 다 했어요!\'라는 거짓말 감별하는 중... 🕵️',
+        '질문 폭격 방어막 전개하는 중... 🛡️',
+        '우리 학원 에이스들 명단 예쁘게 정렬하는 중... ✨',
+        '보강 스케줄 테트리스 하는 중... 🧩'
+      ];
 
       var APP_STATE = {
         token: '',
@@ -2138,6 +2189,7 @@
         syncBranding();
         updateHeaderClock();
         setInterval(updateHeaderClock, 1000);
+        setInterval(rotateLoadingMessage, 1000);
 
         var savedSession = readStoredSession();
         if (savedSession && savedSession.token) {
@@ -2256,12 +2308,24 @@
       }
 
       function setLoading(message) {
-        document.getElementById('loadingMessage').textContent = message || '데이터를 불러오는 중입니다.';
+        document.getElementById('loadingMessage').textContent = message || getRandomLoadingMessage_();
         document.getElementById('loadingOverlay').classList.remove('hidden');
       }
 
       function clearLoading() {
         document.getElementById('loadingOverlay').classList.add('hidden');
+      }
+
+      function rotateLoadingMessage() {
+        var overlay = document.getElementById('loadingOverlay');
+        if (overlay.classList.contains('hidden')) {
+          return;
+        }
+        document.getElementById('loadingMessage').textContent = getRandomLoadingMessage_();
+      }
+
+      function getRandomLoadingMessage_() {
+        return LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
       }
 
       function setNotice(message, tone) {
@@ -2658,7 +2722,8 @@
         var tabs = ['전체'].concat(LOG_TAG_OPTIONS);
         return '<div class="teachinglog-tabs">' + tabs.map(function(tab) {
           var isActive = activeTab === tab;
-          return '<button type="button" class="teachinglog-tab' + (isActive ? ' active' : '') + '" data-action="set-log-tab" data-student-id="' + escapeAttribute(student.studentId) + '" data-log-tab="' + escapeAttribute(tab) + '">' + escapeHtml(tab) + '</button>';
+          var toneClass = tab === '전체' ? '' : ' ' + getLogTagToneClass(tab);
+          return '<button type="button" class="teachinglog-tab' + toneClass + (isActive ? ' active' : '') + '" data-action="set-log-tab" data-student-id="' + escapeAttribute(student.studentId) + '" data-log-tab="' + escapeAttribute(tab) + '">' + escapeHtml(tab) + '</button>';
         }).join('') + '</div>';
       }
 
