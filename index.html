@@ -799,8 +799,8 @@
 
       .students-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 18px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
       }
 
       .student-card {
@@ -973,10 +973,10 @@
       }
 
       .log-top {
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
-        justify-content: space-between;
-        gap: 12px;
+        gap: 8px;
         margin-bottom: 8px;
       }
 
@@ -986,6 +986,15 @@
         gap: 8px;
         font-size: 0.76rem;
         font-weight: 900;
+        min-width: 0;
+      }
+
+      .log-author span:last-child {
+        display: inline-block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .admin-mark {
@@ -1004,6 +1013,7 @@
         color: var(--text-soft);
         font-size: 0.74rem;
         font-weight: 700;
+        white-space: nowrap;
       }
 
       .log-text {
@@ -1254,7 +1264,7 @@
       }
 
       .students-grid {
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 10px;
       }
 
@@ -1350,10 +1360,10 @@
       }
 
       .log-form [data-action="save-log"] {
-        min-width: 72px;
-        padding: 8px 12px;
-        line-height: 1.25;
-        white-space: normal;
+        min-width: 88px;
+        padding: 0 14px;
+        line-height: 1;
+        white-space: nowrap;
         text-align: center;
       }
 
@@ -1527,7 +1537,8 @@
           grid-template-columns: 1fr;
         }
 
-        .stats-grid {
+        .stats-grid,
+        .students-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
       }
@@ -1578,7 +1589,8 @@
           grid-template-columns: 1fr;
         }
 
-        .stats-grid {
+        .stats-grid,
+        .students-grid {
           grid-template-columns: 1fr 1fr;
         }
 
@@ -1606,6 +1618,10 @@
           border: 1px solid rgba(255, 255, 255, 0.68);
           box-shadow: var(--shadow-xl);
           backdrop-filter: blur(16px);
+        }
+
+        .students-grid {
+          grid-template-columns: 1fr;
         }
 
         .mobile-nav .side-nav-button {
@@ -1654,7 +1670,7 @@
             <div class="story-brand" style="margin-top:22px;">
               <img id="loginLogo" src="https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png" alt="S-LMS 로고">
               <h1 id="loginTitle">S-LMS (에스-엘엠에스)</h1>
-              <p>학생 관리, 수업 계획, 권한 제어, 자료 공유를 하나의 운영 대시보드에서 연결하는 학원 전용 SaaS 스타일 워크스페이스입니다.</p>
+              <p>학생 관리, 티칭로그, 권한 제어, 자료 공유를 하나의 운영 대시보드에서 연결하는 학원 전용 SaaS 스타일 워크스페이스입니다.</p>
             </div>
           </div>
           <div class="story-metrics">
@@ -1667,7 +1683,7 @@
               <strong>허용된 학생만 열람</strong>
             </div>
             <div class="story-card">
-              <span>수업 계획</span>
+              <span>티칭로그</span>
               <strong>태그 기반 관리</strong>
             </div>
             <div class="story-card">
@@ -1768,7 +1784,7 @@
               <small>학생과 강사 사이의 허용 연결 수</small>
             </article>
             <article class="stat-card glass-panel">
-              <span>수업 계획</span>
+              <span>티칭로그</span>
               <strong id="logCount">0건</strong>
               <small>현재 화면에 표시되는 전체 로그 수</small>
             </article>
@@ -1779,7 +1795,7 @@
               <div class="panel-head">
                 <div>
                   <h3>학생 검색</h3>
-                  <p>이름, 원, 수업 계획 태그와 내용까지 함께 검색합니다. 이름 앞 슬래시(`/`)는 자동으로 제거되어 검색됩니다.</p>
+                  <p>이름, 원, 티칭로그 태그와 내용까지 함께 검색합니다. 이름 앞 슬래시(`/`)는 자동으로 제거되어 검색됩니다.</p>
                 </div>
               </div>
               <div class="search-layout">
@@ -2174,8 +2190,8 @@
         document.getElementById('userMetaText').textContent =
           (user.userId ? '계정 ID: ' + user.userId + ' | ' : '') +
           (APP_STATE.isAdmin
-            ? '관리자 작성 계획은 강조 표시되며, 전체 활성 학생과 권한 매핑을 관리할 수 있습니다.'
-            : '강사 작성 계획에는 작성자명이 노출되며, 허용된 학생만 조회됩니다.');
+            ? '관리자 작성 티칭로그는 강조 표시되며, 전체 활성 학생과 권한 매핑을 관리할 수 있습니다.'
+            : '강사 작성 티칭로그에는 작성자명이 노출되며, 허용된 학생만 조회됩니다.');
 
         document.getElementById('permissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('mobilePermissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
@@ -2297,7 +2313,7 @@
           }
         }
 
-        return '<div class="empty-state">조건에 맞는 학생이 없습니다.<br>이름, 원, 수업 계획 태그까지 함께 검색되며, 이름 앞 슬래시는 자동으로 무시됩니다.</div>';
+        return '<div class="empty-state">조건에 맞는 학생이 없습니다.<br>이름, 원, 티칭로그 태그까지 함께 검색되며, 이름 앞 슬래시는 자동으로 무시됩니다.</div>';
       }
 
       function renderStudentCard(student) {
@@ -2335,22 +2351,22 @@
           '  <div class="student-facts">' + facts.join('') + '</div>',
           '  <section class="student-block">',
           '    <div class="block-head">',
-          '      <h5>수업 계획 및 데이터</h5>',
+          '      <h5>티칭로그 및 데이터</h5>',
           '      <small>총 ' + ((student.logs || []).length) + '건</small>',
           '    </div>',
                renderLogList(student.logs || []),
           '  </section>',
           '  <section class="student-block">',
           '    <div class="block-head">',
-          '      <h5>새 수업 계획 작성</h5>',
+          '      <h5>새 티칭로그 작성</h5>',
           '      <small>태그를 눌러 선택 후 저장</small>',
           '    </div>',
           '    <div class="log-form">',
-          '      <textarea class="field-textarea" data-role="log-content" placeholder="수업 진행 계획, 과제, 보충 필요 여부, 테스트 결과 등을 기록하세요."></textarea>',
+          '      <textarea class="field-textarea" data-role="log-content" placeholder="수업 진행 내용, 과제, 보충 필요 여부, 테스트 결과 등을 기록하세요."></textarea>',
           '      <div class="tag-selector">' + renderLogTagSelector(student.studentId) + '</div>',
           '      <div class="log-form-foot">',
-          '        <div class="helper-text">관리자 작성 계획은 강조 표시되며, 강사 작성 계획은 작성자명이 함께 표시됩니다.</div>',
-          '        <button type="button" class="button-primary" data-action="save-log">계획 저장</button>',
+          '        <div class="helper-text">관리자 작성 티칭로그는 강조 표시되며, 강사 작성 티칭로그는 작성자명이 함께 표시됩니다.</div>',
+          '        <button type="button" class="button-primary" data-action="save-log">티칭로그 저장</button>',
           '      </div>',
           '    </div>',
           '  </section>',
@@ -2369,7 +2385,7 @@
 
       function renderLogList(logs) {
         if (!logs.length) {
-          return '<div class="empty-state">아직 등록된 수업 계획이 없습니다.<br>바로 아래 입력창에서 첫 계획을 남길 수 있습니다.</div>';
+          return '<div class="empty-state">아직 등록된 티칭로그가 없습니다.<br>바로 아래 입력창에서 첫 티칭로그를 남길 수 있습니다.</div>';
         }
 
         return '<div class="log-stream">' + logs.map(function(log) {
@@ -2382,12 +2398,13 @@
         var authorHtml = isAdmin
           ? '<span class="admin-mark">ADMIN</span><span>' + escapeHtml(log.createdByName || '관리자') + '</span>'
           : '<span>' + escapeHtml((log.createdByName || '강사') + ' 강사') + '</span>';
+        var compactDate = formatTeachingLogDateTime(log.createdAt);
 
         return [
           '<div class="log-card ' + (isAdmin ? 'admin' : '') + '">',
           '  <div class="log-top">',
           '    <div class="log-author">' + authorHtml + '</div>',
-          '    <div class="log-time">' + escapeHtml(log.createdAt || '-') + '</div>',
+          '    <div class="log-time">' + escapeHtml(compactDate) + '</div>',
           '  </div>',
           '  <div class="log-text">' + escapeHtml(log.content || '') + '</div>',
                renderLogTags(log.tags || []),
@@ -2421,6 +2438,37 @@
         return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '');
       }
 
+      function formatTeachingLogDateTime(value) {
+        var text = String(value === null || value === undefined ? '' : value).trim();
+        if (!text) {
+          return '-';
+        }
+
+        if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(text)) {
+          return text.slice(5, 16);
+        }
+
+        var parsed = new Date(text);
+        if (!isNaN(parsed.getTime())) {
+          return [
+            String(parsed.getMonth() + 1).padStart(2, '0'),
+            '-',
+            String(parsed.getDate()).padStart(2, '0'),
+            ' ',
+            String(parsed.getHours()).padStart(2, '0'),
+            ':',
+            String(parsed.getMinutes()).padStart(2, '0')
+          ].join('');
+        }
+
+        var match = text.match(/(\d{4})[-/](\d{2})[-/](\d{2}).*?(\d{2}):(\d{2})/);
+        if (match) {
+          return match[2] + '-' + match[3] + ' ' + match[4] + ':' + match[5];
+        }
+
+        return text;
+      }
+
       function getInitial(name) {
         var text = String(name || '').trim();
         return text ? text.charAt(0) : 'S';
@@ -2445,11 +2493,11 @@
         });
 
         if (!content) {
-          setNotice('수업 계획 내용을 입력해주세요.', 'warning');
+          setNotice('티칭로그 내용을 입력해주세요.', 'warning');
           return;
         }
 
-        setLoading('수업 계획을 저장하는 중입니다.');
+        setLoading('티칭로그를 저장하는 중입니다.');
         apiRequest('addStudentLog', {
           token: APP_STATE.token,
           studentId: studentId,
@@ -2460,7 +2508,7 @@
             hydrateStudentDataOnly(result);
             renderAll();
             switchView('students');
-            setNotice(result.message || '수업 계획이 저장되었습니다.', 'success');
+            setNotice(result.message || '티칭로그가 저장되었습니다.', 'success');
           })
           .catch(handleApiError_)
           .finally(clearLoading);
