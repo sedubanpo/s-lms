@@ -1478,37 +1478,28 @@
         setNotice('로그아웃되었습니다.', 'info');
       }
 
-      function apiRequest(action, payload, method) {
+      function apiRequest(action, payload) {
         if (!isApiConfigured()) {
           return Promise.reject(new Error('API_URL이 설정되지 않았습니다.'));
         }
 
-        var requestMethod = method || 'POST';
-        var params = new URLSearchParams();
-        params.append('action', action);
-
+        var requestBody = { action: action };
         Object.keys(payload || {}).forEach(function(key) {
           var value = payload[key];
           if (value === null || value === undefined) {
             return;
           }
-          params.append(key, String(value));
+          requestBody[key] = value;
         });
 
-        var fetchOptions = {
-          method: requestMethod,
+        return fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify(requestBody),
           redirect: 'follow'
-        };
-
-        var requestUrl = API_URL;
-        if (requestMethod === 'GET') {
-          requestUrl += (API_URL.indexOf('?') === -1 ? '?' : '&') + params.toString();
-        } else {
-          // 커스텀 헤더를 두지 않고 URLSearchParams를 body로 보내면 단순 요청으로 처리되어 CORS preflight를 줄일 수 있습니다.
-          fetchOptions.body = params;
-        }
-
-        return fetch(requestUrl, fetchOptions)
+        })
           .then(function(response) {
             return response.text();
           })
