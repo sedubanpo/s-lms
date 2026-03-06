@@ -2475,6 +2475,7 @@
         studentLogTabs: {},
         selectedPermissionStudentId: '',
         permissionInstructorKeyword: '',
+        isPermissionInstructorComposing: false,
         instructors: [],
         permissions: [],
         materials: [],
@@ -2554,6 +2555,8 @@
         document.getElementById('permissionGradeFilter').addEventListener('change', renderPermissionView);
         document.getElementById('permissionStudentTableWrap').addEventListener('click', handlePermissionListClick);
         document.getElementById('permissionDetailPanel').addEventListener('input', handlePermissionInstructorSearch);
+        document.getElementById('permissionDetailPanel').addEventListener('compositionstart', handlePermissionInstructorCompositionStart);
+        document.getElementById('permissionDetailPanel').addEventListener('compositionend', handlePermissionInstructorCompositionEnd);
         document.getElementById('savePermissionButton').addEventListener('click', handlePermissionSave);
         document.getElementById('modalPermissionStudentSelect').addEventListener('change', renderPermissionModalChecklist);
         document.getElementById('modalSavePermissionButton').addEventListener('click', handlePermissionModalSave);
@@ -3427,16 +3430,42 @@
           return;
         }
 
-        var selectionStart = typeof input.selectionStart === 'number' ? input.selectionStart : null;
-        var selectionEnd = typeof input.selectionEnd === 'number' ? input.selectionEnd : null;
-        APP_STATE.permissionInstructorKeyword = input.value || '';
+        if (APP_STATE.isPermissionInstructorComposing || event.isComposing) {
+          APP_STATE.permissionInstructorKeyword = input.value || '';
+          return;
+        }
+
+        syncPermissionInstructorSearchInput_(input.value || '', input.selectionStart, input.selectionEnd);
+      }
+
+      function handlePermissionInstructorCompositionStart(event) {
+        var input = event.target.closest('[data-role="instructor-search"]');
+        if (!input) {
+          return;
+        }
+        APP_STATE.isPermissionInstructorComposing = true;
+      }
+
+      function handlePermissionInstructorCompositionEnd(event) {
+        var input = event.target.closest('[data-role="instructor-search"]');
+        if (!input) {
+          return;
+        }
+        APP_STATE.isPermissionInstructorComposing = false;
+        syncPermissionInstructorSearchInput_(input.value || '', input.selectionStart, input.selectionEnd);
+      }
+
+      function syncPermissionInstructorSearchInput_(value, selectionStart, selectionEnd) {
+        var safeSelectionStart = typeof selectionStart === 'number' ? selectionStart : null;
+        var safeSelectionEnd = typeof selectionEnd === 'number' ? selectionEnd : null;
+        APP_STATE.permissionInstructorKeyword = value || '';
         renderPermissionDetailPanel();
 
         var nextInput = document.querySelector('#permissionDetailPanel [data-role="instructor-search"]');
         if (nextInput) {
           nextInput.focus();
-          if (selectionStart !== null && selectionEnd !== null) {
-            nextInput.setSelectionRange(selectionStart, selectionEnd);
+          if (safeSelectionStart !== null && safeSelectionEnd !== null) {
+            nextInput.setSelectionRange(safeSelectionStart, safeSelectionEnd);
           }
         }
       }
