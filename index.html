@@ -3427,8 +3427,18 @@
           return;
         }
 
+        var selectionStart = typeof input.selectionStart === 'number' ? input.selectionStart : null;
+        var selectionEnd = typeof input.selectionEnd === 'number' ? input.selectionEnd : null;
         APP_STATE.permissionInstructorKeyword = input.value || '';
         renderPermissionDetailPanel();
+
+        var nextInput = document.querySelector('#permissionDetailPanel [data-role="instructor-search"]');
+        if (nextInput) {
+          nextInput.focus();
+          if (selectionStart !== null && selectionEnd !== null) {
+            nextInput.setSelectionRange(selectionStart, selectionEnd);
+          }
+        }
       }
 
       function renderPermissionModalOptions() {
