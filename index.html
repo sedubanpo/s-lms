@@ -2323,7 +2323,7 @@
             <div class="panel-head">
               <div>
                 <h3>자료 등록</h3>
-                <p>학교, 학년, 대상 년도, 과목, 링크를 한 줄 그리드로 입력해 빠르게 연속 등록할 수 있습니다.</p>
+                <p>학교, 학년, 학기, 대상 년도, 과목, 자료유형, 파일유형, 링크를 한 줄 그리드로 입력해 빠르게 연속 등록할 수 있습니다.</p>
               </div>
             </div>
             <form id="materialForm" class="dense-form-grid">
@@ -2336,12 +2336,24 @@
                 <input id="materialGradeInput" class="field-input" type="text" placeholder="3학년">
               </div>
               <div class="field-shell">
+                <label class="field-label" for="materialTermInput">학기</label>
+                <select id="materialTermInput" class="field-select"></select>
+              </div>
+              <div class="field-shell">
                 <label class="field-label" for="materialYearInput">대상 년도</label>
                 <input id="materialYearInput" class="field-input" type="text" placeholder="2026">
               </div>
               <div class="field-shell">
                 <label class="field-label" for="materialSubjectInput">과목</label>
                 <input id="materialSubjectInput" class="field-input" type="text" placeholder="수학">
+              </div>
+              <div class="field-shell">
+                <label class="field-label" for="materialTypeInput">자료유형</label>
+                <select id="materialTypeInput" class="field-select"></select>
+              </div>
+              <div class="field-shell">
+                <label class="field-label" for="materialFileTypeInput">파일유형</label>
+                <select id="materialFileTypeInput" class="field-select"></select>
               </div>
               <div class="field-shell">
                 <label class="field-label" for="materialLinkInput">링크</label>
@@ -2355,15 +2367,18 @@
             <div class="panel-head">
               <div>
                 <h3>자료 검색 및 목록</h3>
-                <p>검색어는 학교, 학년, 년도, 과목, 등록자, 링크 전체 필드에서 부분 일치로 작동하며, 학교-학년-년도-과목 순으로 묶어 표시합니다.</p>
+                <p>검색어는 학교, 학년, 학기, 년도, 과목, 자료유형, 파일유형, 등록자, 링크 전체 필드에서 부분 일치로 작동하며, 학교-학년-학기-년도-과목-자료유형-파일유형 순으로 묶어 표시합니다.</p>
               </div>
             </div>
             <div class="material-search-row">
               <input id="materialKeywordInput" class="field-input" type="text" placeholder="예: 반포고, 2026, 수학">
               <select id="materialSchoolFilter" class="field-select"></select>
               <select id="materialGradeFilter" class="field-select"></select>
+              <select id="materialTermFilter" class="field-select"></select>
               <select id="materialYearFilter" class="field-select"></select>
               <select id="materialSubjectFilter" class="field-select"></select>
+              <select id="materialTypeFilter" class="field-select"></select>
+              <select id="materialFileTypeFilter" class="field-select"></select>
             </div>
             <div id="materialsTableWrap"></div>
           </section>
@@ -2442,6 +2457,23 @@
         '학부모상담',
         '학생상담'
       ];
+      const MATERIAL_TERM_OPTIONS = [
+        '1학기',
+        '2학기'
+      ];
+      const MATERIAL_TYPE_OPTIONS = [
+        '내신기출',
+        '모의고사',
+        '수능',
+        '부교재',
+        '학교유인물',
+        '테스트지'
+      ];
+      const MATERIAL_FILE_TYPE_OPTIONS = [
+        '문제',
+        '답안',
+        '기타'
+      ];
       const LOADING_MESSAGES = [
         '급하게 카페인 수혈하는 중... ☕',
         '채점용 빨간펜 잉크 채우는 중... 🖊️',
@@ -2509,6 +2541,7 @@
 
       function bootstrap() {
         bindEvents();
+        initializeMaterialFormOptions();
         syncBranding();
         updateHeaderClock();
         setInterval(updateHeaderClock, 1000);
@@ -2566,8 +2599,11 @@
         document.getElementById('materialKeywordInput').addEventListener('input', renderMaterials);
         document.getElementById('materialSchoolFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialGradeFilter').addEventListener('change', renderMaterials);
+        document.getElementById('materialTermFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialYearFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialSubjectFilter').addEventListener('change', renderMaterials);
+        document.getElementById('materialTypeFilter').addEventListener('change', renderMaterials);
+        document.getElementById('materialFileTypeFilter').addEventListener('change', renderMaterials);
 
         Array.prototype.slice.call(document.querySelectorAll('[data-view]')).forEach(function(button) {
           button.addEventListener('click', function() {
@@ -3634,13 +3670,17 @@
           token: APP_STATE.token,
           school: document.getElementById('materialSchoolInput').value.trim(),
           grade: document.getElementById('materialGradeInput').value.trim(),
+          term: document.getElementById('materialTermInput').value.trim(),
           year: document.getElementById('materialYearInput').value.trim(),
           subject: document.getElementById('materialSubjectInput').value.trim(),
+          materialType: document.getElementById('materialTypeInput').value.trim(),
+          fileType: document.getElementById('materialFileTypeInput').value.trim(),
           link: document.getElementById('materialLinkInput').value.trim()
         })
           .then(function(result) {
             APP_STATE.materials = result.materials || [];
             document.getElementById('materialForm').reset();
+            initializeMaterialFormOptions();
             renderMaterials();
             switchView('materials');
             setNotice(result.message || '자료가 저장되었습니다.', 'success');
@@ -3853,15 +3893,21 @@
         var keyword = normalizeSearchText(document.getElementById('materialKeywordInput').value);
         var school = document.getElementById('materialSchoolFilter').value;
         var grade = document.getElementById('materialGradeFilter').value;
+        var term = document.getElementById('materialTermFilter').value;
         var year = document.getElementById('materialYearFilter').value;
         var subject = document.getElementById('materialSubjectFilter').value;
+        var materialType = document.getElementById('materialTypeFilter').value;
+        var fileType = document.getElementById('materialFileTypeFilter').value;
 
         var filtered = APP_STATE.materials.filter(function(item) {
           var searchText = normalizeSearchText([
             item.school,
             item.grade,
+            item.term,
             item.year,
             item.subject,
+            item.materialType,
+            item.fileType,
             item.createdBy,
             item.link
           ].join(' '));
@@ -3869,9 +3915,12 @@
           var matchesKeyword = !keyword || searchText.indexOf(keyword) !== -1;
           var matchesSchool = !school || item.school === school;
           var matchesGrade = !grade || item.grade === grade;
+          var matchesTerm = !term || item.term === term;
           var matchesYear = !year || item.year === year;
           var matchesSubject = !subject || item.subject === subject;
-          return matchesKeyword && matchesSchool && matchesGrade && matchesYear && matchesSubject;
+          var matchesMaterialType = !materialType || item.materialType === materialType;
+          var matchesFileType = !fileType || item.fileType === fileType;
+          return matchesKeyword && matchesSchool && matchesGrade && matchesTerm && matchesYear && matchesSubject && matchesMaterialType && matchesFileType;
         });
 
         var wrap = document.getElementById('materialsTableWrap');
@@ -3884,10 +3933,10 @@
         filtered
           .slice()
           .sort(function(a, b) {
-            return [a.school, a.grade, a.year, a.subject, a.createdAt].join('|').localeCompare([b.school, b.grade, b.year, b.subject, b.createdAt].join('|'));
+            return [a.school, a.grade, a.term, a.year, a.subject, a.materialType, a.fileType, a.createdAt].join('|').localeCompare([b.school, b.grade, b.term, b.year, b.subject, b.materialType, b.fileType, b.createdAt].join('|'));
           })
           .forEach(function(item) {
-            var groupKey = [item.school, item.grade, item.year, item.subject].join('||');
+            var groupKey = [item.school, item.grade, item.term, item.year, item.subject, item.materialType, item.fileType].join('||');
             if (!groupedMap[groupKey]) {
               groupedMap[groupKey] = [];
             }
@@ -3898,20 +3947,23 @@
         wrap.innerHTML = [
           '<div class="data-table-wrap">',
           '  <table class="data-table">',
-          '    <thead><tr><th>학교</th><th>학년</th><th>대상 년도</th><th>과목</th><th>링크</th></tr></thead>',
+          '    <thead><tr><th>학교</th><th>학년</th><th>학기</th><th>대상 년도</th><th>과목</th><th>자료유형</th><th>파일유형</th><th>링크</th></tr></thead>',
           '    <tbody>',
           groupKeys.map(function(groupKey) {
             var groupItems = groupedMap[groupKey];
             var first = groupItems[0] || {};
             return [
-              '<tr class="material-group-row"><td colspan="5">' + escapeHtml([first.school || '-', first.grade || '-', first.year || '-', first.subject || '-'].join(' / ')) + '</td></tr>',
+              '<tr class="material-group-row"><td colspan="8">' + escapeHtml([first.school || '-', first.grade || '-', first.term || '-', first.year || '-', first.subject || '-', first.materialType || '-', first.fileType || '-'].join(' / ')) + '</td></tr>',
               groupItems.map(function(item, index) {
                 return [
                   '<tr>',
                   '  <td>' + (index === 0 ? escapeHtml(item.school || '-') : '') + '</td>',
                   '  <td>' + (index === 0 ? escapeHtml(item.grade || '-') : '') + '</td>',
+                  '  <td>' + (index === 0 ? escapeHtml(item.term || '-') : '') + '</td>',
                   '  <td>' + (index === 0 ? escapeHtml(item.year || '-') : '') + '</td>',
                   '  <td>' + (index === 0 ? escapeHtml(item.subject || '-') : '') + '</td>',
+                  '  <td>' + (index === 0 ? escapeHtml(item.materialType || '-') : '') + '</td>',
+                  '  <td>' + (index === 0 ? escapeHtml(item.fileType || '-') : '') + '</td>',
                   '  <td><a class="material-table-cell-link" href="' + escapeAttribute(item.link) + '" target="_blank" rel="noopener noreferrer">열기</a></td>',
                   '</tr>'
                 ].join('');
@@ -3931,12 +3983,41 @@
         fillSelectWithOptions('materialGradeFilter', APP_STATE.materials.map(function(item) {
           return item.grade;
         }), '전체 학년');
+        fillSelectWithOptions('materialTermFilter', APP_STATE.materials.map(function(item) {
+          return item.term;
+        }), '전체 학기');
         fillSelectWithOptions('materialYearFilter', APP_STATE.materials.map(function(item) {
           return item.year;
         }), '전체 년도');
         fillSelectWithOptions('materialSubjectFilter', APP_STATE.materials.map(function(item) {
           return item.subject;
         }), '전체 과목');
+        fillSelectWithOptions('materialTypeFilter', APP_STATE.materials.map(function(item) {
+          return item.materialType;
+        }), '전체 자료유형');
+        fillSelectWithOptions('materialFileTypeFilter', APP_STATE.materials.map(function(item) {
+          return item.fileType;
+        }), '전체 파일유형');
+      }
+
+      function initializeMaterialFormOptions() {
+        fillStaticSelectWithOptions('materialTermInput', MATERIAL_TERM_OPTIONS, '학기 선택');
+        fillStaticSelectWithOptions('materialTypeInput', MATERIAL_TYPE_OPTIONS, '자료유형 선택');
+        fillStaticSelectWithOptions('materialFileTypeInput', MATERIAL_FILE_TYPE_OPTIONS, '파일유형 선택');
+      }
+
+      function fillStaticSelectWithOptions(selectId, values, defaultLabel) {
+        var select = document.getElementById(selectId);
+        var currentValue = select.value;
+        select.innerHTML = ['<option value="">' + escapeHtml(defaultLabel) + '</option>']
+          .concat(values.map(function(value) {
+            return '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>';
+          }))
+          .join('');
+
+        if (currentValue && values.indexOf(currentValue) !== -1) {
+          select.value = currentValue;
+        }
       }
 
       function fillSelectWithOptions(selectId, values, defaultLabel) {
