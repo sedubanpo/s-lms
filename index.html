@@ -2020,19 +2020,95 @@
       }
 
       .material-table-cell-link {
-        color: var(--brand-deep);
-        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(36, 86, 214, 0.98), rgba(34, 74, 182, 0.98));
+        color: #fff;
+        font-weight: 900;
         text-decoration: none;
+        box-shadow: 0 10px 20px rgba(36, 86, 214, 0.18);
       }
 
       .material-table-cell-link:hover {
-        text-decoration: underline;
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(36, 86, 214, 0.22);
       }
 
       .material-group-row td {
         background: linear-gradient(135deg, hsla(var(--school-hue, 220), 72%, 95%, 0.92), hsla(var(--school-hue, 220), 78%, 90%, 0.92));
         color: hsla(var(--school-hue, 220), 55%, 28%, 1);
         font-weight: 800;
+      }
+
+      .material-school-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.86rem;
+        font-weight: 900;
+      }
+
+      .material-count-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        font-size: 0.68rem;
+        font-weight: 900;
+      }
+
+      .material-badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .material-meta-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      .material-meta-badge.grade {
+        background: rgba(59, 130, 246, 0.12);
+        color: #1d4ed8;
+      }
+
+      .material-meta-badge.term {
+        background: rgba(20, 184, 166, 0.12);
+        color: #0f766e;
+      }
+
+      .material-meta-badge.year {
+        background: rgba(99, 102, 241, 0.12);
+        color: #4338ca;
+      }
+
+      .material-meta-badge.subject {
+        background: rgba(236, 72, 153, 0.12);
+        color: #be185d;
+      }
+
+      .material-meta-badge.type {
+        background: rgba(245, 158, 11, 0.14);
+        color: #b45309;
+      }
+
+      .material-meta-badge.file {
+        background: rgba(168, 85, 247, 0.14);
+        color: #7e22ce;
       }
 
       .mobile-nav {
@@ -4072,27 +4148,28 @@
         wrap.innerHTML = [
           '<div class="data-table-wrap">',
           '  <table class="data-table">',
-          '    <thead><tr><th>학교</th><th>학년</th><th>학기</th><th>대상 년도</th><th>과목</th><th>자료유형</th><th>파일유형</th><th>링크</th></tr></thead>',
+          '    <thead><tr><th>학교</th><th>기본 정보</th><th>자료 구분</th><th>링크</th></tr></thead>',
           '    <tbody>',
           groupKeys.map(function(groupKey) {
             var groupItems = groupedMap[groupKey];
             var first = groupItems[0] || {};
             return [
-              '<tr class="material-group-row" style="' + buildSchoolToneStyle_(first.school) + '"><td colspan="8">' + escapeHtml([first.school || '-', first.grade || '-', first.term || '-', first.year || '-', first.subject || '-', first.materialType || '-', first.fileType || '-'].join(' / ')) + '</td></tr>',
-              groupItems.map(function(item, index) {
-                return [
-                  '<tr>',
-                  '  <td>' + (index === 0 ? escapeHtml(item.school || '-') : '') + '</td>',
-                  '  <td>' + (index === 0 ? escapeHtml(item.grade || '-') : '') + '</td>',
-                  '  <td>' + (index === 0 ? escapeHtml(item.term || '-') : '') + '</td>',
-                  '  <td>' + (index === 0 ? escapeHtml(item.year || '-') : '') + '</td>',
-                  '  <td>' + (index === 0 ? escapeHtml(item.subject || '-') : '') + '</td>',
-                  '  <td>' + (index === 0 ? escapeHtml(item.materialType || '-') : '') + '</td>',
-                  '  <td>' + (index === 0 ? escapeHtml(item.fileType || '-') : '') + '</td>',
-                  '  <td><a class="material-table-cell-link" href="' + escapeAttribute(item.link) + '" target="_blank" rel="noopener noreferrer">열기</a></td>',
-                  '</tr>'
-                ].join('');
-              }).join('')
+              '<tr class="material-group-row" style="' + buildSchoolToneStyle_(first.school) + '">',
+              '  <td><span class="material-school-title">' + escapeHtml(first.school || '-') + '<span class="material-count-badge">자료 ' + escapeHtml(String(groupItems.length)) + '건</span></span></td>',
+              '  <td><div class="material-badge-row">' + [
+                    renderMaterialMetaBadge_(first.grade, 'grade'),
+                    renderMaterialMetaBadge_(first.term, 'term'),
+                    renderMaterialMetaBadge_(first.year, 'year'),
+                    renderMaterialMetaBadge_(first.subject, 'subject')
+                  ].join('') + '</div></td>',
+              '  <td><div class="material-badge-row">' + [
+                    renderMaterialMetaBadge_(first.materialType, 'type'),
+                    renderMaterialMetaBadge_(first.fileType, 'file')
+                  ].join('') + '</div></td>',
+              '  <td>' + groupItems.map(function(item, index) {
+                    return '<a class="material-table-cell-link" href="' + escapeAttribute(item.link) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(groupItems.length > 1 ? '열기 ' + String(index + 1) : '열기') + '</a>';
+                  }).join(' ') + '</td>',
+              '</tr>'
             ].join('');
           }).join(''),
           '    </tbody>',
@@ -4295,6 +4372,10 @@
 
       function renderCoverageStatusBadge_(status) {
         return '<span class="coverage-status ' + escapeAttribute(status.tone) + '">' + escapeHtml(status.label + (status.count ? ' ' + status.count + '건' : '')) + '</span>';
+      }
+
+      function renderMaterialMetaBadge_(value, toneClass) {
+        return '<span class="material-meta-badge ' + escapeAttribute(toneClass) + '">' + escapeHtml(value || '-') + '</span>';
       }
 
       function buildSchoolToneStyle_(schoolName) {
