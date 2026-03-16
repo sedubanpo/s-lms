@@ -1895,14 +1895,14 @@
 
       .dense-form-grid {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(120px, auto);
+        grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(120px, auto);
         gap: 8px;
         align-items: end;
       }
 
       .material-search-row {
         display: grid;
-        grid-template-columns: minmax(0, 1.5fr) repeat(7, minmax(120px, 0.75fr));
+        grid-template-columns: minmax(0, 1.5fr) repeat(8, minmax(120px, 0.72fr));
         gap: 8px;
         margin-bottom: 10px;
       }
@@ -2063,6 +2063,39 @@
         font-weight: 900;
       }
 
+      .material-school-row td {
+        background: linear-gradient(135deg, hsla(var(--school-hue, 220), 72%, 94%, 0.95), hsla(var(--school-hue, 220), 78%, 89%, 0.92));
+        color: hsla(var(--school-hue, 220), 55%, 28%, 1);
+        font-weight: 900;
+      }
+
+      .material-year-row td {
+        background: rgba(244, 248, 255, 0.94);
+        color: var(--text-main);
+        font-weight: 800;
+      }
+
+      .material-year-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.82rem;
+        font-weight: 900;
+      }
+
+      .material-item-index {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(214, 226, 247, 0.92);
+        font-size: 0.72rem;
+        font-weight: 900;
+        color: var(--text-soft);
+      }
+
       .material-badge-row {
         display: flex;
         flex-wrap: wrap;
@@ -2099,6 +2132,11 @@
       .material-meta-badge.subject {
         background: rgba(236, 72, 153, 0.12);
         color: #be185d;
+      }
+
+      .material-meta-badge.exam {
+        background: rgba(251, 113, 133, 0.12);
+        color: #be123c;
       }
 
       .material-meta-badge.type {
@@ -2536,6 +2574,10 @@
                 <input id="materialSubjectInput" class="field-input" type="text" placeholder="수학">
               </div>
               <div class="field-shell">
+                <label class="field-label" for="materialExamTypeInput">시험구분</label>
+                <select id="materialExamTypeInput" class="field-select"></select>
+              </div>
+              <div class="field-shell">
                 <label class="field-label" for="materialTypeInput">자료유형</label>
                 <select id="materialTypeInput" class="field-select"></select>
               </div>
@@ -2555,7 +2597,7 @@
             <div class="panel-head">
               <div>
                 <h3>자료 검색 및 목록</h3>
-                <p>검색어는 학교, 학년, 학기, 년도, 과목, 자료유형, 파일유형, 등록자, 링크 전체 필드에서 부분 일치로 작동하며, 학교-학년-학기-년도-과목-자료유형-파일유형 순으로 묶어 표시합니다.</p>
+                <p>검색어는 학교, 학년, 학기, 년도, 과목, 시험구분, 자료유형, 파일유형, 등록자, 링크 전체 필드에서 부분 일치로 작동하며, 학교-년도 단위로 먼저 묶어 표시합니다.</p>
               </div>
             </div>
             <div id="materialsSchoolTabs" class="school-tab-row"></div>
@@ -2566,6 +2608,7 @@
               <select id="materialTermFilter" class="field-select"></select>
               <select id="materialYearFilter" class="field-select"></select>
               <select id="materialSubjectFilter" class="field-select"></select>
+              <select id="materialExamTypeFilter" class="field-select"></select>
               <select id="materialTypeFilter" class="field-select"></select>
               <select id="materialFileTypeFilter" class="field-select"></select>
             </div>
@@ -2658,6 +2701,10 @@
         '부교재',
         '학교유인물',
         '테스트지'
+      ];
+      const MATERIAL_EXAM_OPTIONS = [
+        '중간고사',
+        '기말고사'
       ];
       const MATERIAL_FILE_TYPE_OPTIONS = [
         '문제',
@@ -2796,6 +2843,7 @@
         document.getElementById('materialTermFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialYearFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialSubjectFilter').addEventListener('change', renderMaterials);
+        document.getElementById('materialExamTypeFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialTypeFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialFileTypeFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialsSchoolTabs').addEventListener('click', handleMaterialSchoolTabClick);
@@ -3868,6 +3916,7 @@
           term: document.getElementById('materialTermInput').value.trim(),
           year: document.getElementById('materialYearInput').value.trim(),
           subject: document.getElementById('materialSubjectInput').value.trim(),
+          examType: document.getElementById('materialExamTypeInput').value.trim(),
           materialType: document.getElementById('materialTypeInput').value.trim(),
           fileType: document.getElementById('materialFileTypeInput').value.trim(),
           link: document.getElementById('materialLinkInput').value.trim()
@@ -4092,6 +4141,7 @@
         var term = document.getElementById('materialTermFilter').value;
         var year = document.getElementById('materialYearFilter').value;
         var subject = document.getElementById('materialSubjectFilter').value;
+        var examType = document.getElementById('materialExamTypeFilter').value;
         var materialType = document.getElementById('materialTypeFilter').value;
         var fileType = document.getElementById('materialFileTypeFilter').value;
 
@@ -4106,6 +4156,7 @@
             item.term,
             item.year,
             item.subject,
+            item.examType,
             item.materialType,
             item.fileType,
             item.createdBy,
@@ -4118,9 +4169,10 @@
           var matchesTerm = !term || item.term === term;
           var matchesYear = !year || item.year === year;
           var matchesSubject = !subject || item.subject === subject;
+          var matchesExamType = !examType || item.examType === examType;
           var matchesMaterialType = !materialType || item.materialType === materialType;
           var matchesFileType = !fileType || item.fileType === fileType;
-          return matchesKeyword && matchesSchool && matchesGrade && matchesTerm && matchesYear && matchesSubject && matchesMaterialType && matchesFileType;
+          return matchesKeyword && matchesSchool && matchesGrade && matchesTerm && matchesYear && matchesSubject && matchesExamType && matchesMaterialType && matchesFileType;
         });
 
         var wrap = document.getElementById('materialsTableWrap');
@@ -4134,42 +4186,87 @@
         filtered
           .slice()
           .sort(function(a, b) {
-            return [a.school, a.grade, a.term, a.year, a.subject, a.materialType, a.fileType, a.createdAt].join('|').localeCompare([b.school, b.grade, b.term, b.year, b.subject, b.materialType, b.fileType, b.createdAt].join('|'));
+            return [
+              a.school,
+              a.year,
+              a.grade,
+              a.term,
+              a.subject,
+              a.examType,
+              a.materialType,
+              a.fileType,
+              a.createdAt
+            ].join('|').localeCompare([
+              b.school,
+              b.year,
+              b.grade,
+              b.term,
+              b.subject,
+              b.examType,
+              b.materialType,
+              b.fileType,
+              b.createdAt
+            ].join('|'));
           })
           .forEach(function(item) {
-            var groupKey = [item.school, item.grade, item.term, item.year, item.subject, item.materialType, item.fileType].join('||');
-            if (!groupedMap[groupKey]) {
-              groupedMap[groupKey] = [];
+            var schoolKey = item.school || '-';
+            var yearKey = item.year || '-';
+            if (!groupedMap[schoolKey]) {
+              groupedMap[schoolKey] = {};
             }
-            groupedMap[groupKey].push(item);
+            if (!groupedMap[schoolKey][yearKey]) {
+              groupedMap[schoolKey][yearKey] = [];
+            }
+            groupedMap[schoolKey][yearKey].push(item);
           });
 
-        var groupKeys = Object.keys(groupedMap);
+        var schoolKeys = Object.keys(groupedMap).sort(function(a, b) {
+          return a.localeCompare(b);
+        });
         wrap.innerHTML = [
           '<div class="data-table-wrap">',
           '  <table class="data-table">',
-          '    <thead><tr><th>학교</th><th>기본 정보</th><th>자료 구분</th><th>링크</th></tr></thead>',
+          '    <thead><tr><th>구분</th><th>기본 정보</th><th>자료 구분</th><th>링크</th></tr></thead>',
           '    <tbody>',
-          groupKeys.map(function(groupKey) {
-            var groupItems = groupedMap[groupKey];
-            var first = groupItems[0] || {};
+          schoolKeys.map(function(schoolKey) {
+            var yearMap = groupedMap[schoolKey] || {};
+            var yearKeys = Object.keys(yearMap).sort(function(a, b) {
+              return String(a).localeCompare(String(b));
+            });
+            var schoolItemCount = yearKeys.reduce(function(total, yearKey) {
+              return total + yearMap[yearKey].length;
+            }, 0);
+
             return [
-              '<tr class="material-group-row" style="' + buildSchoolToneStyle_(first.school) + '">',
-              '  <td><span class="material-school-title">' + escapeHtml(first.school || '-') + '<span class="material-count-badge">자료 ' + escapeHtml(String(groupItems.length)) + '건</span></span></td>',
-              '  <td><div class="material-badge-row">' + [
-                    renderMaterialMetaBadge_(first.grade, 'grade'),
-                    renderMaterialMetaBadge_(first.term, 'term'),
-                    renderMaterialMetaBadge_(first.year, 'year'),
-                    renderMaterialMetaBadge_(first.subject, 'subject')
-                  ].join('') + '</div></td>',
-              '  <td><div class="material-badge-row">' + [
-                    renderMaterialMetaBadge_(first.materialType, 'type'),
-                    renderMaterialMetaBadge_(first.fileType, 'file')
-                  ].join('') + '</div></td>',
-              '  <td>' + groupItems.map(function(item, index) {
-                    return '<a class="material-table-cell-link" href="' + escapeAttribute(item.link) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(groupItems.length > 1 ? '열기 ' + String(index + 1) : '열기') + '</a>';
-                  }).join(' ') + '</td>',
-              '</tr>'
+              '<tr class="material-school-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
+              '  <td colspan="4"><span class="material-school-title">' + escapeHtml(schoolKey) + '<span class="material-count-badge">자료 ' + escapeHtml(String(schoolItemCount)) + '건</span></span></td>',
+              '</tr>',
+              yearKeys.map(function(yearKey) {
+                var yearItems = yearMap[yearKey] || [];
+                return [
+                  '<tr class="material-year-row">',
+                  '  <td colspan="4"><span class="material-year-title">' + renderMaterialMetaBadge_(yearKey, 'year') + '<span class="material-count-badge">' + escapeHtml(String(yearItems.length)) + '건</span></span></td>',
+                  '</tr>',
+                  yearItems.map(function(item, index) {
+                    return [
+                      '<tr class="material-item-row">',
+                      '  <td><span class="material-item-index">자료 ' + escapeHtml(String(index + 1)) + '</span></td>',
+                      '  <td><div class="material-badge-row">' + [
+                            renderMaterialMetaBadge_(item.grade, 'grade'),
+                            renderMaterialMetaBadge_(item.term, 'term'),
+                            renderMaterialMetaBadge_(item.subject, 'subject')
+                          ].join('') + '</div></td>',
+                      '  <td><div class="material-badge-row">' + [
+                            renderMaterialMetaBadge_(item.examType, 'exam'),
+                            renderMaterialMetaBadge_(item.materialType, 'type'),
+                            renderMaterialMetaBadge_(item.fileType, 'file')
+                          ].join('') + '</div></td>',
+                      '  <td><a class="material-table-cell-link" href="' + escapeAttribute(item.link) + '" target="_blank" rel="noopener noreferrer">열기</a></td>',
+                      '</tr>'
+                    ].join('');
+                  }).join('')
+                ].join('');
+              }).join('')
             ].join('');
           }).join(''),
           '    </tbody>',
@@ -4194,6 +4291,9 @@
         fillSelectWithOptions('materialSubjectFilter', APP_STATE.materials.map(function(item) {
           return item.subject;
         }), '전체 과목');
+        fillSelectWithOptions('materialExamTypeFilter', APP_STATE.materials.map(function(item) {
+          return item.examType;
+        }), '전체 시험구분');
         fillSelectWithOptions('materialTypeFilter', APP_STATE.materials.map(function(item) {
           return item.materialType;
         }), '전체 자료유형');
@@ -4204,6 +4304,7 @@
 
       function initializeMaterialFormOptions() {
         fillStaticSelectWithOptions('materialTermInput', MATERIAL_TERM_OPTIONS, '학기 선택');
+        fillStaticSelectWithOptions('materialExamTypeInput', MATERIAL_EXAM_OPTIONS, '시험구분 선택');
         fillStaticSelectWithOptions('materialTypeInput', MATERIAL_TYPE_OPTIONS, '자료유형 선택');
         fillStaticSelectWithOptions('materialFileTypeInput', MATERIAL_FILE_TYPE_OPTIONS, '파일유형 선택');
       }
@@ -4300,11 +4401,11 @@
             term: first.term || '-',
             year: first.year || '-',
             subject: first.subject || '-',
-            midterm: buildExamCoverageStatus_(items, '중간'),
-            finalExam: buildExamCoverageStatus_(items, '기말')
+            midterm: buildExamCoverageStatus_(items, '중간고사'),
+            finalExam: buildExamCoverageStatus_(items, '기말고사')
           };
         }).sort(function(a, b) {
-          return [a.school, a.grade, a.term, a.year, a.subject].join('|').localeCompare([b.school, b.grade, b.term, b.year, b.subject].join('|'));
+          return [a.school, a.year, a.grade, a.term, a.subject].join('|').localeCompare([b.school, b.year, b.grade, b.term, b.subject].join('|'));
         });
 
         wrap.innerHTML = [
@@ -4312,7 +4413,7 @@
           '  <div class="materials-coverage-head">',
           '    <div>',
           '      <h4>학교별 자료 현황</h4>',
-          '      <p>학교 탭 기준으로 학년, 학기, 년도, 과목별 `중간고사`와 `기말고사` 자료 유무를 빠르게 확인합니다. 현재는 자료명/링크/유형에 `중간`, `기말` 표기가 있으면 존재로 판단합니다.</p>',
+          '      <p>학교 탭 기준으로 학년, 학기, 년도, 과목별 `중간고사`와 `기말고사` 자료 유무를 빠르게 확인합니다. 이제 자료 등록 시 선택한 시험구분 값을 기준으로 표시합니다.</p>',
           '    </div>',
           '    <span class="coverage-badge">총 ' + escapeHtml(String(groups.length)) + '개 항목</span>',
           '  </div>',
@@ -4342,17 +4443,7 @@
 
       function buildExamCoverageStatus_(items, examLabel) {
         var matches = items.filter(function(item) {
-          var text = normalizeSearchText([
-            item.school,
-            item.grade,
-            item.term,
-            item.year,
-            item.subject,
-            item.materialType,
-            item.fileType,
-            item.link
-          ].join(' '));
-          return text.indexOf(normalizeSearchText(examLabel)) !== -1;
+          return normalizeSearchText(item.examType) === normalizeSearchText(examLabel);
         });
 
         if (matches.length) {
