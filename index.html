@@ -1902,9 +1902,121 @@
 
       .material-search-row {
         display: grid;
-        grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(110px, 0.8fr));
+        grid-template-columns: minmax(0, 1.5fr) repeat(7, minmax(120px, 0.75fr));
         gap: 8px;
         margin-bottom: 10px;
+      }
+
+      .school-tab-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .school-tab-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        background: rgba(255, 255, 255, 0.82);
+        color: var(--text-soft);
+        font-size: 0.78rem;
+        font-weight: 800;
+        transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+      }
+
+      .school-tab-button:hover {
+        transform: translateY(-1px);
+      }
+
+      .school-tab-button.active {
+        background: linear-gradient(135deg, hsla(var(--school-hue), 72%, 92%, 0.95), hsla(var(--school-hue), 78%, 86%, 0.98));
+        border-color: hsla(var(--school-hue), 72%, 62%, 0.34);
+        color: hsla(var(--school-hue), 55%, 28%, 1);
+        box-shadow: 0 10px 24px hsla(var(--school-hue), 72%, 54%, 0.14);
+      }
+
+      .materials-coverage-shell {
+        margin-bottom: 12px;
+        padding: 12px;
+        border-radius: 16px;
+        background: rgba(248, 251, 255, 0.72);
+        border: 1px solid rgba(214, 226, 247, 0.88);
+      }
+
+      .materials-coverage-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .materials-coverage-head h4 {
+        margin: 0;
+        font-size: 0.86rem;
+        font-weight: 900;
+      }
+
+      .materials-coverage-head p {
+        margin: 4px 0 0;
+        color: var(--text-soft);
+        font-size: 0.72rem;
+        line-height: 1.6;
+      }
+
+      .coverage-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: rgba(36, 86, 214, 0.08);
+        color: var(--brand-deep);
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .coverage-table td,
+      .coverage-table th {
+        white-space: nowrap;
+      }
+
+      .coverage-school-cell {
+        font-weight: 900;
+        color: hsla(var(--school-hue), 55%, 28%, 1);
+        background: linear-gradient(135deg, hsla(var(--school-hue), 72%, 95%, 0.9), hsla(var(--school-hue), 72%, 91%, 0.8));
+      }
+
+      .coverage-status {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 28px;
+        min-width: 68px;
+        padding: 0 10px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .coverage-status.has {
+        background: rgba(16, 185, 129, 0.12);
+        color: #047857;
+      }
+
+      .coverage-status.none {
+        background: rgba(148, 163, 184, 0.14);
+        color: #64748b;
+      }
+
+      .coverage-status.partial {
+        background: rgba(245, 158, 11, 0.12);
+        color: #b45309;
       }
 
       .material-table-cell-link {
@@ -1918,8 +2030,8 @@
       }
 
       .material-group-row td {
-        background: rgba(239, 244, 255, 0.92);
-        color: var(--brand-deep);
+        background: linear-gradient(135deg, hsla(var(--school-hue, 220), 72%, 95%, 0.92), hsla(var(--school-hue, 220), 78%, 90%, 0.92));
+        color: hsla(var(--school-hue, 220), 55%, 28%, 1);
         font-weight: 800;
       }
 
@@ -2370,6 +2482,7 @@
                 <p>검색어는 학교, 학년, 학기, 년도, 과목, 자료유형, 파일유형, 등록자, 링크 전체 필드에서 부분 일치로 작동하며, 학교-학년-학기-년도-과목-자료유형-파일유형 순으로 묶어 표시합니다.</p>
               </div>
             </div>
+            <div id="materialsSchoolTabs" class="school-tab-row"></div>
             <div class="material-search-row">
               <input id="materialKeywordInput" class="field-input" type="text" placeholder="예: 반포고, 2026, 수학">
               <select id="materialSchoolFilter" class="field-select"></select>
@@ -2380,6 +2493,7 @@
               <select id="materialTypeFilter" class="field-select"></select>
               <select id="materialFileTypeFilter" class="field-select"></select>
             </div>
+            <div id="materialsCoverageWrap"></div>
             <div id="materialsTableWrap"></div>
           </section>
         </section>
@@ -2511,6 +2625,7 @@
         instructors: [],
         permissions: [],
         materials: [],
+        selectedMaterialSchoolTab: '',
         events: [],
         calendarYear: new Date().getFullYear(),
         calendarMonth: new Date().getMonth(),
@@ -2597,13 +2712,17 @@
         document.getElementById('materialForm').addEventListener('submit', handleMaterialSave);
         document.getElementById('eventForm').addEventListener('submit', handleEventSave);
         document.getElementById('materialKeywordInput').addEventListener('input', renderMaterials);
-        document.getElementById('materialSchoolFilter').addEventListener('change', renderMaterials);
+        document.getElementById('materialSchoolFilter').addEventListener('change', function(event) {
+          APP_STATE.selectedMaterialSchoolTab = event.target.value || '';
+          renderMaterials();
+        });
         document.getElementById('materialGradeFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialTermFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialYearFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialSubjectFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialTypeFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialFileTypeFilter').addEventListener('change', renderMaterials);
+        document.getElementById('materialsSchoolTabs').addEventListener('click', handleMaterialSchoolTabClick);
 
         Array.prototype.slice.call(document.querySelectorAll('[data-view]')).forEach(function(button) {
           button.addEventListener('click', function() {
@@ -3889,15 +4008,20 @@
 
       function renderMaterials() {
         populateMaterialFilters();
+        renderMaterialSchoolTabs_();
 
         var keyword = normalizeSearchText(document.getElementById('materialKeywordInput').value);
-        var school = document.getElementById('materialSchoolFilter').value;
+        var school = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value;
         var grade = document.getElementById('materialGradeFilter').value;
         var term = document.getElementById('materialTermFilter').value;
         var year = document.getElementById('materialYearFilter').value;
         var subject = document.getElementById('materialSubjectFilter').value;
         var materialType = document.getElementById('materialTypeFilter').value;
         var fileType = document.getElementById('materialFileTypeFilter').value;
+
+        if (document.getElementById('materialSchoolFilter').value !== school) {
+          document.getElementById('materialSchoolFilter').value = school;
+        }
 
         var filtered = APP_STATE.materials.filter(function(item) {
           var searchText = normalizeSearchText([
@@ -3924,6 +4048,7 @@
         });
 
         var wrap = document.getElementById('materialsTableWrap');
+        renderMaterialsCoverageBoard_(filtered);
         if (!filtered.length) {
           wrap.innerHTML = '<div class="empty-state">검색 조건에 맞는 자료가 없습니다.</div>';
           return;
@@ -3953,7 +4078,7 @@
             var groupItems = groupedMap[groupKey];
             var first = groupItems[0] || {};
             return [
-              '<tr class="material-group-row"><td colspan="8">' + escapeHtml([first.school || '-', first.grade || '-', first.term || '-', first.year || '-', first.subject || '-', first.materialType || '-', first.fileType || '-'].join(' / ')) + '</td></tr>',
+              '<tr class="material-group-row" style="' + buildSchoolToneStyle_(first.school) + '"><td colspan="8">' + escapeHtml([first.school || '-', first.grade || '-', first.term || '-', first.year || '-', first.subject || '-', first.materialType || '-', first.fileType || '-'].join(' / ')) + '</td></tr>',
               groupItems.map(function(item, index) {
                 return [
                   '<tr>',
@@ -4039,6 +4164,151 @@
         if (currentValue && uniqueValues.indexOf(currentValue) !== -1) {
           select.value = currentValue;
         }
+      }
+
+      function handleMaterialSchoolTabClick(event) {
+        var button = event.target.closest('[data-material-school]');
+        if (!button) {
+          return;
+        }
+
+        var school = button.getAttribute('data-material-school') || '';
+        APP_STATE.selectedMaterialSchoolTab = school;
+        document.getElementById('materialSchoolFilter').value = school;
+        renderMaterials();
+      }
+
+      function renderMaterialSchoolTabs_() {
+        var schools = APP_STATE.materials
+          .map(function(item) {
+            return item.school;
+          })
+          .filter(Boolean)
+          .filter(function(value, index, source) {
+            return source.indexOf(value) === index;
+          })
+          .sort();
+
+        var selectedSchool = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value || '';
+        var wrap = document.getElementById('materialsSchoolTabs');
+        wrap.innerHTML = [
+          '<button type="button" class="school-tab-button ' + (!selectedSchool ? 'active' : '') + '" data-material-school="" style="' + buildSchoolToneStyle_('전체') + '">전체</button>'
+        ].concat(schools.map(function(school) {
+          return '<button type="button" class="school-tab-button ' + (selectedSchool === school ? 'active' : '') + '" data-material-school="' + escapeAttribute(school) + '" style="' + buildSchoolToneStyle_(school) + '">' + escapeHtml(school) + '</button>';
+        })).join('');
+      }
+
+      function renderMaterialsCoverageBoard_(materials) {
+        var wrap = document.getElementById('materialsCoverageWrap');
+        if (!materials.length) {
+          wrap.innerHTML = '';
+          return;
+        }
+
+        var groupedMap = {};
+        materials.forEach(function(item) {
+          var key = [item.school, item.grade, item.term, item.year, item.subject].join('||');
+          if (!groupedMap[key]) {
+            groupedMap[key] = [];
+          }
+          groupedMap[key].push(item);
+        });
+
+        var groups = Object.keys(groupedMap).map(function(key) {
+          var items = groupedMap[key];
+          var first = items[0] || {};
+          return {
+            school: first.school || '-',
+            grade: first.grade || '-',
+            term: first.term || '-',
+            year: first.year || '-',
+            subject: first.subject || '-',
+            midterm: buildExamCoverageStatus_(items, '중간'),
+            finalExam: buildExamCoverageStatus_(items, '기말')
+          };
+        }).sort(function(a, b) {
+          return [a.school, a.grade, a.term, a.year, a.subject].join('|').localeCompare([b.school, b.grade, b.term, b.year, b.subject].join('|'));
+        });
+
+        wrap.innerHTML = [
+          '<section class="materials-coverage-shell">',
+          '  <div class="materials-coverage-head">',
+          '    <div>',
+          '      <h4>학교별 자료 현황</h4>',
+          '      <p>학교 탭 기준으로 학년, 학기, 년도, 과목별 `중간고사`와 `기말고사` 자료 유무를 빠르게 확인합니다. 현재는 자료명/링크/유형에 `중간`, `기말` 표기가 있으면 존재로 판단합니다.</p>',
+          '    </div>',
+          '    <span class="coverage-badge">총 ' + escapeHtml(String(groups.length)) + '개 항목</span>',
+          '  </div>',
+          '  <div class="data-table-wrap">',
+          '    <table class="data-table coverage-table">',
+          '      <thead><tr><th>학교</th><th>학년</th><th>학기</th><th>대상 년도</th><th>과목</th><th>중간고사</th><th>기말고사</th></tr></thead>',
+          '      <tbody>',
+               groups.map(function(item) {
+                 return [
+                   '<tr>',
+                   '  <td class="coverage-school-cell" style="' + buildSchoolToneStyle_(item.school) + '">' + escapeHtml(item.school) + '</td>',
+                   '  <td>' + escapeHtml(item.grade) + '</td>',
+                   '  <td>' + escapeHtml(item.term) + '</td>',
+                   '  <td>' + escapeHtml(item.year) + '</td>',
+                   '  <td>' + escapeHtml(item.subject) + '</td>',
+                   '  <td>' + renderCoverageStatusBadge_(item.midterm) + '</td>',
+                   '  <td>' + renderCoverageStatusBadge_(item.finalExam) + '</td>',
+                   '</tr>'
+                 ].join('');
+               }).join(''),
+          '      </tbody>',
+          '    </table>',
+          '  </div>',
+          '</section>'
+        ].join('');
+      }
+
+      function buildExamCoverageStatus_(items, examLabel) {
+        var matches = items.filter(function(item) {
+          var text = normalizeSearchText([
+            item.school,
+            item.grade,
+            item.term,
+            item.year,
+            item.subject,
+            item.materialType,
+            item.fileType,
+            item.link
+          ].join(' '));
+          return text.indexOf(normalizeSearchText(examLabel)) !== -1;
+        });
+
+        if (matches.length) {
+          return {
+            tone: 'has',
+            label: '있음',
+            count: matches.length
+          };
+        }
+
+        return {
+          tone: 'none',
+          label: '없음',
+          count: 0
+        };
+      }
+
+      function renderCoverageStatusBadge_(status) {
+        return '<span class="coverage-status ' + escapeAttribute(status.tone) + '">' + escapeHtml(status.label + (status.count ? ' ' + status.count + '건' : '')) + '</span>';
+      }
+
+      function buildSchoolToneStyle_(schoolName) {
+        return '--school-hue:' + String(getSchoolColorHue_(schoolName)) + ';';
+      }
+
+      function getSchoolColorHue_(schoolName) {
+        var text = String(schoolName || '');
+        var hash = 0;
+        for (var i = 0; i < text.length; i += 1) {
+          hash = ((hash << 5) - hash) + text.charCodeAt(i);
+          hash |= 0;
+        }
+        return Math.abs(hash % 300) + 20;
       }
 
       function switchView(viewName) {
