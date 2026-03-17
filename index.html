@@ -2912,6 +2912,8 @@
         document.getElementById('materialKeywordInput').addEventListener('input', renderMaterials);
         document.getElementById('materialSchoolFilter').addEventListener('change', function(event) {
           APP_STATE.selectedMaterialSchoolTab = event.target.value || '';
+          APP_STATE.selectedMaterialYearTab = '';
+          document.getElementById('materialYearFilter').value = '';
           renderMaterials();
         });
         document.getElementById('materialGradeFilter').addEventListener('change', renderMaterials);
@@ -4219,7 +4221,7 @@
 
         var keyword = normalizeSearchText(document.getElementById('materialKeywordInput').value);
         var school = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value;
-        var selectedYearTab = APP_STATE.selectedMaterialYearTab || document.getElementById('materialYearFilter').value;
+        var selectedYearTab = school ? (APP_STATE.selectedMaterialYearTab || document.getElementById('materialYearFilter').value) : '';
         var grade = document.getElementById('materialGradeFilter').value;
         var term = document.getElementById('materialTermFilter').value;
         var year = selectedYearTab;
@@ -4453,7 +4455,9 @@
 
         var school = button.getAttribute('data-material-school') || '';
         APP_STATE.selectedMaterialSchoolTab = school;
+        APP_STATE.selectedMaterialYearTab = '';
         document.getElementById('materialSchoolFilter').value = school;
+        document.getElementById('materialYearFilter').value = '';
         renderMaterials();
       }
 
