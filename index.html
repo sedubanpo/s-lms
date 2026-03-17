@@ -4631,12 +4631,9 @@
                           '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
                           '  <td><span class="material-item-index">자료 ' + escapeHtml(String(index + 1)) + '</span></td>',
                           '  <td><div class="material-badge-row">' + [
-                                renderMaterialMetaBadge_(item.subject, 'subject'),
-                                renderMaterialMetaBadge_(item.grade, 'grade'),
-                                renderMaterialMetaBadge_(item.term, 'term')
+                                renderMaterialMetaBadge_(item.subject, 'subject')
                               ].join('') + '</div></td>',
                           '  <td><div class="material-badge-row">' + [
-                                renderMaterialMetaBadge_(item.examType, 'exam'),
                                 renderMaterialMetaBadge_(item.materialType, 'type'),
                                 renderMaterialMetaBadge_(item.fileType, 'file')
                               ].join('') + '</div></td>',
