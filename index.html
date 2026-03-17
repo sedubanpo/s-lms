@@ -2001,6 +2001,10 @@
         white-space: nowrap;
       }
 
+      .coverage-row.school-tone-row td {
+        background: linear-gradient(135deg, hsla(var(--school-hue, 220), 58%, 98%, 0.94), hsla(var(--school-hue, 220), 64%, 95%, 0.9));
+      }
+
       .coverage-school-cell {
         font-weight: 900;
         color: hsla(var(--school-hue), 55%, 28%, 1);
@@ -2053,6 +2057,32 @@
         box-shadow: 0 12px 24px rgba(36, 86, 214, 0.22);
       }
 
+      .material-action-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .material-edit-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(36, 86, 214, 0.18);
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--brand-deep);
+        font-weight: 900;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+      }
+
+      .material-edit-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1);
+      }
+
       .material-group-row td {
         background: linear-gradient(135deg, hsla(var(--school-hue, 220), 72%, 95%, 0.92), hsla(var(--school-hue, 220), 78%, 90%, 0.92));
         color: hsla(var(--school-hue, 220), 55%, 28%, 1);
@@ -2084,10 +2114,23 @@
         font-weight: 900;
       }
 
+      .material-year-tab-row td {
+        padding: 10px 12px;
+        background: linear-gradient(135deg, hsla(var(--school-hue, 220), 64%, 97%, 0.92), hsla(var(--school-hue, 220), 68%, 94%, 0.88));
+      }
+
       .material-year-row td {
         background: rgba(244, 248, 255, 0.94);
         color: var(--text-main);
         font-weight: 800;
+      }
+
+      .material-year-row.school-tone-row td {
+        background: linear-gradient(135deg, hsla(var(--school-hue, 220), 62%, 97%, 0.94), hsla(var(--school-hue, 220), 70%, 94%, 0.9));
+      }
+
+      .material-item-row.school-tone-row td {
+        background: linear-gradient(135deg, hsla(var(--school-hue, 220), 58%, 98%, 0.92), hsla(var(--school-hue, 220), 62%, 95%, 0.88));
       }
 
       .material-year-title {
@@ -2115,6 +2158,12 @@
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
+      }
+
+      .material-inline-year-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
       }
 
       .material-meta-badge {
@@ -2218,6 +2267,30 @@
         font-size: 0.72rem;
         font-weight: 900;
         white-space: nowrap;
+      }
+
+      .material-edit-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(36, 86, 214, 0.16);
+        background: linear-gradient(135deg, rgba(36, 86, 214, 0.08), rgba(56, 189, 248, 0.08));
+      }
+
+      .material-edit-banner strong {
+        display: block;
+        font-size: 0.84rem;
+        font-weight: 900;
+      }
+
+      .material-edit-banner p {
+        margin-top: 4px;
+        color: var(--text-soft);
+        font-size: 0.76rem;
       }
 
       .mobile-nav {
@@ -2623,6 +2696,13 @@
                 <p>학교, 학년, 학기, 대상 년도, 과목, 자료유형, 파일유형, 링크를 한 줄 그리드로 입력해 빠르게 연속 등록할 수 있습니다.</p>
               </div>
             </div>
+            <div id="materialEditBanner" class="material-edit-banner hidden">
+              <div>
+                <strong>자료 수정 모드</strong>
+                <p id="materialEditBannerText">선택한 자료 정보를 수정한 뒤 저장하세요.</p>
+              </div>
+              <button id="cancelMaterialEditButton" type="button" class="button-ghost">수정 취소</button>
+            </div>
             <form id="materialForm" class="dense-form-grid">
               <div class="field-shell">
                 <label class="field-label" for="materialSchoolInput">학교</label>
@@ -2660,7 +2740,7 @@
                 <label class="field-label" for="materialLinkInput">링크</label>
                 <input id="materialLinkInput" class="field-input" type="url" placeholder="https://...">
               </div>
-              <button type="submit" class="button-primary">자료 저장</button>
+              <button id="saveMaterialButton" type="submit" class="button-primary">자료 저장</button>
             </form>
           </section>
 
@@ -2773,7 +2853,8 @@
         '수능',
         '부교재',
         '학교유인물',
-        '테스트지'
+        '테스트지',
+        '시험지'
       ];
       const MATERIAL_EXAM_OPTIONS = [
         '중간고사',
@@ -2823,6 +2904,8 @@
         materials: [],
         selectedMaterialSchoolTab: '',
         selectedMaterialYearTab: '',
+        materialYearTabsBySchool: {},
+        editingMaterialRowNumber: '',
         materialOpenLogs: [],
         events: [],
         calendarYear: new Date().getFullYear(),
@@ -2908,6 +2991,7 @@
         document.getElementById('modalSavePermissionButton').addEventListener('click', handlePermissionModalSave);
 
         document.getElementById('materialForm').addEventListener('submit', handleMaterialSave);
+        document.getElementById('cancelMaterialEditButton').addEventListener('click', clearMaterialEditMode_);
         document.getElementById('eventForm').addEventListener('submit', handleEventSave);
         document.getElementById('materialKeywordInput').addEventListener('input', renderMaterials);
         document.getElementById('materialSchoolFilter').addEventListener('change', function(event) {
@@ -2920,6 +3004,9 @@
         document.getElementById('materialTermFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialYearFilter').addEventListener('change', function(event) {
           APP_STATE.selectedMaterialYearTab = event.target.value || '';
+          if (APP_STATE.selectedMaterialSchoolTab) {
+            APP_STATE.materialYearTabsBySchool[APP_STATE.selectedMaterialSchoolTab] = APP_STATE.selectedMaterialYearTab || '';
+          }
           renderMaterials();
         });
         document.getElementById('materialSubjectFilter').addEventListener('change', renderMaterials);
@@ -3107,11 +3194,14 @@
         APP_STATE.permissions = studentData.permissions || [];
         APP_STATE.materials = materialData && materialData.materials ? materialData.materials : [];
         APP_STATE.materialOpenLogs = materialData && materialData.openLogs ? materialData.openLogs : [];
+        APP_STATE.materialYearTabsBySchool = {};
+        APP_STATE.editingMaterialRowNumber = '';
         APP_STATE.events = eventData && eventData.events ? eventData.events : [];
         APP_STATE.appName = studentData.appName || APP_STATE.appName;
         APP_STATE.logoUrl = studentData.logoUrl || APP_STATE.logoUrl;
         writeStoredSession();
         syncBranding();
+        syncMaterialFormMode_();
       }
 
       function hydrateStudentDataOnly(studentData) {
@@ -3991,9 +4081,13 @@
       function handleMaterialSave(event) {
         event.preventDefault();
 
-        setLoading('자료를 저장하는 중입니다.');
-        apiRequest('addMaterial', {
+        var isEditing = Boolean(APP_STATE.editingMaterialRowNumber);
+        var action = isEditing ? 'updateMaterial' : 'addMaterial';
+
+        setLoading(isEditing ? '자료를 수정하는 중입니다.' : '자료를 저장하는 중입니다.');
+        apiRequest(action, {
           token: APP_STATE.token,
+          materialRowNumber: APP_STATE.editingMaterialRowNumber,
           school: document.getElementById('materialSchoolInput').value.trim(),
           grade: document.getElementById('materialGradeInput').value.trim(),
           term: document.getElementById('materialTermInput').value.trim(),
@@ -4006,14 +4100,77 @@
         })
           .then(function(result) {
             APP_STATE.materials = result.materials || [];
+            if (result.openLogs) {
+              APP_STATE.materialOpenLogs = result.openLogs || [];
+            }
             document.getElementById('materialForm').reset();
             initializeMaterialFormOptions();
+            clearMaterialEditMode_(true);
             renderMaterials();
             switchView('materials');
-            setNotice(result.message || '자료가 저장되었습니다.', 'success');
+            setNotice(result.message || (isEditing ? '자료가 수정되었습니다.' : '자료가 저장되었습니다.'), 'success');
           })
           .catch(handleApiError_)
           .finally(clearLoading);
+      }
+
+      function syncMaterialFormMode_() {
+        var isEditing = Boolean(APP_STATE.editingMaterialRowNumber);
+        var banner = document.getElementById('materialEditBanner');
+        var saveButton = document.getElementById('saveMaterialButton');
+        banner.classList.toggle('hidden', !isEditing);
+        saveButton.textContent = isEditing ? '자료 수정 저장' : '자료 저장';
+      }
+
+      function clearMaterialEditMode_(skipReset) {
+        APP_STATE.editingMaterialRowNumber = '';
+        document.getElementById('materialEditBannerText').textContent = '선택한 자료 정보를 수정한 뒤 저장하세요.';
+        if (!skipReset) {
+          document.getElementById('materialForm').reset();
+          initializeMaterialFormOptions();
+        }
+        syncMaterialFormMode_();
+      }
+
+      function enterMaterialEditMode_(rowNumber) {
+        if (!APP_STATE.isAdmin) {
+          setNotice('관리자만 자료를 수정할 수 있습니다.', 'warning');
+          return;
+        }
+
+        var material = findMaterialByRow_(rowNumber);
+        if (!material) {
+          setNotice('수정할 자료를 찾을 수 없습니다.', 'warning');
+          return;
+        }
+
+        APP_STATE.editingMaterialRowNumber = String(material.rowNumber);
+        document.getElementById('materialSchoolInput').value = material.school || '';
+        document.getElementById('materialGradeInput').value = material.grade || '';
+        document.getElementById('materialTermInput').value = material.term || '';
+        document.getElementById('materialYearInput').value = material.year || '';
+        document.getElementById('materialSubjectInput').value = material.subject || '';
+        document.getElementById('materialExamTypeInput').value = material.examType || '';
+        document.getElementById('materialTypeInput').value = material.materialType || '';
+        document.getElementById('materialFileTypeInput').value = material.fileType || '';
+        document.getElementById('materialLinkInput').value = material.link || '';
+        document.getElementById('materialEditBannerText').textContent = [
+          material.school || '-',
+          material.year || '-',
+          material.subject || '-'
+        ].join(' / ') + ' 자료를 수정 중입니다.';
+        syncMaterialFormMode_();
+        document.getElementById('materialsCreatePanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      function findMaterialByRow_(rowNumber) {
+        var target = String(rowNumber || '');
+        for (var i = 0; i < APP_STATE.materials.length; i += 1) {
+          if (String(APP_STATE.materials[i].rowNumber) === target) {
+            return APP_STATE.materials[i];
+          }
+        }
+        return null;
       }
 
       function handleEventSave(event) {
@@ -4221,10 +4378,9 @@
 
         var keyword = normalizeSearchText(document.getElementById('materialKeywordInput').value);
         var school = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value;
-        var selectedYearTab = school ? (APP_STATE.selectedMaterialYearTab || document.getElementById('materialYearFilter').value) : '';
         var grade = document.getElementById('materialGradeFilter').value;
         var term = document.getElementById('materialTermFilter').value;
-        var year = selectedYearTab;
+        var year = school ? getResolvedMaterialYearForSchool_(school, APP_STATE.materials) : '';
         var subject = document.getElementById('materialSubjectFilter').value;
         var examType = document.getElementById('materialExamTypeFilter').value;
         var materialType = document.getElementById('materialTypeFilter').value;
@@ -4321,21 +4477,33 @@
             var schoolItemCount = yearKeys.reduce(function(total, yearKey) {
               return total + ((yearMap[yearKey] || []).length);
             }, 0);
+            var activeYear = school ? year : getResolvedMaterialYearForSchool_(schoolKey, filtered);
+            var visibleYearKeys = school ? yearKeys : [activeYear];
 
             return [
-              '<tr class="material-school-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
+              '<tr class="material-school-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
               '  <td colspan="4"><span class="material-school-title">' + escapeHtml(schoolKey) + '<span class="material-count-badge">자료 ' + escapeHtml(String(schoolItemCount)) + '건</span></span></td>',
               '</tr>',
-              yearKeys.map(function(yearKey) {
+              !school ? [
+                '<tr class="material-year-tab-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
+                '  <td colspan="4"><div class="material-inline-year-tabs">' +
+                yearKeys.map(function(yearKey) {
+                  var count = (yearMap[yearKey] || []).length;
+                  return '<button type="button" class="school-tab-button year-tab ' + (activeYear === yearKey ? 'active' : '') + ' ' + (!count ? 'empty' : '') + '" data-material-school-year="' + escapeAttribute(yearKey) + '" data-material-school-name="' + escapeAttribute(schoolKey) + '" style="' + buildSchoolToneStyle_(schoolKey) + '">' + escapeHtml(yearKey) + ' <span class="material-count-badge">' + escapeHtml(String(count)) + '건</span></button>';
+                }).join('') +
+                '</div></td>',
+                '</tr>'
+              ].join('') : '',
+              visibleYearKeys.map(function(yearKey) {
                 var yearItems = yearMap[yearKey] || [];
                 return [
-                  '<tr class="material-year-row">',
+                  '<tr class="material-year-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
                   '  <td colspan="4"><span class="material-year-title">' + renderMaterialMetaBadge_(yearKey, 'year') + '<span class="material-count-badge">' + escapeHtml(String(yearItems.length)) + '건</span></span></td>',
                   '</tr>',
                   (yearItems.length ? yearItems : [null]).map(function(item, index) {
                     if (!item) {
                       return [
-                        '<tr class="material-item-row">',
+                        '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
                         '  <td><span class="material-item-index">자료 없음</span></td>',
                         '  <td><div class="material-badge-row">' + [
                               renderMaterialMetaBadge_('-', 'grade'),
@@ -4352,7 +4520,7 @@
                       ].join('');
                     }
                     return [
-                      '<tr class="material-item-row">',
+                      '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
                       '  <td><span class="material-item-index">자료 ' + escapeHtml(String(index + 1)) + '</span></td>',
                       '  <td><div class="material-badge-row">' + [
                             renderMaterialMetaBadge_(item.grade, 'grade'),
@@ -4364,7 +4532,7 @@
                             renderMaterialMetaBadge_(item.materialType, 'type'),
                             renderMaterialMetaBadge_(item.fileType, 'file')
                           ].join('') + '</div></td>',
-                      '  <td><button type="button" class="material-table-cell-link" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link) + '">열기</button></td>',
+                      '  <td><div class="material-action-group"><button type="button" class="material-table-cell-link" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link) + '">열기</button>' + (APP_STATE.isAdmin ? '<button type="button" class="material-edit-button" data-material-edit="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button>' : '') + '</div></td>',
                       '</tr>'
                     ].join('');
                   }).join('')
@@ -4469,7 +4637,20 @@
 
         var year = button.getAttribute('data-material-year') || '';
         APP_STATE.selectedMaterialYearTab = year;
+        if (APP_STATE.selectedMaterialSchoolTab) {
+          APP_STATE.materialYearTabsBySchool[APP_STATE.selectedMaterialSchoolTab] = year;
+        }
         document.getElementById('materialYearFilter').value = year;
+        renderMaterials();
+      }
+
+      function handleInlineMaterialYearTabClick_(button) {
+        var school = button.getAttribute('data-material-school-name') || '';
+        var year = button.getAttribute('data-material-school-year') || '';
+        if (!school) {
+          return;
+        }
+        APP_STATE.materialYearTabsBySchool[school] = year;
         renderMaterials();
       }
 
@@ -4496,8 +4677,16 @@
       function renderMaterialYearTabs_() {
         var wrap = document.getElementById('materialsYearTabs');
         var selectedSchool = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value || '';
+        if (!selectedSchool) {
+          wrap.innerHTML = '';
+          return;
+        }
         var selectedYear = APP_STATE.selectedMaterialYearTab || document.getElementById('materialYearFilter').value || '';
         var visibleYears = getVisibleMaterialYears_(selectedSchool, APP_STATE.materials);
+        if (!selectedYear && visibleYears.length) {
+          selectedYear = getResolvedMaterialYearForSchool_(selectedSchool, APP_STATE.materials);
+          APP_STATE.selectedMaterialYearTab = selectedYear;
+        }
 
         wrap.innerHTML = [
           '<button type="button" class="school-tab-button year-tab ' + (!selectedYear ? 'active' : '') + '" data-material-year="" style="' + buildSchoolToneStyle_(selectedSchool || '전체') + '">전체</button>'
@@ -4530,6 +4719,33 @@
           .sort(function(a, b) {
             return String(b).localeCompare(String(a));
           });
+      }
+
+      function getResolvedMaterialYearForSchool_(school, materials) {
+        var years = getVisibleMaterialYears_(school, materials);
+        if (!years.length) {
+          return '';
+        }
+
+        var selectedYear = '';
+        if (APP_STATE.selectedMaterialSchoolTab && APP_STATE.selectedMaterialSchoolTab === school) {
+          selectedYear = APP_STATE.selectedMaterialYearTab || document.getElementById('materialYearFilter').value || '';
+        } else {
+          selectedYear = APP_STATE.materialYearTabsBySchool[school] || '';
+        }
+
+        if (selectedYear && years.indexOf(selectedYear) !== -1) {
+          return selectedYear;
+        }
+
+        var source = materials || APP_STATE.materials || [];
+        var firstYearWithData = years.find(function(year) {
+          return source.some(function(item) {
+            return item.school === school && String(item.year || '') === String(year || '');
+          });
+        });
+
+        return firstYearWithData || years[0];
       }
 
       function getVisibleMaterialSchools_(materials) {
@@ -4597,6 +4813,18 @@
       }
 
       function handleMaterialTableClick(event) {
+        var inlineYearButton = event.target.closest('[data-material-school-year]');
+        if (inlineYearButton) {
+          handleInlineMaterialYearTabClick_(inlineYearButton);
+          return;
+        }
+
+        var editButton = event.target.closest('[data-material-edit]');
+        if (editButton) {
+          enterMaterialEditMode_(editButton.getAttribute('data-material-row'));
+          return;
+        }
+
         var button = event.target.closest('[data-material-open]');
         if (!button) {
           return;
@@ -4672,7 +4900,7 @@
           '      <tbody>',
                groups.map(function(item) {
                  return [
-                   '<tr>',
+                   '<tr class="coverage-row school-tone-row" style="' + buildSchoolToneStyle_(item.school) + '">',
                    '  <td class="coverage-school-cell" style="' + buildSchoolToneStyle_(item.school) + '">' + escapeHtml(item.school) + '</td>',
                    '  <td>' + escapeHtml(item.grade) + '</td>',
                    '  <td>' + escapeHtml(item.term) + '</td>',
@@ -4765,6 +4993,9 @@
         APP_STATE.instructors = [];
         APP_STATE.permissions = [];
         APP_STATE.materials = [];
+        APP_STATE.materialYearTabsBySchool = {};
+        APP_STATE.editingMaterialRowNumber = '';
+        APP_STATE.materialOpenLogs = [];
         APP_STATE.events = [];
         APP_STATE.selectedLogRow = '';
         clearStoredSession();
