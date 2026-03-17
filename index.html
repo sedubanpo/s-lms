@@ -1918,6 +1918,35 @@
         margin-top: -2px;
       }
 
+      .material-subtab-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 4px 0 12px;
+      }
+
+      .material-subtab-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 36px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(214, 226, 247, 0.95);
+        background: rgba(255, 255, 255, 0.84);
+        color: var(--text-soft);
+        font-size: 0.78rem;
+        font-weight: 900;
+        transition: 0.18s ease;
+      }
+
+      .material-subtab-button.active {
+        background: linear-gradient(135deg, rgba(36, 86, 214, 0.98), rgba(34, 74, 182, 0.98));
+        border-color: rgba(36, 86, 214, 0.94);
+        color: #fff;
+        box-shadow: 0 12px 26px rgba(36, 86, 214, 0.18);
+      }
+
       .school-tab-button {
         display: inline-flex;
         align-items: center;
@@ -2133,12 +2162,27 @@
         background: linear-gradient(135deg, hsla(var(--school-hue, 220), 58%, 98%, 0.92), hsla(var(--school-hue, 220), 62%, 95%, 0.88));
       }
 
+      .material-subgroup-row td {
+        background: rgba(249, 251, 255, 0.96);
+      }
+
+      .material-subgroup-row.school-tone-row td {
+        background: linear-gradient(135deg, hsla(var(--school-hue, 220), 56%, 97%, 0.94), hsla(var(--school-hue, 220), 62%, 95%, 0.88));
+      }
+
       .material-year-title {
         display: inline-flex;
         align-items: center;
         gap: 8px;
         font-size: 0.82rem;
         font-weight: 900;
+      }
+
+      .material-subgroup-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
       }
 
       .material-item-index {
@@ -2196,6 +2240,36 @@
       .material-meta-badge.subject {
         background: rgba(236, 72, 153, 0.12);
         color: #be185d;
+      }
+
+      .material-meta-badge.subject-math {
+        background: rgba(255, 228, 240, 0.94);
+        color: #d11f6d;
+      }
+
+      .material-meta-badge.subject-korean {
+        background: rgba(255, 237, 222, 0.96);
+        color: #c26208;
+      }
+
+      .material-meta-badge.subject-english {
+        background: rgba(226, 238, 255, 0.96);
+        color: #2458ca;
+      }
+
+      .material-meta-badge.subject-science {
+        background: rgba(227, 248, 234, 0.96);
+        color: #17834e;
+      }
+
+      .material-meta-badge.subject-social {
+        background: rgba(239, 232, 255, 0.96);
+        color: #7440ca;
+      }
+
+      .material-meta-badge.subject-other {
+        background: rgba(236, 242, 250, 0.96);
+        color: #5f6e89;
       }
 
       .material-meta-badge.exam {
@@ -2751,6 +2825,7 @@
                 <p>검색어는 학교, 학년, 학기, 년도, 과목, 시험구분, 자료유형, 파일유형, 등록자, 링크 전체 필드에서 부분 일치로 작동하며, 학교-년도 단위로 먼저 묶어 표시합니다.</p>
               </div>
             </div>
+            <div id="materialsPanelTabs" class="material-subtab-row"></div>
             <div id="materialsSchoolTabs" class="school-tab-row"></div>
             <div id="materialsYearTabs" class="school-tab-row year-tab-row"></div>
             <div class="material-search-row">
@@ -2904,6 +2979,7 @@
         materials: [],
         selectedMaterialSchoolTab: '',
         selectedMaterialYearTab: '',
+        materialPanelMode: 'list',
         materialYearTabsBySchool: {},
         editingMaterialRowNumber: '',
         materialOpenLogs: [],
@@ -3013,6 +3089,7 @@
         document.getElementById('materialExamTypeFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialTypeFilter').addEventListener('change', renderMaterials);
         document.getElementById('materialFileTypeFilter').addEventListener('change', renderMaterials);
+        document.getElementById('materialsPanelTabs').addEventListener('click', handleMaterialPanelTabClick);
         document.getElementById('materialsSchoolTabs').addEventListener('click', handleMaterialSchoolTabClick);
         document.getElementById('materialsYearTabs').addEventListener('click', handleMaterialYearTabClick);
         document.getElementById('materialsTableWrap').addEventListener('click', handleMaterialTableClick);
@@ -4373,6 +4450,7 @@
 
       function renderMaterials() {
         populateMaterialFilters();
+        renderMaterialPanelTabs_();
         renderMaterialSchoolTabs_();
         renderMaterialYearTabs_();
 
@@ -4420,8 +4498,13 @@
         });
 
         var wrap = document.getElementById('materialsTableWrap');
-        renderMaterialsCoverageBoard_(filtered);
         renderMaterialsOpenLogs_();
+        if ((APP_STATE.materialPanelMode || 'list') === 'coverage') {
+          renderMaterialsCoverageBoard_(filtered);
+          wrap.innerHTML = '';
+          return;
+        }
+        document.getElementById('materialsCoverageWrap').innerHTML = '';
         if (!filtered.length) {
           wrap.innerHTML = '<div class="empty-state">검색 조건에 맞는 자료가 없습니다.</div>';
           return;
@@ -4496,46 +4579,73 @@
               ].join('') : '',
               visibleYearKeys.map(function(yearKey) {
                 var yearItems = yearMap[yearKey] || [];
+                var subgroupMap = {};
+                yearItems.forEach(function(item) {
+                  var subgroupKey = [
+                    item.grade || '-',
+                    item.term || '-',
+                    item.examType || '-'
+                  ].join('||');
+                  if (!subgroupMap[subgroupKey]) {
+                    subgroupMap[subgroupKey] = [];
+                  }
+                  subgroupMap[subgroupKey].push(item);
+                });
+                var subgroupKeys = Object.keys(subgroupMap).sort(function(a, b) {
+                  return a.localeCompare(b);
+                });
                 return [
                   '<tr class="material-year-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
                   '  <td colspan="4"><span class="material-year-title">' + renderMaterialMetaBadge_(yearKey, 'year') + '<span class="material-count-badge">' + escapeHtml(String(yearItems.length)) + '건</span></span></td>',
                   '</tr>',
-                  (yearItems.length ? yearItems : [null]).map(function(item, index) {
-                    if (!item) {
-                      return [
-                        '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
-                        '  <td><span class="material-item-index">자료 없음</span></td>',
-                        '  <td><div class="material-badge-row">' + [
-                              renderMaterialMetaBadge_('-', 'grade'),
-                              renderMaterialMetaBadge_('-', 'term'),
-                              renderMaterialMetaBadge_('-', 'subject')
-                            ].join('') + '</div></td>',
-                        '  <td><div class="material-badge-row">' + [
-                              renderMaterialMetaBadge_('-', 'exam'),
-                              renderMaterialMetaBadge_('-', 'type'),
-                              renderMaterialMetaBadge_('-', 'file')
-                            ].join('') + '</div></td>',
-                        '  <td><span class="material-item-index">미등록</span></td>',
-                        '</tr>'
-                      ].join('');
-                    }
+                  (!yearItems.length ? [
+                    '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
+                    '  <td><span class="material-item-index">자료 없음</span></td>',
+                    '  <td><div class="material-badge-row">' + [
+                          renderMaterialMetaBadge_('-', 'grade'),
+                          renderMaterialMetaBadge_('-', 'term'),
+                          renderMaterialMetaBadge_('-', 'subject')
+                        ].join('') + '</div></td>',
+                    '  <td><div class="material-badge-row">' + [
+                          renderMaterialMetaBadge_('-', 'exam'),
+                          renderMaterialMetaBadge_('-', 'type'),
+                          renderMaterialMetaBadge_('-', 'file')
+                        ].join('') + '</div></td>',
+                    '  <td><span class="material-item-index">미등록</span></td>',
+                    '</tr>'
+                  ].join('') : subgroupKeys.map(function(subgroupKey) {
+                    var subgroupItems = subgroupMap[subgroupKey] || [];
+                    var firstItem = subgroupItems[0] || {};
                     return [
-                      '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
-                      '  <td><span class="material-item-index">자료 ' + escapeHtml(String(index + 1)) + '</span></td>',
-                      '  <td><div class="material-badge-row">' + [
-                            renderMaterialMetaBadge_(item.grade, 'grade'),
-                            renderMaterialMetaBadge_(item.term, 'term'),
-                            renderMaterialMetaBadge_(item.subject, 'subject')
-                          ].join('') + '</div></td>',
-                      '  <td><div class="material-badge-row">' + [
-                            renderMaterialMetaBadge_(item.examType, 'exam'),
-                            renderMaterialMetaBadge_(item.materialType, 'type'),
-                            renderMaterialMetaBadge_(item.fileType, 'file')
-                          ].join('') + '</div></td>',
-                      '  <td><div class="material-action-group"><button type="button" class="material-table-cell-link" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link) + '">열기</button>' + (APP_STATE.isAdmin ? '<button type="button" class="material-edit-button" data-material-edit="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button>' : '') + '</div></td>',
-                      '</tr>'
+                      '<tr class="material-subgroup-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
+                      '  <td colspan="4"><span class="material-subgroup-title">' + [
+                            '<strong>그룹</strong>',
+                            renderMaterialMetaBadge_(firstItem.grade || '-', 'grade'),
+                            renderMaterialMetaBadge_(firstItem.term || '-', 'term'),
+                            renderMaterialMetaBadge_(firstItem.examType || '-', 'exam'),
+                            '<span class="material-count-badge">' + escapeHtml(String(subgroupItems.length)) + '건</span>'
+                          ].join('') + '</span></td>',
+                      '</tr>',
+                      subgroupItems.map(function(item, index) {
+                        return [
+                          '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
+                          '  <td><span class="material-item-index">자료 ' + escapeHtml(String(index + 1)) + '</span></td>',
+                          '  <td><div class="material-badge-row">' + [
+                                renderMaterialMetaBadge_(item.subject, 'subject'),
+                                renderMaterialMetaBadge_(item.grade, 'grade'),
+                                renderMaterialMetaBadge_(item.term, 'term')
+                              ].join('') + '</div></td>',
+                          '  <td><div class="material-badge-row">' + [
+                                renderMaterialMetaBadge_(item.examType, 'exam'),
+                                renderMaterialMetaBadge_(item.materialType, 'type'),
+                                renderMaterialMetaBadge_(item.fileType, 'file')
+                              ].join('') + '</div></td>',
+                          '  <td><div class="material-action-group"><button type="button" class="material-table-cell-link" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link) + '">열기</button>' + (APP_STATE.isAdmin ? '<button type="button" class="material-edit-button" data-material-edit="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button>' : '') + '</div></td>',
+                          '</tr>'
+                        ].join('');
+                      }).join('')
                     ].join('');
-                  }).join('')
+                  }).join(''))
                 ].join('');
               }).join('')
             ].join('');
@@ -4629,6 +4739,16 @@
         renderMaterials();
       }
 
+      function handleMaterialPanelTabClick(event) {
+        var button = event.target.closest('[data-material-panel]');
+        if (!button) {
+          return;
+        }
+
+        APP_STATE.materialPanelMode = button.getAttribute('data-material-panel') || 'list';
+        renderMaterials();
+      }
+
       function handleMaterialYearTabClick(event) {
         var button = event.target.closest('[data-material-year]');
         if (!button) {
@@ -4672,6 +4792,15 @@
         ].concat(schools.map(function(school) {
           return '<button type="button" class="school-tab-button ' + (selectedSchool === school ? 'active' : '') + '" data-material-school="' + escapeAttribute(school) + '" style="' + buildSchoolToneStyle_(school) + '">' + escapeHtml(school) + '</button>';
         })).join('');
+      }
+
+      function renderMaterialPanelTabs_() {
+        var wrap = document.getElementById('materialsPanelTabs');
+        var current = APP_STATE.materialPanelMode || 'list';
+        wrap.innerHTML = [
+          '<button type="button" class="material-subtab-button ' + (current === 'list' ? 'active' : '') + '" data-material-panel="list">자료 목록</button>',
+          '<button type="button" class="material-subtab-button ' + (current === 'coverage' ? 'active' : '') + '" data-material-panel="coverage">학교별 자료 현황</button>'
+        ].join('');
       }
 
       function renderMaterialYearTabs_() {
@@ -4943,7 +5072,34 @@
       }
 
       function renderMaterialMetaBadge_(value, toneClass) {
-        return '<span class="material-meta-badge ' + escapeAttribute(toneClass) + '">' + escapeHtml(value || '-') + '</span>';
+        var tone = toneClass || '';
+        if (tone === 'subject') {
+          tone += ' ' + getSubjectToneClass_(value);
+        }
+        return '<span class="material-meta-badge ' + escapeAttribute(tone) + '">' + escapeHtml(value || '-') + '</span>';
+      }
+
+      function getSubjectToneClass_(subject) {
+        var text = normalizeSearchText(subject);
+        if (!text || text === '-') {
+          return 'subject-other';
+        }
+        if (/(수학|공통수학|대수|미적|미적분|확통|확률과통계|기하|경제수학)/.test(text)) {
+          return 'subject-math';
+        }
+        if (/(국어|문학|독서|화작|언매)/.test(text)) {
+          return 'subject-korean';
+        }
+        if (/영어/.test(text)) {
+          return 'subject-english';
+        }
+        if (/(물리|화학|생명|지구과학|과학|통합과학)/.test(text)) {
+          return 'subject-science';
+        }
+        if (/(사회|역사|한국사|지리|윤리|정치|경제|통합사회)/.test(text)) {
+          return 'subject-social';
+        }
+        return 'subject-other';
       }
 
       function buildSchoolToneStyle_(schoolName) {
