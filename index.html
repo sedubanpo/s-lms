@@ -2112,6 +2112,25 @@
         box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1);
       }
 
+      .material-delete-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(239, 68, 68, 0.18);
+        background: rgba(255, 255, 255, 0.92);
+        color: #b91c1c;
+        font-weight: 900;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+      }
+
+      .material-delete-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1);
+      }
+
       .material-group-row td {
         background: linear-gradient(135deg, hsla(var(--school-hue, 220), 72%, 95%, 0.92), hsla(var(--school-hue, 220), 78%, 90%, 0.92));
         color: hsla(var(--school-hue, 220), 55%, 28%, 1);
@@ -2293,6 +2312,37 @@
         border-radius: 16px;
         background: rgba(248, 251, 255, 0.72);
         border: 1px solid rgba(214, 226, 247, 0.88);
+      }
+
+      .material-open-log-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(36, 86, 214, 0.16);
+        background: rgba(255, 255, 255, 0.86);
+        color: var(--brand-deep);
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .material-open-log-collapsed {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(214, 226, 247, 0.88);
+      }
+
+      .material-open-log-collapsed p {
+        margin: 0;
+        color: var(--text-soft);
+        font-size: 0.74rem;
       }
 
       .material-open-log-list {
@@ -2933,7 +2983,8 @@
       ];
       const MATERIAL_EXAM_OPTIONS = [
         '중간고사',
-        '기말고사'
+        '기말고사',
+        '기타'
       ];
       const MATERIAL_FILE_TYPE_OPTIONS = [
         '문제',
@@ -2983,6 +3034,7 @@
         materialYearTabsBySchool: {},
         editingMaterialRowNumber: '',
         materialOpenLogs: [],
+        isMaterialOpenLogsCollapsed: true,
         events: [],
         calendarYear: new Date().getFullYear(),
         calendarMonth: new Date().getMonth(),
@@ -3092,6 +3144,7 @@
         document.getElementById('materialsPanelTabs').addEventListener('click', handleMaterialPanelTabClick);
         document.getElementById('materialsSchoolTabs').addEventListener('click', handleMaterialSchoolTabClick);
         document.getElementById('materialsYearTabs').addEventListener('click', handleMaterialYearTabClick);
+        document.getElementById('materialsOpenLogWrap').addEventListener('click', handleMaterialOpenLogWrapClick);
         document.getElementById('materialsTableWrap').addEventListener('click', handleMaterialTableClick);
 
         Array.prototype.slice.call(document.querySelectorAll('[data-view]')).forEach(function(button) {
@@ -4240,6 +4293,41 @@
         document.getElementById('materialsCreatePanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
+      function handleMaterialDelete_(rowNumber) {
+        if (!APP_STATE.isAdmin) {
+          setNotice('관리자만 자료를 삭제할 수 있습니다.', 'warning');
+          return;
+        }
+
+        var row = parseInt(rowNumber, 10);
+        if (!row) {
+          return;
+        }
+
+        if (!window.confirm('이 자료를 삭제할까요? 삭제 후에는 되돌릴 수 없습니다.')) {
+          return;
+        }
+
+        setLoading('자료를 삭제하는 중입니다.');
+        apiRequest('deleteMaterial', {
+          token: APP_STATE.token,
+          materialRowNumber: row
+        })
+          .then(function(result) {
+            APP_STATE.materials = result.materials || [];
+            if (result.openLogs) {
+              APP_STATE.materialOpenLogs = result.openLogs || [];
+            }
+            if (String(APP_STATE.editingMaterialRowNumber || '') === String(row)) {
+              clearMaterialEditMode_();
+            }
+            renderMaterials();
+            setNotice(result.message || '자료가 삭제되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
       function findMaterialByRow_(rowNumber) {
         var target = String(rowNumber || '');
         for (var i = 0; i < APP_STATE.materials.length; i += 1) {
@@ -4637,7 +4725,7 @@
                                 renderMaterialMetaBadge_(item.materialType, 'type'),
                                 renderMaterialMetaBadge_(item.fileType, 'file')
                               ].join('') + '</div></td>',
-                          '  <td><div class="material-action-group"><button type="button" class="material-table-cell-link" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link) + '">열기</button>' + (APP_STATE.isAdmin ? '<button type="button" class="material-edit-button" data-material-edit="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button>' : '') + '</div></td>',
+                          '  <td><div class="material-action-group"><button type="button" class="material-table-cell-link" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link) + '">열기</button>' + (APP_STATE.isAdmin ? '<button type="button" class="material-edit-button" data-material-edit="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button><button type="button" class="material-delete-button" data-material-delete="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">삭제</button>' : '') + '</div></td>',
                           '</tr>'
                         ].join('');
                       }).join('')
@@ -4898,12 +4986,31 @@
           return;
         }
 
-        var logs = (APP_STATE.materialOpenLogs || []).slice(0, 12);
+        var logs = (APP_STATE.materialOpenLogs || []).filter(function(log) {
+          return normalizeSearchText(log.openedByRole) !== 'admin' &&
+            normalizeSearchText(log.openedByName) !== normalizeSearchText('에스에듀');
+        }).slice(0, 12);
+        var isCollapsed = APP_STATE.isMaterialOpenLogsCollapsed !== false;
+
+        if (isCollapsed) {
+          wrap.innerHTML = [
+            '<section class="material-open-log-shell">',
+            '  <div class="materials-coverage-head">',
+            '    <div><h4>최근 자료 열람 기록</h4><p>기본은 접힌 상태입니다. 필요할 때만 펼쳐 최근 열람 이력을 확인하세요.</p></div>',
+            '    <div class="material-action-group">' + (logs.length ? '<span class="coverage-badge">최근 ' + escapeHtml(String(logs.length)) + '건</span>' : '') + '<button type="button" class="material-open-log-toggle" data-material-log-toggle="true" data-next-state="expand">펼치기</button></div>',
+            '  </div>',
+            '  <div class="material-open-log-collapsed"><p>' + escapeHtml(logs.length ? '강사 열람 기록이 있습니다. 펼치면 최근 기록을 확인할 수 있습니다.' : '강사 열람 이력이 아직 없습니다.') + '</p></div>',
+            '</section>'
+          ].join('');
+          return;
+        }
+
         if (!logs.length) {
           wrap.innerHTML = [
             '<section class="material-open-log-shell">',
             '  <div class="materials-coverage-head">',
             '    <div><h4>최근 자료 열람 기록</h4><p>강사별 자료 열람 이력이 아직 없습니다.</p></div>',
+            '    <button type="button" class="material-open-log-toggle" data-material-log-toggle="true" data-next-state="collapse">접기</button>',
             '  </div>',
             '</section>'
           ].join('');
@@ -4914,7 +5021,7 @@
           '<section class="material-open-log-shell">',
           '  <div class="materials-coverage-head">',
           '    <div><h4>최근 자료 열람 기록</h4><p>강사 아이디별 문제 자료실 열람 이력을 최근 순으로 확인합니다.</p></div>',
-          '    <span class="coverage-badge">최근 ' + escapeHtml(String(logs.length)) + '건</span>',
+          '    <div class="material-action-group"><span class="coverage-badge">최근 ' + escapeHtml(String(logs.length)) + '건</span><button type="button" class="material-open-log-toggle" data-material-log-toggle="true" data-next-state="collapse">접기</button></div>',
           '  </div>',
           '  <div class="material-open-log-list">',
           logs.map(function(log) {
@@ -4938,10 +5045,26 @@
         ].join('');
       }
 
+      function handleMaterialOpenLogWrapClick(event) {
+        var button = event.target.closest('[data-material-log-toggle]');
+        if (!button) {
+          return;
+        }
+
+        APP_STATE.isMaterialOpenLogsCollapsed = button.getAttribute('data-next-state') !== 'expand';
+        renderMaterialsOpenLogs_();
+      }
+
       function handleMaterialTableClick(event) {
         var inlineYearButton = event.target.closest('[data-material-school-year]');
         if (inlineYearButton) {
           handleInlineMaterialYearTabClick_(inlineYearButton);
+          return;
+        }
+
+        var deleteButton = event.target.closest('[data-material-delete]');
+        if (deleteButton) {
+          handleMaterialDelete_(deleteButton.getAttribute('data-material-row'));
           return;
         }
 
@@ -5149,6 +5272,7 @@
         APP_STATE.materialYearTabsBySchool = {};
         APP_STATE.editingMaterialRowNumber = '';
         APP_STATE.materialOpenLogs = [];
+        APP_STATE.isMaterialOpenLogsCollapsed = true;
         APP_STATE.events = [];
         APP_STATE.selectedLogRow = '';
         clearStoredSession();
