@@ -4661,15 +4661,9 @@
         renderMaterialSchoolTabs_();
         renderMaterialYearTabs_();
 
-        var keyword = normalizeSearchText(document.getElementById('materialKeywordInput').value);
-        var school = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value;
-        var grade = document.getElementById('materialGradeFilter').value;
-        var term = document.getElementById('materialTermFilter').value;
-        var year = school ? getResolvedMaterialYearForSchool_(school, APP_STATE.materials) : '';
-        var subject = document.getElementById('materialSubjectFilter').value;
-        var examType = document.getElementById('materialExamTypeFilter').value;
-        var materialType = document.getElementById('materialTypeFilter').value;
-        var fileType = document.getElementById('materialFileTypeFilter').value;
+        var filterState = getCurrentMaterialFilterState_();
+        var school = filterState.school;
+        var year = filterState.year;
 
         if (document.getElementById('materialSchoolFilter').value !== school) {
           document.getElementById('materialSchoolFilter').value = school;
@@ -4678,31 +4672,8 @@
           document.getElementById('materialYearFilter').value = year;
         }
 
-        var filtered = APP_STATE.materials.filter(function(item) {
-          var searchText = normalizeSearchText([
-            item.school,
-            item.grade,
-            item.term,
-            item.year,
-            item.subject,
-            item.examType,
-            item.materialType,
-            item.fileType,
-            item.createdBy,
-            item.link
-          ].join(' '));
-
-          var matchesKeyword = !keyword || searchText.indexOf(keyword) !== -1;
-          var matchesSchool = !school || item.school === school;
-          var matchesGrade = !grade || item.grade === grade;
-          var matchesTerm = !term || item.term === term;
-          var matchesYear = !year || item.year === year;
-          var matchesSubject = !subject || item.subject === subject;
-          var matchesExamType = !examType || item.examType === examType;
-          var matchesMaterialType = !materialType || item.materialType === materialType;
-          var matchesFileType = !fileType || item.fileType === fileType;
-          return matchesKeyword && matchesSchool && matchesGrade && matchesTerm && matchesYear && matchesSubject && matchesExamType && matchesMaterialType && matchesFileType;
-        });
+        var filtered = filterMaterialsByCurrentFilters_();
+        var groupedSource = filterMaterialsByCurrentFilters_({ ignoreYear: true });
 
         var wrap = document.getElementById('materialsTableWrap');
         renderMaterialsOpenLogs_();
@@ -4712,13 +4683,13 @@
           return;
         }
         document.getElementById('materialsCoverageWrap').innerHTML = '';
-        if (!filtered.length) {
+        if (!groupedSource.length) {
           wrap.innerHTML = '<div class="empty-state">검색 조건에 맞는 자료가 없습니다.</div>';
           return;
         }
 
         var groupedMap = {};
-        filtered
+        groupedSource
           .slice()
           .sort(function(a, b) {
             return [
@@ -4755,7 +4726,7 @@
             groupedMap[schoolKey][yearKey].push(item);
           });
 
-        var schoolKeys = getVisibleMaterialSchools_(filtered);
+        var schoolKeys = getVisibleMaterialSchools_(groupedSource);
         wrap.innerHTML = [
           '<div class="data-table-wrap">',
           '  <table class="data-table">',
@@ -4763,11 +4734,11 @@
           '    <tbody>',
           schoolKeys.map(function(schoolKey) {
             var yearMap = groupedMap[schoolKey] || {};
-            var yearKeys = getVisibleMaterialYears_(schoolKey, filtered);
+            var yearKeys = getVisibleMaterialYears_(schoolKey, groupedSource);
             var schoolItemCount = yearKeys.reduce(function(total, yearKey) {
               return total + ((yearMap[yearKey] || []).length);
             }, 0);
-            var activeYear = school ? year : getResolvedMaterialYearForSchool_(schoolKey, filtered);
+            var activeYear = school ? year : getResolvedMaterialYearForSchool_(schoolKey, groupedSource);
             var visibleYearKeys = school ? yearKeys : [activeYear];
 
             return [
@@ -4881,6 +4852,51 @@
           '  </table>',
           '</div>'
         ].join('');
+      }
+
+      function getCurrentMaterialFilterState_(options) {
+        var config = options || {};
+        var school = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value;
+        return {
+          keyword: normalizeSearchText(document.getElementById('materialKeywordInput').value),
+          school: school,
+          grade: document.getElementById('materialGradeFilter').value,
+          term: document.getElementById('materialTermFilter').value,
+          year: config.ignoreYear ? '' : (school ? getResolvedMaterialYearForSchool_(school, APP_STATE.materials) : ''),
+          subject: document.getElementById('materialSubjectFilter').value,
+          examType: document.getElementById('materialExamTypeFilter').value,
+          materialType: document.getElementById('materialTypeFilter').value,
+          fileType: document.getElementById('materialFileTypeFilter').value
+        };
+      }
+
+      function filterMaterialsByCurrentFilters_(options) {
+        var filterState = getCurrentMaterialFilterState_(options);
+        return APP_STATE.materials.filter(function(item) {
+          var searchText = normalizeSearchText([
+            item.school,
+            item.grade,
+            item.term,
+            item.year,
+            item.subject,
+            item.examType,
+            item.materialType,
+            item.fileType,
+            item.createdBy,
+            item.link
+          ].join(' '));
+
+          var matchesKeyword = !filterState.keyword || searchText.indexOf(filterState.keyword) !== -1;
+          var matchesSchool = !filterState.school || item.school === filterState.school;
+          var matchesGrade = !filterState.grade || item.grade === filterState.grade;
+          var matchesTerm = !filterState.term || item.term === filterState.term;
+          var matchesYear = !filterState.year || item.year === filterState.year;
+          var matchesSubject = !filterState.subject || item.subject === filterState.subject;
+          var matchesExamType = !filterState.examType || item.examType === filterState.examType;
+          var matchesMaterialType = !filterState.materialType || item.materialType === filterState.materialType;
+          var matchesFileType = !filterState.fileType || item.fileType === filterState.fileType;
+          return matchesKeyword && matchesSchool && matchesGrade && matchesTerm && matchesYear && matchesSubject && matchesExamType && matchesMaterialType && matchesFileType;
+        });
       }
 
       function populateMaterialFilters() {
@@ -5038,16 +5054,17 @@
           return;
         }
         var selectedYear = APP_STATE.selectedMaterialYearTab || document.getElementById('materialYearFilter').value || '';
-        var visibleYears = getVisibleMaterialYears_(selectedSchool, APP_STATE.materials);
+        var filterSource = filterMaterialsByCurrentFilters_({ ignoreYear: true });
+        var visibleYears = getVisibleMaterialYears_(selectedSchool, filterSource);
         if (!selectedYear && visibleYears.length) {
-          selectedYear = getResolvedMaterialYearForSchool_(selectedSchool, APP_STATE.materials);
+          selectedYear = getResolvedMaterialYearForSchool_(selectedSchool, filterSource);
           APP_STATE.selectedMaterialYearTab = selectedYear;
         }
 
         wrap.innerHTML = [
           '<button type="button" class="school-tab-button year-tab ' + (!selectedYear ? 'active' : '') + '" data-material-year="" style="' + buildSchoolToneStyle_(selectedSchool || '전체') + '">전체</button>'
         ].concat(visibleYears.map(function(year) {
-          var count = APP_STATE.materials.filter(function(item) {
+          var count = filterSource.filter(function(item) {
             var matchesSchool = !selectedSchool || item.school === selectedSchool;
             return matchesSchool && String(item.year || '') === String(year || '');
           }).length;
