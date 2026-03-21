@@ -2232,9 +2232,43 @@
       .material-subject-name {
         display: inline-flex;
         align-items: center;
-        font-size: 0.92rem;
+        gap: 6px;
+        min-height: 32px;
+        padding: 0 12px;
+        border-radius: 999px;
+        font-size: 0.84rem;
         font-weight: 900;
         color: var(--text-strong);
+      }
+
+      .material-subject-name.subject-math {
+        background: rgba(255, 228, 240, 0.94);
+        color: #d11f6d;
+      }
+
+      .material-subject-name.subject-korean {
+        background: rgba(255, 237, 222, 0.96);
+        color: #c26208;
+      }
+
+      .material-subject-name.subject-english {
+        background: rgba(226, 238, 255, 0.96);
+        color: #2458ca;
+      }
+
+      .material-subject-name.subject-science {
+        background: rgba(227, 248, 234, 0.96);
+        color: #17834e;
+      }
+
+      .material-subject-name.subject-social {
+        background: rgba(239, 232, 255, 0.96);
+        color: #7440ca;
+      }
+
+      .material-subject-name.subject-other {
+        background: rgba(236, 242, 250, 0.96);
+        color: #5f6e89;
       }
 
       .material-badge-row {
@@ -2341,9 +2375,54 @@
         color: #b45309;
       }
 
+      .material-meta-badge.type-past {
+        background: rgba(255, 237, 213, 0.96);
+        color: #c05f0c;
+      }
+
+      .material-meta-badge.type-mock {
+        background: rgba(226, 232, 255, 0.96);
+        color: #335bd6;
+      }
+
+      .material-meta-badge.type-csat {
+        background: rgba(236, 226, 255, 0.96);
+        color: #7d41cb;
+      }
+
+      .material-meta-badge.type-book {
+        background: rgba(227, 248, 234, 0.96);
+        color: #1e8a53;
+      }
+
+      .material-meta-badge.type-handout {
+        background: rgba(255, 244, 214, 0.96);
+        color: #b77908;
+      }
+
+      .material-meta-badge.type-testsheet {
+        background: rgba(255, 228, 240, 0.96);
+        color: #cf2b73;
+      }
+
       .material-meta-badge.file {
         background: rgba(168, 85, 247, 0.14);
         color: #7e22ce;
+      }
+
+      .material-meta-badge.file-question {
+        background: rgba(236, 226, 255, 0.96);
+        color: #7e22ce;
+      }
+
+      .material-meta-badge.file-answer {
+        background: rgba(227, 248, 234, 0.96);
+        color: #1f8a4f;
+      }
+
+      .material-meta-badge.file-other {
+        background: rgba(236, 242, 250, 0.96);
+        color: #5f6e89;
       }
 
       .material-open-log-shell {
@@ -4775,17 +4854,16 @@
                           '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
                           '  <td><div class="material-primary-cell">' + [
                                 (!school ? '<span class="material-school-name-inline">' + escapeHtml(schoolKey) + '</span>' : ''),
-                                '<span class="material-subject-name">' + escapeHtml(groupedHead.subject || '-') + '</span>'
+                                renderMaterialSubjectLabel_(groupedHead.subject)
                               ].join('') + '</div></td>',
-                          '  <td><div class="material-secondary-stack"><div class="material-badge-row">' + [
-                                renderMaterialMetaBadge_(groupedHead.materialType, 'type')
-                              ].join('') + '</div><div class="material-file-stack">' + groupedItems.map(function(item) {
-                                return '<div class="material-file-entry">' + renderMaterialMetaBadge_(item.fileType, 'file') + '</div>';
-                              }).join('') + '</div></div></td>',
-                          '  <td><div class="material-file-stack">' + groupedItems.map(function(item) {
-                                return '<div class="material-file-entry">' + [
-                                  renderMaterialMetaBadge_(item.examType, 'exam')
-                                ].join('') + '</div>';
+                          '  <td><div class="material-secondary-stack">' + [
+                                '<div class="material-badge-row">' + renderMaterialMetaBadge_(groupedHead.materialType, 'type') + '</div>',
+                                '<div class="material-file-stack">' + groupedItems.map(function(item) {
+                                  return '<div class="material-file-entry">' + renderMaterialMetaBadge_(item.fileType, 'file') + '</div>';
+                                }).join('') + '</div>'
+                              ].join('') + '</div></td>',
+                          '  <td><div class="material-file-stack">' + groupedItems.map(function(item, itemIndex) {
+                                return '<div class="material-file-entry">' + (itemIndex === 0 ? renderMaterialMetaBadge_(groupedHead.examType || '-', 'exam') : '<span class="material-meta-badge exam" style="visibility:hidden;">' + escapeHtml(groupedHead.examType || '-') + '</span>') + '</div>';
                               }).join('') + '</div></td>',
                           '  <td><div class="material-file-stack">' + groupedItems.map(function(item) {
                                 return '<div class="material-file-entry actions"><div class="material-action-group"><button type="button" class="material-table-cell-link" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link) + '">열기</button>' + (APP_STATE.isAdmin ? '<button type="button" class="material-edit-button" data-material-edit="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button><button type="button" class="material-delete-button" data-material-delete="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">삭제</button>' : '') + '</div></div>';
@@ -5260,7 +5338,19 @@
         if (tone === 'subject') {
           tone += ' ' + getSubjectToneClass_(value);
         }
+        if (toneClass === 'type') {
+          tone += ' ' + getMaterialTypeToneClass_(value);
+        }
+        if (toneClass === 'file') {
+          tone += ' ' + getFileTypeToneClass_(value);
+        }
         return '<span class="material-meta-badge ' + escapeAttribute(tone) + '">' + escapeHtml(value || '-') + '</span>';
+      }
+
+      function renderMaterialSubjectLabel_(subject) {
+        var text = subject || '-';
+        var emoji = getSubjectEmoji_(text);
+        return '<span class="material-subject-name ' + escapeAttribute(getSubjectToneClass_(text)) + '">' + escapeHtml(emoji + ' ' + text) + '</span>';
       }
 
       function getSubjectToneClass_(subject) {
@@ -5284,6 +5374,60 @@
           return 'subject-social';
         }
         return 'subject-other';
+      }
+
+      function getSubjectEmoji_(subject) {
+        switch (getSubjectToneClass_(subject)) {
+          case 'subject-math':
+            return '📐';
+          case 'subject-korean':
+            return '📚';
+          case 'subject-english':
+            return '🔤';
+          case 'subject-science':
+            return '🧪';
+          case 'subject-social':
+            return '🌍';
+          default:
+            return '📘';
+        }
+      }
+
+      function getMaterialTypeToneClass_(materialType) {
+        var text = normalizeSearchText(materialType);
+        if (/내신기출/.test(text)) {
+          return 'type-past';
+        }
+        if (/모의고사/.test(text)) {
+          return 'type-mock';
+        }
+        if (/수능/.test(text)) {
+          return 'type-csat';
+        }
+        if (/부교재/.test(text)) {
+          return 'type-book';
+        }
+        if (/학교유인물/.test(text)) {
+          return 'type-handout';
+        }
+        if (/(테스트지|시험지)/.test(text)) {
+          return 'type-testsheet';
+        }
+        return '';
+      }
+
+      function getFileTypeToneClass_(fileType) {
+        var text = normalizeSearchText(fileType);
+        if (/문제/.test(text)) {
+          return 'file-question';
+        }
+        if (/답안/.test(text)) {
+          return 'file-answer';
+        }
+        if (/기타/.test(text)) {
+          return 'file-other';
+        }
+        return '';
       }
 
       function buildSchoolToneStyle_(schoolName) {
