@@ -2217,10 +2217,50 @@
         color: var(--text-soft);
       }
 
+      .material-primary-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .material-school-name-inline {
+        font-size: 0.72rem;
+        font-weight: 900;
+        color: var(--text-soft);
+      }
+
+      .material-subject-name {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.92rem;
+        font-weight: 900;
+        color: var(--text-strong);
+      }
+
       .material-badge-row {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
+      }
+
+      .material-secondary-stack {
+        display: grid;
+        gap: 8px;
+      }
+
+      .material-file-stack {
+        display: grid;
+        gap: 8px;
+      }
+
+      .material-file-entry {
+        display: flex;
+        align-items: center;
+        min-height: 38px;
+      }
+
+      .material-file-entry.actions {
+        justify-content: flex-start;
       }
 
       .material-inline-year-tabs {
@@ -4704,6 +4744,20 @@
                   ].join('') : subgroupKeys.map(function(subgroupKey) {
                     var subgroupItems = subgroupMap[subgroupKey] || [];
                     var firstItem = subgroupItems[0] || {};
+                    var subjectGroupMap = {};
+                    subgroupItems.forEach(function(item) {
+                      var subjectGroupKey = [
+                        item.subject || '-',
+                        item.materialType || '-'
+                      ].join('||');
+                      if (!subjectGroupMap[subjectGroupKey]) {
+                        subjectGroupMap[subjectGroupKey] = [];
+                      }
+                      subjectGroupMap[subjectGroupKey].push(item);
+                    });
+                    var subjectGroupKeys = Object.keys(subjectGroupMap).sort(function(a, b) {
+                      return a.localeCompare(b);
+                    });
                     return [
                       '<tr class="material-subgroup-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
                       '  <td colspan="4"><span class="material-subgroup-title">' + [
@@ -4714,18 +4768,28 @@
                             '<span class="material-count-badge">' + escapeHtml(String(subgroupItems.length)) + '건</span>'
                           ].join('') + '</span></td>',
                       '</tr>',
-                      subgroupItems.map(function(item, index) {
+                      subjectGroupKeys.map(function(subjectGroupKey) {
+                        var groupedItems = subjectGroupMap[subjectGroupKey] || [];
+                        var groupedHead = groupedItems[0] || {};
                         return [
                           '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
-                          '  <td><span class="material-item-index">자료 ' + escapeHtml(String(index + 1)) + '</span></td>',
-                          '  <td><div class="material-badge-row">' + [
-                                renderMaterialMetaBadge_(item.subject, 'subject')
+                          '  <td><div class="material-primary-cell">' + [
+                                (!school ? '<span class="material-school-name-inline">' + escapeHtml(schoolKey) + '</span>' : ''),
+                                '<span class="material-subject-name">' + escapeHtml(groupedHead.subject || '-') + '</span>'
                               ].join('') + '</div></td>',
-                          '  <td><div class="material-badge-row">' + [
-                                renderMaterialMetaBadge_(item.materialType, 'type'),
-                                renderMaterialMetaBadge_(item.fileType, 'file')
-                              ].join('') + '</div></td>',
-                          '  <td><div class="material-action-group"><button type="button" class="material-table-cell-link" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link) + '">열기</button>' + (APP_STATE.isAdmin ? '<button type="button" class="material-edit-button" data-material-edit="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button><button type="button" class="material-delete-button" data-material-delete="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">삭제</button>' : '') + '</div></td>',
+                          '  <td><div class="material-secondary-stack"><div class="material-badge-row">' + [
+                                renderMaterialMetaBadge_(groupedHead.materialType, 'type')
+                              ].join('') + '</div><div class="material-file-stack">' + groupedItems.map(function(item) {
+                                return '<div class="material-file-entry">' + renderMaterialMetaBadge_(item.fileType, 'file') + '</div>';
+                              }).join('') + '</div></div></td>',
+                          '  <td><div class="material-file-stack">' + groupedItems.map(function(item) {
+                                return '<div class="material-file-entry">' + [
+                                  renderMaterialMetaBadge_(item.examType, 'exam')
+                                ].join('') + '</div>';
+                              }).join('') + '</div></td>',
+                          '  <td><div class="material-file-stack">' + groupedItems.map(function(item) {
+                                return '<div class="material-file-entry actions"><div class="material-action-group"><button type="button" class="material-table-cell-link" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link) + '">열기</button>' + (APP_STATE.isAdmin ? '<button type="button" class="material-edit-button" data-material-edit="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button><button type="button" class="material-delete-button" data-material-delete="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">삭제</button>' : '') + '</div></div>';
+                              }).join('') + '</div></td>',
                           '</tr>'
                         ].join('');
                       }).join('')
