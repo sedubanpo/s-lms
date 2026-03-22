@@ -2181,6 +2181,16 @@
         background: linear-gradient(135deg, hsla(var(--school-hue, 220), 58%, 98%, 0.92), hsla(var(--school-hue, 220), 62%, 95%, 0.88));
       }
 
+      .material-item-row td.material-subject-cell {
+        padding: 0;
+      }
+
+      .material-item-row td.material-subject-cell .material-primary-cell {
+        min-height: 100%;
+        padding: 14px 16px;
+        justify-content: center;
+      }
+
       .material-subgroup-row td {
         background: rgba(249, 251, 255, 0.96);
       }
@@ -2233,41 +2243,60 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        min-height: 32px;
-        padding: 0 12px;
-        border-radius: 999px;
+        min-height: 28px;
+        padding: 0;
+        border-radius: 0;
         font-size: 0.84rem;
         font-weight: 900;
         color: var(--text-strong);
+        background: transparent;
+      }
+
+      .material-item-row td.material-subject-cell.subject-math {
+        background: linear-gradient(135deg, rgba(255, 228, 240, 0.96), rgba(255, 238, 246, 0.92));
       }
 
       .material-subject-name.subject-math {
-        background: rgba(255, 228, 240, 0.94);
         color: #d11f6d;
       }
 
+      .material-item-row td.material-subject-cell.subject-korean {
+        background: linear-gradient(135deg, rgba(255, 237, 222, 0.98), rgba(255, 244, 233, 0.92));
+      }
+
       .material-subject-name.subject-korean {
-        background: rgba(255, 237, 222, 0.96);
         color: #c26208;
       }
 
+      .material-item-row td.material-subject-cell.subject-english {
+        background: linear-gradient(135deg, rgba(226, 238, 255, 0.98), rgba(239, 245, 255, 0.92));
+      }
+
       .material-subject-name.subject-english {
-        background: rgba(226, 238, 255, 0.96);
         color: #2458ca;
       }
 
+      .material-item-row td.material-subject-cell.subject-science {
+        background: linear-gradient(135deg, rgba(227, 248, 234, 0.98), rgba(239, 252, 244, 0.92));
+      }
+
       .material-subject-name.subject-science {
-        background: rgba(227, 248, 234, 0.96);
         color: #17834e;
       }
 
+      .material-item-row td.material-subject-cell.subject-social {
+        background: linear-gradient(135deg, rgba(239, 232, 255, 0.98), rgba(247, 242, 255, 0.92));
+      }
+
       .material-subject-name.subject-social {
-        background: rgba(239, 232, 255, 0.96);
         color: #7440ca;
       }
 
+      .material-item-row td.material-subject-cell.subject-other {
+        background: linear-gradient(135deg, rgba(236, 242, 250, 0.98), rgba(245, 248, 252, 0.92));
+      }
+
       .material-subject-name.subject-other {
-        background: rgba(236, 242, 250, 0.96);
         color: #5f6e89;
       }
 
@@ -4739,7 +4768,9 @@
               return total + ((yearMap[yearKey] || []).length);
             }, 0);
             var activeYear = school ? year : getResolvedMaterialYearForSchool_(schoolKey, groupedSource);
-            var visibleYearKeys = school ? yearKeys : [activeYear];
+            var visibleYearKeys = school
+              ? (year ? [year] : yearKeys)
+              : [activeYear];
 
             return [
               '<tr class="material-school-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
@@ -4821,9 +4852,10 @@
                       subjectGroupKeys.map(function(subjectGroupKey) {
                         var groupedItems = subjectGroupMap[subjectGroupKey] || [];
                         var groupedHead = groupedItems[0] || {};
+                        var subjectToneClass = getSubjectToneClass_(groupedHead.subject);
                         return [
                           '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
-                          '  <td><div class="material-primary-cell">' + [
+                          '  <td class="material-subject-cell ' + escapeAttribute(subjectToneClass) + '"><div class="material-primary-cell">' + [
                                 (!school ? '<span class="material-school-name-inline">' + escapeHtml(schoolKey) + '</span>' : ''),
                                 renderMaterialSubjectLabel_(groupedHead.subject)
                               ].join('') + '</div></td>',
