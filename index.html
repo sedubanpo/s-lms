@@ -2782,6 +2782,10 @@
             <span class="nav-indicator"></span>
             <span>학생 데이터</span>
           </button>
+          <button type="button" id="homeroomNavButton" class="side-nav-button" data-view="homeroom">
+            <span class="nav-indicator"></span>
+            <span class="side-nav-label">담임 학생 <span class="admin-nav-badge">관리자 전용</span></span>
+          </button>
           <button type="button" id="permissionNavButton" class="side-nav-button" data-view="permissions">
             <span class="nav-indicator"></span>
             <span class="side-nav-label">권한 관리 <span class="admin-nav-badge">관리자 전용</span></span>
@@ -2879,8 +2883,8 @@
           <section class="panel-shell glass-panel">
             <div class="panel-head">
               <div>
-                <h3>권한 관리</h3>
-                <p>학생명을 검색하고, 원/학년으로 좁힌 뒤 학생을 선택하면 우측에서 강사 열람 권한을 빠르게 관리할 수 있습니다.</p>
+                <h3 id="permissionPanelTitle">담임 학생 관리</h3>
+                <p id="permissionPanelDescription">학생명을 검색하고, 원/학년으로 좁힌 뒤 학생을 선택하면 우측에서 담당 강사와 열람 권한을 빠르게 관리할 수 있습니다.</p>
               </div>
             </div>
             <div class="compact-control-bar">
@@ -3054,6 +3058,10 @@
           <span class="nav-indicator"></span>
           <span>학생</span>
         </button>
+        <button type="button" id="mobileHomeroomNavButton" class="side-nav-button" data-view="homeroom">
+          <span class="nav-indicator"></span>
+          <span>담임학생</span>
+        </button>
         <button type="button" id="mobilePermissionNavButton" class="side-nav-button" data-view="permissions">
           <span class="nav-indicator"></span>
           <span>권한</span>
@@ -3199,6 +3207,10 @@
           title: '학생 데이터',
           description: '정확한 시트 헤더 매핑과 슬래시 제거가 적용된 학생 정보를 카드로 확인합니다.'
         },
+        homeroom: {
+          title: '담임 학생',
+          description: '관리자가 학생별 담당 강사를 연결하고, 학생 단위로 허용 강사 구성을 빠르게 관리하는 영역입니다.'
+        },
         permissions: {
           title: '권한 관리',
           description: '관리자가 학생별로 강사 접근 권한을 설정하는 관리자 전용 영역입니다.'
@@ -3243,10 +3255,10 @@
         document.getElementById('topRefreshButton').addEventListener('click', refreshDashboard);
         document.getElementById('openPermissionModalButton').addEventListener('click', function() {
           if (!APP_STATE.isAdmin) {
-            setNotice('권한 관리 메뉴는 관리자만 사용할 수 있습니다.', 'warning');
+            setNotice('담임 학생 메뉴는 관리자만 사용할 수 있습니다.', 'warning');
             return;
           }
-          switchView('permissions');
+          switchView('homeroom');
         });
         document.getElementById('closePermissionModalButton').addEventListener('click', closePermissionModal);
         document.getElementById('permissionModal').addEventListener('click', handlePermissionModalBackdropClick);
@@ -3303,8 +3315,8 @@
         Array.prototype.slice.call(document.querySelectorAll('[data-view]')).forEach(function(button) {
           button.addEventListener('click', function() {
             var viewName = button.getAttribute('data-view');
-            if (viewName === 'permissions' && !APP_STATE.isAdmin) {
-              setNotice('권한 관리 메뉴는 관리자만 사용할 수 있습니다.', 'warning');
+            if ((viewName === 'permissions' || viewName === 'homeroom') && !APP_STATE.isAdmin) {
+              setNotice('담임 학생 메뉴는 관리자만 사용할 수 있습니다.', 'warning');
             }
             switchView(viewName);
           });
@@ -3523,13 +3535,15 @@
             ? '관리자 작성 티칭로그는 강조 표시되며, 전체 활성 학생과 권한 매핑을 관리할 수 있습니다.'
             : '강사 작성 티칭로그에는 작성자명이 노출되며, 허용된 학생만 조회됩니다.');
 
+        document.getElementById('homeroomNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
+        document.getElementById('mobileHomeroomNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('permissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('mobilePermissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('openPermissionModalButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('view-permissions').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('materialsCreatePanel').classList.toggle('hidden', !APP_STATE.isAdmin);
 
-        if (!APP_STATE.isAdmin && APP_STATE.currentView === 'permissions') {
+        if (!APP_STATE.isAdmin && (APP_STATE.currentView === 'permissions' || APP_STATE.currentView === 'homeroom')) {
           APP_STATE.currentView = 'students';
         }
       }
@@ -4265,7 +4279,9 @@
           if (!map[item.studentId]) {
             map[item.studentId] = [];
           }
-          map[item.studentId].push(item);
+          if (item.instructorId && map[item.studentId].indexOf(item.instructorId) === -1) {
+            map[item.studentId].push(item.instructorId);
+          }
         });
         return map;
       }
@@ -4297,7 +4313,7 @@
           .then(function(result) {
             hydrateStudentDataOnly(result);
             renderAll();
-            switchView('permissions');
+            switchView(APP_STATE.currentView === 'homeroom' ? 'homeroom' : 'permissions');
             setNotice(result.message || '학생 열람 권한이 저장되었습니다.', 'success');
           })
           .catch(handleApiError_)
@@ -4310,7 +4326,7 @@
           return;
         }
 
-        switchView('permissions');
+        switchView('homeroom');
       }
 
       function closePermissionModal() {
@@ -4351,7 +4367,7 @@
             hydrateStudentDataOnly(result);
             renderAll();
             APP_STATE.selectedPermissionStudentId = studentId;
-            switchView('permissions');
+            switchView(APP_STATE.currentView === 'homeroom' ? 'homeroom' : 'permissions');
             document.getElementById('modalPermissionStudentSelect').value = studentId;
             renderPermissionModalChecklist();
             closePermissionModal();
@@ -4770,7 +4786,11 @@
           '    <tbody>',
           schoolKeys.map(function(schoolKey) {
             var yearMap = groupedMap[schoolKey] || {};
-            var yearKeys = getVisibleMaterialYears_(schoolKey, groupedSource);
+            var yearKeys = school
+              ? Object.keys(yearMap).sort(function(a, b) {
+                  return String(b).localeCompare(String(a));
+                })
+              : getVisibleMaterialYears_(schoolKey, groupedSource);
             var schoolItemCount = yearKeys.reduce(function(total, yearKey) {
               return total + ((yearMap[yearKey] || []).length);
             }, 0);
@@ -5497,14 +5517,15 @@
       }
 
       function switchView(viewName) {
-        if (viewName === 'permissions' && !APP_STATE.isAdmin) {
+        if ((viewName === 'permissions' || viewName === 'homeroom') && !APP_STATE.isAdmin) {
           viewName = 'students';
         }
 
+        var renderViewName = viewName === 'homeroom' ? 'permissions' : viewName;
         APP_STATE.currentView = viewName;
 
         Array.prototype.slice.call(document.querySelectorAll('.dashboard-view')).forEach(function(view) {
-          view.classList.toggle('active', view.id === 'view-' + viewName);
+          view.classList.toggle('active', view.id === 'view-' + renderViewName);
         });
 
         Array.prototype.slice.call(document.querySelectorAll('[data-view]')).forEach(function(button) {
