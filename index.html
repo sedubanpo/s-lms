@@ -4358,8 +4358,15 @@
         }
         APP_STATE.selectedHomeroomInstructorId = selectedId;
         if (teacherInput) {
-          teacherInput.value = getHomeroomInstructorSearchLabel_(getSelectedHomeroomInstructor_());
-          APP_STATE.homeroomTeacherSearchKeyword = teacherInput.value;
+          var resolvedLabel = getHomeroomInstructorSearchLabel_(getSelectedHomeroomInstructor_());
+          if (document.activeElement !== teacherInput) {
+            teacherInput.value = APP_STATE.homeroomTeacherSearchKeyword || resolvedLabel;
+          } else if (!APP_STATE.homeroomTeacherSearchKeyword) {
+            teacherInput.value = resolvedLabel;
+          }
+          if (!APP_STATE.homeroomTeacherSearchKeyword) {
+            APP_STATE.homeroomTeacherSearchKeyword = resolvedLabel;
+          }
         }
       }
 
