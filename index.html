@@ -3614,13 +3614,14 @@
         document.getElementById('view-events').addEventListener('click', handleEventsViewClick);
 
         document.getElementById('homeroomTeacherSearchInput').addEventListener('input', handleHomeroomTeacherSearchInput_);
-        document.getElementById('homeroomTeacherSearchInput').addEventListener('change', handleHomeroomTeacherSearchInput_);
+        document.getElementById('homeroomTeacherSearchInput').addEventListener('change', handleHomeroomTeacherSearchCommit_);
         document.getElementById('homeroomSearchInput').addEventListener('input', renderHomeroomView);
         document.getElementById('homeroomSchoolFilter').addEventListener('change', renderHomeroomView);
         document.getElementById('homeroomGradeFilter').addEventListener('change', renderHomeroomView);
         document.getElementById('homeroomSubjectInput').addEventListener('input', handleHomeroomSubjectInput_);
         document.getElementById('homeroomAssignmentStatusWrap').addEventListener('click', handleHomeroomAssignmentStatusClick_);
         document.getElementById('homeroomStudentTableWrap').addEventListener('change', handleHomeroomStudentTableChange_);
+        document.getElementById('homeroomDetailPanel').addEventListener('input', handleHomeroomDetailPanelInput_);
         document.getElementById('homeroomSelectFilteredButton').addEventListener('click', handleHomeroomSelectFiltered_);
         document.getElementById('homeroomClearFilteredButton').addEventListener('click', handleHomeroomClearFiltered_);
         document.getElementById('saveHomeroomButton').addEventListener('click', handleHomeroomSave);
@@ -4516,6 +4517,10 @@
         if (subjectInput && document.activeElement !== subjectInput) {
           subjectInput.value = APP_STATE.homeroomSubjectDraft || '';
         }
+        var detailSubjectInput = document.querySelector('[data-homeroom-detail-subject]');
+        if (detailSubjectInput && document.activeElement !== detailSubjectInput) {
+          detailSubjectInput.value = APP_STATE.homeroomSubjectDraft || '';
+        }
       }
 
       function getHomeroomMap_() {
@@ -4598,8 +4603,7 @@
               instructorName: item.instructorName,
               subjects: [],
               studentNames: [],
-              schoolTags: [],
-              gradeTags: []
+              schoolGradeMap: {}
             };
           }
           if (item.subject && assignmentMap[item.instructorId].subjects.indexOf(item.subject) === -1) {
@@ -4609,11 +4613,15 @@
             assignmentMap[item.instructorId].studentNames.push(item.studentName);
           }
           var matchedStudent = studentMap[item.studentId] || {};
-          if (matchedStudent.school && assignmentMap[item.instructorId].schoolTags.indexOf(matchedStudent.school) === -1) {
-            assignmentMap[item.instructorId].schoolTags.push(matchedStudent.school);
-          }
-          if (matchedStudent.grade && assignmentMap[item.instructorId].gradeTags.indexOf(String(matchedStudent.grade) + '학년') === -1) {
-            assignmentMap[item.instructorId].gradeTags.push(String(matchedStudent.grade) + '학년');
+          var schoolKey = matchedStudent.school || '';
+          var gradeKey = matchedStudent.grade ? String(matchedStudent.grade) + '학년' : '';
+          if (schoolKey) {
+            if (!assignmentMap[item.instructorId].schoolGradeMap[schoolKey]) {
+              assignmentMap[item.instructorId].schoolGradeMap[schoolKey] = [];
+            }
+            if (gradeKey && assignmentMap[item.instructorId].schoolGradeMap[schoolKey].indexOf(gradeKey) === -1) {
+              assignmentMap[item.instructorId].schoolGradeMap[schoolKey].push(gradeKey);
+            }
           }
         });
 
@@ -4649,16 +4657,20 @@
               '<section class="homeroom-assignment-subject-group ' + escapeAttribute(toneClass) + '">',
               '  <div class="homeroom-assignment-group-title">' + escapeHtml(subjectKey) + '</div>',
               '  <div class="homeroom-assignment-list">',
-              (groupedCards[subjectKey] || []).map(function(card, index) {
+              (groupedCards[subjectKey] || []).map(function(card) {
+                var schoolTags = Object.keys(card.schoolGradeMap || {}).sort(function(a, b) {
+                  return a.localeCompare(b);
+                }).map(function(schoolKey) {
+                  var grades = (card.schoolGradeMap[schoolKey] || []).slice().sort(function(a, b) {
+                    return a.localeCompare(b);
+                  });
+                  return '<span class="homeroom-assignment-tag">#' + escapeHtml(schoolKey + (grades.length ? ' ' + grades.join('·') : '')) + '</span>';
+                });
                 return [
                   '<button type="button" class="homeroom-assignment-card ' + (APP_STATE.selectedHomeroomInstructorId === card.instructorId ? 'active' : '') + '" data-homeroom-assignment-instructor="' + escapeAttribute(card.instructorId) + '">',
-                  '  <strong>' + escapeHtml(subjectKey.replace(/\s+/g, '') + String(index + 1)) + ' · ' + escapeHtml(card.instructorName || card.instructorId) + '</strong>',
+                  '  <strong>' + escapeHtml(card.instructorName || card.instructorId) + '</strong>',
                   '  <span>담임 학생 ' + escapeHtml(String(card.studentNames.length)) + '명 · 담당 과목 ' + escapeHtml(card.subjects.join(', ') || '미지정') + '</span>',
-                  '  <div class="homeroom-assignment-tags">' + card.schoolTags.slice(0, 2).map(function(tag) {
-                       return '<span class="homeroom-assignment-tag">#' + escapeHtml(tag) + '</span>';
-                     }).concat(card.gradeTags.slice(0, 2).map(function(tag) {
-                       return '<span class="homeroom-assignment-tag">#' + escapeHtml(tag) + '</span>';
-                     })).join('') + '</div>',
+                  '  <div class="homeroom-assignment-tags">' + schoolTags.join('') + '</div>',
                   '  <span>' + escapeHtml(card.studentNames.join(', ')) + '</span>',
                   '</button>'
                 ].join('');
@@ -4739,6 +4751,11 @@
           '  <div class="dense-summary-item"><span>선택 학생 수</span><strong>' + escapeHtml(String(selectedStudents.length)) + '명</strong></div>',
           '  <div class="dense-summary-item"><span>선택 강사</span><strong>' + escapeHtml((instructor.name || '-') + (instructor.subject ? ' (' + instructor.subject + ')' : '')) + '</strong></div>',
           '  <div class="dense-summary-item"><span>담당 과목명</span><strong>' + escapeHtml(APP_STATE.homeroomSubjectDraft || '미지정') + '</strong></div>',
+          '</div>',
+          '<div class="field-shell" style="margin-top:12px;">',
+          '  <span class="field-label">담당 과목명 수정</span>',
+          '  <input data-homeroom-detail-subject class="field-input" type="text" placeholder="예: 수학, 수학 팀장, 국어A" value="' + escapeAttribute(APP_STATE.homeroomSubjectDraft || '') + '">',
+          '  <div class="helper-text">여기서 과목 미지정을 직접 수정한 뒤 저장하면 해당 강사의 담임 과목명이 함께 반영됩니다.</div>',
           '</div>'
         ].concat(subjectKeys.length ? [
           '<div class="homeroom-instructor-groups">',
@@ -4817,6 +4834,34 @@
       function handleHomeroomTeacherSearchInput_() {
         var input = document.getElementById('homeroomTeacherSearchInput');
         var keyword = input ? (input.value || '') : '';
+        APP_STATE.homeroomTeacherSearchKeyword = keyword;
+        if (!keyword) {
+          APP_STATE.selectedHomeroomInstructorId = '';
+          APP_STATE.homeroomSelectedStudentIds = [];
+          APP_STATE.homeroomSelectionSourceInstructorId = '';
+          APP_STATE.homeroomSubjectDraft = '';
+          renderHomeroomView();
+          return;
+        }
+        var normalizedKeyword = normalizeSearchText(keyword);
+        var exactInstructor = APP_STATE.instructors.find(function(instructor) {
+          return normalizedKeyword && (
+            normalizedKeyword === normalizeSearchText(instructor.name) ||
+            normalizedKeyword === normalizeSearchText(instructor.userId) ||
+            normalizedKeyword === normalizeSearchText(getHomeroomInstructorSearchLabel_(instructor))
+          );
+        });
+        if (exactInstructor && APP_STATE.selectedHomeroomInstructorId !== exactInstructor.userId) {
+          APP_STATE.selectedHomeroomInstructorId = exactInstructor.userId;
+          APP_STATE.homeroomSubjectDraft = '';
+          syncHomeroomSelectedStudentIds_();
+          renderHomeroomView();
+        }
+      }
+
+      function handleHomeroomTeacherSearchCommit_() {
+        var input = document.getElementById('homeroomTeacherSearchInput');
+        var keyword = input ? (input.value || '') : '';
         var matchedInstructor = resolveHomeroomInstructorByKeyword_(keyword);
         APP_STATE.homeroomTeacherSearchKeyword = keyword;
         if (!keyword) {
@@ -4828,6 +4873,7 @@
           return;
         }
         if (!matchedInstructor) {
+          renderHomeroomDetailPanel();
           return;
         }
         if (APP_STATE.selectedHomeroomInstructorId !== matchedInstructor.userId) {
@@ -4835,11 +4881,25 @@
           APP_STATE.homeroomSubjectDraft = '';
           syncHomeroomSelectedStudentIds_();
         }
+        APP_STATE.homeroomTeacherSearchKeyword = matchedInstructor.name || matchedInstructor.userId || keyword;
         renderHomeroomView();
       }
 
       function handleHomeroomSubjectInput_() {
         APP_STATE.homeroomSubjectDraft = document.getElementById('homeroomSubjectInput').value || '';
+        renderHomeroomDetailPanel();
+      }
+
+      function handleHomeroomDetailPanelInput_(event) {
+        var subjectInput = event.target.closest('[data-homeroom-detail-subject]');
+        if (!subjectInput) {
+          return;
+        }
+        APP_STATE.homeroomSubjectDraft = subjectInput.value || '';
+        var topSubjectInput = document.getElementById('homeroomSubjectInput');
+        if (topSubjectInput && document.activeElement !== topSubjectInput) {
+          topSubjectInput.value = APP_STATE.homeroomSubjectDraft || '';
+        }
         renderHomeroomDetailPanel();
       }
 
