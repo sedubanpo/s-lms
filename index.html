@@ -3948,6 +3948,12 @@
           .replace(/\s+/g, '');
       }
 
+      function uniqueList_(values) {
+        return (values || []).filter(function(value, index, array) {
+          return array.indexOf(value) === index;
+        });
+      }
+
       function collectStudentTagSet(student) {
         var tags = [];
         (student.logs || []).forEach(function(log) {
@@ -4927,7 +4933,6 @@
         if (topSubjectInput && document.activeElement !== topSubjectInput) {
           topSubjectInput.value = APP_STATE.homeroomSubjectDraft || '';
         }
-        renderHomeroomDetailPanel();
       }
 
       function handleHomeroomAssignmentStatusClick_(event) {
