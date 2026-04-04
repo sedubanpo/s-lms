@@ -3071,16 +3071,16 @@
             <div class="panel-head">
               <div>
                 <h3>담임 학생 대시보드</h3>
-                <p>수업 권한과 별도로, 선생님별로 실제 담당하는 학생을 과목 중심으로 배정하고 한눈에 관리합니다.</p>
+                <p>수업 권한과 별도로, 선생님별로 실제 담당하는 학생을 빠르게 찾아 다중 선택으로 배정하고 한눈에 관리합니다.</p>
               </div>
             </div>
             <div id="homeroomDashboardWrap" class="homeroom-dashboard"></div>
             <div class="compact-control-bar">
-              <select id="homeroomTeacherFilter" class="field-select"></select>
+              <input id="homeroomTeacherSearchInput" class="field-input" type="text" list="homeroomTeacherList" placeholder="담임 강사명 또는 아이디 검색">
+              <datalist id="homeroomTeacherList"></datalist>
               <input id="homeroomSearchInput" class="field-input" type="text" placeholder="학생명 검색">
               <select id="homeroomSchoolFilter" class="field-select"></select>
               <select id="homeroomGradeFilter" class="field-select"></select>
-              <select id="homeroomSubjectFilter" class="field-select"></select>
             </div>
             <div class="permission-dense-layout">
               <section class="dense-table-shell">
@@ -3407,6 +3407,7 @@
         homeroomAssignments: [],
         studentLogTabs: {},
         selectedHomeroomInstructorId: '',
+        homeroomTeacherSearchKeyword: '',
         homeroomSelectedStudentIds: [],
         homeroomSelectionSourceInstructorId: '',
         selectedPermissionStudentId: '',
@@ -3498,11 +3499,11 @@
         document.getElementById('studentList').addEventListener('click', handleStudentListClick);
         document.getElementById('view-events').addEventListener('click', handleEventsViewClick);
 
-        document.getElementById('homeroomTeacherFilter').addEventListener('change', handleHomeroomTeacherChange_);
+        document.getElementById('homeroomTeacherSearchInput').addEventListener('input', handleHomeroomTeacherSearchInput_);
+        document.getElementById('homeroomTeacherSearchInput').addEventListener('change', handleHomeroomTeacherSearchInput_);
         document.getElementById('homeroomSearchInput').addEventListener('input', renderHomeroomView);
         document.getElementById('homeroomSchoolFilter').addEventListener('change', renderHomeroomView);
         document.getElementById('homeroomGradeFilter').addEventListener('change', renderHomeroomView);
-        document.getElementById('homeroomSubjectFilter').addEventListener('change', renderHomeroomView);
         document.getElementById('homeroomStudentTableWrap').addEventListener('change', handleHomeroomStudentTableChange_);
         document.getElementById('homeroomSelectFilteredButton').addEventListener('click', handleHomeroomSelectFiltered_);
         document.getElementById('homeroomClearFilteredButton').addEventListener('click', handleHomeroomClearFiltered_);
@@ -4297,14 +4298,6 @@
       }
 
       function populateHomeroomFilters() {
-        var teacherOptions = APP_STATE.instructors.map(function(instructor) {
-          return (instructor.subject ? instructor.subject + ' · ' : '') + (instructor.name || instructor.userId);
-        });
-        var teacherValues = APP_STATE.instructors.map(function(instructor) {
-          return instructor.userId;
-        });
-        fillSelectWithOptionPairs_('homeroomTeacherFilter', teacherValues, teacherOptions, '담임 강사 선택');
-
         fillSelectWithOptions('homeroomSchoolFilter', APP_STATE.activeStudents.map(function(student) {
           return student.school;
         }), '전체 원');
@@ -4312,17 +4305,13 @@
         fillSelectWithOptions('homeroomGradeFilter', APP_STATE.activeStudents.map(function(student) {
           return student.grade ? String(student.grade) : '';
         }), '전체 학년');
-
-        fillSelectWithOptions('homeroomSubjectFilter', APP_STATE.activeStudents.map(function(student) {
-          return student.subject || '';
-        }), '전체 과목');
+        renderHomeroomTeacherSuggestions_();
       }
 
       function getFilteredHomeroomStudents_() {
         var keyword = normalizeSearchText(document.getElementById('homeroomSearchInput').value);
         var school = document.getElementById('homeroomSchoolFilter').value;
         var grade = document.getElementById('homeroomGradeFilter').value;
-        var subject = document.getElementById('homeroomSubjectFilter').value;
 
         return APP_STATE.activeStudents.filter(function(student) {
           var searchText = normalizeSearchText([
@@ -4336,8 +4325,7 @@
           var matchesKeyword = !keyword || searchText.indexOf(keyword) !== -1;
           var matchesSchool = !school || student.school === school;
           var matchesGrade = !grade || String(student.grade || '') === grade;
-          var matchesSubject = !subject || String(student.subject || '') === String(subject || '');
-          return matchesKeyword && matchesSchool && matchesGrade && matchesSubject;
+          return matchesKeyword && matchesSchool && matchesGrade;
         }).sort(function(a, b) {
           return [
             a.subject || 'zzzz',
@@ -4354,8 +4342,8 @@
       }
 
       function syncSelectedHomeroomInstructor_() {
-        var teacherSelect = document.getElementById('homeroomTeacherFilter');
-        var selectedId = APP_STATE.selectedHomeroomInstructorId || teacherSelect.value || '';
+        var teacherInput = document.getElementById('homeroomTeacherSearchInput');
+        var selectedId = APP_STATE.selectedHomeroomInstructorId || '';
         var hasCurrent = APP_STATE.instructors.some(function(instructor) {
           return instructor.userId === selectedId;
         });
@@ -4369,8 +4357,9 @@
           selectedId = APP_STATE.instructors[0].userId;
         }
         APP_STATE.selectedHomeroomInstructorId = selectedId;
-        if (teacherSelect.value !== selectedId) {
-          teacherSelect.value = selectedId;
+        if (teacherInput) {
+          teacherInput.value = getHomeroomInstructorSearchLabel_(getSelectedHomeroomInstructor_());
+          APP_STATE.homeroomTeacherSearchKeyword = teacherInput.value;
         }
       }
 
@@ -4548,6 +4537,50 @@
         return instructors.length ? instructors[0] : null;
       }
 
+      function renderHomeroomTeacherSuggestions_() {
+        var datalist = document.getElementById('homeroomTeacherList');
+        if (!datalist) {
+          return;
+        }
+        datalist.innerHTML = APP_STATE.instructors.map(function(instructor) {
+          return '<option value="' + escapeHtml(getHomeroomInstructorSearchLabel_(instructor)) + '"></option>';
+        }).join('');
+      }
+
+      function getHomeroomInstructorSearchLabel_(instructor) {
+        if (!instructor) {
+          return '';
+        }
+        return [instructor.name || instructor.userId, instructor.userId || '']
+          .filter(Boolean)
+          .join(' · ');
+      }
+
+      function resolveHomeroomInstructorByKeyword_(keyword) {
+        var normalizedKeyword = normalizeSearchText(keyword);
+        if (!normalizedKeyword) {
+          return APP_STATE.instructors[0] || null;
+        }
+
+        var exactMatch = APP_STATE.instructors.find(function(instructor) {
+          var nameKey = normalizeSearchText(instructor.name);
+          var idKey = normalizeSearchText(instructor.userId);
+          var labelKey = normalizeSearchText(getHomeroomInstructorSearchLabel_(instructor));
+          return normalizedKeyword === nameKey || normalizedKeyword === idKey || normalizedKeyword === labelKey;
+        });
+        if (exactMatch) {
+          return exactMatch;
+        }
+
+        return APP_STATE.instructors.find(function(instructor) {
+          var searchText = normalizeSearchText([
+            instructor.name,
+            instructor.userId
+          ].join(' '));
+          return searchText.indexOf(normalizedKeyword) !== -1;
+        }) || null;
+      }
+
       function getSelectedHomeroomStudents_() {
         var selectedIds = APP_STATE.homeroomSelectedStudentIds || [];
         return APP_STATE.activeStudents.filter(function(student) {
@@ -4555,9 +4588,21 @@
         });
       }
 
-      function handleHomeroomTeacherChange_() {
-        APP_STATE.selectedHomeroomInstructorId = document.getElementById('homeroomTeacherFilter').value || '';
-        syncHomeroomSelectedStudentIds_();
+      function handleHomeroomTeacherSearchInput_() {
+        var input = document.getElementById('homeroomTeacherSearchInput');
+        var keyword = input ? (input.value || '') : '';
+        var matchedInstructor = resolveHomeroomInstructorByKeyword_(keyword);
+        APP_STATE.homeroomTeacherSearchKeyword = keyword;
+        if (!matchedInstructor) {
+          return;
+        }
+        if (APP_STATE.selectedHomeroomInstructorId !== matchedInstructor.userId) {
+          APP_STATE.selectedHomeroomInstructorId = matchedInstructor.userId;
+          syncHomeroomSelectedStudentIds_();
+        }
+        if (input && document.activeElement !== input) {
+          input.value = getHomeroomInstructorSearchLabel_(matchedInstructor);
+        }
         renderHomeroomView();
       }
 
@@ -6208,6 +6253,7 @@
         APP_STATE.homeroomAssignments = [];
         APP_STATE.studentLogTabs = {};
         APP_STATE.selectedHomeroomInstructorId = '';
+        APP_STATE.homeroomTeacherSearchKeyword = '';
         APP_STATE.homeroomSelectedStudentIds = [];
         APP_STATE.homeroomSelectionSourceInstructorId = '';
         APP_STATE.selectedPermissionStudentId = '';
