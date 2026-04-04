@@ -1307,6 +1307,58 @@
         margin-bottom: 14px;
       }
 
+      .homeroom-assignment-board {
+        display: grid;
+        gap: 10px;
+      }
+
+      .homeroom-assignment-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+      }
+
+      .homeroom-assignment-card {
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(214, 226, 247, 0.9);
+        text-align: left;
+        box-shadow: 0 10px 22px rgba(18, 36, 86, 0.06);
+      }
+
+      .homeroom-assignment-card.active {
+        background: linear-gradient(135deg, rgba(36, 86, 214, 0.12), rgba(15, 183, 194, 0.08));
+        border-color: rgba(36, 86, 214, 0.26);
+        box-shadow: 0 14px 26px rgba(36, 86, 214, 0.1);
+      }
+
+      .homeroom-assignment-card strong {
+        display: block;
+        font-size: 0.92rem;
+        font-weight: 900;
+      }
+
+      .homeroom-assignment-card span {
+        display: block;
+        margin-top: 6px;
+        color: var(--text-soft);
+        font-size: 0.74rem;
+        line-height: 1.6;
+      }
+
+      .homeroom-filter-stack {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .homeroom-filter-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(180px, 0.4fr) minmax(180px, 0.4fr);
+        gap: 10px;
+      }
+
       .homeroom-summary-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -3075,15 +3127,19 @@
               </div>
             </div>
             <div id="homeroomDashboardWrap" class="homeroom-dashboard"></div>
-            <div class="compact-control-bar">
-              <input id="homeroomTeacherSearchInput" class="field-input" type="text" list="homeroomTeacherList" placeholder="담임 강사명 또는 아이디 검색">
-              <datalist id="homeroomTeacherList"></datalist>
-              <input id="homeroomSearchInput" class="field-input" type="text" placeholder="학생명 검색">
-              <select id="homeroomSchoolFilter" class="field-select"></select>
-              <select id="homeroomGradeFilter" class="field-select"></select>
-            </div>
+            <div id="homeroomAssignmentStatusWrap" class="homeroom-assignment-board"></div>
             <div class="permission-dense-layout">
               <section class="dense-table-shell">
+                <div class="homeroom-filter-stack">
+                  <input id="homeroomTeacherSearchInput" class="field-input" type="text" list="homeroomTeacherList" placeholder="강사명 검색">
+                  <datalist id="homeroomTeacherList"></datalist>
+                  <input id="homeroomSearchInput" class="field-input" type="text" placeholder="학생명 검색">
+                  <div class="homeroom-filter-row">
+                    <select id="homeroomSchoolFilter" class="field-select"></select>
+                    <select id="homeroomGradeFilter" class="field-select"></select>
+                    <input id="homeroomSubjectInput" class="field-input" type="text" placeholder="담당 과목명">
+                  </div>
+                </div>
                 <div class="homeroom-bulk-toolbar">
                   <span id="homeroomSelectionSummary" class="homeroom-check-pill">선택 학생 0명</span>
                   <div class="homeroom-bulk-actions">
@@ -3408,6 +3464,7 @@
         studentLogTabs: {},
         selectedHomeroomInstructorId: '',
         homeroomTeacherSearchKeyword: '',
+        homeroomSubjectDraft: '',
         homeroomSelectedStudentIds: [],
         homeroomSelectionSourceInstructorId: '',
         selectedPermissionStudentId: '',
@@ -3504,6 +3561,8 @@
         document.getElementById('homeroomSearchInput').addEventListener('input', renderHomeroomView);
         document.getElementById('homeroomSchoolFilter').addEventListener('change', renderHomeroomView);
         document.getElementById('homeroomGradeFilter').addEventListener('change', renderHomeroomView);
+        document.getElementById('homeroomSubjectInput').addEventListener('input', handleHomeroomSubjectInput_);
+        document.getElementById('homeroomAssignmentStatusWrap').addEventListener('click', handleHomeroomAssignmentStatusClick_);
         document.getElementById('homeroomStudentTableWrap').addEventListener('change', handleHomeroomStudentTableChange_);
         document.getElementById('homeroomSelectFilteredButton').addEventListener('click', handleHomeroomSelectFiltered_);
         document.getElementById('homeroomClearFilteredButton').addEventListener('click', handleHomeroomClearFiltered_);
@@ -4293,6 +4352,7 @@
           syncHomeroomSelectedStudentIds_();
         }
         renderHomeroomDashboard_();
+        renderHomeroomAssignmentStatusWrap_();
         renderHomeroomStudentTable();
         renderHomeroomDetailPanel();
       }
@@ -4350,30 +4410,27 @@
 
         if (!APP_STATE.instructors.length) {
           APP_STATE.selectedHomeroomInstructorId = '';
+          APP_STATE.homeroomSubjectDraft = '';
           return;
         }
 
         if (!hasCurrent) {
-          selectedId = APP_STATE.instructors[0].userId;
+          selectedId = '';
         }
         APP_STATE.selectedHomeroomInstructorId = selectedId;
         if (teacherInput) {
-          var resolvedLabel = getHomeroomInstructorSearchLabel_(getSelectedHomeroomInstructor_());
           if (document.activeElement !== teacherInput) {
-            teacherInput.value = APP_STATE.homeroomTeacherSearchKeyword || resolvedLabel;
-          } else if (!APP_STATE.homeroomTeacherSearchKeyword) {
-            teacherInput.value = resolvedLabel;
-          }
-          if (!APP_STATE.homeroomTeacherSearchKeyword) {
-            APP_STATE.homeroomTeacherSearchKeyword = resolvedLabel;
+            teacherInput.value = APP_STATE.homeroomTeacherSearchKeyword || '';
           }
         }
+        syncHomeroomSubjectDraft_();
       }
 
       function syncHomeroomSelectedStudentIds_() {
         var instructorId = APP_STATE.selectedHomeroomInstructorId;
         if (!instructorId) {
           APP_STATE.homeroomSelectedStudentIds = [];
+          APP_STATE.homeroomSelectionSourceInstructorId = '';
           return;
         }
         APP_STATE.homeroomSelectedStudentIds = APP_STATE.homeroomAssignments
@@ -4384,6 +4441,24 @@
             return item.studentId;
           });
         APP_STATE.homeroomSelectionSourceInstructorId = instructorId;
+        syncHomeroomSubjectDraft_();
+      }
+
+      function syncHomeroomSubjectDraft_() {
+        var subjectInput = document.getElementById('homeroomSubjectInput');
+        var instructorId = APP_STATE.selectedHomeroomInstructorId;
+        var assignedRows = (APP_STATE.homeroomAssignments || []).filter(function(item) {
+          return item.instructorId === instructorId;
+        });
+        var subjectText = assignedRows.length
+          ? uniqueList_(assignedRows.map(function(item) {
+              return item.subject || '';
+            }).filter(Boolean)).join(', ')
+          : ((getSelectedHomeroomInstructor_() || {}).subject || '');
+        APP_STATE.homeroomSubjectDraft = APP_STATE.homeroomSubjectDraft || subjectText || '';
+        if (subjectInput && document.activeElement !== subjectInput) {
+          subjectInput.value = APP_STATE.homeroomSubjectDraft || '';
+        }
       }
 
       function getHomeroomMap_() {
@@ -4446,7 +4521,55 @@
               return '<article class="homeroom-subject-card"><strong>' + escapeHtml(subjectKey) + '</strong><span>담임 학생 ' + escapeHtml(String(item.studentCount)) + '명 · 담당 강사 ' + escapeHtml(String(item.instructorIds.length)) + '명</span></article>';
             }).join(''),
             '</div>'
-          ].join('') : '<div class="empty-state">현재 필터에서는 담임 배정된 학생이 없습니다.<br>우측 패널에서 학생별 담당 강사를 지정해 주세요.</div>'
+          ].join('') : '<div class="empty-state">현재 필터에서는 담임 배정된 학생이 없습니다.<br>아래 담임 배정 현황 카드 또는 강사명 검색으로 바로 편집을 시작하세요.</div>'
+        ].join('');
+      }
+
+      function renderHomeroomAssignmentStatusWrap_() {
+        var wrap = document.getElementById('homeroomAssignmentStatusWrap');
+        var assignmentMap = {};
+
+        APP_STATE.homeroomAssignments.forEach(function(item) {
+          if (!assignmentMap[item.instructorId]) {
+            assignmentMap[item.instructorId] = {
+              instructorId: item.instructorId,
+              instructorName: item.instructorName,
+              subjects: [],
+              studentNames: []
+            };
+          }
+          if (item.subject && assignmentMap[item.instructorId].subjects.indexOf(item.subject) === -1) {
+            assignmentMap[item.instructorId].subjects.push(item.subject);
+          }
+          if (item.studentName && assignmentMap[item.instructorId].studentNames.indexOf(item.studentName) === -1) {
+            assignmentMap[item.instructorId].studentNames.push(item.studentName);
+          }
+        });
+
+        var cards = Object.keys(assignmentMap).map(function(key) {
+          return assignmentMap[key];
+        }).sort(function(a, b) {
+          return String(a.instructorName || a.instructorId).localeCompare(String(b.instructorName || b.instructorId));
+        });
+
+        if (!cards.length) {
+          wrap.innerHTML = '<div class="empty-state">아직 등록된 담임 배정이 없습니다.<br>강사명 검색 후 학생을 선택해 담임 학생을 저장하세요.</div>';
+          return;
+        }
+
+        wrap.innerHTML = [
+          '<div class="homeroom-subject-note">담임 배정 현황</div>',
+          '<div class="homeroom-assignment-list">',
+          cards.map(function(card) {
+            return [
+              '<button type="button" class="homeroom-assignment-card ' + (APP_STATE.selectedHomeroomInstructorId === card.instructorId ? 'active' : '') + '" data-homeroom-assignment-instructor="' + escapeAttribute(card.instructorId) + '">',
+              '  <strong>' + escapeHtml(card.instructorName || card.instructorId) + '</strong>',
+              '  <span>담임 학생 ' + escapeHtml(String(card.studentNames.length)) + '명 · 담당 과목 ' + escapeHtml(card.subjects.join(', ') || '미지정') + '</span>',
+              '  <span>' + escapeHtml(card.studentNames.join(', ')) + '</span>',
+              '</button>'
+            ].join('');
+          }).join(''),
+          '</div>'
         ].join('');
       }
 
@@ -4518,6 +4641,7 @@
           '<div class="dense-summary-list">',
           '  <div class="dense-summary-item"><span>선택 학생 수</span><strong>' + escapeHtml(String(selectedStudents.length)) + '명</strong></div>',
           '  <div class="dense-summary-item"><span>선택 강사</span><strong>' + escapeHtml((instructor.name || '-') + (instructor.subject ? ' (' + instructor.subject + ')' : '')) + '</strong></div>',
+          '  <div class="dense-summary-item"><span>담당 과목명</span><strong>' + escapeHtml(APP_STATE.homeroomSubjectDraft || '미지정') + '</strong></div>',
           '</div>'
         ].concat(subjectKeys.length ? [
           '<div class="homeroom-instructor-groups">',
@@ -4558,9 +4682,7 @@
         if (!instructor) {
           return '';
         }
-        return [instructor.name || instructor.userId, instructor.userId || '']
-          .filter(Boolean)
-          .join(' · ');
+        return instructor.name || instructor.userId || '';
       }
 
       function resolveHomeroomInstructorByKeyword_(keyword) {
@@ -4600,16 +4722,43 @@
         var keyword = input ? (input.value || '') : '';
         var matchedInstructor = resolveHomeroomInstructorByKeyword_(keyword);
         APP_STATE.homeroomTeacherSearchKeyword = keyword;
+        if (!keyword) {
+          APP_STATE.selectedHomeroomInstructorId = '';
+          APP_STATE.homeroomSelectedStudentIds = [];
+          APP_STATE.homeroomSelectionSourceInstructorId = '';
+          APP_STATE.homeroomSubjectDraft = '';
+          renderHomeroomView();
+          return;
+        }
         if (!matchedInstructor) {
           return;
         }
         if (APP_STATE.selectedHomeroomInstructorId !== matchedInstructor.userId) {
           APP_STATE.selectedHomeroomInstructorId = matchedInstructor.userId;
+          APP_STATE.homeroomSubjectDraft = '';
           syncHomeroomSelectedStudentIds_();
         }
-        if (input && document.activeElement !== input) {
-          input.value = getHomeroomInstructorSearchLabel_(matchedInstructor);
+        renderHomeroomView();
+      }
+
+      function handleHomeroomSubjectInput_() {
+        APP_STATE.homeroomSubjectDraft = document.getElementById('homeroomSubjectInput').value || '';
+        renderHomeroomDetailPanel();
+      }
+
+      function handleHomeroomAssignmentStatusClick_(event) {
+        var button = event.target.closest('[data-homeroom-assignment-instructor]');
+        if (!button) {
+          return;
         }
+        var instructorId = button.getAttribute('data-homeroom-assignment-instructor') || '';
+        var instructor = APP_STATE.instructors.find(function(item) {
+          return item.userId === instructorId;
+        });
+        APP_STATE.selectedHomeroomInstructorId = instructorId;
+        APP_STATE.homeroomTeacherSearchKeyword = instructor ? (instructor.name || instructor.userId) : '';
+        APP_STATE.homeroomSubjectDraft = '';
+        syncHomeroomSelectedStudentIds_();
         renderHomeroomView();
       }
 
@@ -4674,7 +4823,8 @@
         apiRequest('saveHomeroomAssignmentsByInstructor', {
           token: APP_STATE.token,
           instructorId: instructorId,
-          studentIds: JSON.stringify(studentIds)
+          studentIds: JSON.stringify(studentIds),
+          homeroomSubject: APP_STATE.homeroomSubjectDraft || ''
         })
           .then(function(result) {
             hydrateStudentDataOnly(result);
@@ -6261,6 +6411,7 @@
         APP_STATE.studentLogTabs = {};
         APP_STATE.selectedHomeroomInstructorId = '';
         APP_STATE.homeroomTeacherSearchKeyword = '';
+        APP_STATE.homeroomSubjectDraft = '';
         APP_STATE.homeroomSelectedStudentIds = [];
         APP_STATE.homeroomSelectionSourceInstructorId = '';
         APP_STATE.selectedPermissionStudentId = '';
