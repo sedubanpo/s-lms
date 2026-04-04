@@ -1318,6 +1318,43 @@
         gap: 10px;
       }
 
+      .homeroom-assignment-subject-group {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border-radius: 22px;
+        border: 1px solid rgba(214, 226, 247, 0.9);
+        background: rgba(248, 251, 255, 0.76);
+      }
+
+      .homeroom-assignment-subject-group.subject-math {
+        background: linear-gradient(135deg, rgba(255, 233, 242, 0.86), rgba(255, 242, 247, 0.76));
+      }
+
+      .homeroom-assignment-subject-group.subject-korean {
+        background: linear-gradient(135deg, rgba(255, 240, 227, 0.9), rgba(255, 247, 238, 0.78));
+      }
+
+      .homeroom-assignment-subject-group.subject-english {
+        background: linear-gradient(135deg, rgba(230, 240, 255, 0.9), rgba(241, 246, 255, 0.8));
+      }
+
+      .homeroom-assignment-subject-group.subject-science {
+        background: linear-gradient(135deg, rgba(231, 248, 236, 0.9), rgba(243, 252, 246, 0.8));
+      }
+
+      .homeroom-assignment-subject-group.subject-social {
+        background: linear-gradient(135deg, rgba(241, 236, 255, 0.9), rgba(248, 244, 255, 0.8));
+      }
+
+      .homeroom-assignment-group-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.96rem;
+        font-weight: 900;
+      }
+
       .homeroom-assignment-card {
         padding: 14px 16px;
         border-radius: 18px;
@@ -1345,6 +1382,26 @@
         color: var(--text-soft);
         font-size: 0.74rem;
         line-height: 1.6;
+      }
+
+      .homeroom-assignment-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .homeroom-assignment-tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(214, 226, 247, 0.88);
+        color: var(--text-soft);
+        font-size: 0.68rem;
+        font-weight: 900;
       }
 
       .homeroom-filter-stack {
@@ -4528,6 +4585,11 @@
       function renderHomeroomAssignmentStatusWrap_() {
         var wrap = document.getElementById('homeroomAssignmentStatusWrap');
         var assignmentMap = {};
+        var studentMap = {};
+
+        APP_STATE.activeStudents.forEach(function(student) {
+          studentMap[student.studentId] = student;
+        });
 
         APP_STATE.homeroomAssignments.forEach(function(item) {
           if (!assignmentMap[item.instructorId]) {
@@ -4535,7 +4597,9 @@
               instructorId: item.instructorId,
               instructorName: item.instructorName,
               subjects: [],
-              studentNames: []
+              studentNames: [],
+              schoolTags: [],
+              gradeTags: []
             };
           }
           if (item.subject && assignmentMap[item.instructorId].subjects.indexOf(item.subject) === -1) {
@@ -4543,6 +4607,13 @@
           }
           if (item.studentName && assignmentMap[item.instructorId].studentNames.indexOf(item.studentName) === -1) {
             assignmentMap[item.instructorId].studentNames.push(item.studentName);
+          }
+          var matchedStudent = studentMap[item.studentId] || {};
+          if (matchedStudent.school && assignmentMap[item.instructorId].schoolTags.indexOf(matchedStudent.school) === -1) {
+            assignmentMap[item.instructorId].schoolTags.push(matchedStudent.school);
+          }
+          if (matchedStudent.grade && assignmentMap[item.instructorId].gradeTags.indexOf(String(matchedStudent.grade) + '학년') === -1) {
+            assignmentMap[item.instructorId].gradeTags.push(String(matchedStudent.grade) + '학년');
           }
         });
 
@@ -4557,19 +4628,45 @@
           return;
         }
 
+        var groupedCards = {};
+        cards.forEach(function(card) {
+          var subjectKey = card.subjects[0] || '과목 미지정';
+          if (!groupedCards[subjectKey]) {
+            groupedCards[subjectKey] = [];
+          }
+          groupedCards[subjectKey].push(card);
+        });
+
+        var subjectKeys = Object.keys(groupedCards).sort(function(a, b) {
+          return a.localeCompare(b);
+        });
+
         wrap.innerHTML = [
           '<div class="homeroom-subject-note">담임 배정 현황</div>',
-          '<div class="homeroom-assignment-list">',
-          cards.map(function(card) {
+          subjectKeys.map(function(subjectKey) {
+            var toneClass = getSubjectToneClass_(subjectKey);
             return [
-              '<button type="button" class="homeroom-assignment-card ' + (APP_STATE.selectedHomeroomInstructorId === card.instructorId ? 'active' : '') + '" data-homeroom-assignment-instructor="' + escapeAttribute(card.instructorId) + '">',
-              '  <strong>' + escapeHtml(card.instructorName || card.instructorId) + '</strong>',
-              '  <span>담임 학생 ' + escapeHtml(String(card.studentNames.length)) + '명 · 담당 과목 ' + escapeHtml(card.subjects.join(', ') || '미지정') + '</span>',
-              '  <span>' + escapeHtml(card.studentNames.join(', ')) + '</span>',
-              '</button>'
+              '<section class="homeroom-assignment-subject-group ' + escapeAttribute(toneClass) + '">',
+              '  <div class="homeroom-assignment-group-title">' + escapeHtml(subjectKey) + '</div>',
+              '  <div class="homeroom-assignment-list">',
+              (groupedCards[subjectKey] || []).map(function(card, index) {
+                return [
+                  '<button type="button" class="homeroom-assignment-card ' + (APP_STATE.selectedHomeroomInstructorId === card.instructorId ? 'active' : '') + '" data-homeroom-assignment-instructor="' + escapeAttribute(card.instructorId) + '">',
+                  '  <strong>' + escapeHtml(subjectKey.replace(/\s+/g, '') + String(index + 1)) + ' · ' + escapeHtml(card.instructorName || card.instructorId) + '</strong>',
+                  '  <span>담임 학생 ' + escapeHtml(String(card.studentNames.length)) + '명 · 담당 과목 ' + escapeHtml(card.subjects.join(', ') || '미지정') + '</span>',
+                  '  <div class="homeroom-assignment-tags">' + card.schoolTags.slice(0, 2).map(function(tag) {
+                       return '<span class="homeroom-assignment-tag">#' + escapeHtml(tag) + '</span>';
+                     }).concat(card.gradeTags.slice(0, 2).map(function(tag) {
+                       return '<span class="homeroom-assignment-tag">#' + escapeHtml(tag) + '</span>';
+                     })).join('') + '</div>',
+                  '  <span>' + escapeHtml(card.studentNames.join(', ')) + '</span>',
+                  '</button>'
+                ].join('');
+              }).join(''),
+              '  </div>',
+              '</section>'
             ].join('');
-          }).join(''),
-          '</div>'
+          }).join('')
         ].join('');
       }
 
@@ -4758,6 +4855,9 @@
         APP_STATE.selectedHomeroomInstructorId = instructorId;
         APP_STATE.homeroomTeacherSearchKeyword = instructor ? (instructor.name || instructor.userId) : '';
         APP_STATE.homeroomSubjectDraft = '';
+        document.getElementById('homeroomSearchInput').value = '';
+        document.getElementById('homeroomSchoolFilter').value = '';
+        document.getElementById('homeroomGradeFilter').value = '';
         syncHomeroomSelectedStudentIds_();
         renderHomeroomView();
       }
