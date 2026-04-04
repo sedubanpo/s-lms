@@ -2183,12 +2183,16 @@
 
       .material-item-row td.material-subject-cell {
         padding: 0;
+        background-clip: padding-box;
       }
 
       .material-item-row td.material-subject-cell .material-primary-cell {
+        width: 100%;
         min-height: 100%;
         padding: 14px 16px;
+        box-sizing: border-box;
         justify-content: center;
+        align-items: flex-start;
       }
 
       .material-subgroup-row td {
@@ -2240,9 +2244,10 @@
       }
 
       .material-subject-name {
-        display: inline-flex;
+        display: flex;
         align-items: center;
         gap: 6px;
+        width: 100%;
         min-height: 28px;
         padding: 0;
         border-radius: 0;
@@ -4894,7 +4899,7 @@
           school: school,
           grade: document.getElementById('materialGradeFilter').value,
           term: document.getElementById('materialTermFilter').value,
-          year: config.ignoreYear ? '' : (school ? getResolvedMaterialYearForSchool_(school, APP_STATE.materials) : ''),
+          year: config.ignoreYear ? '' : (APP_STATE.selectedMaterialYearTab || document.getElementById('materialYearFilter').value || ''),
           subject: document.getElementById('materialSubjectFilter').value,
           examType: document.getElementById('materialExamTypeFilter').value,
           materialType: document.getElementById('materialTypeFilter').value,
@@ -5088,10 +5093,6 @@
         var selectedYear = APP_STATE.selectedMaterialYearTab || document.getElementById('materialYearFilter').value || '';
         var filterSource = filterMaterialsByCurrentFilters_({ ignoreYear: true });
         var visibleYears = getVisibleMaterialYears_(selectedSchool, filterSource);
-        if (!selectedYear && visibleYears.length) {
-          selectedYear = getResolvedMaterialYearForSchool_(selectedSchool, filterSource);
-          APP_STATE.selectedMaterialYearTab = selectedYear;
-        }
 
         wrap.innerHTML = [
           '<button type="button" class="school-tab-button year-tab ' + (!selectedYear ? 'active' : '') + '" data-material-year="" style="' + buildSchoolToneStyle_(selectedSchool || '전체') + '">전체</button>'
