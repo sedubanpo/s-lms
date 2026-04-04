@@ -4707,7 +4707,9 @@
         }
 
         var filtered = filterMaterialsByCurrentFilters_();
-        var groupedSource = filterMaterialsByCurrentFilters_({ ignoreYear: true });
+        var groupedSource = school
+          ? filtered
+          : filterMaterialsByCurrentFilters_({ ignoreYear: true });
 
         var wrap = document.getElementById('materialsTableWrap');
         renderMaterialsOpenLogs_();
