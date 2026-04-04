@@ -3521,6 +3521,7 @@
         studentLogTabs: {},
         selectedHomeroomInstructorId: '',
         homeroomTeacherSearchKeyword: '',
+        isHomeroomTeacherComposing: false,
         homeroomSubjectDraft: '',
         homeroomSelectedStudentIds: [],
         homeroomSelectionSourceInstructorId: '',
@@ -3615,6 +3616,9 @@
 
         document.getElementById('homeroomTeacherSearchInput').addEventListener('input', handleHomeroomTeacherSearchInput_);
         document.getElementById('homeroomTeacherSearchInput').addEventListener('change', handleHomeroomTeacherSearchCommit_);
+        document.getElementById('homeroomTeacherSearchInput').addEventListener('compositionstart', handleHomeroomTeacherSearchCompositionStart_);
+        document.getElementById('homeroomTeacherSearchInput').addEventListener('compositionend', handleHomeroomTeacherSearchCompositionEnd_);
+        document.getElementById('homeroomTeacherSearchInput').addEventListener('keydown', handleHomeroomTeacherSearchKeydown_);
         document.getElementById('homeroomSearchInput').addEventListener('input', renderHomeroomView);
         document.getElementById('homeroomSchoolFilter').addEventListener('change', renderHomeroomView);
         document.getElementById('homeroomGradeFilter').addEventListener('change', renderHomeroomView);
@@ -4835,6 +4839,9 @@
         var input = document.getElementById('homeroomTeacherSearchInput');
         var keyword = input ? (input.value || '') : '';
         APP_STATE.homeroomTeacherSearchKeyword = keyword;
+        if (APP_STATE.isHomeroomTeacherComposing) {
+          return;
+        }
         if (!keyword) {
           APP_STATE.selectedHomeroomInstructorId = '';
           APP_STATE.homeroomSelectedStudentIds = [];
@@ -4856,7 +4863,9 @@
           APP_STATE.homeroomSubjectDraft = '';
           syncHomeroomSelectedStudentIds_();
           renderHomeroomView();
+          return;
         }
+        renderHomeroomDetailPanel();
       }
 
       function handleHomeroomTeacherSearchCommit_() {
@@ -4883,6 +4892,24 @@
         }
         APP_STATE.homeroomTeacherSearchKeyword = matchedInstructor.name || matchedInstructor.userId || keyword;
         renderHomeroomView();
+      }
+
+      function handleHomeroomTeacherSearchCompositionStart_() {
+        APP_STATE.isHomeroomTeacherComposing = true;
+      }
+
+      function handleHomeroomTeacherSearchCompositionEnd_(event) {
+        APP_STATE.isHomeroomTeacherComposing = false;
+        handleHomeroomTeacherSearchInput_(event);
+        handleHomeroomTeacherSearchCommit_();
+      }
+
+      function handleHomeroomTeacherSearchKeydown_(event) {
+        if (event.key !== 'Enter') {
+          return;
+        }
+        event.preventDefault();
+        handleHomeroomTeacherSearchCommit_();
       }
 
       function handleHomeroomSubjectInput_() {
