@@ -1384,11 +1384,26 @@
         line-height: 1.6;
       }
 
+      .homeroom-assignment-card .homeroom-assignment-summary {
+        margin-top: 8px;
+        color: var(--text-soft);
+        font-size: 0.74rem;
+        line-height: 1.6;
+      }
+
+      .homeroom-assignment-card .homeroom-assignment-students {
+        margin-top: 10px;
+        color: var(--text-main);
+        font-size: 0.84rem;
+        font-weight: 800;
+        line-height: 1.75;
+      }
+
       .homeroom-assignment-tags {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        margin-top: 8px;
+        margin-top: 10px;
       }
 
       .homeroom-assignment-tag {
@@ -1397,11 +1412,11 @@
         min-height: 24px;
         padding: 0 8px;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.82);
-        border: 1px solid rgba(214, 226, 247, 0.88);
-        color: var(--text-soft);
-        font-size: 0.68rem;
-        font-weight: 900;
+        background: rgba(255, 255, 255, 0.58);
+        border: 1px solid rgba(214, 226, 247, 0.72);
+        color: rgba(84, 103, 148, 0.92);
+        font-size: 0.66rem;
+        font-weight: 700;
       }
 
       .homeroom-filter-stack {
@@ -2627,6 +2642,42 @@
         justify-content: flex-start;
       }
 
+      .material-row-main {
+        display: grid;
+        gap: 6px;
+      }
+
+      .material-row-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .material-row-title {
+        font-size: 0.86rem;
+        font-weight: 900;
+        color: var(--text-strong);
+      }
+
+      .material-row-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: var(--text-soft);
+        word-break: break-all;
+      }
+
+      .material-row-link a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .material-row-link a:hover {
+        color: var(--brand-deep);
+      }
+
       .material-inline-year-tabs {
         display: flex;
         flex-wrap: wrap;
@@ -3454,6 +3505,8 @@
       const APP_NAME = 'S-LMS (에스-엘엠에스)';
       const LOGO_URL = 'https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png';
       const SESSION_STORAGE_KEY = 'slms_api_session';
+      const DASHBOARD_CACHE_KEY = 'slms_dashboard_snapshot';
+      const DASHBOARD_CACHE_MAX_AGE_MS = 1000 * 60 * 15;
       const LOG_TAG_OPTIONS = [
         '수업현황',
         '첫수업 정보',
@@ -3582,7 +3635,12 @@
         if (savedSession && savedSession.token) {
           APP_STATE.token = savedSession.token;
           APP_STATE.user = savedSession.user || null;
-          loadDashboard();
+          var hasSnapshot = hydrateDashboardSnapshot_(readDashboardSnapshot_());
+          if (hasSnapshot) {
+            renderAll();
+            showAppOnly();
+          }
+          loadDashboard({ useStagedLoading: true, silent: true });
           return;
         }
 
@@ -3730,6 +3788,67 @@
         localStorage.removeItem(SESSION_STORAGE_KEY);
       }
 
+      function readDashboardSnapshot_() {
+        try {
+          var raw = localStorage.getItem(DASHBOARD_CACHE_KEY);
+          if (!raw) {
+            return null;
+          }
+          var parsed = JSON.parse(raw);
+          if (!parsed || !parsed.storedAt || !parsed.userId) {
+            return null;
+          }
+          if ((Date.now() - Number(parsed.storedAt || 0)) > DASHBOARD_CACHE_MAX_AGE_MS) {
+            return null;
+          }
+          return parsed;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function writeDashboardSnapshot_() {
+        if (!APP_STATE.user || !APP_STATE.user.userId || !APP_STATE.token) {
+          return;
+        }
+
+        localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify({
+          userId: APP_STATE.user.userId,
+          storedAt: Date.now(),
+          studentData: {
+            user: APP_STATE.user,
+            isAdmin: APP_STATE.isAdmin,
+            visibleStudents: APP_STATE.visibleStudents,
+            activeStudents: APP_STATE.activeStudents,
+            totalActiveStudentCount: APP_STATE.totalActiveStudentCount,
+            instructors: APP_STATE.instructors,
+            permissions: APP_STATE.permissions,
+            homeroomAssignments: APP_STATE.homeroomAssignments,
+            appName: APP_STATE.appName,
+            logoUrl: APP_STATE.logoUrl
+          },
+          materials: APP_STATE.materials,
+          materialOpenLogs: APP_STATE.materialOpenLogs,
+          events: APP_STATE.events
+        }));
+      }
+
+      function clearDashboardSnapshot_() {
+        localStorage.removeItem(DASHBOARD_CACHE_KEY);
+      }
+
+      function hydrateDashboardSnapshot_(snapshot) {
+        if (!snapshot || !APP_STATE.user || snapshot.userId !== APP_STATE.user.userId) {
+          return false;
+        }
+
+        hydrateStudentDataOnly(snapshot.studentData || {});
+        APP_STATE.materials = snapshot.materials || [];
+        APP_STATE.materialOpenLogs = snapshot.materialOpenLogs || [];
+        APP_STATE.events = snapshot.events || [];
+        return true;
+      }
+
       function showLoginOnly() {
         document.getElementById('loginScreen').classList.remove('hidden');
         document.getElementById('appShell').classList.add('hidden');
@@ -3806,7 +3925,7 @@
             writeStoredSession();
             syncBranding();
             setNotice(result.message || '로그인되었습니다.', 'success');
-            return loadDashboard();
+            return loadDashboard({ useStagedLoading: true, forceOverlay: true });
           })
           .catch(handleApiError_)
           .finally(clearLoading);
@@ -3816,28 +3935,51 @@
         if (!APP_STATE.token) {
           return;
         }
-        loadDashboard();
+        loadDashboard({ useStagedLoading: true, forceOverlay: true });
       }
 
-      function loadDashboard() {
+      function loadDashboard(options) {
+        var config = options || {};
         if (!APP_STATE.token) {
           showLoginOnly();
           return Promise.resolve();
         }
 
-        setLoading('학생 데이터, 자료, 일정을 동기화하는 중입니다.');
-        return Promise.all([
-          apiRequest('getStudents', { token: APP_STATE.token }),
-          apiRequest('getMaterials', { token: APP_STATE.token }),
-          apiRequest('getEvents', { token: APP_STATE.token })
-        ])
-          .then(function(results) {
-            hydrateDashboard(results[0], results[1], results[2]);
-            renderAll();
+        if (config.forceOverlay && !config.silent) {
+          setLoading('학생 데이터, 자료, 일정을 동기화하는 중입니다.');
+        }
+
+        return apiRequest('getStudents', { token: APP_STATE.token })
+          .then(function(studentData) {
+            hydrateStudentDataOnly(studentData);
+            if (config.useStagedLoading) {
+              renderUserSummary();
+              renderStats();
+              renderStudents();
+              renderHomeroomView();
+              renderPermissionView();
+              switchView(APP_STATE.currentView);
+              showAppOnly();
+            }
+
+            return Promise.all([
+              apiRequest('getMaterials', { token: APP_STATE.token }),
+              apiRequest('getEvents', { token: APP_STATE.token })
+            ]).then(function(results) {
+              hydrateDashboard(studentData, results[0], results[1]);
+              renderAll();
+              writeDashboardSnapshot_();
+            });
+          })
+          .then(function() {
             showAppOnly();
           })
           .catch(handleApiError_)
-          .finally(clearLoading);
+          .finally(function() {
+            if (config.forceOverlay && !config.silent) {
+              clearLoading();
+            }
+          });
       }
 
       function hydrateDashboard(studentData, materialData, eventData) {
@@ -4679,9 +4821,9 @@
                 return [
                   '<button type="button" class="homeroom-assignment-card ' + (APP_STATE.selectedHomeroomInstructorId === card.instructorId ? 'active' : '') + '" data-homeroom-assignment-instructor="' + escapeAttribute(card.instructorId) + '">',
                   '  <strong>' + escapeHtml(card.instructorName || card.instructorId) + '</strong>',
-                  '  <span>담임 학생 ' + escapeHtml(String(card.studentNames.length)) + '명 · 담당 과목 ' + escapeHtml(card.subjects.join(', ') || '미지정') + '</span>',
+                  '  <div class="homeroom-assignment-summary">담임 학생 ' + escapeHtml(String(card.studentNames.length)) + '명 · 담당 과목 ' + escapeHtml(card.subjects.join(', ') || '미지정') + '</div>',
+                  '  <div class="homeroom-assignment-students">' + escapeHtml(card.studentNames.join(', ')) + '</div>',
                   '  <div class="homeroom-assignment-tags">' + schoolTags.join('') + '</div>',
-                  '  <span>' + escapeHtml(card.studentNames.join(', ')) + '</span>',
                   '</button>'
                 ].join('');
               }).join(''),
@@ -5809,7 +5951,7 @@
         wrap.innerHTML = [
           '<div class="data-table-wrap">',
           '  <table class="data-table">',
-          '    <thead><tr><th>구분</th><th>기본 정보</th><th>자료 구분</th><th>링크</th></tr></thead>',
+          '    <thead><tr><th>과목</th><th>학년 / 학기</th><th>시험</th><th>자료유형</th><th>파일유형 / 링크</th><th>작업</th></tr></thead>',
           '    <tbody>',
           schoolKeys.map(function(schoolKey) {
             var yearMap = groupedMap[schoolKey] || {};
@@ -5828,11 +5970,11 @@
 
             return [
               '<tr class="material-school-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
-              '  <td colspan="4"><span class="material-school-title">' + escapeHtml(schoolKey) + '<span class="material-count-badge">자료 ' + escapeHtml(String(schoolItemCount)) + '건</span></span></td>',
+              '  <td colspan="6"><span class="material-school-title">' + escapeHtml(schoolKey) + '<span class="material-count-badge">자료 ' + escapeHtml(String(schoolItemCount)) + '건</span></span></td>',
               '</tr>',
               !school ? [
                 '<tr class="material-year-tab-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
-                '  <td colspan="4"><div class="material-inline-year-tabs">' +
+                '  <td colspan="6"><div class="material-inline-year-tabs">' +
                 yearKeys.map(function(yearKey) {
                   var count = (yearMap[yearKey] || []).length;
                   return '<button type="button" class="school-tab-button year-tab ' + (activeYear === yearKey ? 'active' : '') + ' ' + (!count ? 'empty' : '') + '" data-material-school-year="' + escapeAttribute(yearKey) + '" data-material-school-name="' + escapeAttribute(schoolKey) + '" style="' + buildSchoolToneStyle_(schoolKey) + '">' + escapeHtml(yearKey) + ' <span class="material-count-badge">' + escapeHtml(String(count)) + '건</span></button>';
@@ -5859,21 +6001,18 @@
                 });
                 return [
                   '<tr class="material-year-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
-                  '  <td colspan="4"><span class="material-year-title">' + renderMaterialMetaBadge_(yearKey, 'year') + '<span class="material-count-badge">' + escapeHtml(String(yearItems.length)) + '건</span></span></td>',
+                  '  <td colspan="6"><span class="material-year-title">' + renderMaterialMetaBadge_(yearKey, 'year') + '<span class="material-count-badge">' + escapeHtml(String(yearItems.length)) + '건</span></span></td>',
                   '</tr>',
                   (!yearItems.length ? [
                     '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
                     '  <td><span class="material-item-index">자료 없음</span></td>',
                     '  <td><div class="material-badge-row">' + [
                           renderMaterialMetaBadge_('-', 'grade'),
-                          renderMaterialMetaBadge_('-', 'term'),
-                          renderMaterialMetaBadge_('-', 'subject')
+                          renderMaterialMetaBadge_('-', 'term')
                         ].join('') + '</div></td>',
-                    '  <td><div class="material-badge-row">' + [
-                          renderMaterialMetaBadge_('-', 'exam'),
-                          renderMaterialMetaBadge_('-', 'type'),
-                          renderMaterialMetaBadge_('-', 'file')
-                        ].join('') + '</div></td>',
+                    '  <td>' + renderMaterialMetaBadge_('-', 'exam') + '</td>',
+                    '  <td>' + renderMaterialMetaBadge_('-', 'type') + '</td>',
+                    '  <td>' + renderMaterialMetaBadge_('-', 'file') + '</td>',
                     '  <td><span class="material-item-index">미등록</span></td>',
                     '</tr>'
                   ].join('') : subgroupKeys.map(function(subgroupKey) {
@@ -5895,7 +6034,7 @@
                     });
                     return [
                       '<tr class="material-subgroup-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
-                      '  <td colspan="4"><span class="material-subgroup-title">' + [
+                      '  <td colspan="6"><span class="material-subgroup-title">' + [
                             '<strong>그룹</strong>',
                             renderMaterialMetaBadge_(firstItem.grade || '-', 'grade'),
                             renderMaterialMetaBadge_(firstItem.term || '-', 'term'),
@@ -5907,26 +6046,24 @@
                         var groupedItems = subjectGroupMap[subjectGroupKey] || [];
                         var groupedHead = groupedItems[0] || {};
                         var subjectToneClass = getSubjectToneClass_(groupedHead.subject);
-                        return [
-                          '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
-                          '  <td class="material-subject-cell ' + escapeAttribute(subjectToneClass) + '"><div class="material-primary-cell">' + [
-                                (!school ? '<span class="material-school-name-inline">' + escapeHtml(schoolKey) + '</span>' : ''),
-                                renderMaterialSubjectLabel_(groupedHead.subject)
-                              ].join('') + '</div></td>',
-                          '  <td><div class="material-secondary-stack">' + [
-                                '<div class="material-badge-row">' + renderMaterialMetaBadge_(groupedHead.materialType, 'type') + '</div>',
-                                '<div class="material-file-stack">' + groupedItems.map(function(item) {
-                                  return '<div class="material-file-entry">' + renderMaterialMetaBadge_(item.fileType, 'file') + '</div>';
-                                }).join('') + '</div>'
-                              ].join('') + '</div></td>',
-                          '  <td><div class="material-file-stack">' + groupedItems.map(function(item, itemIndex) {
-                                return '<div class="material-file-entry">' + (itemIndex === 0 ? renderMaterialMetaBadge_(groupedHead.examType || '-', 'exam') : '<span class="material-meta-badge exam" style="visibility:hidden;">' + escapeHtml(groupedHead.examType || '-') + '</span>') + '</div>';
-                              }).join('') + '</div></td>',
-                          '  <td><div class="material-file-stack">' + groupedItems.map(function(item) {
-                                return '<div class="material-file-entry actions"><div class="material-action-group"><button type="button" class="material-table-cell-link" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link) + '">열기</button>' + (APP_STATE.isAdmin ? '<button type="button" class="material-edit-button" data-material-edit="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button><button type="button" class="material-delete-button" data-material-delete="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">삭제</button>' : '') + '</div></div>';
-                              }).join('') + '</div></td>',
-                          '</tr>'
-                        ].join('');
+                        return groupedItems.map(function(item, itemIndex) {
+                          return [
+                            '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
+                            '  <td class="material-subject-cell ' + escapeAttribute(subjectToneClass) + '"><div class="material-primary-cell">' + [
+                                  (!school && itemIndex === 0 ? '<span class="material-school-name-inline">' + escapeHtml(schoolKey) + '</span>' : ''),
+                                  renderMaterialSubjectLabel_(groupedHead.subject)
+                                ].join('') + '</div></td>',
+                            '  <td><div class="material-row-meta">' + [
+                                  renderMaterialMetaBadge_(item.grade || '-', 'grade'),
+                                  renderMaterialMetaBadge_(item.term || '-', 'term')
+                                ].join('') + '</div></td>',
+                            '  <td>' + renderMaterialMetaBadge_(item.examType || '-', 'exam') + '</td>',
+                            '  <td>' + renderMaterialMetaBadge_(item.materialType || '-', 'type') + '</td>',
+                            '  <td>' + renderMaterialFileCell_(item) + '</td>',
+                            '  <td>' + renderMaterialActionButtons_(item) + '</td>',
+                            '</tr>'
+                          ].join('');
+                        }).join('');
                       }).join('')
                     ].join('');
                   }).join(''))
@@ -5938,6 +6075,22 @@
           '  </table>',
           '</div>'
         ].join('');
+      }
+
+      function renderMaterialFileCell_(item) {
+        return '<div class="material-row-main">' + [
+          renderMaterialMetaBadge_(item.fileType || '-', 'file'),
+          '<span class="material-row-link"><a href="' + escapeAttribute(item.link || '#') + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(truncateText_(item.link || '-', 56)) + '</a></span>'
+        ].join('') + '</div>';
+      }
+
+      function renderMaterialActionButtons_(item) {
+        return '<div class="material-action-group">' +
+          '<button type="button" class="material-table-cell-link" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link || '') + '">열기</button>' +
+          (APP_STATE.isAdmin
+            ? '<button type="button" class="material-edit-button" data-material-edit="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button><button type="button" class="material-delete-button" data-material-delete="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">삭제</button>'
+            : '') +
+          '</div>';
       }
 
       function getCurrentMaterialFilterState_(options) {
@@ -6618,6 +6771,7 @@
         APP_STATE.events = [];
         APP_STATE.selectedLogRow = '';
         clearStoredSession();
+        clearDashboardSnapshot_();
         closePermissionModal();
         closeTeachingLogDetailModal();
         renderAll();
