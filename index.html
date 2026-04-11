@@ -4157,10 +4157,17 @@
             APP_STATE.logoUrl = result.logoUrl || APP_STATE.logoUrl;
             writeStoredSession();
             syncBranding();
+            showAppOnly();
             setNotice(result.message || '로그인되었습니다.', 'success');
             return loadDashboard({ useStagedLoading: true, forceOverlay: true });
           })
-          .catch(handleApiError_)
+          .catch(function(error) {
+            if (APP_STATE.token) {
+              setNotice('로그인은 되었지만 초기 데이터 동기화 중 문제가 발생했습니다. 실시간 동기화로 다시 시도해주세요.', 'warning');
+              return;
+            }
+            handleApiError_(error);
+          })
           .finally(clearLoading);
       }
 
