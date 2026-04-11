@@ -2678,6 +2678,67 @@
         color: var(--brand-deep);
       }
 
+      .material-row-note {
+        display: block;
+        font-size: 0.73rem;
+        line-height: 1.55;
+        color: #7c869f;
+      }
+
+      .material-settings-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .material-settings-section {
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(248, 251, 255, 0.78);
+        border: 1px solid rgba(214, 226, 247, 0.88);
+      }
+
+      .material-settings-head {
+        display: grid;
+        gap: 4px;
+        margin-bottom: 10px;
+      }
+
+      .material-settings-head strong {
+        font-size: 0.88rem;
+        font-weight: 900;
+      }
+
+      .material-settings-head span {
+        color: var(--text-soft);
+        font-size: 0.72rem;
+      }
+
+      .material-option-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .material-option-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(214, 226, 247, 0.92);
+        color: var(--text-main);
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .material-settings-input-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+      }
+
       .material-inline-year-tabs {
         display: flex;
         flex-wrap: wrap;
@@ -3360,8 +3421,9 @@
             <div class="panel-head">
               <div>
                 <h3>자료 등록</h3>
-                <p>학교, 학년, 학기, 대상 년도, 과목, 자료유형, 파일유형, 링크를 한 줄 그리드로 입력해 빠르게 연속 등록할 수 있습니다.</p>
+                <p>학교, 학년, 학기, 대상 년도, 과목, 자료유형, 파일유형, 링크와 설명을 한 줄 그리드로 입력해 빠르게 연속 등록할 수 있습니다.</p>
               </div>
+              <button id="openMaterialSettingsButton" type="button" class="mini-button">설정창</button>
             </div>
             <div id="materialEditBanner" class="material-edit-banner hidden">
               <div>
@@ -3407,6 +3469,10 @@
                 <label class="field-label" for="materialLinkInput">링크</label>
                 <input id="materialLinkInput" class="field-input" type="url" placeholder="https://...">
               </div>
+              <div class="field-shell">
+                <label class="field-label" for="materialNoteInput">비고 / 설명</label>
+                <input id="materialNoteInput" class="field-input" type="text" placeholder="자료 설명을 입력하세요">
+              </div>
               <button id="saveMaterialButton" type="submit" class="button-primary">자료 저장</button>
             </form>
           </section>
@@ -3415,7 +3481,7 @@
             <div class="panel-head">
               <div>
                 <h3>자료 검색 및 목록</h3>
-                <p>검색어는 학교, 학년, 학기, 년도, 과목, 시험구분, 자료유형, 파일유형, 등록자, 링크 전체 필드에서 부분 일치로 작동하며, 학교-년도 단위로 먼저 묶어 표시합니다.</p>
+                <p>검색어는 학교, 학년, 학기, 년도, 과목, 시험구분, 자료유형, 파일유형, 비고 설명, 등록자 필드에서 부분 일치로 작동하며, 학교-년도 단위로 먼저 묶어 표시합니다.</p>
               </div>
             </div>
             <div id="materialsPanelTabs" class="material-subtab-row"></div>
@@ -3497,6 +3563,56 @@
           <button id="closeTeachingLogDetailButton" type="button" class="icon-button" aria-label="티칭로그 상세창 닫기">×</button>
         </div>
         <div id="teachingLogDetailContent" class="modal-body"></div>
+      </div>
+    </div>
+
+    <div id="materialSettingsModal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-top">
+          <div>
+            <h3>문제 자료실 설정</h3>
+            <p>시험구분, 자료유형, 파일유형 옵션을 직접 추가할 수 있습니다.</p>
+          </div>
+          <button id="closeMaterialSettingsButton" type="button" class="icon-button" aria-label="자료실 설정창 닫기">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="materialSettingsNotice" class="hint-box">추가한 옵션은 자료 등록 선택창에 바로 반영됩니다.</div>
+          <div class="material-settings-grid">
+            <section class="material-settings-section">
+              <div class="material-settings-head">
+                <strong>시험구분</strong>
+                <span>예: 월말평가, 반배치고사</span>
+              </div>
+              <div id="materialExamTypeOptionList" class="material-option-list"></div>
+              <div class="material-settings-input-row">
+                <input id="materialExamTypeOptionInput" class="field-input" type="text" placeholder="시험구분 추가">
+                <button type="button" class="mini-button" data-material-setting-save="examType">추가</button>
+              </div>
+            </section>
+            <section class="material-settings-section">
+              <div class="material-settings-head">
+                <strong>자료유형</strong>
+                <span>예: 개념정리, 서술형특강</span>
+              </div>
+              <div id="materialTypeOptionList" class="material-option-list"></div>
+              <div class="material-settings-input-row">
+                <input id="materialTypeOptionInput" class="field-input" type="text" placeholder="자료유형 추가">
+                <button type="button" class="mini-button" data-material-setting-save="materialType">추가</button>
+              </div>
+            </section>
+            <section class="material-settings-section">
+              <div class="material-settings-head">
+                <strong>파일유형</strong>
+                <span>예: 해설지, 첨삭본</span>
+              </div>
+              <div id="materialFileTypeOptionList" class="material-option-list"></div>
+              <div class="material-settings-input-row">
+                <input id="materialFileTypeOptionInput" class="field-input" type="text" placeholder="파일유형 추가">
+                <button type="button" class="mini-button" data-material-setting-save="fileType">추가</button>
+              </div>
+            </section>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3584,6 +3700,11 @@
         instructors: [],
         permissions: [],
         materials: [],
+        materialSettings: {
+          examTypes: [],
+          materialTypes: [],
+          fileTypes: []
+        },
         selectedMaterialSchoolTab: '',
         selectedMaterialYearTab: '',
         materialPanelMode: 'list',
@@ -3701,6 +3822,10 @@
 
         document.getElementById('materialForm').addEventListener('submit', handleMaterialSave);
         document.getElementById('cancelMaterialEditButton').addEventListener('click', clearMaterialEditMode_);
+        document.getElementById('openMaterialSettingsButton').addEventListener('click', openMaterialSettingsModal);
+        document.getElementById('closeMaterialSettingsButton').addEventListener('click', closeMaterialSettingsModal);
+        document.getElementById('materialSettingsModal').addEventListener('click', handleMaterialSettingsBackdropClick);
+        document.getElementById('materialSettingsModal').addEventListener('click', handleMaterialSettingsSaveClick);
         document.getElementById('eventForm').addEventListener('submit', handleEventSave);
         document.getElementById('materialKeywordInput').addEventListener('input', renderMaterials);
         document.getElementById('materialSchoolFilter').addEventListener('change', function(event) {
@@ -3828,6 +3953,7 @@
             logoUrl: APP_STATE.logoUrl
           },
           materials: APP_STATE.materials,
+          materialSettings: APP_STATE.materialSettings,
           materialOpenLogs: APP_STATE.materialOpenLogs,
           events: APP_STATE.events
         }));
@@ -3844,6 +3970,7 @@
 
         hydrateStudentDataOnly(snapshot.studentData || {});
         APP_STATE.materials = snapshot.materials || [];
+        APP_STATE.materialSettings = snapshot.materialSettings || APP_STATE.materialSettings;
         APP_STATE.materialOpenLogs = snapshot.materialOpenLogs || [];
         APP_STATE.events = snapshot.events || [];
         return true;
@@ -3992,6 +4119,7 @@
         APP_STATE.permissions = studentData.permissions || [];
         APP_STATE.homeroomAssignments = studentData.homeroomAssignments || [];
         APP_STATE.materials = materialData && materialData.materials ? materialData.materials : [];
+        APP_STATE.materialSettings = materialData && materialData.settings ? materialData.settings : APP_STATE.materialSettings;
         APP_STATE.materialOpenLogs = materialData && materialData.openLogs ? materialData.openLogs : [];
         APP_STATE.materialYearTabsBySchool = {};
         APP_STATE.editingMaterialRowNumber = '';
@@ -5564,10 +5692,14 @@
           examType: document.getElementById('materialExamTypeInput').value.trim(),
           materialType: document.getElementById('materialTypeInput').value.trim(),
           fileType: document.getElementById('materialFileTypeInput').value.trim(),
-          link: document.getElementById('materialLinkInput').value.trim()
+          link: document.getElementById('materialLinkInput').value.trim(),
+          note: document.getElementById('materialNoteInput').value.trim()
         })
           .then(function(result) {
             APP_STATE.materials = result.materials || [];
+            if (result.settings) {
+              APP_STATE.materialSettings = result.settings;
+            }
             if (result.openLogs) {
               APP_STATE.materialOpenLogs = result.openLogs || [];
             }
@@ -5575,6 +5707,7 @@
             initializeMaterialFormOptions();
             clearMaterialEditMode_(true);
             renderMaterials();
+            writeDashboardSnapshot_();
             switchView('materials');
             setNotice(result.message || (isEditing ? '자료가 수정되었습니다.' : '자료가 저장되었습니다.'), 'success');
           })
@@ -5622,6 +5755,7 @@
         document.getElementById('materialTypeInput').value = material.materialType || '';
         document.getElementById('materialFileTypeInput').value = material.fileType || '';
         document.getElementById('materialLinkInput').value = material.link || '';
+        document.getElementById('materialNoteInput').value = material.note || '';
         document.getElementById('materialEditBannerText').textContent = [
           material.school || '-',
           material.year || '-',
@@ -5660,6 +5794,7 @@
               clearMaterialEditMode_();
             }
             renderMaterials();
+            writeDashboardSnapshot_();
             setNotice(result.message || '자료가 삭제되었습니다.', 'success');
           })
           .catch(handleApiError_)
@@ -5674,6 +5809,72 @@
           }
         }
         return null;
+      }
+
+      function openMaterialSettingsModal() {
+        if (!APP_STATE.isAdmin) {
+          setNotice('관리자만 자료실 설정을 변경할 수 있습니다.', 'warning');
+          return;
+        }
+        renderMaterialSettingsModal();
+        document.getElementById('materialSettingsModal').classList.remove('hidden');
+      }
+
+      function closeMaterialSettingsModal() {
+        document.getElementById('materialSettingsModal').classList.add('hidden');
+      }
+
+      function handleMaterialSettingsBackdropClick(event) {
+        if (event.target.id === 'materialSettingsModal') {
+          closeMaterialSettingsModal();
+        }
+      }
+
+      function renderMaterialSettingsModal() {
+        renderMaterialSettingOptionList_('materialExamTypeOptionList', getResolvedMaterialSettingOptions_('examType'));
+        renderMaterialSettingOptionList_('materialTypeOptionList', getResolvedMaterialSettingOptions_('materialType'));
+        renderMaterialSettingOptionList_('materialFileTypeOptionList', getResolvedMaterialSettingOptions_('fileType'));
+      }
+
+      function renderMaterialSettingOptionList_(targetId, values) {
+        document.getElementById(targetId).innerHTML = (values || []).map(function(value) {
+          return '<span class="material-option-chip">' + escapeHtml(value) + '</span>';
+        }).join('');
+      }
+
+      function handleMaterialSettingsSaveClick(event) {
+        var button = event.target.closest('[data-material-setting-save]');
+        if (!button) {
+          return;
+        }
+
+        var settingType = button.getAttribute('data-material-setting-save') || '';
+        var inputId = settingType === 'examType'
+          ? 'materialExamTypeOptionInput'
+          : (settingType === 'materialType' ? 'materialTypeOptionInput' : 'materialFileTypeOptionInput');
+        var input = document.getElementById(inputId);
+        var value = input.value.trim();
+        if (!value) {
+          setNotice('추가할 옵션 이름을 입력해주세요.', 'warning');
+          return;
+        }
+
+        setLoading('자료실 옵션을 추가하는 중입니다.');
+        apiRequest('saveMaterialSettingOption', {
+          token: APP_STATE.token,
+          settingType: settingType,
+          value: value
+        })
+          .then(function(result) {
+            APP_STATE.materialSettings = result.settings || APP_STATE.materialSettings;
+            input.value = '';
+            initializeMaterialFormOptions();
+            renderMaterialSettingsModal();
+            writeDashboardSnapshot_();
+            setNotice(result.message || '자료실 옵션이 추가되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
       }
 
       function handleEventSave(event) {
@@ -5951,7 +6152,7 @@
         wrap.innerHTML = [
           '<div class="data-table-wrap">',
           '  <table class="data-table">',
-          '    <thead><tr><th>과목</th><th>학년 / 학기</th><th>시험</th><th>자료유형</th><th>파일유형 / 링크</th><th>작업</th></tr></thead>',
+          '    <thead><tr><th>과목</th><th>학년 / 학기</th><th>시험</th><th>자료유형</th><th>파일유형 / 설명</th><th>작업</th></tr></thead>',
           '    <tbody>',
           schoolKeys.map(function(schoolKey) {
             var yearMap = groupedMap[schoolKey] || {};
@@ -6080,7 +6281,7 @@
       function renderMaterialFileCell_(item) {
         return '<div class="material-row-main">' + [
           renderMaterialMetaBadge_(item.fileType || '-', 'file'),
-          '<span class="material-row-link"><a href="' + escapeAttribute(item.link || '#') + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(truncateText_(item.link || '-', 56)) + '</a></span>'
+          (item.note ? '<span class="material-row-note">' + escapeHtml(item.note) + '</span>' : '')
         ].join('') + '</div>';
       }
 
@@ -6121,6 +6322,7 @@
             item.examType,
             item.materialType,
             item.fileType,
+            item.note,
             item.createdBy,
             item.link
           ].join(' '));
@@ -6167,9 +6369,23 @@
 
       function initializeMaterialFormOptions() {
         fillStaticSelectWithOptions('materialTermInput', MATERIAL_TERM_OPTIONS, '학기 선택');
-        fillStaticSelectWithOptions('materialExamTypeInput', MATERIAL_EXAM_OPTIONS, '시험구분 선택');
-        fillStaticSelectWithOptions('materialTypeInput', MATERIAL_TYPE_OPTIONS, '자료유형 선택');
-        fillStaticSelectWithOptions('materialFileTypeInput', MATERIAL_FILE_TYPE_OPTIONS, '파일유형 선택');
+        fillStaticSelectWithOptions('materialExamTypeInput', getResolvedMaterialSettingOptions_('examType'), '시험구분 선택');
+        fillStaticSelectWithOptions('materialTypeInput', getResolvedMaterialSettingOptions_('materialType'), '자료유형 선택');
+        fillStaticSelectWithOptions('materialFileTypeInput', getResolvedMaterialSettingOptions_('fileType'), '파일유형 선택');
+      }
+
+      function getResolvedMaterialSettingOptions_(settingType) {
+        var settings = APP_STATE.materialSettings || {};
+        if (settingType === 'examType') {
+          return (settings.examTypes && settings.examTypes.length ? settings.examTypes : MATERIAL_EXAM_OPTIONS).slice();
+        }
+        if (settingType === 'materialType') {
+          return (settings.materialTypes && settings.materialTypes.length ? settings.materialTypes : MATERIAL_TYPE_OPTIONS).slice();
+        }
+        if (settingType === 'fileType') {
+          return (settings.fileTypes && settings.fileTypes.length ? settings.fileTypes : MATERIAL_FILE_TYPE_OPTIONS).slice();
+        }
+        return [];
       }
 
       function fillStaticSelectWithOptions(selectId, values, defaultLabel) {
@@ -6764,6 +6980,7 @@
         APP_STATE.instructors = [];
         APP_STATE.permissions = [];
         APP_STATE.materials = [];
+        APP_STATE.materialSettings = { examTypes: [], materialTypes: [], fileTypes: [] };
         APP_STATE.materialYearTabsBySchool = {};
         APP_STATE.editingMaterialRowNumber = '';
         APP_STATE.materialOpenLogs = [];
@@ -6773,6 +6990,7 @@
         clearStoredSession();
         clearDashboardSnapshot_();
         closePermissionModal();
+        closeMaterialSettingsModal();
         closeTeachingLogDetailModal();
         renderAll();
         showLoginOnly();
