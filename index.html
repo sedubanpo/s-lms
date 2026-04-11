@@ -1903,6 +1903,59 @@
         min-height: 420px;
       }
 
+      .permission-panel-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .student-manage-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .student-manage-form {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+        gap: 8px;
+        align-items: end;
+      }
+
+      .student-status-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .student-status-chip.active {
+        background: rgba(16, 185, 129, 0.14);
+        color: #047857;
+      }
+
+      .student-status-chip.inactive {
+        background: rgba(148, 163, 184, 0.16);
+        color: #64748b;
+      }
+
+      .student-status-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(214, 226, 247, 0.95);
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--text-main);
+        font-size: 0.74rem;
+        font-weight: 900;
+      }
+
       .dense-table-shell,
       .dense-side-shell {
         padding: 12px;
@@ -3334,18 +3387,52 @@
                 <p id="permissionPanelDescription">학생명을 검색하고, 원/학년으로 좁힌 뒤 학생을 선택하면 우측에서 수업 열람 권한을 빠르게 관리할 수 있습니다.</p>
               </div>
             </div>
-            <div class="compact-control-bar">
-              <input id="permissionSearchInput" class="field-input" type="text" placeholder="학생명 검색">
-              <select id="permissionSchoolFilter" class="field-select"></select>
-              <select id="permissionGradeFilter" class="field-select"></select>
+            <div id="permissionPanelTabs" class="permission-panel-tabs"></div>
+            <div id="permissionInstructorPanel">
+              <div class="compact-control-bar">
+                <input id="permissionSearchInput" class="field-input" type="text" placeholder="학생명 검색">
+                <select id="permissionSchoolFilter" class="field-select"></select>
+                <select id="permissionGradeFilter" class="field-select"></select>
+              </div>
+              <div class="permission-dense-layout">
+                <section class="dense-table-shell">
+                  <div class="scroll-shell" id="permissionStudentTableWrap"></div>
+                </section>
+                <section class="dense-side-shell">
+                  <div id="permissionDetailPanel"></div>
+                  <button id="savePermissionButton" type="button" class="button-primary" style="margin-top:10px; width:100%;">권한 저장</button>
+                </section>
+              </div>
             </div>
-            <div class="permission-dense-layout">
+            <div id="permissionStudentManagePanel" class="student-manage-stack hidden">
+              <div class="dense-table-shell">
+                <div class="student-manage-form">
+                  <div class="field-shell">
+                    <label class="field-label" for="studentManageNameInput">학생명</label>
+                    <input id="studentManageNameInput" class="field-input" type="text" placeholder="김하은">
+                  </div>
+                  <div class="field-shell">
+                    <label class="field-label" for="studentManageSchoolInput">원(학교)</label>
+                    <input id="studentManageSchoolInput" class="field-input" type="text" placeholder="서문여고">
+                  </div>
+                  <div class="field-shell">
+                    <label class="field-label" for="studentManageGradeInput">학년</label>
+                    <input id="studentManageGradeInput" class="field-input" type="text" placeholder="3">
+                  </div>
+                  <button id="addStudentButton" type="button" class="button-primary">학생 추가</button>
+                </div>
+              </div>
+              <div class="compact-control-bar">
+                <input id="studentManageSearchInput" class="field-input" type="text" placeholder="학생명 검색">
+                <select id="studentManageSchoolFilter" class="field-select"></select>
+                <select id="studentManageStatusFilter" class="field-select">
+                  <option value="">전체 상태</option>
+                  <option value="active">등록</option>
+                  <option value="inactive">중지</option>
+                </select>
+              </div>
               <section class="dense-table-shell">
-                <div class="scroll-shell" id="permissionStudentTableWrap"></div>
-              </section>
-              <section class="dense-side-shell">
-                <div id="permissionDetailPanel"></div>
-                <button id="savePermissionButton" type="button" class="button-primary" style="margin-top:10px; width:100%;">권한 저장</button>
+                <div class="scroll-shell" id="studentManageTableWrap"></div>
               </section>
             </div>
           </section>
@@ -3695,8 +3782,10 @@
         homeroomSelectedStudentIds: [],
         homeroomSelectionSourceInstructorId: '',
         selectedPermissionStudentId: '',
+        permissionTab: 'instructors',
         permissionInstructorKeyword: '',
         isPermissionInstructorComposing: false,
+        allStudents: [],
         instructors: [],
         permissions: [],
         materials: [],
@@ -3817,6 +3906,12 @@
         document.getElementById('permissionDetailPanel').addEventListener('compositionstart', handlePermissionInstructorCompositionStart);
         document.getElementById('permissionDetailPanel').addEventListener('compositionend', handlePermissionInstructorCompositionEnd);
         document.getElementById('savePermissionButton').addEventListener('click', handlePermissionSave);
+        document.getElementById('permissionPanelTabs').addEventListener('click', handlePermissionTabClick);
+        document.getElementById('addStudentButton').addEventListener('click', handleStudentAdd);
+        document.getElementById('studentManageSearchInput').addEventListener('input', renderPermissionView);
+        document.getElementById('studentManageSchoolFilter').addEventListener('change', renderPermissionView);
+        document.getElementById('studentManageStatusFilter').addEventListener('change', renderPermissionView);
+        document.getElementById('studentManageTableWrap').addEventListener('click', handleStudentManageTableClick);
         document.getElementById('modalPermissionStudentSelect').addEventListener('change', renderPermissionModalChecklist);
         document.getElementById('modalSavePermissionButton').addEventListener('click', handlePermissionModalSave);
 
@@ -3945,6 +4040,7 @@
             isAdmin: APP_STATE.isAdmin,
             visibleStudents: APP_STATE.visibleStudents,
             activeStudents: APP_STATE.activeStudents,
+            allStudents: APP_STATE.allStudents,
             totalActiveStudentCount: APP_STATE.totalActiveStudentCount,
             instructors: APP_STATE.instructors,
             permissions: APP_STATE.permissions,
@@ -4114,6 +4210,7 @@
         APP_STATE.isAdmin = Boolean(studentData.isAdmin);
         APP_STATE.visibleStudents = studentData.visibleStudents || [];
         APP_STATE.activeStudents = studentData.activeStudents || [];
+        APP_STATE.allStudents = studentData.allStudents || [];
         APP_STATE.totalActiveStudentCount = Number(studentData.totalActiveStudentCount || 0);
         APP_STATE.instructors = studentData.instructors || [];
         APP_STATE.permissions = studentData.permissions || [];
@@ -4136,6 +4233,7 @@
         APP_STATE.isAdmin = Boolean(studentData.isAdmin);
         APP_STATE.visibleStudents = studentData.visibleStudents || [];
         APP_STATE.activeStudents = studentData.activeStudents || [];
+        APP_STATE.allStudents = studentData.allStudents || [];
         APP_STATE.totalActiveStudentCount = Number(studentData.totalActiveStudentCount || 0);
         APP_STATE.instructors = studentData.instructors || [];
         APP_STATE.permissions = studentData.permissions || [];
@@ -5309,10 +5407,26 @@
           return;
         }
 
+        renderPermissionPanelTabs_();
         populatePermissionFilters();
         syncSelectedPermissionStudent_();
+        document.getElementById('permissionInstructorPanel').classList.toggle('hidden', APP_STATE.permissionTab !== 'instructors');
+        document.getElementById('permissionStudentManagePanel').classList.toggle('hidden', APP_STATE.permissionTab !== 'students');
+
+        if (APP_STATE.permissionTab === 'students') {
+          renderStudentManageTable();
+          return;
+        }
+
         renderPermissionStudentTable();
         renderPermissionDetailPanel();
+      }
+
+      function renderPermissionPanelTabs_() {
+        document.getElementById('permissionPanelTabs').innerHTML = [
+          '<button type="button" class="material-subtab-button ' + (APP_STATE.permissionTab === 'instructors' ? 'active' : '') + '" data-permission-tab="instructors">강사</button>',
+          '<button type="button" class="material-subtab-button ' + (APP_STATE.permissionTab === 'students' ? 'active' : '') + '" data-permission-tab="students">학생</button>'
+        ].join('');
       }
 
       function populatePermissionFilters() {
@@ -5323,6 +5437,10 @@
         fillSelectWithOptions('permissionGradeFilter', APP_STATE.activeStudents.map(function(student) {
           return student.grade ? String(student.grade) : '';
         }), '전체 학년');
+
+        fillSelectWithOptions('studentManageSchoolFilter', APP_STATE.allStudents.map(function(student) {
+          return student.school;
+        }), '전체 원');
       }
 
       function getFilteredPermissionStudents_() {
@@ -5468,6 +5586,15 @@
         APP_STATE.permissionInstructorKeyword = '';
         renderPermissionStudentTable();
         renderPermissionDetailPanel();
+      }
+
+      function handlePermissionTabClick(event) {
+        var button = event.target.closest('[data-permission-tab]');
+        if (!button) {
+          return;
+        }
+        APP_STATE.permissionTab = button.getAttribute('data-permission-tab') || 'instructors';
+        renderPermissionView();
       }
 
       function handlePermissionInstructorSearch(event) {
@@ -5669,6 +5796,106 @@
             renderPermissionModalChecklist();
             closePermissionModal();
             setNotice(result.message || '학생 열람 권한이 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function getFilteredManagedStudents_() {
+        var keyword = normalizeSearchText(document.getElementById('studentManageSearchInput').value);
+        var school = document.getElementById('studentManageSchoolFilter').value;
+        var status = document.getElementById('studentManageStatusFilter').value;
+
+        return (APP_STATE.allStudents || []).filter(function(student) {
+          var searchText = normalizeSearchText([
+            student.studentName,
+            student.school,
+            student.grade,
+            student.studentId
+          ].join(' '));
+          var matchesKeyword = !keyword || searchText.indexOf(keyword) !== -1;
+          var matchesSchool = !school || student.school === school;
+          var matchesStatus = !status || (status === 'active' ? student.isActive : !student.isActive);
+          return matchesKeyword && matchesSchool && matchesStatus;
+        });
+      }
+
+      function renderStudentManageTable() {
+        var wrap = document.getElementById('studentManageTableWrap');
+        var students = getFilteredManagedStudents_();
+
+        if (!students.length) {
+          wrap.innerHTML = '<div class="empty-state">조건에 맞는 학생이 없습니다.<br>검색 또는 상태 필터를 조정해 주세요.</div>';
+          return;
+        }
+
+        wrap.innerHTML = [
+          '<div class="data-table-wrap">',
+          '  <table class="data-table">',
+          '    <thead><tr><th>학생명</th><th>원</th><th>학년</th><th>상태</th><th>작업</th></tr></thead>',
+          '    <tbody>',
+          students.map(function(student) {
+            return [
+              '<tr>',
+              '  <td>' + escapeHtml(student.studentName || '-') + '</td>',
+              '  <td>' + escapeHtml(student.school || '-') + '</td>',
+              '  <td>' + escapeHtml(student.grade ? String(student.grade) : '-') + '</td>',
+              '  <td><span class="student-status-chip ' + (student.isActive ? 'active' : 'inactive') + '">' + (student.isActive ? '등록' : '중지') + '</span></td>',
+              '  <td><button type="button" class="student-status-button" data-student-status-toggle="' + escapeAttribute(student.studentId) + '" data-next-status="' + escapeAttribute(student.isActive ? 'inactive' : 'active') + '">' + escapeHtml(student.isActive ? '중지' : '재등록') + '</button></td>',
+              '</tr>'
+            ].join('');
+          }).join(''),
+          '    </tbody>',
+          '  </table>',
+          '</div>'
+        ].join('');
+      }
+
+      function handleStudentAdd() {
+        if (!APP_STATE.isAdmin) {
+          setNotice('관리자만 학생을 등록할 수 있습니다.', 'warning');
+          return;
+        }
+
+        setLoading('학생을 등록하는 중입니다.');
+        apiRequest('addStudent', {
+          token: APP_STATE.token,
+          studentName: document.getElementById('studentManageNameInput').value.trim(),
+          school: document.getElementById('studentManageSchoolInput').value.trim(),
+          grade: document.getElementById('studentManageGradeInput').value.trim()
+        })
+          .then(function(result) {
+            hydrateStudentDataOnly(result);
+            document.getElementById('studentManageNameInput').value = '';
+            document.getElementById('studentManageSchoolInput').value = '';
+            document.getElementById('studentManageGradeInput').value = '';
+            renderAll();
+            switchView('permissions');
+            setNotice(result.message || '학생이 등록되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function handleStudentManageTableClick(event) {
+        var button = event.target.closest('[data-student-status-toggle]');
+        if (!button) {
+          return;
+        }
+
+        var studentId = button.getAttribute('data-student-status-toggle') || '';
+        var nextStatus = button.getAttribute('data-next-status') || '';
+        setLoading(nextStatus === 'active' ? '학생을 다시 등록하는 중입니다.' : '학생을 중지하는 중입니다.');
+        apiRequest('updateStudentStatus', {
+          token: APP_STATE.token,
+          studentId: studentId,
+          isActive: String(nextStatus === 'active')
+        })
+          .then(function(result) {
+            hydrateStudentDataOnly(result);
+            renderAll();
+            switchView('permissions');
+            setNotice(result.message || '학생 상태가 변경되었습니다.', 'success');
           })
           .catch(handleApiError_)
           .finally(clearLoading);
@@ -6976,7 +7203,9 @@
         APP_STATE.homeroomSelectedStudentIds = [];
         APP_STATE.homeroomSelectionSourceInstructorId = '';
         APP_STATE.selectedPermissionStudentId = '';
+        APP_STATE.permissionTab = 'instructors';
         APP_STATE.permissionInstructorKeyword = '';
+        APP_STATE.allStudents = [];
         APP_STATE.instructors = [];
         APP_STATE.permissions = [];
         APP_STATE.materials = [];
