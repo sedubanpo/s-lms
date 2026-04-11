@@ -3802,6 +3802,10 @@
         materialOpenLogs: [],
         isMaterialOpenLogsCollapsed: true,
         events: [],
+        materialsLoaded: false,
+        eventsLoaded: false,
+        materialsLoading: false,
+        eventsLoading: false,
         calendarYear: new Date().getFullYear(),
         calendarMonth: new Date().getMonth(),
         selectedLogRow: ''
@@ -4051,7 +4055,9 @@
           materials: APP_STATE.materials,
           materialSettings: APP_STATE.materialSettings,
           materialOpenLogs: APP_STATE.materialOpenLogs,
-          events: APP_STATE.events
+          events: APP_STATE.events,
+          materialsLoaded: APP_STATE.materialsLoaded,
+          eventsLoaded: APP_STATE.eventsLoaded
         }));
       }
 
@@ -4069,6 +4075,8 @@
         APP_STATE.materialSettings = snapshot.materialSettings || APP_STATE.materialSettings;
         APP_STATE.materialOpenLogs = snapshot.materialOpenLogs || [];
         APP_STATE.events = snapshot.events || [];
+        APP_STATE.materialsLoaded = Boolean(snapshot.materialsLoaded);
+        APP_STATE.eventsLoaded = Boolean(snapshot.eventsLoaded);
         return true;
       }
 
@@ -4082,9 +4090,11 @@
         document.getElementById('appShell').classList.remove('hidden');
       }
 
-      function setLoading(message) {
+      function setLoading(message, useOverlay) {
         document.getElementById('loadingMessage').textContent = message || getRandomLoadingMessage_();
-        document.getElementById('loadingOverlay').classList.remove('hidden');
+        if (useOverlay) {
+          document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
       }
 
       function clearLoading() {
@@ -4138,7 +4148,7 @@
         var userId = document.getElementById('userIdInput').value.trim();
         var password = document.getElementById('passwordInput').value.trim();
 
-        setLoading('로그인 정보를 확인하는 중입니다.');
+        setLoading('로그인 정보를 확인하는 중입니다.', true);
         apiRequest('login', { userId: userId, password: password })
           .then(function(result) {
             APP_STATE.token = result.token;
@@ -4158,7 +4168,9 @@
         if (!APP_STATE.token) {
           return;
         }
-        loadDashboard({ useStagedLoading: true, forceOverlay: true });
+        APP_STATE.materialsLoaded = false;
+        APP_STATE.eventsLoaded = false;
+        loadDashboard({ useStagedLoading: true, forceOverlay: true, preloadCurrentView: true });
       }
 
       function loadDashboard(options) {
@@ -4169,7 +4181,7 @@
         }
 
         if (config.forceOverlay && !config.silent) {
-          setLoading('학생 데이터, 자료, 일정을 동기화하는 중입니다.');
+          setLoading('학생 데이터, 자료, 일정을 동기화하는 중입니다.', true);
         }
 
         return apiRequest('getStudents', { token: APP_STATE.token })
@@ -4185,14 +4197,18 @@
               showAppOnly();
             }
 
-            return Promise.all([
-              apiRequest('getMaterials', { token: APP_STATE.token }),
-              apiRequest('getEvents', { token: APP_STATE.token })
-            ]).then(function(results) {
-              hydrateDashboard(studentData, results[0], results[1]);
-              renderAll();
-              writeDashboardSnapshot_();
-            });
+            if (config.preloadCurrentView) {
+              return ensureViewDataLoaded_(APP_STATE.currentView, { silent: true }).then(function() {
+                hydrateDashboard(studentData, null, null);
+                renderAll();
+                writeDashboardSnapshot_();
+              });
+            }
+
+            hydrateDashboard(studentData, null, null);
+            renderAll();
+            writeDashboardSnapshot_();
+            return null;
           })
           .then(function() {
             showAppOnly();
@@ -4215,12 +4231,14 @@
         APP_STATE.instructors = studentData.instructors || [];
         APP_STATE.permissions = studentData.permissions || [];
         APP_STATE.homeroomAssignments = studentData.homeroomAssignments || [];
-        APP_STATE.materials = materialData && materialData.materials ? materialData.materials : [];
+        APP_STATE.materials = materialData && materialData.materials ? materialData.materials : APP_STATE.materials;
         APP_STATE.materialSettings = materialData && materialData.settings ? materialData.settings : APP_STATE.materialSettings;
-        APP_STATE.materialOpenLogs = materialData && materialData.openLogs ? materialData.openLogs : [];
+        APP_STATE.materialOpenLogs = materialData && materialData.openLogs ? materialData.openLogs : APP_STATE.materialOpenLogs;
+        APP_STATE.materialsLoaded = APP_STATE.materialsLoaded || Boolean(materialData);
         APP_STATE.materialYearTabsBySchool = {};
         APP_STATE.editingMaterialRowNumber = '';
-        APP_STATE.events = eventData && eventData.events ? eventData.events : [];
+        APP_STATE.events = eventData && eventData.events ? eventData.events : APP_STATE.events;
+        APP_STATE.eventsLoaded = APP_STATE.eventsLoaded || Boolean(eventData);
         APP_STATE.appName = studentData.appName || APP_STATE.appName;
         APP_STATE.logoUrl = studentData.logoUrl || APP_STATE.logoUrl;
         writeStoredSession();
@@ -4242,6 +4260,55 @@
         APP_STATE.logoUrl = studentData.logoUrl || APP_STATE.logoUrl;
         writeStoredSession();
         syncBranding();
+      }
+
+      function ensureViewDataLoaded_(viewName, options) {
+        var config = options || {};
+        if (!APP_STATE.token) {
+          return Promise.resolve();
+        }
+
+        if (viewName === 'materials') {
+          if (APP_STATE.materialsLoaded || APP_STATE.materialsLoading) {
+            return Promise.resolve();
+          }
+          APP_STATE.materialsLoading = true;
+          return apiRequest('getMaterials', { token: APP_STATE.token })
+            .then(function(materialData) {
+              APP_STATE.materials = materialData && materialData.materials ? materialData.materials : [];
+              APP_STATE.materialSettings = materialData && materialData.settings ? materialData.settings : APP_STATE.materialSettings;
+              APP_STATE.materialOpenLogs = materialData && materialData.openLogs ? materialData.openLogs : [];
+              APP_STATE.materialsLoaded = true;
+              if (!config.silent) {
+                renderMaterials();
+                writeDashboardSnapshot_();
+              }
+            })
+            .finally(function() {
+              APP_STATE.materialsLoading = false;
+            });
+        }
+
+        if (viewName === 'events') {
+          if (APP_STATE.eventsLoaded || APP_STATE.eventsLoading) {
+            return Promise.resolve();
+          }
+          APP_STATE.eventsLoading = true;
+          return apiRequest('getEvents', { token: APP_STATE.token })
+            .then(function(eventData) {
+              APP_STATE.events = eventData && eventData.events ? eventData.events : [];
+              APP_STATE.eventsLoaded = true;
+              if (!config.silent) {
+                renderEvents();
+                writeDashboardSnapshot_();
+              }
+            })
+            .finally(function() {
+              APP_STATE.eventsLoading = false;
+            });
+        }
+
+        return Promise.resolve();
       }
 
       function renderAll() {
@@ -7186,6 +7253,7 @@
         var meta = VIEW_META[viewName];
         document.getElementById('pageTitle').textContent = meta.title;
         document.getElementById('pageDescription').textContent = meta.description;
+        ensureViewDataLoaded_(viewName);
       }
 
       function handleLogout() {
@@ -7215,6 +7283,10 @@
         APP_STATE.materialOpenLogs = [];
         APP_STATE.isMaterialOpenLogsCollapsed = true;
         APP_STATE.events = [];
+        APP_STATE.materialsLoaded = false;
+        APP_STATE.eventsLoaded = false;
+        APP_STATE.materialsLoading = false;
+        APP_STATE.eventsLoading = false;
         APP_STATE.selectedLogRow = '';
         clearStoredSession();
         clearDashboardSnapshot_();
