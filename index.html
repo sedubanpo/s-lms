@@ -641,6 +641,10 @@
         align-items: center;
       }
 
+      .top-actions .hidden {
+        display: none !important;
+      }
+
       .mini-button {
         display: inline-flex;
         align-items: center;
@@ -1920,6 +1924,68 @@
         grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
         gap: 8px;
         align-items: end;
+      }
+
+      .student-manage-form.is-submitting,
+      .student-manage-form.is-success {
+        position: relative;
+      }
+
+      .student-manage-form.is-submitting::after,
+      .student-manage-form.is-success::after {
+        content: '';
+        position: absolute;
+        inset: -6px;
+        border-radius: 24px;
+        pointer-events: none;
+      }
+
+      .student-manage-form.is-submitting::after {
+        border: 1px solid rgba(37, 99, 235, 0.26);
+        box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.08);
+      }
+
+      .student-manage-form.is-success::after {
+        border: 1px solid rgba(16, 185, 129, 0.24);
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.08);
+      }
+
+      .button-primary.is-pending {
+        opacity: 0.92;
+        cursor: wait;
+      }
+
+      .button-primary.is-pending::before {
+        content: '';
+        width: 14px;
+        height: 14px;
+        margin-right: 8px;
+        border-radius: 999px;
+        border: 2px solid rgba(255, 255, 255, 0.34);
+        border-top-color: rgba(255, 255, 255, 0.96);
+        animation: button-spin 0.75s linear infinite;
+      }
+
+      .student-manage-feedback {
+        min-height: 22px;
+        padding: 0 4px;
+        color: var(--text-soft);
+        font-size: 0.83rem;
+        font-weight: 700;
+      }
+
+      .student-manage-feedback.pending {
+        color: var(--brand-deep);
+      }
+
+      .student-manage-feedback.success {
+        color: #047857;
+      }
+
+      @keyframes button-spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
 
       .student-status-chip {
@@ -3289,6 +3355,7 @@
             </div>
           </div>
           <div class="top-actions">
+            <button id="quickAddStudentButton" type="button" class="mini-button hidden">학생 추가</button>
             <button id="topRefreshButton" type="button" class="mini-button">실시간 동기화</button>
             <button id="openPermissionModalButton" type="button" class="mini-button permission-trigger hidden">권한 설정</button>
             <button id="topLogoutButton" type="button" class="mini-button">세션 종료</button>
@@ -3421,6 +3488,7 @@
                   </div>
                   <button id="addStudentButton" type="button" class="button-primary">학생 추가</button>
                 </div>
+                <div id="studentManageFeedback" class="student-manage-feedback" aria-live="polite"></div>
               </div>
               <div class="compact-control-bar">
                 <input id="studentManageSearchInput" class="field-input" type="text" placeholder="학생명 검색">
@@ -3806,6 +3874,10 @@
         eventsLoaded: false,
         materialsLoading: false,
         eventsLoading: false,
+        isAddingStudent: false,
+        studentAddFeedbackText: '',
+        studentAddFeedbackTone: '',
+        studentAddSuccessTimer: null,
         calendarYear: new Date().getFullYear(),
         calendarMonth: new Date().getMonth(),
         selectedLogRow: ''
@@ -3867,6 +3939,7 @@
         document.getElementById('topLogoutButton').addEventListener('click', handleLogout);
         document.getElementById('refreshButton').addEventListener('click', refreshDashboard);
         document.getElementById('topRefreshButton').addEventListener('click', refreshDashboard);
+        document.getElementById('quickAddStudentButton').addEventListener('click', handleQuickAddStudentOpen);
         document.getElementById('openPermissionModalButton').addEventListener('click', function() {
           if (!APP_STATE.isAdmin) {
             setNotice('권한 관리 메뉴는 관리자만 사용할 수 있습니다.', 'warning');
@@ -4346,6 +4419,7 @@
         document.getElementById('permissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('mobilePermissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('openPermissionModalButton').classList.toggle('hidden', !APP_STATE.isAdmin);
+        document.getElementById('quickAddStudentButton').classList.toggle('hidden', !APP_STATE.isAdmin || APP_STATE.currentView !== 'students');
         document.getElementById('view-homeroom').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('view-permissions').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('materialsCreatePanel').classList.toggle('hidden', !APP_STATE.isAdmin);
@@ -5482,6 +5556,7 @@
         }
 
         renderPermissionPanelTabs_();
+        renderStudentManageFormState_();
         populatePermissionFilters();
         syncSelectedPermissionStudent_();
         document.getElementById('permissionInstructorPanel').classList.toggle('hidden', APP_STATE.permissionTab !== 'instructors');
@@ -5925,13 +6000,77 @@
         ].join('');
       }
 
+      function renderStudentManageFormState_() {
+        var form = document.querySelector('.student-manage-form');
+        var button = document.getElementById('addStudentButton');
+        var feedback = document.getElementById('studentManageFeedback');
+        if (!form || !button || !feedback) {
+          return;
+        }
+
+        form.classList.toggle('is-submitting', APP_STATE.isAddingStudent);
+        form.classList.toggle('is-success', APP_STATE.studentAddFeedbackTone === 'success');
+        button.disabled = APP_STATE.isAddingStudent;
+        button.classList.toggle('is-pending', APP_STATE.isAddingStudent);
+        button.textContent = APP_STATE.isAddingStudent ? '추가 중...' : '학생 추가';
+        feedback.textContent = APP_STATE.studentAddFeedbackText || '';
+        feedback.className = 'student-manage-feedback' + (APP_STATE.studentAddFeedbackTone ? ' ' + APP_STATE.studentAddFeedbackTone : '');
+      }
+
+      function setStudentAddFeedback_(message, tone) {
+        APP_STATE.studentAddFeedbackText = message || '';
+        APP_STATE.studentAddFeedbackTone = tone || '';
+        renderStudentManageFormState_();
+      }
+
+      function clearStudentAddSuccessTimer_() {
+        if (!APP_STATE.studentAddSuccessTimer) {
+          return;
+        }
+        clearTimeout(APP_STATE.studentAddSuccessTimer);
+        APP_STATE.studentAddSuccessTimer = null;
+      }
+
+      function openStudentAddPanel_() {
+        APP_STATE.permissionTab = 'students';
+        switchView('permissions');
+        renderPermissionView();
+        requestAnimationFrame(function() {
+          var input = document.getElementById('studentManageNameInput');
+          if (input) {
+            input.focus();
+            input.select();
+          }
+          var panel = document.getElementById('permissionStudentManagePanel');
+          if (panel) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      }
+
+      function handleQuickAddStudentOpen() {
+        if (!APP_STATE.isAdmin) {
+          setNotice('관리자만 학생을 등록할 수 있습니다.', 'warning');
+          return;
+        }
+        openStudentAddPanel_();
+        setStudentAddFeedback_('학생명을 입력하고 추가 버튼을 누르면 바로 등록됩니다.', '');
+      }
+
       function handleStudentAdd() {
         if (!APP_STATE.isAdmin) {
           setNotice('관리자만 학생을 등록할 수 있습니다.', 'warning');
           return;
         }
 
-        setLoading('학생을 등록하는 중입니다.');
+        if (APP_STATE.isAddingStudent) {
+          return;
+        }
+
+        clearStudentAddSuccessTimer_();
+
+        APP_STATE.isAddingStudent = true;
+        setStudentAddFeedback_('학생 정보를 등록하는 중입니다. 잠시만 기다려 주세요.', 'pending');
         apiRequest('addStudent', {
           token: APP_STATE.token,
           studentName: document.getElementById('studentManageNameInput').value.trim(),
@@ -5943,12 +6082,24 @@
             document.getElementById('studentManageNameInput').value = '';
             document.getElementById('studentManageSchoolInput').value = '';
             document.getElementById('studentManageGradeInput').value = '';
+            APP_STATE.permissionTab = 'students';
             renderAll();
             switchView('permissions');
+            setStudentAddFeedback_(result.message || '학생 등록이 완료되었습니다.', 'success');
+            APP_STATE.studentAddSuccessTimer = setTimeout(function() {
+              APP_STATE.studentAddSuccessTimer = null;
+              setStudentAddFeedback_('', '');
+            }, 1600);
             setNotice(result.message || '학생이 등록되었습니다.', 'success');
           })
-          .catch(handleApiError_)
-          .finally(clearLoading);
+          .catch(function(error) {
+            setStudentAddFeedback_('학생 등록에 실패했습니다. 입력값을 확인한 뒤 다시 시도해 주세요.', '');
+            handleApiError_(error);
+          })
+          .finally(function() {
+            APP_STATE.isAddingStudent = false;
+            renderStudentManageFormState_();
+          });
       }
 
       function handleStudentManageTableClick(event) {
@@ -7260,6 +7411,7 @@
         var meta = VIEW_META[viewName];
         document.getElementById('pageTitle').textContent = meta.title;
         document.getElementById('pageDescription').textContent = meta.description;
+        document.getElementById('quickAddStudentButton').classList.toggle('hidden', !APP_STATE.isAdmin || viewName !== 'students');
         ensureViewDataLoaded_(viewName);
       }
 
@@ -7294,6 +7446,10 @@
         APP_STATE.eventsLoaded = false;
         APP_STATE.materialsLoading = false;
         APP_STATE.eventsLoading = false;
+        APP_STATE.isAddingStudent = false;
+        APP_STATE.studentAddFeedbackText = '';
+        APP_STATE.studentAddFeedbackTone = '';
+        clearStudentAddSuccessTimer_();
         APP_STATE.selectedLogRow = '';
         clearStoredSession();
         clearDashboardSnapshot_();
