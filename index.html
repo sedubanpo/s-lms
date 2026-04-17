@@ -2464,6 +2464,73 @@
         background: linear-gradient(135deg, hsla(var(--school-hue, 220), 58%, 98%, 0.94), hsla(var(--school-hue, 220), 64%, 95%, 0.9));
       }
 
+      .materials-loading-card {
+        display: grid;
+        justify-items: center;
+        gap: 14px;
+        min-height: 260px;
+        margin-top: 12px;
+        padding: 44px 18px;
+        border-radius: 24px;
+        border: 1px dashed rgba(150, 170, 210, 0.72);
+        background:
+          radial-gradient(circle at 35% 20%, rgba(36, 86, 214, 0.1), transparent 32%),
+          linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(245, 249, 255, 0.72));
+        color: var(--text-soft);
+        text-align: center;
+      }
+
+      .materials-loading-orbit {
+        position: relative;
+        width: 72px;
+        height: 72px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid rgba(214, 226, 247, 0.94);
+        box-shadow: 0 16px 34px rgba(36, 86, 214, 0.12);
+      }
+
+      .materials-loading-orbit::before {
+        content: '';
+        position: absolute;
+        inset: 10px;
+        border-radius: inherit;
+        border: 4px solid rgba(36, 86, 214, 0.14);
+        border-top-color: rgba(36, 86, 214, 0.9);
+        animation: material-loading-spin 0.9s linear infinite;
+      }
+
+      .materials-loading-orbit::after {
+        content: '자료';
+        position: absolute;
+        inset: 22px 14px;
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(36, 86, 214, 0.96), rgba(15, 183, 194, 0.92));
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .materials-loading-card strong {
+        color: var(--text-main);
+        font-size: 0.98rem;
+        font-weight: 900;
+      }
+
+      .materials-loading-card p {
+        margin: 0;
+        font-size: 0.8rem;
+        line-height: 1.7;
+      }
+
+      @keyframes material-loading-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
       .coverage-school-cell {
         font-weight: 900;
         color: hsla(var(--school-hue), 55%, 28%, 1);
@@ -4353,6 +4420,9 @@
             return Promise.resolve();
           }
           APP_STATE.materialsLoading = true;
+          if (!config.silent && APP_STATE.currentView === 'materials') {
+            renderMaterials();
+          }
           return apiRequest('getMaterials', { token: APP_STATE.token })
             .then(function(materialData) {
               APP_STATE.materials = materialData && materialData.materials ? materialData.materials : [];
@@ -4366,6 +4436,9 @@
             })
             .finally(function() {
               APP_STATE.materialsLoading = false;
+              if (!config.silent && APP_STATE.currentView === 'materials') {
+                renderMaterials();
+              }
             });
         }
 
@@ -6550,6 +6623,13 @@
           : filterMaterialsByCurrentFilters_({ ignoreYear: true });
 
         var wrap = document.getElementById('materialsTableWrap');
+        if (APP_STATE.materialsLoading && !APP_STATE.materialsLoaded) {
+          document.getElementById('materialsCoverageWrap').innerHTML = '';
+          document.getElementById('materialsOpenLogWrap').innerHTML = '';
+          wrap.innerHTML = renderMaterialsLoadingCard_();
+          return;
+        }
+
         renderMaterialsOpenLogs_();
         if ((APP_STATE.materialPanelMode || 'list') === 'coverage') {
           renderMaterialsCoverageBoard_(filtered);
@@ -6565,29 +6645,7 @@
         var groupedMap = {};
         groupedSource
           .slice()
-          .sort(function(a, b) {
-            return [
-              a.school,
-              a.year,
-              a.grade,
-              a.term,
-              a.subject,
-              a.examType,
-              a.materialType,
-              a.fileType,
-              a.createdAt
-            ].join('|').localeCompare([
-              b.school,
-              b.year,
-              b.grade,
-              b.term,
-              b.subject,
-              b.examType,
-              b.materialType,
-              b.fileType,
-              b.createdAt
-            ].join('|'));
-          })
+          .sort(compareMaterialRows_)
           .forEach(function(item) {
             var schoolKey = item.school || '-';
             var yearKey = item.year || '-';
@@ -6650,7 +6708,7 @@
                   subgroupMap[subgroupKey].push(item);
                 });
                 var subgroupKeys = Object.keys(subgroupMap).sort(function(a, b) {
-                  return a.localeCompare(b);
+                  return compareMaterialGroups_(subgroupMap[a], subgroupMap[b], a, b);
                 });
                 return [
                   '<tr class="material-year-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
@@ -6683,7 +6741,7 @@
                       subjectGroupMap[subjectGroupKey].push(item);
                     });
                     var subjectGroupKeys = Object.keys(subjectGroupMap).sort(function(a, b) {
-                      return a.localeCompare(b);
+                      return compareMaterialGroups_(subjectGroupMap[a], subjectGroupMap[b], a, b);
                     });
                     return [
                       '<tr class="material-subgroup-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
@@ -6699,7 +6757,7 @@
                         var groupedItems = subjectGroupMap[subjectGroupKey] || [];
                         var groupedHead = groupedItems[0] || {};
                         var subjectToneClass = getSubjectToneClass_(groupedHead.subject);
-                        return groupedItems.map(function(item, itemIndex) {
+                        return groupedItems.slice().sort(compareMaterialRows_).map(function(item, itemIndex) {
                           return [
                             '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
                             '  <td class="material-subject-cell ' + escapeAttribute(subjectToneClass) + '"><div class="material-primary-cell">' + [
@@ -6744,6 +6802,65 @@
             ? '<button type="button" class="material-edit-button" data-material-edit="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button><button type="button" class="material-delete-button" data-material-delete="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">삭제</button>'
             : '') +
           '</div>';
+      }
+
+      function renderMaterialsLoadingCard_() {
+        return [
+          '<div class="materials-loading-card">',
+          '  <div class="materials-loading-orbit" aria-hidden="true"></div>',
+          '  <strong>문제 자료실을 불러오는 중입니다.</strong>',
+          '  <p>학교, 년도, 자료유형을 정리하고 있습니다.<br>잠시 후 자료 목록이 자동으로 표시됩니다.</p>',
+          '</div>'
+        ].join('');
+      }
+
+      function isExamScopeMaterial_(item) {
+        return normalizeSearchText(item && item.materialType) === normalizeSearchText('시험범위');
+      }
+
+      function getMaterialPriority_(item) {
+        return isExamScopeMaterial_(item) ? 0 : 1;
+      }
+
+      function getMaterialGroupPriority_(items) {
+        return (items || []).some(isExamScopeMaterial_) ? 0 : 1;
+      }
+
+      function compareMaterialGroups_(itemsA, itemsB, keyA, keyB) {
+        var priority = getMaterialGroupPriority_(itemsA) - getMaterialGroupPriority_(itemsB);
+        if (priority) {
+          return priority;
+        }
+        return String(keyA || '').localeCompare(String(keyB || ''));
+      }
+
+      function compareMaterialRows_(a, b) {
+        var priority = getMaterialPriority_(a) - getMaterialPriority_(b);
+        if (priority) {
+          return priority;
+        }
+
+        return [
+          a.school,
+          a.year,
+          a.grade,
+          a.term,
+          a.subject,
+          a.examType,
+          a.materialType,
+          a.fileType,
+          a.createdAt
+        ].join('|').localeCompare([
+          b.school,
+          b.year,
+          b.grade,
+          b.term,
+          b.subject,
+          b.examType,
+          b.materialType,
+          b.fileType,
+          b.createdAt
+        ].join('|'));
       }
 
       function getCurrentMaterialFilterState_(options) {
