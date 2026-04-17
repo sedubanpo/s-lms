@@ -2802,6 +2802,82 @@
         color: #5f6e89;
       }
 
+      .material-item-row.material-key-highlight td {
+        background:
+          linear-gradient(135deg, rgba(255, 251, 235, 0.98), rgba(255, 247, 214, 0.9)),
+          linear-gradient(135deg, hsla(var(--school-hue, 220), 58%, 98%, 0.92), hsla(var(--school-hue, 220), 62%, 95%, 0.88));
+      }
+
+      .material-item-row.material-key-highlight td.material-subject-cell {
+        background:
+          radial-gradient(circle at 18% 22%, rgba(245, 158, 11, 0.2), transparent 34%),
+          linear-gradient(135deg, rgba(255, 246, 210, 0.98), rgba(255, 251, 235, 0.94));
+      }
+
+      .material-key-highlight .material-subject-name.material-special-schedule,
+      .material-meta-badge.material-special-allgrade {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(245, 158, 11, 0.34);
+        background: linear-gradient(135deg, rgba(255, 247, 210, 0.98), rgba(255, 232, 169, 0.96));
+        color: #a84f00;
+        box-shadow: 0 8px 18px rgba(245, 158, 11, 0.16);
+      }
+
+      .material-key-highlight .material-subject-name.material-special-schedule {
+        width: max-content;
+        max-width: 100%;
+        min-height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+      }
+
+      .material-key-highlight .material-subject-name.material-special-schedule::before,
+      .material-meta-badge.material-special-allgrade::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(120deg, transparent 18%, rgba(255, 255, 255, 0.55) 48%, transparent 78%);
+        transform: translateX(-120%);
+        animation: material-key-shine 3.2s ease-in-out infinite;
+      }
+
+      .material-key-highlight .material-subject-name.material-special-schedule::after {
+        content: '중요';
+        position: relative;
+        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        min-height: 22px;
+        padding: 0 7px;
+        border-radius: 999px;
+        background: rgba(180, 83, 9, 0.12);
+        color: #92400e;
+        font-size: 0.64rem;
+        font-weight: 900;
+      }
+
+      .material-key-highlight .material-subject-name.material-special-schedule,
+      .material-key-highlight .material-subject-name.material-special-schedule span,
+      .material-meta-badge.material-special-allgrade {
+        z-index: 1;
+      }
+
+      .material-meta-badge.material-special-allgrade {
+        min-height: 32px;
+        padding: 0 12px;
+        font-weight: 900;
+      }
+
+      @keyframes material-key-shine {
+        0%, 68%, 100% {
+          transform: translateX(-120%);
+        }
+        82% {
+          transform: translateX(120%);
+        }
+      }
+
       .material-badge-row {
         display: flex;
         flex-wrap: wrap;
@@ -6759,10 +6835,10 @@
                         var subjectToneClass = getSubjectToneClass_(groupedHead.subject);
                         return groupedItems.slice().sort(compareMaterialRows_).map(function(item, itemIndex) {
                           return [
-                            '<tr class="material-item-row school-tone-row" style="' + buildSchoolToneStyle_(schoolKey) + '">',
+                            '<tr class="material-item-row school-tone-row ' + escapeAttribute(getMaterialHighlightClass_(item)) + '" style="' + buildSchoolToneStyle_(schoolKey) + '">',
                             '  <td class="material-subject-cell ' + escapeAttribute(subjectToneClass) + '"><div class="material-primary-cell">' + [
                                   (!school && itemIndex === 0 ? '<span class="material-school-name-inline">' + escapeHtml(schoolKey) + '</span>' : ''),
-                                  renderMaterialSubjectLabel_(groupedHead.subject)
+                                  renderMaterialSubjectLabel_(item.subject || groupedHead.subject)
                                 ].join('') + '</div></td>',
                             '  <td><div class="material-row-meta">' + [
                                   renderMaterialMetaBadge_(item.grade || '-', 'grade'),
@@ -7410,13 +7486,38 @@
         if (toneClass === 'file') {
           tone += ' ' + getFileTypeToneClass_(value);
         }
+        tone += ' ' + getMaterialKeywordBadgeClass_(value);
         return '<span class="material-meta-badge ' + escapeAttribute(tone) + '">' + escapeHtml(value || '-') + '</span>';
       }
 
       function renderMaterialSubjectLabel_(subject) {
         var text = subject || '-';
         var emoji = getSubjectEmoji_(text);
-        return '<span class="material-subject-name ' + escapeAttribute(getSubjectToneClass_(text)) + '">' + escapeHtml(emoji + ' ' + text) + '</span>';
+        return '<span class="material-subject-name ' + escapeAttribute(getSubjectToneClass_(text) + ' ' + getMaterialSubjectKeywordClass_(text)) + '">' + escapeHtml(emoji + ' ' + text) + '</span>';
+      }
+
+      function hasImportantMaterialKeyword_(value, keyword) {
+        return normalizeSearchText(value).indexOf(normalizeSearchText(keyword)) !== -1;
+      }
+
+      function isSpecialScheduleMaterial_(item) {
+        return hasImportantMaterialKeyword_(item && item.subject, '시험일정 및 범위');
+      }
+
+      function hasSpecialAllGrade_(item) {
+        return hasImportantMaterialKeyword_(item && item.grade, '전학년');
+      }
+
+      function getMaterialHighlightClass_(item) {
+        return (isSpecialScheduleMaterial_(item) || hasSpecialAllGrade_(item)) ? 'material-key-highlight' : '';
+      }
+
+      function getMaterialSubjectKeywordClass_(value) {
+        return hasImportantMaterialKeyword_(value, '시험일정 및 범위') ? 'material-special-schedule' : '';
+      }
+
+      function getMaterialKeywordBadgeClass_(value) {
+        return hasImportantMaterialKeyword_(value, '전학년') ? 'material-special-allgrade' : '';
       }
 
       function getSubjectToneClass_(subject) {
