@@ -2188,21 +2188,110 @@
       }
 
       .calendar-event-chip {
-        padding: 5px 7px;
+        display: grid;
+        gap: 3px;
+        padding: 6px 7px;
         border-radius: 10px;
+        background: var(--event-bg, rgba(99, 102, 241, 0.14));
+        border: 1px solid var(--event-border, rgba(99, 102, 241, 0.18));
+        color: var(--event-text, #4338ca);
         font-size: 0.66rem;
         font-weight: 700;
-        line-height: 1.4;
+        line-height: 1.25;
+        overflow: hidden;
       }
 
       .calendar-event-chip.primary {
-        background: rgba(99, 102, 241, 0.14);
-        color: #4338ca;
+        box-shadow: inset 3px 0 0 var(--event-accent, #6366f1);
       }
 
       .calendar-event-chip.secondary {
-        background: rgba(20, 184, 166, 0.14);
-        color: #0f766e;
+        opacity: 0.92;
+      }
+
+      .calendar-event-target {
+        display: block;
+        color: #0f172a;
+        font-size: 0.7rem;
+        font-weight: 950;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .calendar-event-title {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        max-width: 100%;
+        min-height: 18px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.64);
+        color: var(--event-text, #4338ca);
+        font-size: 0.62rem;
+        font-weight: 900;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .calendar-event-note {
+        color: rgba(15, 23, 42, 0.66);
+        font-size: 0.61rem;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .event-subject-korean {
+        --event-bg: rgba(244, 63, 94, 0.13);
+        --event-border: rgba(244, 63, 94, 0.22);
+        --event-text: #be123c;
+        --event-accent: #f43f5e;
+      }
+
+      .event-subject-math {
+        --event-bg: rgba(37, 99, 235, 0.13);
+        --event-border: rgba(37, 99, 235, 0.2);
+        --event-text: #1d4ed8;
+        --event-accent: #2563eb;
+      }
+
+      .event-subject-english {
+        --event-bg: rgba(5, 150, 105, 0.13);
+        --event-border: rgba(5, 150, 105, 0.21);
+        --event-text: #047857;
+        --event-accent: #059669;
+      }
+
+      .event-subject-science {
+        --event-bg: rgba(124, 58, 237, 0.13);
+        --event-border: rgba(124, 58, 237, 0.21);
+        --event-text: #6d28d9;
+        --event-accent: #7c3aed;
+      }
+
+      .event-subject-social {
+        --event-bg: rgba(217, 119, 6, 0.14);
+        --event-border: rgba(217, 119, 6, 0.24);
+        --event-text: #b45309;
+        --event-accent: #d97706;
+      }
+
+      .event-subject-history {
+        --event-bg: rgba(180, 83, 9, 0.13);
+        --event-border: rgba(180, 83, 9, 0.22);
+        --event-text: #92400e;
+        --event-accent: #b45309;
+      }
+
+      .event-subject-default {
+        --event-bg: rgba(71, 85, 105, 0.1);
+        --event-border: rgba(71, 85, 105, 0.16);
+        --event-text: #475569;
+        --event-accent: #64748b;
       }
 
       .calendar-more {
@@ -2229,8 +2318,9 @@
         align-items: start;
         padding: 10px 12px;
         border-radius: 14px;
-        background: rgba(255, 255, 255, 0.76);
-        border: 1px solid rgba(214, 226, 247, 0.88);
+        background: var(--event-bg, rgba(255, 255, 255, 0.76));
+        border: 1px solid var(--event-border, rgba(214, 226, 247, 0.88));
+        box-shadow: inset 4px 0 0 var(--event-accent, rgba(36, 86, 214, 0.34));
       }
 
       .event-date-chip {
@@ -2248,11 +2338,26 @@
 
       .event-item strong {
         display: block;
-        font-size: 0.84rem;
+        font-size: 0.86rem;
+      }
+
+      .event-target-title {
+        display: block;
+        color: #0f172a;
+        font-size: 0.98rem;
+        font-weight: 950;
+      }
+
+      .event-subject-line {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 2px;
       }
 
       .event-item p {
-        margin: 2px 0 0;
+        margin: 3px 0 0;
         font-size: 0.74rem;
         color: var(--text-soft);
       }
@@ -6589,13 +6694,24 @@
             '<div class="' + classNames.join(' ') + '">',
             '  <span class="calendar-day-number">' + escapeHtml(String(date.getDate())) + '</span>',
                dayEvents.slice(0, 2).map(function(item, index) {
-                 return '<div class="calendar-event-chip ' + (index === 0 ? 'primary' : 'secondary') + '">' + escapeHtml(item.title) + '</div>';
+                 return renderCalendarEventChip_(item, index);
                }).join(''),
                dayEvents.length > 2 ? '<div class="calendar-more">+' + escapeHtml(String(dayEvents.length - 2)) + '건 더보기</div>' : '',
             '</div>'
           ].join(''));
         }
         return cells;
+      }
+
+      function renderCalendarEventChip_(item, index) {
+        var className = getEventSubjectClass_(item.title);
+        return [
+          '<div class="calendar-event-chip ' + className + ' ' + (index === 0 ? 'primary' : 'secondary') + '">',
+          '  <span class="calendar-event-target">' + escapeHtml(item.target || '대상 미지정') + '</span>',
+          '  <span class="calendar-event-title">' + escapeHtml(item.title || '일정') + '</span>',
+          item.note ? '  <span class="calendar-event-note">' + escapeHtml(item.note) + '</span>' : '',
+          '</div>'
+        ].join('');
       }
 
       function renderEventList_() {
@@ -6605,14 +6721,44 @@
         }
 
         return '<div class="event-list">' + items.map(function(item) {
+          var className = getEventSubjectClass_(item.title);
           return [
-            '<div class="event-item">',
+            '<div class="event-item ' + className + '">',
             '  <span class="event-date-chip">' + escapeHtml(formatEventDateLabel_(item.isoDate || item.date)) + '</span>',
-            '  <div><strong>' + escapeHtml(item.title) + '</strong><p>' + escapeHtml([item.target || '-', item.note || '메모 없음'].join(' · ')) + '</p></div>',
+            '  <div>',
+            '    <span class="event-target-title">' + escapeHtml(item.target || '대상 미지정') + '</span>',
+            '    <div class="event-subject-line"><strong>' + escapeHtml(item.title || '일정') + '</strong>' + (item.note ? '<p>' + escapeHtml(item.note) + '</p>' : '') + '</div>',
+            '  </div>',
             '  <div class="helper-text">' + escapeHtml(item.submitter || '작성자 미상') + '</div>',
             '</div>'
           ].join('');
         }).join('') + '</div>';
+      }
+
+      function getEventSubjectClass_(title) {
+        var text = normalizeSearchText(title);
+        if (!text) {
+          return 'event-subject-default';
+        }
+        if (text.indexOf('국어') !== -1 || text.indexOf('문학') !== -1 || text.indexOf('독서') !== -1 || text.indexOf('작문') !== -1 || text.indexOf('언어') !== -1) {
+          return 'event-subject-korean';
+        }
+        if (text.indexOf('수학') !== -1 || text.indexOf('미적') !== -1 || text.indexOf('확통') !== -1 || text.indexOf('기하') !== -1) {
+          return 'event-subject-math';
+        }
+        if (text.indexOf('영어') !== -1 || text.indexOf('영문') !== -1) {
+          return 'event-subject-english';
+        }
+        if (text.indexOf('과학') !== -1 || text.indexOf('물리') !== -1 || text.indexOf('화학') !== -1 || text.indexOf('생명') !== -1 || text.indexOf('지구') !== -1) {
+          return 'event-subject-science';
+        }
+        if (text.indexOf('사회') !== -1 || text.indexOf('통사') !== -1 || text.indexOf('윤리') !== -1 || text.indexOf('정치') !== -1 || text.indexOf('경제') !== -1 || text.indexOf('지리') !== -1) {
+          return 'event-subject-social';
+        }
+        if (text.indexOf('역사') !== -1 || text.indexOf('한국사') !== -1 || text.indexOf('세계사') !== -1 || text.indexOf('동아시아사') !== -1) {
+          return 'event-subject-history';
+        }
+        return 'event-subject-default';
       }
 
       function getEventsForCurrentMonth_() {
