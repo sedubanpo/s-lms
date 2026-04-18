@@ -2079,13 +2079,30 @@
       }
 
       .events-shell {
-        display: grid;
-        grid-template-columns: minmax(300px, 350px) minmax(0, 1fr);
-        gap: 12px;
+        display: block;
       }
 
       .events-side {
-        padding: 14px;
+        position: fixed;
+        inset: 0;
+        z-index: 70;
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 48px 18px 18px;
+        background: rgba(15, 23, 42, 0.22);
+        backdrop-filter: blur(10px);
+      }
+
+      .events-side.active {
+        display: flex;
+      }
+
+      .event-editor-panel {
+        width: min(440px, 100%);
+        max-height: calc(100vh - 72px);
+        overflow: auto;
+        padding: 16px;
         border-radius: 18px;
       }
 
@@ -2194,7 +2211,7 @@
       }
 
       .calendar-day {
-        min-height: 110px;
+        min-height: 150px;
         padding: 8px;
         display: grid;
         gap: 6px;
@@ -2266,9 +2283,19 @@
         color: rgba(15, 23, 42, 0.66);
         font-size: 0.61rem;
         font-weight: 700;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        line-height: 1.35;
+      }
+
+      .calendar-event-subjects {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .calendar-event-count {
+        color: rgba(15, 23, 42, 0.6);
+        font-size: 0.6rem;
+        font-weight: 900;
       }
 
       .event-subject-korean {
@@ -2334,7 +2361,7 @@
 
       .event-calendar-toolbar {
         display: grid;
-        grid-template-columns: minmax(220px, 360px) minmax(0, 1fr);
+        grid-template-columns: minmax(220px, 360px) minmax(0, 1fr) auto;
         gap: 10px;
         align-items: center;
         margin-bottom: 10px;
@@ -2681,6 +2708,10 @@
         color: #fff;
         font-size: 0.72rem;
         font-weight: 900;
+      }
+
+      .events-loading-orbit::after {
+        content: '일정';
       }
 
       .materials-loading-card strong {
@@ -3513,7 +3544,7 @@
         }
 
         .calendar-day {
-          min-height: 90px;
+          min-height: 140px;
         }
 
         .event-calendar-toolbar,
@@ -3830,19 +3861,15 @@
 
         <section id="view-events" class="dashboard-view">
           <section class="events-shell">
-            <div class="events-side glass-panel">
+            <div id="eventEditorOverlay" class="events-side">
+              <div class="event-editor-panel glass-panel">
               <div class="panel-head">
                 <div>
-                  <h3>미니 캘린더</h3>
-                  <p>월 이동 후 일정을 빠르게 훑어볼 수 있습니다.</p>
+                  <h3>일정 입력</h3>
+                  <p>학교와 학년을 대상에 함께 입력하면 캘린더에서 가장 먼저 표시됩니다.</p>
                 </div>
+                <button type="button" class="icon-button" data-action="close-event-editor" aria-label="닫기">×</button>
               </div>
-              <div class="mini-calendar-top">
-                <button type="button" class="icon-button" data-action="prev-month" aria-label="이전 달">‹</button>
-                <strong id="miniCalendarLabel">2026년 03월</strong>
-                <button type="button" class="icon-button" data-action="next-month" aria-label="다음 달">›</button>
-              </div>
-              <div id="miniCalendarWrap" class="mini-calendar-wrap"></div>
               <form id="eventForm" class="event-form-grid">
                 <div id="eventFormMode" class="event-form-mode">일정 수정 중</div>
                 <div class="field-shell">
@@ -3866,6 +3893,7 @@
                   <button id="eventEditCancelButton" type="button" class="mini-button hidden" data-action="cancel-event-edit">취소</button>
                 </div>
               </form>
+              </div>
             </div>
 
             <div class="events-main">
@@ -3884,6 +3912,7 @@
                 <div class="event-calendar-toolbar">
                   <input id="eventSearchInput" class="field-input event-search-input" type="search" placeholder="일정 검색: 학교, 학년, 과목, 비고">
                   <span id="eventSearchSummary" class="event-search-summary"></span>
+                  <button type="button" class="mini-button" data-action="open-event-editor">일정 추가</button>
                 </div>
                 <div id="eventCalendarWrap" class="event-calendar-wrap"></div>
               </section>
@@ -4202,6 +4231,7 @@
         events: [],
         eventSearchKeyword: '',
         editingEventRowNumber: '',
+        isEventEditorOpen: false,
         materialsLoaded: false,
         eventsLoaded: false,
         materialsLoading: false,
@@ -4713,6 +4743,9 @@
             return Promise.resolve();
           }
           APP_STATE.eventsLoading = true;
+          if (!config.silent && APP_STATE.currentView === 'events') {
+            renderEvents();
+          }
           return apiRequest('getEvents', { token: APP_STATE.token })
             .then(function(eventData) {
               APP_STATE.events = eventData && eventData.events ? eventData.events : [];
@@ -4724,6 +4757,9 @@
             })
             .finally(function() {
               APP_STATE.eventsLoading = false;
+              if (!config.silent && APP_STATE.currentView === 'events') {
+                renderEvents();
+              }
             });
         }
 
@@ -6685,6 +6721,7 @@
             APP_STATE.events = result.events || [];
             document.getElementById('eventForm').reset();
             clearEventEditMode_();
+            APP_STATE.isEventEditorOpen = false;
             renderEvents();
             switchView('events');
             setNotice(result.message || (isEditing ? '주요일정이 수정되었습니다.' : '주요일정이 저장되었습니다.'), 'success');
@@ -6694,6 +6731,13 @@
       }
 
       function handleEventsViewClick(event) {
+        if (event.target && event.target.id === 'eventEditorOverlay') {
+          APP_STATE.isEventEditorOpen = false;
+          clearEventEditMode_();
+          document.getElementById('eventForm').reset();
+          renderEvents();
+          return;
+        }
         var actionButton = event.target.closest('[data-action]');
         if (!actionButton) {
           return;
@@ -6715,6 +6759,26 @@
           renderEvents();
           return;
         }
+        if (action === 'open-event-editor') {
+          APP_STATE.isEventEditorOpen = true;
+          clearEventEditMode_();
+          document.getElementById('eventForm').reset();
+          var today = new Date();
+          var defaultDay = today.getFullYear() === APP_STATE.calendarYear && today.getMonth() === APP_STATE.calendarMonth ? today.getDate() : 1;
+          document.getElementById('eventDateInput').value = formatDateKey_(new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth, defaultDay));
+          renderEvents();
+          setTimeout(function() {
+            document.getElementById('eventTargetInput').focus();
+          }, 0);
+          return;
+        }
+        if (action === 'close-event-editor') {
+          APP_STATE.isEventEditorOpen = false;
+          clearEventEditMode_();
+          document.getElementById('eventForm').reset();
+          renderEvents();
+          return;
+        }
         if (action === 'edit-event') {
           enterEventEditMode_(actionButton.getAttribute('data-event-row'));
           return;
@@ -6722,7 +6786,8 @@
         if (action === 'cancel-event-edit') {
           clearEventEditMode_();
           document.getElementById('eventForm').reset();
-          renderEventFormState_();
+          APP_STATE.isEventEditorOpen = false;
+          renderEvents();
         }
       }
 
@@ -6743,13 +6808,18 @@
         if (!document.getElementById('eventDateInput').value) {
           document.getElementById('eventDateInput').value = formatDateKey_(new Date());
         }
-        document.getElementById('miniCalendarLabel').textContent = monthLabel;
         document.getElementById('eventMonthTitle').textContent = monthLabel + ' 주요일정';
         document.getElementById('eventMonthDescription').textContent = '선택한 달의 일정을 달력과 목록으로 함께 확인합니다.';
         document.getElementById('eventSearchInput').value = APP_STATE.eventSearchKeyword || '';
         renderEventFormState_();
+        renderEventEditorState_();
+        if (APP_STATE.eventsLoading && !APP_STATE.eventsLoaded) {
+          document.getElementById('eventSearchSummary').textContent = '일정 불러오는 중';
+          document.getElementById('eventCalendarWrap').innerHTML = renderEventsLoadingCard_();
+          document.getElementById('eventListWrap').innerHTML = '';
+          return;
+        }
         renderEventSearchSummary_();
-        document.getElementById('miniCalendarWrap').innerHTML = renderMiniCalendar_();
         document.getElementById('eventCalendarWrap').innerHTML = renderMonthCalendar_();
         document.getElementById('eventListWrap').innerHTML = renderEventList_();
       }
@@ -6759,6 +6829,20 @@
         document.getElementById('eventFormMode').classList.toggle('active', isEditing);
         document.getElementById('eventSaveButton').textContent = isEditing ? '일정 수정 저장' : '일정 저장';
         document.getElementById('eventEditCancelButton').classList.toggle('hidden', !isEditing);
+      }
+
+      function renderEventEditorState_() {
+        document.getElementById('eventEditorOverlay').classList.toggle('active', Boolean(APP_STATE.isEventEditorOpen));
+      }
+
+      function renderEventsLoadingCard_() {
+        return [
+          '<div class="materials-loading-card">',
+          '  <div class="materials-loading-orbit events-loading-orbit" aria-hidden="true"></div>',
+          '  <strong>주요일정을 불러오는 중입니다.</strong>',
+          '  <p>학교별 시험 일정을 달력에 정리하고 있습니다.<br>잠시 후 캘린더가 자동으로 표시됩니다.</p>',
+          '</div>'
+        ].join('');
       }
 
       function renderEventSearchSummary_() {
@@ -6815,23 +6899,53 @@
           cells.push([
             '<div class="' + classNames.join(' ') + '">',
             '  <span class="calendar-day-number">' + escapeHtml(String(date.getDate())) + '</span>',
-               dayEvents.slice(0, 2).map(function(item, index) {
-                 return renderCalendarEventChip_(item, index);
+               groupEventsForCalendar_(dayEvents).map(function(group, index) {
+                 return renderCalendarEventChip_(group, index);
                }).join(''),
-               dayEvents.length > 2 ? '<div class="calendar-more">+' + escapeHtml(String(dayEvents.length - 2)) + '건 더보기</div>' : '',
             '</div>'
           ].join(''));
         }
         return cells;
       }
 
-      function renderCalendarEventChip_(item, index) {
-        var className = getEventSubjectClass_(item.title);
+      function groupEventsForCalendar_(items) {
+        var groups = [];
+        (items || []).forEach(function(item) {
+          var key = normalizeSearchText(item.target || '대상 미지정');
+          var group = groups.find(function(candidate) {
+            return candidate.key === key;
+          });
+          if (!group) {
+            group = {
+              key: key,
+              target: item.target || '대상 미지정',
+              items: []
+            };
+            groups.push(group);
+          }
+          group.items.push(item);
+        });
+        return groups;
+      }
+
+      function renderCalendarEventChip_(group, index) {
+        var items = group.items || [];
+        var firstItem = items[0] || {};
+        var className = getEventSubjectClass_(firstItem.title);
+        var subjects = uniqueList_(items.map(function(item) {
+          return item.title || '일정';
+        })).map(function(title) {
+          return '<span class="calendar-event-title">' + escapeHtml(title) + '</span>';
+        }).join('');
+        var notes = uniqueList_(items.map(function(item) {
+          return item.note || '';
+        }).filter(Boolean)).join(', ');
         return [
           '<div class="calendar-event-chip ' + className + ' ' + (index === 0 ? 'primary' : 'secondary') + '">',
-          '  <span class="calendar-event-target">' + escapeHtml(item.target || '대상 미지정') + '</span>',
-          '  <span class="calendar-event-title">' + escapeHtml(item.title || '일정') + '</span>',
-          item.note ? '  <span class="calendar-event-note">' + escapeHtml(item.note) + '</span>' : '',
+          '  <span class="calendar-event-target">' + escapeHtml(group.target || '대상 미지정') + '</span>',
+          '  <span class="calendar-event-subjects">' + subjects + '</span>',
+          notes ? '  <span class="calendar-event-note">' + escapeHtml(notes) + '</span>' : '',
+          items.length > 1 ? '  <span class="calendar-event-count">' + escapeHtml(String(items.length)) + '건 묶음</span>' : '',
           '</div>'
         ].join('');
       }
@@ -6873,11 +6987,12 @@
         }
 
         APP_STATE.editingEventRowNumber = String(eventItem.rowNumber || '');
+        APP_STATE.isEventEditorOpen = true;
         document.getElementById('eventDateInput').value = eventItem.isoDate || formatDateInputValue_(eventItem.date);
         document.getElementById('eventTargetInput').value = eventItem.target || '';
         document.getElementById('eventTitleInput').value = eventItem.title || '';
         document.getElementById('eventNoteInput').value = eventItem.note || '';
-        renderEventFormState_();
+        renderEvents();
         document.getElementById('eventTargetInput').focus();
       }
 
