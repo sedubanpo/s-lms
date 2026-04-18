@@ -2162,6 +2162,32 @@
         gap: 8px;
       }
 
+      .event-form-mode {
+        display: none;
+        min-height: 30px;
+        align-items: center;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: rgba(245, 158, 11, 0.12);
+        color: #b45309;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .event-form-mode.active {
+        display: inline-flex;
+      }
+
+      .event-form-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+      }
+
+      .event-form-actions .hidden {
+        display: none !important;
+      }
+
       .event-calendar-wrap {
         display: grid;
         gap: 8px;
@@ -2306,6 +2332,24 @@
         flex-wrap: wrap;
       }
 
+      .event-calendar-toolbar {
+        display: grid;
+        grid-template-columns: minmax(220px, 360px) minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .event-search-input {
+        min-height: 38px;
+      }
+
+      .event-search-summary {
+        color: var(--text-soft);
+        font-size: 0.74rem;
+        font-weight: 800;
+      }
+
       .event-list {
         display: grid;
         gap: 8px;
@@ -2360,6 +2404,27 @@
         margin: 3px 0 0;
         font-size: 0.74rem;
         color: var(--text-soft);
+      }
+
+      .event-item-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .event-edit-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        padding: 0 11px;
+        border-radius: 999px;
+        border: 1px solid rgba(214, 226, 247, 0.95);
+        background: rgba(255, 255, 255, 0.78);
+        color: var(--brand-deep);
+        font-size: 0.72rem;
+        font-weight: 900;
       }
 
       #materialsCreatePanel.hidden + section {
@@ -3451,6 +3516,15 @@
           min-height: 90px;
         }
 
+        .event-calendar-toolbar,
+        .event-item {
+          grid-template-columns: 1fr;
+        }
+
+        .event-item-actions {
+          justify-content: flex-start;
+        }
+
         .mobile-nav .side-nav-button {
           justify-content: center;
           min-height: 52px;
@@ -3770,6 +3844,7 @@
               </div>
               <div id="miniCalendarWrap" class="mini-calendar-wrap"></div>
               <form id="eventForm" class="event-form-grid">
+                <div id="eventFormMode" class="event-form-mode">일정 수정 중</div>
                 <div class="field-shell">
                   <label class="field-label" for="eventDateInput">날짜</label>
                   <input id="eventDateInput" class="field-input" type="date">
@@ -3786,7 +3861,10 @@
                   <label class="field-label" for="eventNoteInput">비고</label>
                   <input id="eventNoteInput" class="field-input" type="text" placeholder="메모를 입력하세요">
                 </div>
-                <button type="submit" class="button-primary">일정 저장</button>
+                <div class="event-form-actions">
+                  <button id="eventSaveButton" type="submit" class="button-primary">일정 저장</button>
+                  <button id="eventEditCancelButton" type="button" class="mini-button hidden" data-action="cancel-event-edit">취소</button>
+                </div>
               </form>
             </div>
 
@@ -3802,6 +3880,10 @@
                     <button type="button" class="mini-button" data-action="go-today">이번 달</button>
                     <button type="button" class="mini-button" data-action="next-month">다음 달</button>
                   </div>
+                </div>
+                <div class="event-calendar-toolbar">
+                  <input id="eventSearchInput" class="field-input event-search-input" type="search" placeholder="일정 검색: 학교, 학년, 과목, 비고">
+                  <span id="eventSearchSummary" class="event-search-summary"></span>
                 </div>
                 <div id="eventCalendarWrap" class="event-calendar-wrap"></div>
               </section>
@@ -4118,6 +4200,8 @@
         materialOpenLogs: [],
         isMaterialOpenLogsCollapsed: true,
         events: [],
+        eventSearchKeyword: '',
+        editingEventRowNumber: '',
         materialsLoaded: false,
         eventsLoaded: false,
         materialsLoading: false,
@@ -4247,6 +4331,7 @@
         document.getElementById('materialSettingsModal').addEventListener('click', handleMaterialSettingsBackdropClick);
         document.getElementById('materialSettingsModal').addEventListener('click', handleMaterialSettingsSaveClick);
         document.getElementById('eventForm').addEventListener('submit', handleEventSave);
+        document.getElementById('eventSearchInput').addEventListener('input', handleEventSearchInput_);
         document.getElementById('materialKeywordInput').addEventListener('input', renderMaterials);
         document.getElementById('materialSchoolFilter').addEventListener('change', function(event) {
           APP_STATE.selectedMaterialSchoolTab = event.target.value || '';
@@ -6586,9 +6671,11 @@
       function handleEventSave(event) {
         event.preventDefault();
 
-        setLoading('주요일정을 저장하는 중입니다.');
-        apiRequest('addEvent', {
+        var isEditing = Boolean(APP_STATE.editingEventRowNumber);
+        setLoading(isEditing ? '주요일정을 수정하는 중입니다.' : '주요일정을 저장하는 중입니다.');
+        apiRequest(isEditing ? 'updateEvent' : 'addEvent', {
           token: APP_STATE.token,
+          eventRowNumber: APP_STATE.editingEventRowNumber,
           date: document.getElementById('eventDateInput').value,
           target: document.getElementById('eventTargetInput').value.trim(),
           title: document.getElementById('eventTitleInput').value.trim(),
@@ -6597,9 +6684,10 @@
           .then(function(result) {
             APP_STATE.events = result.events || [];
             document.getElementById('eventForm').reset();
+            clearEventEditMode_();
             renderEvents();
             switchView('events');
-            setNotice(result.message || '주요일정이 저장되었습니다.', 'success');
+            setNotice(result.message || (isEditing ? '주요일정이 수정되었습니다.' : '주요일정이 저장되었습니다.'), 'success');
           })
           .catch(handleApiError_)
           .finally(clearLoading);
@@ -6625,7 +6713,22 @@
           APP_STATE.calendarYear = today.getFullYear();
           APP_STATE.calendarMonth = today.getMonth();
           renderEvents();
+          return;
         }
+        if (action === 'edit-event') {
+          enterEventEditMode_(actionButton.getAttribute('data-event-row'));
+          return;
+        }
+        if (action === 'cancel-event-edit') {
+          clearEventEditMode_();
+          document.getElementById('eventForm').reset();
+          renderEventFormState_();
+        }
+      }
+
+      function handleEventSearchInput_(event) {
+        APP_STATE.eventSearchKeyword = event.target.value || '';
+        renderEvents();
       }
 
       function shiftCalendarMonth_(delta) {
@@ -6643,9 +6746,28 @@
         document.getElementById('miniCalendarLabel').textContent = monthLabel;
         document.getElementById('eventMonthTitle').textContent = monthLabel + ' 주요일정';
         document.getElementById('eventMonthDescription').textContent = '선택한 달의 일정을 달력과 목록으로 함께 확인합니다.';
+        document.getElementById('eventSearchInput').value = APP_STATE.eventSearchKeyword || '';
+        renderEventFormState_();
+        renderEventSearchSummary_();
         document.getElementById('miniCalendarWrap').innerHTML = renderMiniCalendar_();
         document.getElementById('eventCalendarWrap').innerHTML = renderMonthCalendar_();
         document.getElementById('eventListWrap').innerHTML = renderEventList_();
+      }
+
+      function renderEventFormState_() {
+        var isEditing = Boolean(APP_STATE.editingEventRowNumber);
+        document.getElementById('eventFormMode').classList.toggle('active', isEditing);
+        document.getElementById('eventSaveButton').textContent = isEditing ? '일정 수정 저장' : '일정 저장';
+        document.getElementById('eventEditCancelButton').classList.toggle('hidden', !isEditing);
+      }
+
+      function renderEventSearchSummary_() {
+        var keyword = String(APP_STATE.eventSearchKeyword || '').trim();
+        var total = getEventsForCurrentMonth_(true).length;
+        var visible = getEventsForCurrentMonth_().length;
+        document.getElementById('eventSearchSummary').textContent = keyword
+          ? '검색 결과 ' + visible + '건 / 전체 ' + total + '건'
+          : '이번 달 일정 ' + total + '건';
       }
 
       function renderMiniCalendar_() {
@@ -6717,6 +6839,9 @@
       function renderEventList_() {
         var items = getEventsForCurrentMonth_();
         if (!items.length) {
+          if (String(APP_STATE.eventSearchKeyword || '').trim()) {
+            return '<div class="empty-state">검색 조건에 맞는 일정이 없습니다.<br>학교, 학년, 과목명 또는 비고를 다시 입력해 주세요.</div>';
+          }
           return '<div class="empty-state">선택한 달에 등록된 일정이 없습니다.<br>좌측 입력창에서 바로 새 일정을 추가할 수 있습니다.</div>';
         }
 
@@ -6729,10 +6854,36 @@
             '    <span class="event-target-title">' + escapeHtml(item.target || '대상 미지정') + '</span>',
             '    <div class="event-subject-line"><strong>' + escapeHtml(item.title || '일정') + '</strong>' + (item.note ? '<p>' + escapeHtml(item.note) + '</p>' : '') + '</div>',
             '  </div>',
-            '  <div class="helper-text">' + escapeHtml(item.submitter || '작성자 미상') + '</div>',
+            '  <div class="event-item-actions">',
+            '    <button type="button" class="event-edit-button" data-action="edit-event" data-event-row="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button>',
+            '    <span class="helper-text">' + escapeHtml(item.submitter || '작성자 미상') + '</span>',
+            '  </div>',
             '</div>'
           ].join('');
         }).join('') + '</div>';
+      }
+
+      function enterEventEditMode_(rowNumber) {
+        var eventItem = (APP_STATE.events || []).find(function(item) {
+          return String(item.rowNumber || '') === String(rowNumber || '');
+        });
+        if (!eventItem) {
+          setNotice('수정할 일정을 찾을 수 없습니다.', 'error');
+          return;
+        }
+
+        APP_STATE.editingEventRowNumber = String(eventItem.rowNumber || '');
+        document.getElementById('eventDateInput').value = eventItem.isoDate || formatDateInputValue_(eventItem.date);
+        document.getElementById('eventTargetInput').value = eventItem.target || '';
+        document.getElementById('eventTitleInput').value = eventItem.title || '';
+        document.getElementById('eventNoteInput').value = eventItem.note || '';
+        renderEventFormState_();
+        document.getElementById('eventTargetInput').focus();
+      }
+
+      function clearEventEditMode_() {
+        APP_STATE.editingEventRowNumber = '';
+        renderEventFormState_();
       }
 
       function getEventSubjectClass_(title) {
@@ -6761,10 +6912,22 @@
         return 'event-subject-default';
       }
 
-      function getEventsForCurrentMonth_() {
+      function getEventsForCurrentMonth_(ignoreSearch) {
+        var keyword = normalizeSearchText(APP_STATE.eventSearchKeyword);
         return (APP_STATE.events || []).filter(function(item) {
           var parsed = parseEventDateForClient_(item.isoDate || item.date);
-          return parsed && parsed.getFullYear() === APP_STATE.calendarYear && parsed.getMonth() === APP_STATE.calendarMonth;
+          var matchesMonth = parsed && parsed.getFullYear() === APP_STATE.calendarYear && parsed.getMonth() === APP_STATE.calendarMonth;
+          if (!matchesMonth || ignoreSearch || !keyword) {
+            return matchesMonth;
+          }
+          return normalizeSearchText([
+            item.date,
+            item.isoDate,
+            item.target,
+            item.title,
+            item.note,
+            item.submitter
+          ].join(' ')).indexOf(keyword) !== -1;
         });
       }
 
@@ -6784,6 +6947,11 @@
           return value || '-';
         }
         return String(parsed.getMonth() + 1).padStart(2, '0') + '.' + String(parsed.getDate()).padStart(2, '0');
+      }
+
+      function formatDateInputValue_(value) {
+        var parsed = parseEventDateForClient_(value);
+        return parsed ? formatDateKey_(parsed) : '';
       }
 
       function parseEventDateForClient_(value) {
@@ -7806,6 +7974,8 @@
         APP_STATE.materialOpenLogs = [];
         APP_STATE.isMaterialOpenLogsCollapsed = true;
         APP_STATE.events = [];
+        APP_STATE.eventSearchKeyword = '';
+        APP_STATE.editingEventRowNumber = '';
         APP_STATE.materialsLoaded = false;
         APP_STATE.eventsLoaded = false;
         APP_STATE.materialsLoading = false;
@@ -7847,7 +8017,8 @@
           'updateMaterial',
           'deleteMaterial',
           'saveMaterialSettingOption',
-          'addEvent'
+          'addEvent',
+          'updateEvent'
         ].indexOf(action) !== -1;
 
         if (shouldUsePost) {
