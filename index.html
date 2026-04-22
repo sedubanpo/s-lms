@@ -3620,6 +3620,10 @@
         text-align: left;
       }
 
+      .student-cell.split {
+        vertical-align: top;
+      }
+
       .jikbo-student-name {
         font-size: 0.82rem;
         font-weight: 900;
@@ -3640,11 +3644,8 @@
         background: rgba(255, 255, 255, 0.9);
       }
 
-      .jikbo-day-inner {
-        min-height: 78px;
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
+      .jikbo-day-cell.jikbo-class-cell {
+        background: rgba(244, 246, 250, 0.98);
       }
 
       .jikbo-empty-cell {
@@ -3657,20 +3658,28 @@
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
+        align-items: center;
       }
 
-      .jikbo-cell-section + .jikbo-cell-section {
+      .jikbo-row-label {
+        display: inline-flex;
+        align-items: center;
+        min-width: 40px;
+        font-size: 0.68rem;
+        font-weight: 900;
+        color: var(--text-soft);
+        letter-spacing: 0.01em;
+      }
+
+      .jikbo-student-split-label {
+        display: inline-flex;
         margin-top: 6px;
-      }
-
-      .jikbo-cell-section.exam-section {
-        justify-content: flex-start;
-      }
-
-      .jikbo-cell-section.class-section {
-        margin-top: auto;
-        padding-top: 12px;
-        justify-content: flex-end;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: var(--text-soft);
+        background: rgba(240, 244, 251, 0.9);
       }
 
       .jikbo-chip {
@@ -3687,6 +3696,9 @@
         background: rgba(255, 255, 255, 0.96);
         color: var(--text-strong);
         white-space: normal;
+        font-family: inherit;
+        appearance: none;
+        cursor: default;
       }
 
       .jikbo-chip.exam.subject-math {
@@ -3731,12 +3743,43 @@
         border-color: rgba(37, 99, 235, 0.24);
         color: #1d4ed8;
         box-shadow: inset 0 -1px 0 rgba(37, 99, 235, 0.08);
+        cursor: pointer;
       }
 
       .jikbo-chip.class.unassigned {
         background: rgba(255, 228, 240, 0.96);
         border-color: rgba(244, 63, 94, 0.22);
         color: #be123c;
+        cursor: pointer;
+      }
+
+      .jikbo-chip.class.confirmed {
+        background: rgba(227, 247, 234, 0.98);
+        border-color: rgba(22, 128, 76, 0.24);
+        color: #166534;
+        cursor: pointer;
+      }
+
+      .jikbo-chip.class.pending {
+        background: rgba(255, 244, 214, 0.98);
+        border-color: rgba(217, 119, 6, 0.24);
+        color: #a16207;
+        cursor: pointer;
+      }
+
+      .jikbo-chip.class.not-held {
+        background: rgba(241, 245, 249, 0.98);
+        border-color: rgba(100, 116, 139, 0.26);
+        color: #475569;
+        cursor: pointer;
+      }
+
+      .jikbo-chip.class.missing-subject {
+        cursor: pointer;
+      }
+
+      .jikbo-chip.class:hover {
+        transform: translateY(-1px);
       }
 
       .mobile-nav {
@@ -4587,6 +4630,38 @@
       </div>
     </div>
 
+    <div id="jikboStatusModal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-top">
+          <div>
+            <h3>직보 진행 상태</h3>
+            <p>선택한 직보의 상태, 시간, 특이사항을 저장합니다.</p>
+          </div>
+          <button id="closeJikboStatusModalButton" type="button" class="icon-button" aria-label="직보 상태창 닫기">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="jikboStatusContext" class="hint-box">직보 정보를 불러오는 중입니다.</div>
+          <div class="field-shell">
+            <label class="field-label" for="jikboStatusProgressInput">상태</label>
+            <select id="jikboStatusProgressInput" class="field-select">
+              <option value="미정">미정</option>
+              <option value="확정">확정</option>
+              <option value="미진행">미진행</option>
+            </select>
+          </div>
+          <div class="field-shell">
+            <label class="field-label" for="jikboStatusTimeInput">시간</label>
+            <input id="jikboStatusTimeInput" class="field-input" type="time">
+          </div>
+          <div class="field-shell">
+            <label class="field-label" for="jikboStatusNoteInput">특이사항</label>
+            <textarea id="jikboStatusNoteInput" class="field-textarea" placeholder="예: 학생 요청으로 7시 30분 확정, 학교 자율학습 후 시작"></textarea>
+          </div>
+          <button id="saveJikboStatusButton" type="button" class="button-primary">직보 상태 저장</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       const API_URL = 'https://script.google.com/macros/s/AKfycbxNNT0JOl4RsMBDsvyy8wnR2PchU7SMB0F9VloUF0pcfsc6tS9gDuHzkCzKhXtOQ8-F/exec';
       const APP_NAME = 'S-LMS (에스-엘엠에스)';
@@ -4693,11 +4768,13 @@
         jikboSubjectDefinitions: [],
         jikboStudentOverrides: [],
         jikboExamEvents: [],
+        jikboScheduleStatuses: [],
         editingJikboSubjectRowNumber: '',
         editingJikboOverrideRowNumber: '',
         jikboLoaded: false,
         jikboLoading: false,
         jikboSearchKeyword: '',
+        selectedJikboStatusKey: '',
         jikboCalendarYear: new Date().getFullYear(),
         jikboCalendarMonth: new Date().getMonth(),
         materialsLoaded: false,
@@ -4785,6 +4862,10 @@
         document.getElementById('permissionModal').addEventListener('click', handlePermissionModalBackdropClick);
         document.getElementById('closeTeachingLogDetailButton').addEventListener('click', closeTeachingLogDetailModal);
         document.getElementById('teachingLogDetailModal').addEventListener('click', handleTeachingLogDetailBackdropClick);
+        document.getElementById('closeJikboStatusModalButton').addEventListener('click', closeJikboStatusModal_);
+        document.getElementById('jikboStatusModal').addEventListener('click', handleJikboStatusModalBackdropClick_);
+        document.getElementById('jikboStatusProgressInput').addEventListener('change', syncJikboStatusFormMode_);
+        document.getElementById('saveJikboStatusButton').addEventListener('click', handleJikboStatusSave_);
 
         document.getElementById('studentSearchInput').addEventListener('input', renderStudents);
         document.getElementById('studentSchoolFilter').addEventListener('change', renderStudents);
@@ -5194,6 +5275,7 @@
         APP_STATE.jikboSubjectDefinitions = jikboData && jikboData.subjectDefinitions ? jikboData.subjectDefinitions : [];
         APP_STATE.jikboStudentOverrides = jikboData && jikboData.studentOverrides ? jikboData.studentOverrides : [];
         APP_STATE.jikboExamEvents = jikboData && jikboData.examEvents ? jikboData.examEvents : [];
+        APP_STATE.jikboScheduleStatuses = jikboData && jikboData.scheduleStatuses ? jikboData.scheduleStatuses : [];
       }
 
       function ensureViewDataLoaded_(viewName, options) {
@@ -7226,6 +7308,90 @@
           .finally(clearLoading);
       }
 
+      function closeJikboStatusModal_() {
+        APP_STATE.selectedJikboStatusKey = '';
+        document.getElementById('jikboStatusModal').classList.add('hidden');
+      }
+
+      function handleJikboStatusModalBackdropClick_(event) {
+        if (event.target.id === 'jikboStatusModal') {
+          closeJikboStatusModal_();
+        }
+      }
+
+      function openJikboStatusModal_(encodedPayload) {
+        var draft = decodeJikboStatusPayload_(encodedPayload);
+        if (!draft || !draft.studentId || !draft.subjectName || !draft.examDate || !draft.jikboDate) {
+          setNotice('직보 상태 정보를 열 수 없습니다.', 'warning');
+          return;
+        }
+
+        APP_STATE.selectedJikboStatusKey = buildJikboStatusKey_(
+          draft.studentId,
+          draft.subjectName,
+          draft.examDate,
+          draft.jikboDate,
+          draft.instructorId,
+          draft.instructorName
+        );
+
+        var existing = getJikboStatusMap_()[APP_STATE.selectedJikboStatusKey] || null;
+        document.getElementById('jikboStatusContext').innerHTML = [
+          '<strong>' + escapeHtml(draft.studentName || '-') + '</strong>',
+          ' · ' + escapeHtml(draft.subjectName || '-') +
+          ' · ' + escapeHtml(draft.instructorName || draft.instructorLabel || '강사 미배정'),
+          '<br>',
+          '시험일 ' + escapeHtml(draft.examDate || '-') + ' / 직보일 ' + escapeHtml(draft.jikboDate || '-')
+        ].join('');
+        document.getElementById('jikboStatusProgressInput').value = (existing && existing.progressStatus) || draft.progressStatus || '미정';
+        document.getElementById('jikboStatusTimeInput').value = (existing && existing.confirmedTime) || draft.confirmedTime || '';
+        document.getElementById('jikboStatusNoteInput').value = (existing && existing.note) || draft.note || '';
+        document.getElementById('jikboStatusModal').classList.remove('hidden');
+        document.getElementById('jikboStatusModal').dataset.payload = encodedPayload || '';
+        syncJikboStatusFormMode_();
+      }
+
+      function syncJikboStatusFormMode_() {
+        var progressStatus = document.getElementById('jikboStatusProgressInput').value;
+        var timeInput = document.getElementById('jikboStatusTimeInput');
+        var shouldEnableTime = progressStatus === '확정';
+        timeInput.disabled = !shouldEnableTime;
+        if (!shouldEnableTime) {
+          timeInput.value = '';
+        }
+      }
+
+      function handleJikboStatusSave_() {
+        var encodedPayload = document.getElementById('jikboStatusModal').dataset.payload || '';
+        var draft = decodeJikboStatusPayload_(encodedPayload);
+        if (!draft) {
+          setNotice('저장할 직보 정보를 찾을 수 없습니다.', 'warning');
+          return;
+        }
+
+        setLoading('직보 상태를 저장하는 중입니다.');
+        apiRequest('saveJikboStatus', {
+          token: APP_STATE.token,
+          studentId: draft.studentId,
+          subjectName: draft.subjectName,
+          examDate: draft.examDate,
+          jikboDate: draft.jikboDate,
+          instructorId: draft.instructorId,
+          instructorName: draft.instructorName,
+          progressStatus: document.getElementById('jikboStatusProgressInput').value,
+          confirmedTime: document.getElementById('jikboStatusTimeInput').value,
+          note: document.getElementById('jikboStatusNoteInput').value.trim()
+        })
+          .then(function(result) {
+            APP_STATE.jikboScheduleStatuses = result.scheduleStatuses || APP_STATE.jikboScheduleStatuses;
+            renderJikboBoard_();
+            closeJikboStatusModal_();
+            setNotice(result.message || '직보 상태가 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
       function renderJikboView() {
         if (!APP_STATE.isAdmin) {
           if (APP_STATE.currentView === 'jikbo') {
@@ -7312,6 +7478,12 @@
         var overrideDeleteButton = event.target.closest('[data-jikbo-override-delete]');
         if (overrideDeleteButton) {
           handleJikboOverrideDelete_(overrideDeleteButton.getAttribute('data-jikbo-override-delete'));
+          return;
+        }
+
+        var statusButton = event.target.closest('[data-jikbo-status-open]');
+        if (statusButton) {
+          openJikboStatusModal_(statusButton.getAttribute('data-jikbo-status-open'));
         }
       }
 
@@ -7353,6 +7525,7 @@
         var monthEventList = getJikboExamEventsForCurrentMonth_();
         var subjectDefinitionMap = getJikboSubjectDefinitionMap_();
         var overrideMap = getJikboOverrideMap_();
+        var statusMap = getJikboStatusMap_();
         var permissionMap = getPermissionMap();
         var keyword = normalizeSearchText(APP_STATE.jikboSearchKeyword);
         var groupsByKey = {};
@@ -7430,20 +7603,22 @@
                 examType: eventItem.examType || ''
               });
 
-              var resolvedJikbo = resolveJikboInstructorDisplay_(student, eventItem, subjectDefinition, override, permissionMap);
-              if (isJikboDateInCurrentMonth_(resolvedJikbo.dateKey)) {
-                activeDateKeyMap[resolvedJikbo.dateKey] = true;
-              }
-              if (isJikboDateInCurrentMonth_(resolvedJikbo.dateKey)) {
-                if (!cellMap[resolvedJikbo.dateKey]) {
-                  cellMap[resolvedJikbo.dateKey] = { exams: [], jikbos: [] };
+              resolveJikboInstructorDisplay_(student, eventItem, subjectDefinition, override, permissionMap).forEach(function(resolvedJikbo) {
+                applyJikboStatusMeta_(resolvedJikbo, statusMap);
+                if (isJikboDateInCurrentMonth_(resolvedJikbo.dateKey)) {
+                  activeDateKeyMap[resolvedJikbo.dateKey] = true;
                 }
-                cellMap[resolvedJikbo.dateKey].jikbos.push(resolvedJikbo);
-              }
-              stats.jikboCount += 1;
-              if (resolvedJikbo.status !== 'assigned') {
-                stats.warningCount += 1;
-              }
+                if (isJikboDateInCurrentMonth_(resolvedJikbo.dateKey)) {
+                  if (!cellMap[resolvedJikbo.dateKey]) {
+                    cellMap[resolvedJikbo.dateKey] = { exams: [], jikbos: [] };
+                  }
+                  cellMap[resolvedJikbo.dateKey].jikbos.push(resolvedJikbo);
+                }
+                stats.jikboCount += 1;
+                if (resolvedJikbo.status === 'missing-subject' || resolvedJikbo.status === 'unassigned') {
+                  stats.warningCount += 1;
+                }
+              });
             });
 
             if (matchedExamCount > 0) {
@@ -7534,7 +7709,7 @@
 
         var schoolRowSpanMap = {};
         model.groups.forEach(function(group) {
-          schoolRowSpanMap[group.school] = (schoolRowSpanMap[group.school] || 0) + group.rowCount;
+          schoolRowSpanMap[group.school] = (schoolRowSpanMap[group.school] || 0) + (group.rowCount * 2);
         });
 
         var renderedSchoolMap = {};
@@ -7562,14 +7737,19 @@
             }
             return group.rows.map(function(row, rowIndex) {
               return [
-                '<tr>',
-                (!isSchoolRendered && rowIndex === 0 ? '<td class="sticky-col sticky-school school-cell" rowspan="' + escapeAttribute(String(schoolRowSpanMap[group.school] || group.rowCount)) + '">' + escapeHtml(group.school || '-') + '</td>' : ''),
-                (rowIndex === 0 ? '<td class="sticky-col sticky-start range-cell" rowspan="' + escapeAttribute(String(group.rowCount)) + '">' + escapeHtml(group.eventRange.startLabel) + '</td>' : ''),
-                (rowIndex === 0 ? '<td class="sticky-col sticky-end range-cell" rowspan="' + escapeAttribute(String(group.rowCount)) + '">' + escapeHtml(group.eventRange.endLabel) + '</td>' : ''),
-                (rowIndex === 0 ? '<td class="sticky-col sticky-grade grade-cell" rowspan="' + escapeAttribute(String(group.rowCount)) + '">' + escapeHtml(group.grade || '-') + '</td>' : ''),
-                '<td class="sticky-col sticky-student student-cell">' + renderJikboStudentLabel_(row.student, row.matchedExamCount) + '</td>',
+                '<tr class="jikbo-student-exam-row">',
+                (!isSchoolRendered && rowIndex === 0 ? '<td class="sticky-col sticky-school school-cell" rowspan="' + escapeAttribute(String(schoolRowSpanMap[group.school] || (group.rowCount * 2))) + '">' + escapeHtml(group.school || '-') + '</td>' : ''),
+                (rowIndex === 0 ? '<td class="sticky-col sticky-start range-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.eventRange.startLabel) + '</td>' : ''),
+                (rowIndex === 0 ? '<td class="sticky-col sticky-end range-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.eventRange.endLabel) + '</td>' : ''),
+                (rowIndex === 0 ? '<td class="sticky-col sticky-grade grade-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.grade || '-') + '</td>' : ''),
+                '<td class="sticky-col sticky-student student-cell split" rowspan="2">' + renderJikboStudentLabel_(row.student, row.matchedExamCount) + '<span class="jikbo-student-split-label">시험일정</span><span class="jikbo-student-split-label">직보</span></td>',
                 model.monthDateKeys.map(function(dateKey, dateIndex) {
-                  return '<td class="jikbo-day-cell ' + (isJikboWeekend_(model.monthDates[dateIndex]) ? 'weekend' : '') + '">' + renderJikboDayCell_(row.cellMap[dateKey]) + '</td>';
+                  return '<td class="jikbo-day-cell ' + (isJikboWeekend_(model.monthDates[dateIndex]) ? 'weekend' : '') + '">' + renderJikboExamCell_(row.cellMap[dateKey]) + '</td>';
+                }).join(''),
+                '</tr>',
+                '<tr class="jikbo-student-class-row">',
+                model.monthDateKeys.map(function(dateKey, dateIndex) {
+                  return '<td class="jikbo-day-cell jikbo-class-cell ' + (isJikboWeekend_(model.monthDates[dateIndex]) ? 'weekend' : '') + '">' + renderJikboClassCell_(row.cellMap[dateKey]) + '</td>';
                 }).join(''),
                 '</tr>'
               ].join('');
@@ -7588,23 +7768,33 @@
         ].join('');
       }
 
-      function renderJikboDayCell_(cell) {
+      function renderJikboExamCell_(cell) {
         var model = cell || { exams: [], jikbos: [] };
-        if (!model.exams.length && !model.jikbos.length) {
+        if (!model.exams.length) {
           return '<div class="jikbo-empty-cell">-</div>';
         }
 
-        return [
-          '<div class="jikbo-day-inner">',
-          model.exams.length ? '<div class="jikbo-cell-section exam-section">' + model.exams.map(function(item) {
-            return '<span class="jikbo-chip exam ' + escapeAttribute(item.toneClass || 'subject-other') + (item.isDefined ? '' : ' warning') + '">' + escapeHtml(item.subjectName) + '</span>';
-          }).join('') + '</div>' : '',
-          model.jikbos.length ? '<div class="jikbo-cell-section class-section">' + model.jikbos.map(function(item) {
-            var text = item.subjectName + ' · ' + (item.instructorLabel || (item.status === 'missing-subject' ? '과목 미설정' : '미배정'));
-            return '<span class="jikbo-chip class ' + escapeAttribute(item.status) + '">' + escapeHtml(text) + '</span>';
-          }).join('') + '</div>' : '',
-          '</div>'
-        ].join('');
+        return '<div class="jikbo-cell-section"><span class="jikbo-row-label">시험</span>' + model.exams.map(function(item) {
+          return '<span class="jikbo-chip exam ' + escapeAttribute(item.toneClass || 'subject-other') + (item.isDefined ? '' : ' warning') + '">' + escapeHtml(item.subjectName) + '</span>';
+        }).join('') + '</div>';
+      }
+
+      function renderJikboClassCell_(cell) {
+        var model = cell || { exams: [], jikbos: [] };
+        if (!model.jikbos.length) {
+          return '<div class="jikbo-empty-cell">-</div>';
+        }
+
+        return '<div class="jikbo-cell-section"><span class="jikbo-row-label">직보</span>' + model.jikbos.map(function(item) {
+          var statusClass = getJikboProgressToneClass_(item.progressStatus, item.status);
+          var textParts = [item.subjectName, item.instructorLabel || (item.status === 'missing-subject' ? '과목 미설정' : '미배정')];
+          if (item.progressStatus === '확정' && item.confirmedTime) {
+            textParts.push(item.confirmedTime);
+          } else if (item.progressStatus === '미정' || item.progressStatus === '미진행') {
+            textParts.push(item.progressStatus);
+          }
+          return '<button type="button" class="jikbo-chip class ' + escapeAttribute(statusClass) + '" data-jikbo-status-open="' + escapeAttribute(encodeJikboStatusPayload_(item)) + '"' + (item.note ? ' title="' + escapeAttribute(item.note) + '"' : '') + '>' + escapeHtml(textParts.join(' · ')) + '</button>';
+        }).join('') + '</div>';
       }
 
       function isJikboDateInCurrentMonth_(dateKey) {
@@ -7664,8 +7854,84 @@
         return map;
       }
 
+      function getJikboStatusMap_() {
+        var map = {};
+        (APP_STATE.jikboScheduleStatuses || []).forEach(function(item) {
+          if (!item || !item.studentId || !item.subjectName || !item.examDate || !item.jikboDate) {
+            return;
+          }
+          map[buildJikboStatusKey_(item.studentId, item.subjectName, item.examDate, item.jikboDate, item.instructorId, item.instructorName)] = item;
+        });
+        return map;
+      }
+
       function buildJikboOverrideKey_(studentId, subjectName) {
         return [String(studentId || ''), normalizeSearchText(subjectName)].join('|');
+      }
+
+      function buildJikboStatusKey_(studentId, subjectName, examDate, jikboDate, instructorId, instructorName) {
+        return [
+          String(studentId || ''),
+          normalizeSearchText(subjectName),
+          String(examDate || ''),
+          String(jikboDate || ''),
+          String(instructorId || ''),
+          normalizeSearchText(instructorName)
+        ].join('|');
+      }
+
+      function encodeJikboStatusPayload_(item) {
+        try {
+          var raw = unescape(encodeURIComponent(JSON.stringify(item || {})));
+          if (window && typeof window.btoa === 'function') {
+            return window.btoa(raw);
+          }
+          if (typeof btoa === 'function') {
+            return btoa(raw);
+          }
+          return '';
+        } catch (error) {
+          return '';
+        }
+      }
+
+      function decodeJikboStatusPayload_(value) {
+        if (!value) {
+          return null;
+        }
+        try {
+          var raw = '';
+          if (window && typeof window.atob === 'function') {
+            raw = window.atob(value);
+          } else if (typeof atob === 'function') {
+            raw = atob(value);
+          }
+          return raw ? JSON.parse(decodeURIComponent(escape(raw))) : null;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function applyJikboStatusMeta_(item, statusMap) {
+        var key = buildJikboStatusKey_(item.studentId, item.subjectName, item.examDate, item.dateKey, item.instructorId, item.instructorName);
+        var saved = statusMap && statusMap[key] ? statusMap[key] : null;
+        item.progressStatus = saved && saved.progressStatus ? saved.progressStatus : '미정';
+        item.confirmedTime = saved && saved.confirmedTime ? saved.confirmedTime : '';
+        item.note = saved && saved.note ? saved.note : '';
+        item.scheduleStatusKey = key;
+      }
+
+      function getJikboProgressToneClass_(progressStatus, fallbackStatus) {
+        if (progressStatus === '확정') {
+          return 'confirmed';
+        }
+        if (progressStatus === '미정') {
+          return 'pending';
+        }
+        if (progressStatus === '미진행') {
+          return 'not-held';
+        }
+        return fallbackStatus || 'assigned';
       }
 
       function shouldIncludeJikboSubject_(student, eventItem, subjectDefinition, override, permissionMap) {
@@ -7727,47 +7993,75 @@
         var resolvedDateKey = formatDateInputValue_(override && override.overrideDate) || defaultDateKey;
 
         if (override && override.instructorId) {
-          return {
+          return [{
+            studentId: student.studentId,
+            studentName: student.studentName,
+            school: student.school,
+            grade: normalizeJikboGradeForClient_(student.grade),
             subjectName: eventItem.subjectName,
+            examDate: eventItem.isoDate,
             dateKey: resolvedDateKey,
             status: 'assigned',
+            instructorId: override.instructorId,
+            instructorName: override.instructorName || resolveInstructorNameById_(override.instructorId) || override.instructorId,
             instructorLabel: override.instructorName || resolveInstructorNameById_(override.instructorId) || override.instructorId
-          };
+          }];
         }
 
         if (!subjectDefinition || subjectDefinition.isEnabled === false) {
-          return {
+          return [{
+            studentId: student.studentId,
+            studentName: student.studentName,
+            school: student.school,
+            grade: normalizeJikboGradeForClient_(student.grade),
             subjectName: eventItem.subjectName,
+            examDate: eventItem.isoDate,
             dateKey: resolvedDateKey,
             status: 'missing-subject',
+            instructorId: '',
+            instructorName: '',
             instructorLabel: ''
-          };
+          }];
         }
 
         var allowedInstructorIds = permissionMap[student.studentId] || [];
         var categories = subjectDefinition.instructorSubjectCategories || [];
-        var matchedNames = APP_STATE.instructors.filter(function(instructor) {
+        var matchedInstructors = APP_STATE.instructors.filter(function(instructor) {
           return allowedInstructorIds.indexOf(instructor.userId) !== -1 &&
             matchesJikboInstructorCategories_(instructor.subject, categories);
-        }).map(function(instructor) {
-          return instructor.name || instructor.userId;
         });
 
-        if (!matchedNames.length) {
-          return {
+        if (!matchedInstructors.length) {
+          return [{
+            studentId: student.studentId,
+            studentName: student.studentName,
+            school: student.school,
+            grade: normalizeJikboGradeForClient_(student.grade),
             subjectName: eventItem.subjectName,
+            examDate: eventItem.isoDate,
             dateKey: resolvedDateKey,
             status: 'unassigned',
+            instructorId: '',
+            instructorName: '',
             instructorLabel: ''
-          };
+          }];
         }
 
-        return {
-          subjectName: eventItem.subjectName,
-          dateKey: resolvedDateKey,
-          status: 'assigned',
-          instructorLabel: matchedNames.join(', ')
-        };
+        return matchedInstructors.map(function(instructor) {
+          return {
+            studentId: student.studentId,
+            studentName: student.studentName,
+            school: student.school,
+            grade: normalizeJikboGradeForClient_(student.grade),
+            subjectName: eventItem.subjectName,
+            examDate: eventItem.isoDate,
+            dateKey: resolvedDateKey,
+            status: 'assigned',
+            instructorId: instructor.userId,
+            instructorName: instructor.name || instructor.userId,
+            instructorLabel: instructor.name || instructor.userId
+          };
+        });
       }
 
       function matchesJikboInstructorCategories_(instructorSubject, categories) {
@@ -9514,11 +9808,13 @@
         APP_STATE.jikboSubjectDefinitions = [];
         APP_STATE.jikboStudentOverrides = [];
         APP_STATE.jikboExamEvents = [];
+        APP_STATE.jikboScheduleStatuses = [];
         APP_STATE.editingJikboSubjectRowNumber = '';
         APP_STATE.editingJikboOverrideRowNumber = '';
         APP_STATE.jikboLoaded = false;
         APP_STATE.jikboLoading = false;
         APP_STATE.jikboSearchKeyword = '';
+        APP_STATE.selectedJikboStatusKey = '';
         APP_STATE.jikboCalendarYear = new Date().getFullYear();
         APP_STATE.jikboCalendarMonth = new Date().getMonth();
         APP_STATE.materialsLoaded = false;
@@ -9534,6 +9830,7 @@
         clearDashboardSnapshot_();
         closePermissionModal();
         closeMaterialSettingsModal();
+        closeJikboStatusModal_();
         closeTeachingLogDetailModal();
         renderAll();
         showLoginOnly();
@@ -9567,7 +9864,8 @@
           'saveJikboSubject',
           'deleteJikboSubject',
           'saveJikboStudentOverride',
-          'deleteJikboStudentOverride'
+          'deleteJikboStudentOverride',
+          'saveJikboStatus'
         ].indexOf(action) !== -1;
 
         if (shouldUsePost) {
