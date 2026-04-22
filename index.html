@@ -3449,6 +3449,27 @@
         margin: 12px 0;
       }
 
+      .jikbo-board-toolbar {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin: 10px 0 6px;
+      }
+
+      .jikbo-board-search {
+        flex: 1 1 420px;
+        max-width: 520px;
+      }
+
+      .jikbo-board-search-label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-soft);
+        font-size: 0.74rem;
+        font-weight: 800;
+      }
+
       .jikbo-manager-stack {
         display: grid;
         gap: 14px;
@@ -3619,6 +3640,13 @@
         background: rgba(255, 255, 255, 0.9);
       }
 
+      .jikbo-day-inner {
+        min-height: 78px;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
       .jikbo-empty-cell {
         color: rgba(148, 163, 184, 0.82);
         font-size: 0.8rem;
@@ -3633,6 +3661,16 @@
 
       .jikbo-cell-section + .jikbo-cell-section {
         margin-top: 6px;
+      }
+
+      .jikbo-cell-section.exam-section {
+        justify-content: flex-start;
+      }
+
+      .jikbo-cell-section.class-section {
+        margin-top: auto;
+        padding-top: 12px;
+        justify-content: flex-end;
       }
 
       .jikbo-chip {
@@ -3689,9 +3727,10 @@
       }
 
       .jikbo-chip.class.assigned {
-        background: rgba(226, 238, 255, 0.96);
-        border-color: rgba(37, 99, 235, 0.2);
+        background: linear-gradient(180deg, rgba(232, 242, 255, 0.98), rgba(216, 232, 255, 0.98));
+        border-color: rgba(37, 99, 235, 0.24);
         color: #1d4ed8;
+        box-shadow: inset 0 -1px 0 rgba(37, 99, 235, 0.08);
       }
 
       .jikbo-chip.class.unassigned {
@@ -3720,6 +3759,15 @@
         .students-grid,
         .jikbo-summary-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .jikbo-board-toolbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .jikbo-board-search {
+          max-width: none;
         }
       }
 
@@ -4162,6 +4210,12 @@
                   <button type="button" class="mini-button" data-action="prev-jikbo-month">이전 달</button>
                   <button type="button" class="mini-button" data-action="go-jikbo-today">이번 달</button>
                   <button type="button" class="mini-button" data-action="next-jikbo-month">다음 달</button>
+                </div>
+              </div>
+              <div class="jikbo-board-toolbar">
+                <div class="jikbo-board-search">
+                  <label class="jikbo-board-search-label" for="jikboSearchInput">학교 / 학생 검색</label>
+                  <input id="jikboSearchInput" class="field-input" type="search" placeholder="예: 경원중, 송정현">
                 </div>
               </div>
               <div id="jikboSummaryWrap" class="stats-grid jikbo-summary-grid"></div>
@@ -4643,6 +4697,7 @@
         editingJikboOverrideRowNumber: '',
         jikboLoaded: false,
         jikboLoading: false,
+        jikboSearchKeyword: '',
         jikboCalendarYear: new Date().getFullYear(),
         jikboCalendarMonth: new Date().getMonth(),
         materialsLoaded: false,
@@ -4781,6 +4836,7 @@
         document.getElementById('eventForm').addEventListener('submit', handleEventSave);
         document.getElementById('eventSearchInput').addEventListener('input', handleEventSearchInput_);
         document.getElementById('jikboPanelTabs').addEventListener('click', handleJikboPanelTabClick_);
+        document.getElementById('jikboSearchInput').addEventListener('input', handleJikboSearchInput_);
         document.getElementById('jikboSubjectForm').addEventListener('submit', handleJikboSubjectSave_);
         document.getElementById('cancelJikboSubjectEditButton').addEventListener('click', clearJikboSubjectEditMode_);
         document.getElementById('jikboOverrideForm').addEventListener('submit', handleJikboOverrideSave_);
@@ -7210,6 +7266,11 @@
         renderJikboView();
       }
 
+      function handleJikboSearchInput_(event) {
+        APP_STATE.jikboSearchKeyword = event.target.value || '';
+        renderJikboBoard_();
+      }
+
       function handleJikboViewClick_(event) {
         var actionButton = event.target.closest('[data-action]');
         if (actionButton) {
@@ -7265,6 +7326,7 @@
         var monthLabel = formatCalendarMonthLabel_(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth);
         document.getElementById('jikboMonthTitle').textContent = monthLabel + ' 직보 보드';
         document.getElementById('jikboMonthDescription').textContent = '주요일정의 시험 이벤트를 읽어 학교와 학년별 직보 배정을 월간 표로 정리합니다.';
+        document.getElementById('jikboSearchInput').value = APP_STATE.jikboSearchKeyword || '';
 
         if (APP_STATE.jikboLoading && !APP_STATE.jikboLoaded) {
           document.getElementById('jikboSummaryWrap').innerHTML = '';
@@ -7288,19 +7350,17 @@
       }
 
       function buildJikboBoardModel_() {
-        var monthDates = getJikboMonthDates_(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth);
-        var monthDateKeys = monthDates.map(function(date) {
-          return formatDateKey_(date);
-        });
         var monthEventList = getJikboExamEventsForCurrentMonth_();
         var subjectDefinitionMap = getJikboSubjectDefinitionMap_();
         var overrideMap = getJikboOverrideMap_();
         var permissionMap = getPermissionMap();
+        var keyword = normalizeSearchText(APP_STATE.jikboSearchKeyword);
         var groupsByKey = {};
+        var activeDateKeyMap = {};
         var stats = {
           schoolCount: 0,
           gradeGroupCount: 0,
-          examCount: monthEventList.length,
+          examCount: 0,
           jikboCount: 0,
           warningCount: 0,
           matchedStudentCount: 0
@@ -7317,6 +7377,7 @@
             };
           }
           groupsByKey[groupKey].events.push(item);
+          activeDateKeyMap[item.isoDate] = true;
         });
 
         var groups = Object.keys(groupsByKey).map(function(key) {
@@ -7324,19 +7385,25 @@
         }).sort(function(a, b) {
           return [a.school || '', a.grade || ''].join('|').localeCompare([b.school || '', b.grade || ''].join('|'));
         }).map(function(group) {
+          var groupMatchesKeyword = !keyword || normalizeSearchText(group.school).indexOf(keyword) !== -1;
           var students = APP_STATE.activeStudents.filter(function(student) {
             return isSameJikboSchoolGrade_(student.school, student.grade, group.school, group.grade);
+          }).filter(function(student) {
+            if (!keyword || groupMatchesKeyword) {
+              return true;
+            }
+            return normalizeSearchText(student.studentName).indexOf(keyword) !== -1;
           }).sort(compareJikboStudents_);
+
+          if (keyword && !groupMatchesKeyword && !students.length) {
+            return null;
+          }
+
+          var visibleEventRows = {};
+          var visibleEvents = [];
           var rows = students.map(function(student) {
             var cellMap = {};
             var matchedExamCount = 0;
-
-            monthDateKeys.forEach(function(dateKey) {
-              cellMap[dateKey] = {
-                exams: [],
-                jikbos: []
-              };
-            });
 
             group.events.forEach(function(eventItem) {
               var subjectDefinition = subjectDefinitionMap[normalizeSearchText(eventItem.subjectName)] || null;
@@ -7348,17 +7415,29 @@
               }
 
               matchedExamCount += 1;
-              if (cellMap[eventItem.isoDate]) {
-                cellMap[eventItem.isoDate].exams.push({
-                  subjectName: eventItem.subjectName,
-                  toneClass: getSubjectToneClass_(eventItem.subjectName),
-                  isDefined: Boolean(subjectDefinition && subjectDefinition.isEnabled !== false),
-                  examType: eventItem.examType || ''
-                });
+              if (!visibleEventRows[eventItem.rowNumber]) {
+                visibleEventRows[eventItem.rowNumber] = true;
+                visibleEvents.push(eventItem);
               }
 
+              if (!cellMap[eventItem.isoDate]) {
+                cellMap[eventItem.isoDate] = { exams: [], jikbos: [] };
+              }
+              cellMap[eventItem.isoDate].exams.push({
+                subjectName: eventItem.subjectName,
+                toneClass: getSubjectToneClass_(eventItem.subjectName),
+                isDefined: Boolean(subjectDefinition && subjectDefinition.isEnabled !== false),
+                examType: eventItem.examType || ''
+              });
+
               var resolvedJikbo = resolveJikboInstructorDisplay_(student, eventItem, subjectDefinition, override, permissionMap);
-              if (cellMap[resolvedJikbo.dateKey]) {
+              if (isJikboDateInCurrentMonth_(resolvedJikbo.dateKey)) {
+                activeDateKeyMap[resolvedJikbo.dateKey] = true;
+              }
+              if (isJikboDateInCurrentMonth_(resolvedJikbo.dateKey)) {
+                if (!cellMap[resolvedJikbo.dateKey]) {
+                  cellMap[resolvedJikbo.dateKey] = { exams: [], jikbos: [] };
+                }
                 cellMap[resolvedJikbo.dateKey].jikbos.push(resolvedJikbo);
               }
               stats.jikboCount += 1;
@@ -7379,29 +7458,51 @@
           });
 
           if (!rows.length) {
-            var emptyCellMap = {};
-            monthDateKeys.forEach(function(dateKey) {
-              emptyCellMap[dateKey] = {
-                exams: [],
-                jikbos: []
-              };
-            });
             rows.push({
               student: {
                 studentName: '활성 학생 없음',
                 subject: '-',
                 studentId: ''
               },
-              cellMap: emptyCellMap,
+              cellMap: {},
               matchedExamCount: 0
             });
           }
 
+          if (keyword && !groupMatchesKeyword && !rows.some(function(row) { return row.matchedExamCount > 0 || normalizeSearchText(row.student.studentName).indexOf(keyword) !== -1; })) {
+            return null;
+          }
+
+          if (!visibleEvents.length) {
+            visibleEvents = group.events.slice();
+          }
+
           group.rows = rows;
           group.rowCount = Math.max(rows.length, 1);
+          group.events = visibleEvents;
           group.eventRange = getJikboEventRange_(group.events);
           return group;
-        });
+        }).filter(Boolean);
+
+        var monthDateKeys = Object.keys(activeDateKeyMap).filter(function(dateKey) {
+          return isJikboDateInCurrentMonth_(dateKey);
+        }).sort();
+        var monthDates = monthDateKeys.map(function(dateKey) {
+          return parseEventDateForClient_(dateKey);
+        }).filter(Boolean);
+
+        if (!monthDates.length) {
+          monthDates = uniqueList_(monthEventList.map(function(item) { return item.isoDate; }).filter(Boolean)).sort().map(function(dateKey) {
+            return parseEventDateForClient_(dateKey);
+          }).filter(Boolean);
+          monthDateKeys = monthDates.map(function(date) { return formatDateKey_(date); });
+        }
+
+        stats.examCount = groups.reduce(function(total, group) {
+          return total + uniqueList_((group.events || []).map(function(item) {
+            return item.rowNumber;
+          }).filter(Boolean)).length;
+        }, 0);
 
         stats.schoolCount = uniqueList_(groups.map(function(group) {
           return group.school;
@@ -7428,7 +7529,7 @@
 
       function renderJikboBoardTable_(model) {
         if (!model.groups.length) {
-          return '<div class="empty-state">선택한 달에 직보 계산 대상 시험이 없습니다.<br>주요일정에 `학교|학년` 또는 `학교 1학년`, 과목명, 시험구분 형식으로 입력한 시험만 직보 보드에 반영됩니다.</div>';
+          return '<div class="empty-state">조건에 맞는 직보 데이터가 없습니다.<br>주요일정에 `학교|학년` 또는 `학교 1학년`, 과목명, 시험구분 형식으로 입력한 시험만 직보 보드에 반영됩니다.</div>';
         }
 
         var schoolRowSpanMap = {};
@@ -7494,14 +7595,25 @@
         }
 
         return [
-          model.exams.length ? '<div class="jikbo-cell-section">' + model.exams.map(function(item) {
+          '<div class="jikbo-day-inner">',
+          model.exams.length ? '<div class="jikbo-cell-section exam-section">' + model.exams.map(function(item) {
             return '<span class="jikbo-chip exam ' + escapeAttribute(item.toneClass || 'subject-other') + (item.isDefined ? '' : ' warning') + '">' + escapeHtml(item.subjectName) + '</span>';
           }).join('') + '</div>' : '',
-          model.jikbos.length ? '<div class="jikbo-cell-section">' + model.jikbos.map(function(item) {
+          model.jikbos.length ? '<div class="jikbo-cell-section class-section">' + model.jikbos.map(function(item) {
             var text = item.subjectName + ' · ' + (item.instructorLabel || (item.status === 'missing-subject' ? '과목 미설정' : '미배정'));
             return '<span class="jikbo-chip class ' + escapeAttribute(item.status) + '">' + escapeHtml(text) + '</span>';
-          }).join('') + '</div>' : ''
+          }).join('') + '</div>' : '',
+          '</div>'
         ].join('');
+      }
+
+      function isJikboDateInCurrentMonth_(dateKey) {
+        var parsed = parseEventDateForClient_(dateKey);
+        return Boolean(
+          parsed &&
+          parsed.getFullYear() === APP_STATE.jikboCalendarYear &&
+          parsed.getMonth() === APP_STATE.jikboCalendarMonth
+        );
       }
 
       function renderJikboDateHeader_(date) {
@@ -9406,6 +9518,7 @@
         APP_STATE.editingJikboOverrideRowNumber = '';
         APP_STATE.jikboLoaded = false;
         APP_STATE.jikboLoading = false;
+        APP_STATE.jikboSearchKeyword = '';
         APP_STATE.jikboCalendarYear = new Date().getFullYear();
         APP_STATE.jikboCalendarMonth = new Date().getMonth();
         APP_STATE.materialsLoaded = false;
