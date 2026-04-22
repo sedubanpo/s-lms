@@ -3447,6 +3447,139 @@
 
       .jikbo-summary-grid {
         margin: 12px 0;
+        display: grid;
+        gap: 12px;
+      }
+
+      .jikbo-summary-cards {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .jikbo-summary-card {
+        text-align: left;
+        appearance: none;
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      }
+
+      .jikbo-summary-card:hover {
+        transform: translateY(-1px);
+      }
+
+      .jikbo-summary-card.active {
+        border-color: rgba(37, 99, 235, 0.28);
+        box-shadow: 0 18px 30px rgba(37, 99, 235, 0.12), inset 0 0 0 1px rgba(37, 99, 235, 0.1);
+      }
+
+      .jikbo-summary-card.alert {
+        border-color: rgba(239, 68, 68, 0.22);
+        background: linear-gradient(180deg, rgba(255, 247, 247, 0.98), rgba(255, 241, 242, 0.98));
+      }
+
+      .jikbo-summary-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .jikbo-summary-card strong {
+        display: block;
+        margin-top: 10px;
+        font-size: 1.9rem;
+        line-height: 1;
+      }
+
+      .jikbo-summary-preview {
+        margin-top: 12px;
+        color: var(--text-soft);
+        font-size: 0.78rem;
+        line-height: 1.5;
+      }
+
+      .jikbo-summary-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: rgba(36, 86, 214, 0.1);
+        color: var(--brand-deep);
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .jikbo-summary-badge.alert {
+        background: rgba(239, 68, 68, 0.12);
+        color: #b91c1c;
+      }
+
+      .jikbo-summary-detail {
+        padding: 16px 18px;
+        border-radius: 20px;
+        border: 1px solid rgba(214, 226, 247, 0.9);
+        background: rgba(255, 255, 255, 0.82);
+      }
+
+      .jikbo-summary-detail-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .jikbo-summary-detail-head h4 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .jikbo-summary-detail-head p {
+        margin: 4px 0 0;
+        color: var(--text-soft);
+        font-size: 0.8rem;
+      }
+
+      .jikbo-summary-detail-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .jikbo-summary-detail-item {
+        display: grid;
+        gap: 4px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(223, 231, 245, 0.96);
+        background: rgba(248, 251, 255, 0.88);
+      }
+
+      .jikbo-summary-detail-item.alert {
+        background: rgba(255, 245, 245, 0.92);
+        border-color: rgba(239, 68, 68, 0.18);
+      }
+
+      .jikbo-summary-detail-item-title {
+        font-size: 0.84rem;
+        font-weight: 900;
+        color: var(--text-strong);
+      }
+
+      .jikbo-summary-detail-item-meta {
+        color: var(--text-soft);
+        font-size: 0.75rem;
+        line-height: 1.45;
+      }
+
+      .jikbo-summary-empty {
+        padding: 20px 16px;
+        border-radius: 16px;
+        border: 1px dashed rgba(199, 210, 226, 0.9);
+        color: var(--text-soft);
+        text-align: center;
+        font-size: 0.82rem;
       }
 
       .jikbo-board-toolbar {
@@ -3624,6 +3757,10 @@
         vertical-align: top;
       }
 
+      .student-cell.has-unconfirmed-jikbo {
+        background: linear-gradient(180deg, rgba(255, 248, 248, 0.98), rgba(255, 239, 239, 0.98));
+      }
+
       .jikbo-student-name {
         font-size: 0.82rem;
         font-weight: 900;
@@ -3635,6 +3772,18 @@
         color: var(--text-soft);
         font-size: 0.72rem;
         line-height: 1.4;
+      }
+
+      .jikbo-student-alert {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 8px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(239, 68, 68, 0.12);
+        color: #b91c1c;
+        font-size: 0.68rem;
+        font-weight: 900;
       }
 
       .jikbo-day-cell {
@@ -3804,6 +3953,10 @@
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
+        .jikbo-summary-cards {
+          grid-template-columns: 1fr 1fr;
+        }
+
         .jikbo-board-toolbar {
           flex-direction: column;
           align-items: stretch;
@@ -3897,6 +4050,10 @@
         }
 
         .jikbo-summary-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .jikbo-summary-cards {
           grid-template-columns: 1fr;
         }
 
@@ -4779,6 +4936,7 @@
         selectedJikboStatusKey: '',
         jikboCalendarYear: new Date().getFullYear(),
         jikboCalendarMonth: new Date().getMonth(),
+        selectedJikboSummaryPanel: '',
         materialsLoaded: false,
         eventsLoaded: false,
         materialsLoading: false,
@@ -7508,6 +7666,14 @@
           return;
         }
 
+        var summaryButton = event.target.closest('[data-jikbo-summary-panel]');
+        if (summaryButton) {
+          var panelName = summaryButton.getAttribute('data-jikbo-summary-panel') || '';
+          APP_STATE.selectedJikboSummaryPanel = APP_STATE.selectedJikboSummaryPanel === panelName ? '' : panelName;
+          renderJikboSummary_(buildJikboBoardModel_());
+          return;
+        }
+
         var statusButton = event.target.closest('[data-jikbo-status-open]');
         if (statusButton) {
           openJikboStatusModal_(statusButton);
@@ -7556,6 +7722,10 @@
         var statusMap = getJikboStatusMap_();
         var permissionMap = getPermissionMap();
         var keyword = normalizeSearchText(APP_STATE.jikboSearchKeyword);
+        var todayKey = formatDateKey_(new Date());
+        var tomorrowDate = new Date();
+        tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+        var tomorrowKey = formatDateKey_(tomorrowDate);
         var groupsByKey = {};
         var activeDateKeyMap = {};
         var stats = {
@@ -7564,7 +7734,22 @@
           examCount: 0,
           jikboCount: 0,
           warningCount: 0,
-          matchedStudentCount: 0
+          matchedStudentCount: 0,
+          unresolvedStudentCount: 0
+        };
+        var summary = {
+          todayJikbos: [],
+          tomorrowJikbos: [],
+          todayExams: [],
+          tomorrowExams: [],
+          unresolvedStudents: []
+        };
+        var summarySeenMap = {
+          todayJikbos: {},
+          tomorrowJikbos: {},
+          todayExams: {},
+          tomorrowExams: {},
+          unresolvedStudents: {}
         };
 
         monthEventList.forEach(function(item) {
@@ -7630,6 +7815,7 @@
                 isDefined: Boolean(subjectDefinition && subjectDefinition.isEnabled !== false),
                 examType: eventItem.examType || ''
               });
+              collectJikboExamSummaryItem_(summary, summarySeenMap, eventItem, todayKey, tomorrowKey);
 
               resolveJikboInstructorDisplay_(student, eventItem, subjectDefinition, override, permissionMap).forEach(function(resolvedJikbo) {
                 applyJikboStatusMeta_(resolvedJikbo, statusMap);
@@ -7646,6 +7832,7 @@
                 if (resolvedJikbo.status === 'missing-subject' || resolvedJikbo.status === 'unassigned') {
                   stats.warningCount += 1;
                 }
+                collectJikboScheduleSummaryItem_(summary, summarySeenMap, resolvedJikbo, todayKey, tomorrowKey);
               });
             });
 
@@ -7653,10 +7840,34 @@
               stats.matchedStudentCount += 1;
             }
 
+            var unresolvedJikboItems = Object.keys(cellMap).reduce(function(list, dateKey) {
+              var cell = cellMap[dateKey];
+              (cell && cell.jikbos ? cell.jikbos : []).forEach(function(item) {
+                if (item.progressStatus !== '확정') {
+                  list.push(item);
+                }
+              });
+              return list;
+            }, []);
+            var hasUnconfirmedJikbo = unresolvedJikboItems.length > 0;
+
+            if (hasUnconfirmedJikbo && student && student.studentId && !summarySeenMap.unresolvedStudents[student.studentId]) {
+              summarySeenMap.unresolvedStudents[student.studentId] = true;
+              summary.unresolvedStudents.push({
+                title: [student.studentName || '-', student.school || '-'].join(' · '),
+                meta: unresolvedJikboItems.map(function(item) {
+                  return [item.subjectName, item.instructorLabel || '미배정', item.dateKey, item.progressStatus || '미정'].filter(Boolean).join(' · ');
+                }).join(' / '),
+                preview: [student.studentName || '-', String(unresolvedJikboItems.length) + '건 미확정'].join(' · ')
+              });
+              stats.unresolvedStudentCount += 1;
+            }
+
             return {
               student: student,
               cellMap: cellMap,
-              matchedExamCount: matchedExamCount
+              matchedExamCount: matchedExamCount,
+              hasUnconfirmedJikbo: hasUnconfirmedJikbo
             };
           });
 
@@ -7716,18 +7927,137 @@
           monthDates: monthDates,
           monthDateKeys: monthDateKeys,
           groups: groups,
-          stats: stats
+          stats: stats,
+          summary: summary
         };
       }
 
       function renderJikboSummary_(model) {
         var stats = model && model.stats ? model.stats : {};
+        var summary = model && model.summary ? model.summary : {};
+        var panelMap = {
+          todayJikbos: {
+            title: '오늘 직보',
+            description: '오늘 직보 학생과 과목',
+            count: (summary.todayJikbos || []).length,
+            items: summary.todayJikbos || [],
+            emptyText: '오늘 직보 학생이 없습니다.'
+          },
+          tomorrowJikbos: {
+            title: '내일 직보',
+            description: '내일 직보 학생과 과목',
+            count: (summary.tomorrowJikbos || []).length,
+            items: summary.tomorrowJikbos || [],
+            emptyText: '내일 직보 학생이 없습니다.'
+          },
+          todayExams: {
+            title: '오늘 시험',
+            description: '오늘 시험 학교와 과목',
+            count: (summary.todayExams || []).length,
+            items: summary.todayExams || [],
+            emptyText: '오늘 시험 일정이 없습니다.'
+          },
+          tomorrowExams: {
+            title: '내일 시험',
+            description: '내일 시험 학교와 과목',
+            count: (summary.tomorrowExams || []).length,
+            items: summary.tomorrowExams || [],
+            emptyText: '내일 시험 일정이 없습니다.'
+          },
+          unresolvedStudents: {
+            title: '미확정 직보 학생',
+            description: '확정되지 않은 학생 수',
+            count: Number(stats.unresolvedStudentCount || 0),
+            items: summary.unresolvedStudents || [],
+            emptyText: '모든 직보가 확정되었습니다.',
+            alert: true
+          }
+        };
+        var panelOrder = ['todayJikbos', 'tomorrowJikbos', 'todayExams', 'tomorrowExams', 'unresolvedStudents'];
+        var activePanel = panelMap[APP_STATE.selectedJikboSummaryPanel]
+          ? APP_STATE.selectedJikboSummaryPanel
+          : (panelOrder.find(function(key) { return panelMap[key].count > 0; }) || 'unresolvedStudents');
+        APP_STATE.selectedJikboSummaryPanel = activePanel;
+
         document.getElementById('jikboSummaryWrap').innerHTML = [
-          '<article class="stat-card glass-panel"><span>학교 수</span><strong>' + escapeHtml(String(stats.schoolCount || 0)) + '</strong><small>선택한 달에 시험이 잡힌 학교 수</small></article>',
-          '<article class="stat-card glass-panel"><span>시험 건수</span><strong>' + escapeHtml(String(stats.examCount || 0)) + '</strong><small>직보 계산 대상 시험 이벤트 수</small></article>',
-          '<article class="stat-card glass-panel"><span>직보 셀</span><strong>' + escapeHtml(String(stats.jikboCount || 0)) + '</strong><small>학생별 직보 표시 건수</small></article>',
-          '<article class="stat-card glass-panel"><span>경고 셀</span><strong>' + escapeHtml(String(stats.warningCount || 0)) + '</strong><small>과목 미설정 또는 강사 미배정 상태</small></article>'
+          '<div class="jikbo-summary-cards">',
+          panelOrder.map(function(key) {
+            return renderJikboSummaryCard_(key, panelMap[key], activePanel === key);
+          }).join(''),
+          '</div>',
+          renderJikboSummaryDetailPanel_(panelMap[activePanel])
         ].join('');
+      }
+
+      function renderJikboSummaryCard_(key, panel, isActive) {
+        var previewHtml = (panel.items || []).slice(0, 2).map(function(item) {
+          return '<div>' + escapeHtml(item.preview || item.title || '-') + '</div>';
+        }).join('');
+        return [
+          '<button type="button" class="stat-card glass-panel jikbo-summary-card ' + (isActive ? 'active ' : '') + (panel.alert ? 'alert' : '') + '" data-jikbo-summary-panel="' + escapeAttribute(key) + '">',
+          '<div class="jikbo-summary-card-head"><span>' + escapeHtml(panel.title || '-') + '</span><span class="jikbo-summary-badge ' + (panel.alert ? 'alert' : '') + '">' + escapeHtml(String(panel.count || 0)) + '건</span></div>',
+          '<strong>' + escapeHtml(String(panel.count || 0)) + '</strong>',
+          '<small>' + escapeHtml(panel.description || '') + '</small>',
+          '<div class="jikbo-summary-preview">' + (previewHtml || '<div>표시할 항목이 없습니다.</div>') + '</div>',
+          '</button>'
+        ].join('');
+      }
+
+      function renderJikboSummaryDetailPanel_(panel) {
+        return [
+          '<section class="jikbo-summary-detail glass-panel">',
+          '<div class="jikbo-summary-detail-head"><div><h4>' + escapeHtml(panel.title || '-') + '</h4><p>' + escapeHtml(panel.description || '') + '</p></div><span class="jikbo-summary-badge ' + (panel.alert ? 'alert' : '') + '">' + escapeHtml(String(panel.count || 0)) + '건</span></div>',
+          (panel.items || []).length
+            ? '<div class="jikbo-summary-detail-list">' + panel.items.map(function(item) {
+              return '<article class="jikbo-summary-detail-item ' + (panel.alert ? 'alert' : '') + '"><div class="jikbo-summary-detail-item-title">' + escapeHtml(item.title || '-') + '</div><div class="jikbo-summary-detail-item-meta">' + escapeHtml(item.meta || '') + '</div></article>';
+            }).join('') + '</div>'
+            : '<div class="jikbo-summary-empty">' + escapeHtml(panel.emptyText || '표시할 항목이 없습니다.') + '</div>',
+          '</section>'
+        ].join('');
+      }
+
+      function collectJikboScheduleSummaryItem_(summary, seenMap, item, todayKey, tomorrowKey) {
+        if (!item || !item.studentId || !item.dateKey) {
+          return;
+        }
+        var bucket = item.dateKey === todayKey ? 'todayJikbos' : (item.dateKey === tomorrowKey ? 'tomorrowJikbos' : '');
+        if (!bucket) {
+          return;
+        }
+        var key = [item.studentId, item.subjectName, item.dateKey, item.instructorId || item.instructorLabel || ''].join('|');
+        if (seenMap[bucket][key]) {
+          return;
+        }
+        seenMap[bucket][key] = true;
+        summary[bucket].push({
+          title: [item.studentName || '-', item.subjectName || '-'].join(' · '),
+          meta: [
+            [item.school || '-', item.grade ? String(item.grade) + '학년' : ''].filter(Boolean).join(' '),
+            item.instructorLabel || '강사 미배정',
+            item.progressStatus || '미정'
+          ].filter(Boolean).join(' · '),
+          preview: [item.studentName || '-', item.subjectName || '-'].join(' · ')
+        });
+      }
+
+      function collectJikboExamSummaryItem_(summary, seenMap, eventItem, todayKey, tomorrowKey) {
+        if (!eventItem || !eventItem.isoDate) {
+          return;
+        }
+        var bucket = eventItem.isoDate === todayKey ? 'todayExams' : (eventItem.isoDate === tomorrowKey ? 'tomorrowExams' : '');
+        if (!bucket) {
+          return;
+        }
+        var key = [eventItem.school || '', eventItem.grade || '', eventItem.subjectName || '', eventItem.isoDate].join('|');
+        if (seenMap[bucket][key]) {
+          return;
+        }
+        seenMap[bucket][key] = true;
+        summary[bucket].push({
+          title: [eventItem.school || '-', normalizeJikboGradeForClient_(eventItem.grade) ? normalizeJikboGradeForClient_(eventItem.grade) + '학년' : ''].filter(Boolean).join(' '),
+          meta: [eventItem.subjectName || '-', eventItem.examType || eventItem.isoDate].filter(Boolean).join(' · '),
+          preview: [eventItem.school || '-', eventItem.subjectName || '-'].join(' · ')
+        });
       }
 
       function renderJikboBoardTable_(model) {
@@ -7770,7 +8100,7 @@
                 (rowIndex === 0 ? '<td class="sticky-col sticky-start range-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.eventRange.startLabel) + '</td>' : ''),
                 (rowIndex === 0 ? '<td class="sticky-col sticky-end range-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.eventRange.endLabel) + '</td>' : ''),
                 (rowIndex === 0 ? '<td class="sticky-col sticky-grade grade-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.grade || '-') + '</td>' : ''),
-                '<td class="sticky-col sticky-student student-cell split" rowspan="2">' + renderJikboStudentLabel_(row.student, row.matchedExamCount) + '<span class="jikbo-student-split-label">시험일정</span><span class="jikbo-student-split-label">직보</span></td>',
+                '<td class="sticky-col sticky-student student-cell split ' + (row.hasUnconfirmedJikbo ? 'has-unconfirmed-jikbo' : '') + '" rowspan="2">' + renderJikboStudentLabel_(row.student, row.matchedExamCount, row.hasUnconfirmedJikbo) + '<span class="jikbo-student-split-label">시험일정</span><span class="jikbo-student-split-label">직보</span></td>',
                 model.monthDateKeys.map(function(dateKey, dateIndex) {
                   return '<td class="jikbo-day-cell ' + (isJikboWeekend_(model.monthDates[dateIndex]) ? 'weekend' : '') + '">' + renderJikboExamCell_(row.cellMap[dateKey]) + '</td>';
                 }).join(''),
@@ -7789,10 +8119,11 @@
         ].join('');
       }
 
-      function renderJikboStudentLabel_(student, matchedExamCount) {
+      function renderJikboStudentLabel_(student, matchedExamCount, hasUnconfirmedJikbo) {
         return [
           '<div class="jikbo-student-name">' + escapeHtml(student.studentName || '-') + '</div>',
-          '<div class="jikbo-student-meta">' + escapeHtml(student.subject || '과목 미지정') + ' · ' + escapeHtml(String(matchedExamCount || 0)) + '건</div>'
+          '<div class="jikbo-student-meta">' + escapeHtml(student.subject || '과목 미지정') + ' · ' + escapeHtml(String(matchedExamCount || 0)) + '건</div>',
+          hasUnconfirmedJikbo ? '<div class="jikbo-student-alert">직보 미확정</div>' : ''
         ].join('');
       }
 
@@ -9879,6 +10210,7 @@
         APP_STATE.selectedJikboStatusKey = '';
         APP_STATE.jikboCalendarYear = new Date().getFullYear();
         APP_STATE.jikboCalendarMonth = new Date().getMonth();
+        APP_STATE.selectedJikboSummaryPanel = '';
         APP_STATE.materialsLoaded = false;
         APP_STATE.eventsLoaded = false;
         APP_STATE.materialsLoading = false;
