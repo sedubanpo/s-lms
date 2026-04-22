@@ -3441,6 +3441,265 @@
         font-size: 0.76rem;
       }
 
+      .jikbo-board-top {
+        align-items: flex-start;
+      }
+
+      .jikbo-summary-grid {
+        margin: 12px 0;
+      }
+
+      .jikbo-manager-stack {
+        display: grid;
+        gap: 14px;
+      }
+
+      .jikbo-inline-check {
+        min-height: 100%;
+      }
+
+      .jikbo-board-shell {
+        --jikbo-school-width: 120px;
+        --jikbo-start-width: 110px;
+        --jikbo-end-width: 110px;
+        --jikbo-grade-width: 80px;
+        --jikbo-student-width: 220px;
+        overflow: auto;
+        border-radius: 20px;
+        border: 1px solid rgba(214, 226, 247, 0.88);
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      }
+
+      .jikbo-board-table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+      }
+
+      .jikbo-board-table thead th,
+      .jikbo-board-table tbody td {
+        border-right: 1px solid rgba(214, 226, 247, 0.88);
+        border-bottom: 1px solid rgba(214, 226, 247, 0.88);
+      }
+
+      .jikbo-board-table thead th:first-child,
+      .jikbo-board-table tbody td:first-child {
+        border-left: none;
+      }
+
+      .jikbo-board-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 6;
+        background: rgba(247, 250, 255, 0.96);
+      }
+
+      .jikbo-header-cell {
+        padding: 12px 10px;
+        text-align: center;
+        font-size: 0.76rem;
+        font-weight: 900;
+        color: var(--brand-deep);
+        white-space: nowrap;
+      }
+
+      .jikbo-date-header {
+        min-width: 136px;
+      }
+
+      .jikbo-date-header.weekend,
+      .jikbo-day-cell.weekend {
+        background: rgba(245, 248, 252, 0.96);
+      }
+
+      .jikbo-date-weekday {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--text-soft);
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .jikbo-date-label {
+        display: block;
+        font-size: 0.82rem;
+      }
+
+      .sticky-col {
+        position: sticky;
+        z-index: 4;
+        background: rgba(255, 255, 255, 0.98);
+      }
+
+      .jikbo-board-table thead .sticky-col {
+        z-index: 8;
+        background: rgba(247, 250, 255, 0.98);
+      }
+
+      .sticky-school {
+        left: 0;
+        min-width: var(--jikbo-school-width);
+        width: var(--jikbo-school-width);
+      }
+
+      .sticky-start {
+        left: var(--jikbo-school-width);
+        min-width: var(--jikbo-start-width);
+        width: var(--jikbo-start-width);
+      }
+
+      .sticky-end {
+        left: calc(var(--jikbo-school-width) + var(--jikbo-start-width));
+        min-width: var(--jikbo-end-width);
+        width: var(--jikbo-end-width);
+      }
+
+      .sticky-grade {
+        left: calc(var(--jikbo-school-width) + var(--jikbo-start-width) + var(--jikbo-end-width));
+        min-width: var(--jikbo-grade-width);
+        width: var(--jikbo-grade-width);
+      }
+
+      .sticky-student {
+        left: calc(var(--jikbo-school-width) + var(--jikbo-start-width) + var(--jikbo-end-width) + var(--jikbo-grade-width));
+        min-width: var(--jikbo-student-width);
+        width: var(--jikbo-student-width);
+      }
+
+      .school-cell,
+      .grade-cell,
+      .range-cell,
+      .student-cell {
+        padding: 12px 10px;
+        vertical-align: middle;
+        background: rgba(255, 255, 255, 0.98);
+      }
+
+      .school-cell {
+        font-weight: 900;
+        color: var(--brand-deep);
+        text-align: center;
+      }
+
+      .grade-cell {
+        text-align: center;
+        font-weight: 900;
+        color: #1e3a8a;
+      }
+
+      .range-cell {
+        text-align: center;
+        font-size: 0.78rem;
+        color: var(--text-soft);
+      }
+
+      .student-cell {
+        text-align: left;
+      }
+
+      .jikbo-student-name {
+        font-size: 0.82rem;
+        font-weight: 900;
+        color: var(--text-strong);
+      }
+
+      .jikbo-student-meta {
+        margin-top: 4px;
+        color: var(--text-soft);
+        font-size: 0.72rem;
+        line-height: 1.4;
+      }
+
+      .jikbo-day-cell {
+        min-width: 136px;
+        padding: 10px 8px;
+        vertical-align: top;
+        background: rgba(255, 255, 255, 0.9);
+      }
+
+      .jikbo-empty-cell {
+        color: rgba(148, 163, 184, 0.82);
+        font-size: 0.8rem;
+        text-align: center;
+      }
+
+      .jikbo-cell-section {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .jikbo-cell-section + .jikbo-cell-section {
+        margin-top: 6px;
+      }
+
+      .jikbo-chip {
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+        min-height: 28px;
+        padding: 5px 9px;
+        border-radius: 12px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        line-height: 1.35;
+        border: 1px solid rgba(214, 226, 247, 0.88);
+        background: rgba(255, 255, 255, 0.96);
+        color: var(--text-strong);
+        white-space: normal;
+      }
+
+      .jikbo-chip.exam.subject-math {
+        background: rgba(227, 238, 255, 0.96);
+        color: #2458ca;
+      }
+
+      .jikbo-chip.exam.subject-korean {
+        background: rgba(255, 239, 225, 0.96);
+        color: #c96b10;
+      }
+
+      .jikbo-chip.exam.subject-english {
+        background: rgba(227, 248, 234, 0.96);
+        color: #16804c;
+      }
+
+      .jikbo-chip.exam.subject-science {
+        background: rgba(235, 232, 255, 0.96);
+        color: #6f42c9;
+      }
+
+      .jikbo-chip.exam.subject-social {
+        background: rgba(255, 243, 214, 0.96);
+        color: #b77908;
+      }
+
+      .jikbo-chip.exam.subject-other {
+        background: rgba(236, 242, 250, 0.96);
+        color: #5f6e89;
+      }
+
+      .jikbo-chip.exam.warning,
+      .jikbo-chip.class.missing-subject {
+        background: rgba(255, 244, 214, 0.98);
+        border-color: rgba(217, 119, 6, 0.22);
+        color: #a16207;
+      }
+
+      .jikbo-chip.class.assigned {
+        background: rgba(226, 238, 255, 0.96);
+        border-color: rgba(37, 99, 235, 0.2);
+        color: #1d4ed8;
+      }
+
+      .jikbo-chip.class.unassigned {
+        background: rgba(255, 228, 240, 0.96);
+        border-color: rgba(244, 63, 94, 0.22);
+        color: #be123c;
+      }
+
       .mobile-nav {
         display: none;
       }
@@ -3452,12 +3711,14 @@
         .permission-dense-layout,
         .material-search-row,
         .dense-form-grid,
-        .events-shell {
+        .events-shell,
+        .jikbo-manager-stack {
           grid-template-columns: 1fr;
         }
 
         .stats-grid,
-        .students-grid {
+        .students-grid,
+        .jikbo-summary-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
       }
@@ -3509,7 +3770,8 @@
         }
 
         .stats-grid,
-        .students-grid {
+        .students-grid,
+        .jikbo-summary-grid {
           grid-template-columns: 1fr 1fr;
         }
 
@@ -3529,7 +3791,7 @@
           bottom: 14px;
           z-index: 40;
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
           gap: 8px;
           padding: 10px;
           border-radius: 24px;
@@ -3541,6 +3803,23 @@
 
         .students-grid {
           grid-template-columns: 1fr;
+        }
+
+        .jikbo-summary-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .jikbo-board-shell {
+          --jikbo-school-width: 104px;
+          --jikbo-start-width: 92px;
+          --jikbo-end-width: 92px;
+          --jikbo-grade-width: 68px;
+          --jikbo-student-width: 180px;
+        }
+
+        .jikbo-date-header,
+        .jikbo-day-cell {
+          min-width: 118px;
         }
 
         .calendar-day {
@@ -3669,6 +3948,10 @@
           <button type="button" id="permissionNavButton" class="side-nav-button" data-view="permissions">
             <span class="nav-indicator"></span>
             <span class="side-nav-label">권한 관리 <span class="admin-nav-badge">관리자 전용</span></span>
+          </button>
+          <button type="button" id="jikboNavButton" class="side-nav-button" data-view="jikbo">
+            <span class="nav-indicator"></span>
+            <span class="side-nav-label">직보 매니저 <span class="admin-nav-badge">관리자 전용</span></span>
           </button>
           <button type="button" class="side-nav-button" data-view="events">
             <span class="nav-indicator"></span>
@@ -3859,6 +4142,122 @@
           </section>
         </section>
 
+        <section id="view-jikbo" class="dashboard-view">
+          <section class="panel-shell glass-panel">
+            <div class="panel-head">
+              <div>
+                <h3>직보 매니저</h3>
+                <p>학교별 시험 전날 직보 배정과 과목 사전, 학생별 예외를 한 화면에서 관리합니다.</p>
+              </div>
+            </div>
+            <div id="jikboPanelTabs" class="permission-panel-tabs"></div>
+
+            <div id="jikboBoardPanel">
+              <div class="events-board-top jikbo-board-top">
+                <div>
+                  <h3 id="jikboMonthTitle">직보 보드</h3>
+                  <p id="jikboMonthDescription">주요일정의 시험 이벤트를 읽어 학교/학년별 직보 배정을 월 기준으로 정리합니다.</p>
+                </div>
+                <div class="month-switch">
+                  <button type="button" class="mini-button" data-action="prev-jikbo-month">이전 달</button>
+                  <button type="button" class="mini-button" data-action="go-jikbo-today">이번 달</button>
+                  <button type="button" class="mini-button" data-action="next-jikbo-month">다음 달</button>
+                </div>
+              </div>
+              <div id="jikboSummaryWrap" class="stats-grid jikbo-summary-grid"></div>
+              <div id="jikboBoardWrap"></div>
+            </div>
+
+            <div id="jikboManagerPanel" class="hidden">
+              <div class="jikbo-manager-stack">
+                <section class="dense-table-shell">
+                  <div class="panel-head">
+                    <div>
+                      <h3>과목 사전</h3>
+                      <p>시험 과목명을 exact match 로 등록하고, 학생과목키워드와 강사과목분류를 함께 관리합니다.</p>
+                    </div>
+                  </div>
+                  <div id="jikboSubjectHint" class="hint-box">등록된 시험 과목은 직보 보드 자동 매칭에 바로 반영됩니다.</div>
+                  <div id="jikboSubjectEditBanner" class="material-edit-banner hidden">
+                    <div>
+                      <strong>직보 과목 수정 모드</strong>
+                      <p id="jikboSubjectEditBannerText">선택한 직보 과목 정보를 수정한 뒤 저장하세요.</p>
+                    </div>
+                    <button id="cancelJikboSubjectEditButton" type="button" class="button-ghost">수정 취소</button>
+                  </div>
+                  <form id="jikboSubjectForm" class="dense-form-grid">
+                    <div class="field-shell">
+                      <label class="field-label" for="jikboSubjectNameInput">과목명</label>
+                      <input id="jikboSubjectNameInput" class="field-input" type="text" placeholder="수학">
+                    </div>
+                    <div class="field-shell">
+                      <label class="field-label" for="jikboInstructorCategoryInput">강사과목분류</label>
+                      <input id="jikboInstructorCategoryInput" class="field-input" type="text" placeholder="수학">
+                    </div>
+                    <div class="field-shell">
+                      <label class="field-label" for="jikboStudentKeywordsInput">학생과목키워드</label>
+                      <input id="jikboStudentKeywordsInput" class="field-input" type="text" placeholder="수학, 공통수학, 대수">
+                    </div>
+                    <label class="check-card jikbo-inline-check" for="jikboSubjectEnabledInput">
+                      <input id="jikboSubjectEnabledInput" type="checkbox" checked>
+                      <div>
+                        <div style="font-weight:800;">사용 여부</div>
+                        <div style="margin-top:4px;color:var(--text-soft);font-size:0.78rem;">체크 해제 시 보드 자동 매칭에서 제외됩니다.</div>
+                      </div>
+                    </label>
+                    <button id="saveJikboSubjectButton" type="submit" class="button-primary">직보 과목 저장</button>
+                  </form>
+                  <div id="jikboSubjectTableWrap" style="margin-top:12px;"></div>
+                </section>
+
+                <section class="dense-table-shell">
+                  <div class="panel-head">
+                    <div>
+                      <h3>학생별 보완 / 오버라이드</h3>
+                      <p>학생별 과목 포함/제외, 전용 강사 지정, 직보일자 수동 오버라이드를 저장합니다.</p>
+                    </div>
+                  </div>
+                  <div id="jikboOverrideEditBanner" class="material-edit-banner hidden">
+                    <div>
+                      <strong>학생별 직보 예외 수정 모드</strong>
+                      <p id="jikboOverrideEditBannerText">선택한 학생별 직보 예외를 수정한 뒤 저장하세요.</p>
+                    </div>
+                    <button id="cancelJikboOverrideEditButton" type="button" class="button-ghost">수정 취소</button>
+                  </div>
+                  <form id="jikboOverrideForm" class="dense-form-grid">
+                    <div class="field-shell">
+                      <label class="field-label" for="jikboOverrideStudentSelect">학생</label>
+                      <select id="jikboOverrideStudentSelect" class="field-select"></select>
+                    </div>
+                    <div class="field-shell">
+                      <label class="field-label" for="jikboOverrideSubjectInput">과목명</label>
+                      <input id="jikboOverrideSubjectInput" class="field-input" type="text" list="jikboOverrideSubjectList" placeholder="수학">
+                      <datalist id="jikboOverrideSubjectList"></datalist>
+                    </div>
+                    <div class="field-shell">
+                      <label class="field-label" for="jikboOverrideApplyModeInput">적용방식</label>
+                      <select id="jikboOverrideApplyModeInput" class="field-select">
+                        <option value="INCLUDE">INCLUDE</option>
+                        <option value="EXCLUDE">EXCLUDE</option>
+                      </select>
+                    </div>
+                    <div class="field-shell">
+                      <label class="field-label" for="jikboOverrideInstructorSelect">강사 지정</label>
+                      <select id="jikboOverrideInstructorSelect" class="field-select"></select>
+                    </div>
+                    <div class="field-shell">
+                      <label class="field-label" for="jikboOverrideDateInput">직보일자오버라이드</label>
+                      <input id="jikboOverrideDateInput" class="field-input" type="date">
+                    </div>
+                    <button id="saveJikboOverrideButton" type="submit" class="button-primary">학생별 예외 저장</button>
+                  </form>
+                  <div id="jikboOverrideTableWrap" style="margin-top:12px;"></div>
+                </section>
+              </div>
+            </div>
+          </section>
+        </section>
+
         <section id="view-events" class="dashboard-view">
           <section class="events-shell">
             <div id="eventEditorOverlay" class="events-side">
@@ -4031,6 +4430,10 @@
         <button type="button" id="mobilePermissionNavButton" class="side-nav-button" data-view="permissions">
           <span class="nav-indicator"></span>
           <span>권한</span>
+        </button>
+        <button type="button" id="mobileJikboNavButton" class="side-nav-button" data-view="jikbo">
+          <span class="nav-indicator"></span>
+          <span>직보</span>
         </button>
         <button type="button" class="side-nav-button" data-view="events">
           <span class="nav-indicator"></span>
@@ -4232,6 +4635,16 @@
         eventSearchKeyword: '',
         editingEventRowNumber: '',
         isEventEditorOpen: false,
+        jikboPanelMode: 'board',
+        jikboSubjectDefinitions: [],
+        jikboStudentOverrides: [],
+        jikboExamEvents: [],
+        editingJikboSubjectRowNumber: '',
+        editingJikboOverrideRowNumber: '',
+        jikboLoaded: false,
+        jikboLoading: false,
+        jikboCalendarYear: new Date().getFullYear(),
+        jikboCalendarMonth: new Date().getMonth(),
         materialsLoaded: false,
         eventsLoaded: false,
         materialsLoading: false,
@@ -4257,6 +4670,10 @@
         permissions: {
           title: '권한 관리',
           description: '관리자가 학생별로 강사 접근 권한을 설정하는 관리자 전용 영역입니다.'
+        },
+        jikbo: {
+          title: '직보 매니저',
+          description: '시험 전날 직보 보드를 월 기준으로 확인하고, 과목 사전과 학생별 예외를 관리합니다.'
         },
         events: {
           title: '주요일정',
@@ -4320,6 +4737,7 @@
 
         document.getElementById('studentList').addEventListener('click', handleStudentListClick);
         document.getElementById('view-events').addEventListener('click', handleEventsViewClick);
+        document.getElementById('view-jikbo').addEventListener('click', handleJikboViewClick_);
 
         document.getElementById('homeroomTeacherSearchInput').addEventListener('input', handleHomeroomTeacherSearchInput_);
         document.getElementById('homeroomTeacherSearchInput').addEventListener('change', handleHomeroomTeacherSearchCommit_);
@@ -4362,6 +4780,12 @@
         document.getElementById('materialSettingsModal').addEventListener('click', handleMaterialSettingsSaveClick);
         document.getElementById('eventForm').addEventListener('submit', handleEventSave);
         document.getElementById('eventSearchInput').addEventListener('input', handleEventSearchInput_);
+        document.getElementById('jikboPanelTabs').addEventListener('click', handleJikboPanelTabClick_);
+        document.getElementById('jikboSubjectForm').addEventListener('submit', handleJikboSubjectSave_);
+        document.getElementById('cancelJikboSubjectEditButton').addEventListener('click', clearJikboSubjectEditMode_);
+        document.getElementById('jikboOverrideForm').addEventListener('submit', handleJikboOverrideSave_);
+        document.getElementById('cancelJikboOverrideEditButton').addEventListener('click', clearJikboOverrideEditMode_);
+        document.getElementById('jikboOverrideApplyModeInput').addEventListener('change', syncJikboOverrideFormMode_);
         document.getElementById('materialKeywordInput').addEventListener('input', renderMaterials);
         document.getElementById('materialSchoolFilter').addEventListener('change', function(event) {
           APP_STATE.selectedMaterialSchoolTab = event.target.value || '';
@@ -4396,6 +4820,9 @@
             }
             if (viewName === 'homeroom' && !APP_STATE.isAdmin) {
               setNotice('담임 학생 메뉴는 관리자만 사용할 수 있습니다.', 'warning');
+            }
+            if (viewName === 'jikbo' && !APP_STATE.isAdmin) {
+              setNotice('직보 매니저는 관리자만 사용할 수 있습니다.', 'warning');
             }
             switchView(viewName);
           });
@@ -4613,6 +5040,7 @@
         }
         APP_STATE.materialsLoaded = false;
         APP_STATE.eventsLoaded = false;
+        APP_STATE.jikboLoaded = false;
         loadDashboard({ useStagedLoading: true, forceOverlay: true, preloadCurrentView: true });
       }
 
@@ -4636,6 +5064,7 @@
               renderStudents();
               renderHomeroomView();
               renderPermissionView();
+              renderJikboView();
               switchView(APP_STATE.currentView);
               showAppOnly();
             }
@@ -4705,6 +5134,12 @@
         syncBranding();
       }
 
+      function hydrateJikboData_(jikboData) {
+        APP_STATE.jikboSubjectDefinitions = jikboData && jikboData.subjectDefinitions ? jikboData.subjectDefinitions : [];
+        APP_STATE.jikboStudentOverrides = jikboData && jikboData.studentOverrides ? jikboData.studentOverrides : [];
+        APP_STATE.jikboExamEvents = jikboData && jikboData.examEvents ? jikboData.examEvents : [];
+      }
+
       function ensureViewDataLoaded_(viewName, options) {
         var config = options || {};
         if (!APP_STATE.token) {
@@ -4763,6 +5198,33 @@
             });
         }
 
+        if (viewName === 'jikbo') {
+          if (!APP_STATE.isAdmin) {
+            return Promise.resolve();
+          }
+          if (APP_STATE.jikboLoaded || APP_STATE.jikboLoading) {
+            return Promise.resolve();
+          }
+          APP_STATE.jikboLoading = true;
+          if (!config.silent && APP_STATE.currentView === 'jikbo') {
+            renderJikboView();
+          }
+          return apiRequest('getJikboManagerData', { token: APP_STATE.token })
+            .then(function(jikboData) {
+              hydrateJikboData_(jikboData);
+              APP_STATE.jikboLoaded = true;
+              if (!config.silent) {
+                renderJikboView();
+              }
+            })
+            .finally(function() {
+              APP_STATE.jikboLoading = false;
+              if (!config.silent && APP_STATE.currentView === 'jikbo') {
+                renderJikboView();
+              }
+            });
+        }
+
         return Promise.resolve();
       }
 
@@ -4772,6 +5234,7 @@
         renderStudents();
         renderHomeroomView();
         renderPermissionView();
+        renderJikboView();
         renderEvents();
         renderMaterials();
         switchView(APP_STATE.currentView);
@@ -4793,13 +5256,16 @@
         document.getElementById('mobileHomeroomNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('permissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('mobilePermissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
+        document.getElementById('jikboNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
+        document.getElementById('mobileJikboNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('openPermissionModalButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('quickAddStudentButton').classList.toggle('hidden', !APP_STATE.isAdmin || APP_STATE.currentView !== 'students');
         document.getElementById('view-homeroom').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('view-permissions').classList.toggle('hidden', !APP_STATE.isAdmin);
+        document.getElementById('view-jikbo').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('materialsCreatePanel').classList.toggle('hidden', !APP_STATE.isAdmin);
 
-        if (!APP_STATE.isAdmin && (APP_STATE.currentView === 'permissions' || APP_STATE.currentView === 'homeroom')) {
+        if (!APP_STATE.isAdmin && (APP_STATE.currentView === 'permissions' || APP_STATE.currentView === 'homeroom' || APP_STATE.currentView === 'jikbo')) {
           APP_STATE.currentView = 'students';
         }
       }
@@ -6704,6 +7170,824 @@
           .finally(clearLoading);
       }
 
+      function renderJikboView() {
+        if (!APP_STATE.isAdmin) {
+          if (APP_STATE.currentView === 'jikbo') {
+            APP_STATE.currentView = 'students';
+          }
+          return;
+        }
+
+        renderJikboPanelTabs_();
+        document.getElementById('jikboBoardPanel').classList.toggle('hidden', APP_STATE.jikboPanelMode !== 'board');
+        document.getElementById('jikboManagerPanel').classList.toggle('hidden', APP_STATE.jikboPanelMode !== 'manager');
+
+        if (APP_STATE.jikboPanelMode === 'board') {
+          renderJikboBoard_();
+          return;
+        }
+
+        populateJikboOverrideFormOptions_();
+        renderJikboSubjectFormState_();
+        renderJikboOverrideFormState_();
+        renderJikboSubjectTable_();
+        renderJikboOverrideTable_();
+      }
+
+      function renderJikboPanelTabs_() {
+        document.getElementById('jikboPanelTabs').innerHTML = [
+          '<button type="button" class="material-subtab-button ' + (APP_STATE.jikboPanelMode === 'board' ? 'active' : '') + '" data-jikbo-panel="board">직보 보드</button>',
+          '<button type="button" class="material-subtab-button ' + (APP_STATE.jikboPanelMode === 'manager' ? 'active' : '') + '" data-jikbo-panel="manager">과목 매니저</button>'
+        ].join('');
+      }
+
+      function handleJikboPanelTabClick_(event) {
+        var button = event.target.closest('[data-jikbo-panel]');
+        if (!button) {
+          return;
+        }
+        APP_STATE.jikboPanelMode = button.getAttribute('data-jikbo-panel') || 'board';
+        renderJikboView();
+      }
+
+      function handleJikboViewClick_(event) {
+        var actionButton = event.target.closest('[data-action]');
+        if (actionButton) {
+          var action = actionButton.getAttribute('data-action') || '';
+          if (action === 'prev-jikbo-month') {
+            shiftJikboMonth_(-1);
+            return;
+          }
+          if (action === 'next-jikbo-month') {
+            shiftJikboMonth_(1);
+            return;
+          }
+          if (action === 'go-jikbo-today') {
+            APP_STATE.jikboCalendarYear = new Date().getFullYear();
+            APP_STATE.jikboCalendarMonth = new Date().getMonth();
+            renderJikboBoard_();
+            return;
+          }
+        }
+
+        var subjectEditButton = event.target.closest('[data-jikbo-subject-edit]');
+        if (subjectEditButton) {
+          enterJikboSubjectEditMode_(subjectEditButton.getAttribute('data-jikbo-subject-edit'));
+          return;
+        }
+
+        var subjectDeleteButton = event.target.closest('[data-jikbo-subject-delete]');
+        if (subjectDeleteButton) {
+          handleJikboSubjectDelete_(subjectDeleteButton.getAttribute('data-jikbo-subject-delete'));
+          return;
+        }
+
+        var overrideEditButton = event.target.closest('[data-jikbo-override-edit]');
+        if (overrideEditButton) {
+          enterJikboOverrideEditMode_(overrideEditButton.getAttribute('data-jikbo-override-edit'));
+          return;
+        }
+
+        var overrideDeleteButton = event.target.closest('[data-jikbo-override-delete]');
+        if (overrideDeleteButton) {
+          handleJikboOverrideDelete_(overrideDeleteButton.getAttribute('data-jikbo-override-delete'));
+        }
+      }
+
+      function shiftJikboMonth_(delta) {
+        var nextDate = new Date(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth + Number(delta || 0), 1);
+        APP_STATE.jikboCalendarYear = nextDate.getFullYear();
+        APP_STATE.jikboCalendarMonth = nextDate.getMonth();
+        renderJikboBoard_();
+      }
+
+      function renderJikboBoard_() {
+        var monthLabel = formatCalendarMonthLabel_(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth);
+        document.getElementById('jikboMonthTitle').textContent = monthLabel + ' 직보 보드';
+        document.getElementById('jikboMonthDescription').textContent = '주요일정의 시험 이벤트를 읽어 학교와 학년별 직보 배정을 월간 표로 정리합니다.';
+
+        if (APP_STATE.jikboLoading && !APP_STATE.jikboLoaded) {
+          document.getElementById('jikboSummaryWrap').innerHTML = '';
+          document.getElementById('jikboBoardWrap').innerHTML = renderJikboLoadingCard_();
+          return;
+        }
+
+        var model = buildJikboBoardModel_();
+        renderJikboSummary_(model);
+        document.getElementById('jikboBoardWrap').innerHTML = renderJikboBoardTable_(model);
+      }
+
+      function renderJikboLoadingCard_() {
+        return [
+          '<div class="materials-loading-card">',
+          '  <div class="materials-loading-orbit events-loading-orbit" aria-hidden="true"></div>',
+          '  <strong>직보 보드를 불러오는 중입니다.</strong>',
+          '  <p>주요일정, 권한 매핑, 과목 사전과 학생별 예외를 함께 정리하고 있습니다.</p>',
+          '</div>'
+        ].join('');
+      }
+
+      function buildJikboBoardModel_() {
+        var monthDates = getJikboMonthDates_(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth);
+        var monthDateKeys = monthDates.map(function(date) {
+          return formatDateKey_(date);
+        });
+        var monthEventList = getJikboExamEventsForCurrentMonth_();
+        var subjectDefinitionMap = getJikboSubjectDefinitionMap_();
+        var overrideMap = getJikboOverrideMap_();
+        var permissionMap = getPermissionMap();
+        var groupsByKey = {};
+        var stats = {
+          schoolCount: 0,
+          gradeGroupCount: 0,
+          examCount: monthEventList.length,
+          jikboCount: 0,
+          warningCount: 0,
+          matchedStudentCount: 0
+        };
+
+        monthEventList.forEach(function(item) {
+          var groupKey = [item.school || '', normalizeJikboGradeForClient_(item.grade)].join('|');
+          if (!groupsByKey[groupKey]) {
+            groupsByKey[groupKey] = {
+              key: groupKey,
+              school: item.school || '',
+              grade: normalizeJikboGradeForClient_(item.grade),
+              events: []
+            };
+          }
+          groupsByKey[groupKey].events.push(item);
+        });
+
+        var groups = Object.keys(groupsByKey).map(function(key) {
+          return groupsByKey[key];
+        }).sort(function(a, b) {
+          return [a.school || '', a.grade || ''].join('|').localeCompare([b.school || '', b.grade || ''].join('|'));
+        }).map(function(group) {
+          var students = APP_STATE.activeStudents.filter(function(student) {
+            return isSameJikboSchoolGrade_(student.school, student.grade, group.school, group.grade);
+          }).sort(compareJikboStudents_);
+          var rows = students.map(function(student) {
+            var cellMap = {};
+            var matchedExamCount = 0;
+
+            monthDateKeys.forEach(function(dateKey) {
+              cellMap[dateKey] = {
+                exams: [],
+                jikbos: []
+              };
+            });
+
+            group.events.forEach(function(eventItem) {
+              var subjectDefinition = subjectDefinitionMap[normalizeSearchText(eventItem.subjectName)] || null;
+              var overrideKey = buildJikboOverrideKey_(student.studentId, eventItem.subjectName);
+              var override = overrideMap[overrideKey] || null;
+              var shouldInclude = shouldIncludeJikboSubject_(student, eventItem, subjectDefinition, override);
+              if (!shouldInclude) {
+                return;
+              }
+
+              matchedExamCount += 1;
+              if (cellMap[eventItem.isoDate]) {
+                cellMap[eventItem.isoDate].exams.push({
+                  subjectName: eventItem.subjectName,
+                  toneClass: getSubjectToneClass_(eventItem.subjectName),
+                  isDefined: Boolean(subjectDefinition && subjectDefinition.isEnabled !== false),
+                  examType: eventItem.examType || ''
+                });
+              }
+
+              var resolvedJikbo = resolveJikboInstructorDisplay_(student, eventItem, subjectDefinition, override, permissionMap);
+              if (cellMap[resolvedJikbo.dateKey]) {
+                cellMap[resolvedJikbo.dateKey].jikbos.push(resolvedJikbo);
+              }
+              stats.jikboCount += 1;
+              if (resolvedJikbo.status !== 'assigned') {
+                stats.warningCount += 1;
+              }
+            });
+
+            if (matchedExamCount > 0) {
+              stats.matchedStudentCount += 1;
+            }
+
+            return {
+              student: student,
+              cellMap: cellMap,
+              matchedExamCount: matchedExamCount
+            };
+          });
+
+          if (!rows.length) {
+            var emptyCellMap = {};
+            monthDateKeys.forEach(function(dateKey) {
+              emptyCellMap[dateKey] = {
+                exams: [],
+                jikbos: []
+              };
+            });
+            rows.push({
+              student: {
+                studentName: '활성 학생 없음',
+                subject: '-',
+                studentId: ''
+              },
+              cellMap: emptyCellMap,
+              matchedExamCount: 0
+            });
+          }
+
+          group.rows = rows;
+          group.rowCount = Math.max(rows.length, 1);
+          group.eventRange = getJikboEventRange_(group.events);
+          return group;
+        });
+
+        stats.schoolCount = uniqueList_(groups.map(function(group) {
+          return group.school;
+        }).filter(Boolean)).length;
+        stats.gradeGroupCount = groups.length;
+
+        return {
+          monthDates: monthDates,
+          monthDateKeys: monthDateKeys,
+          groups: groups,
+          stats: stats
+        };
+      }
+
+      function renderJikboSummary_(model) {
+        var stats = model && model.stats ? model.stats : {};
+        document.getElementById('jikboSummaryWrap').innerHTML = [
+          '<article class="stat-card glass-panel"><span>학교 수</span><strong>' + escapeHtml(String(stats.schoolCount || 0)) + '</strong><small>선택한 달에 시험이 잡힌 학교 수</small></article>',
+          '<article class="stat-card glass-panel"><span>시험 건수</span><strong>' + escapeHtml(String(stats.examCount || 0)) + '</strong><small>직보 계산 대상 시험 이벤트 수</small></article>',
+          '<article class="stat-card glass-panel"><span>직보 셀</span><strong>' + escapeHtml(String(stats.jikboCount || 0)) + '</strong><small>학생별 직보 표시 건수</small></article>',
+          '<article class="stat-card glass-panel"><span>경고 셀</span><strong>' + escapeHtml(String(stats.warningCount || 0)) + '</strong><small>과목 미설정 또는 강사 미배정 상태</small></article>'
+        ].join('');
+      }
+
+      function renderJikboBoardTable_(model) {
+        if (!model.groups.length) {
+          return '<div class="empty-state">선택한 달에 직보 계산 대상 시험이 없습니다.<br>주요일정에 `학교|학년`, 과목명, 시험구분 형식으로 입력한 시험만 직보 보드에 반영됩니다.</div>';
+        }
+
+        var schoolRowSpanMap = {};
+        model.groups.forEach(function(group) {
+          schoolRowSpanMap[group.school] = (schoolRowSpanMap[group.school] || 0) + group.rowCount;
+        });
+
+        var renderedSchoolMap = {};
+        return [
+          '<div class="jikbo-board-shell">',
+          '  <table class="jikbo-board-table">',
+          '    <thead>',
+          '      <tr>',
+          '        <th class="jikbo-header-cell sticky-col sticky-school">학교</th>',
+          '        <th class="jikbo-header-cell sticky-col sticky-start">시험 시작</th>',
+          '        <th class="jikbo-header-cell sticky-col sticky-end">시험 종료</th>',
+          '        <th class="jikbo-header-cell sticky-col sticky-grade">학년</th>',
+          '        <th class="jikbo-header-cell sticky-col sticky-student">학생</th>',
+          model.monthDates.map(function(date) {
+            var dateKey = formatDateKey_(date);
+            return '<th class="jikbo-header-cell jikbo-date-header ' + (isJikboWeekend_(date) ? 'weekend' : '') + '" data-jikbo-date-header="' + escapeAttribute(dateKey) + '">' + renderJikboDateHeader_(date) + '</th>';
+          }).join(''),
+          '      </tr>',
+          '    </thead>',
+          '    <tbody>',
+          model.groups.map(function(group) {
+            var isSchoolRendered = Boolean(renderedSchoolMap[group.school]);
+            if (!isSchoolRendered) {
+              renderedSchoolMap[group.school] = true;
+            }
+            return group.rows.map(function(row, rowIndex) {
+              return [
+                '<tr>',
+                (!isSchoolRendered && rowIndex === 0 ? '<td class="sticky-col sticky-school school-cell" rowspan="' + escapeAttribute(String(schoolRowSpanMap[group.school] || group.rowCount)) + '">' + escapeHtml(group.school || '-') + '</td>' : ''),
+                (rowIndex === 0 ? '<td class="sticky-col sticky-start range-cell" rowspan="' + escapeAttribute(String(group.rowCount)) + '">' + escapeHtml(group.eventRange.startLabel) + '</td>' : ''),
+                (rowIndex === 0 ? '<td class="sticky-col sticky-end range-cell" rowspan="' + escapeAttribute(String(group.rowCount)) + '">' + escapeHtml(group.eventRange.endLabel) + '</td>' : ''),
+                (rowIndex === 0 ? '<td class="sticky-col sticky-grade grade-cell" rowspan="' + escapeAttribute(String(group.rowCount)) + '">' + escapeHtml(group.grade || '-') + '</td>' : ''),
+                '<td class="sticky-col sticky-student student-cell">' + renderJikboStudentLabel_(row.student, row.matchedExamCount) + '</td>',
+                model.monthDateKeys.map(function(dateKey, dateIndex) {
+                  return '<td class="jikbo-day-cell ' + (isJikboWeekend_(model.monthDates[dateIndex]) ? 'weekend' : '') + '">' + renderJikboDayCell_(row.cellMap[dateKey]) + '</td>';
+                }).join(''),
+                '</tr>'
+              ].join('');
+            }).join('');
+          }).join(''),
+          '    </tbody>',
+          '  </table>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderJikboStudentLabel_(student, matchedExamCount) {
+        return [
+          '<div class="jikbo-student-name">' + escapeHtml(student.studentName || '-') + '</div>',
+          '<div class="jikbo-student-meta">' + escapeHtml(student.subject || '과목 미지정') + ' · ' + escapeHtml(String(matchedExamCount || 0)) + '건</div>'
+        ].join('');
+      }
+
+      function renderJikboDayCell_(cell) {
+        var model = cell || { exams: [], jikbos: [] };
+        if (!model.exams.length && !model.jikbos.length) {
+          return '<div class="jikbo-empty-cell">-</div>';
+        }
+
+        return [
+          model.exams.length ? '<div class="jikbo-cell-section">' + model.exams.map(function(item) {
+            return '<span class="jikbo-chip exam ' + escapeAttribute(item.toneClass || 'subject-other') + (item.isDefined ? '' : ' warning') + '">' + escapeHtml(item.subjectName) + '</span>';
+          }).join('') + '</div>' : '',
+          model.jikbos.length ? '<div class="jikbo-cell-section">' + model.jikbos.map(function(item) {
+            var text = item.subjectName + ' · ' + (item.instructorLabel || (item.status === 'missing-subject' ? '과목 미설정' : '미배정'));
+            return '<span class="jikbo-chip class ' + escapeAttribute(item.status) + '">' + escapeHtml(text) + '</span>';
+          }).join('') + '</div>' : ''
+        ].join('');
+      }
+
+      function renderJikboDateHeader_(date) {
+        var weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+        return [
+          '<span class="jikbo-date-weekday">' + escapeHtml(weekdays[date.getDay()]) + '</span>',
+          '<strong class="jikbo-date-label">' + escapeHtml(String(date.getMonth() + 1).padStart(2, '0') + '월 ' + String(date.getDate()).padStart(2, '0') + '일') + '</strong>'
+        ].join('');
+      }
+
+      function getJikboMonthDates_(year, month) {
+        var dates = [];
+        var lastDate = new Date(year, month + 1, 0).getDate();
+        for (var day = 1; day <= lastDate; day += 1) {
+          dates.push(new Date(year, month, day));
+        }
+        return dates;
+      }
+
+      function getJikboExamEventsForCurrentMonth_() {
+        return (APP_STATE.jikboExamEvents || []).filter(function(item) {
+          var parsed = parseEventDateForClient_(item.isoDate || item.date);
+          return parsed &&
+            parsed.getFullYear() === APP_STATE.jikboCalendarYear &&
+            parsed.getMonth() === APP_STATE.jikboCalendarMonth;
+        });
+      }
+
+      function getJikboSubjectDefinitionMap_() {
+        var map = {};
+        (APP_STATE.jikboSubjectDefinitions || []).forEach(function(item) {
+          if (!item || !item.subjectName) {
+            return;
+          }
+          map[normalizeSearchText(item.subjectName)] = item;
+        });
+        return map;
+      }
+
+      function getJikboOverrideMap_() {
+        var map = {};
+        (APP_STATE.jikboStudentOverrides || []).forEach(function(item) {
+          if (!item || !item.studentId || !item.subjectName) {
+            return;
+          }
+          map[buildJikboOverrideKey_(item.studentId, item.subjectName)] = item;
+        });
+        return map;
+      }
+
+      function buildJikboOverrideKey_(studentId, subjectName) {
+        return [String(studentId || ''), normalizeSearchText(subjectName)].join('|');
+      }
+
+      function shouldIncludeJikboSubject_(student, eventItem, subjectDefinition, override) {
+        if (override && override.applyMode === 'EXCLUDE') {
+          return false;
+        }
+        if (override && override.applyMode === 'INCLUDE') {
+          return true;
+        }
+        if (!subjectDefinition || subjectDefinition.isEnabled === false) {
+          return matchesJikboSubjectFallback_(student, eventItem.subjectName);
+        }
+        return matchesJikboStudentKeywords_(student, subjectDefinition.studentSubjectKeywords || []);
+      }
+
+      function matchesJikboStudentKeywords_(student, keywords) {
+        var studentText = normalizeSearchText(student && student.subject);
+        if (!studentText) {
+          return false;
+        }
+        return (keywords || []).some(function(keyword) {
+          var key = normalizeSearchText(keyword);
+          return key && studentText.indexOf(key) !== -1;
+        });
+      }
+
+      function matchesJikboSubjectFallback_(student, subjectName) {
+        var studentText = normalizeSearchText(student && student.subject);
+        var subjectText = normalizeSearchText(subjectName);
+        if (!studentText || !subjectText) {
+          return false;
+        }
+        return studentText.indexOf(subjectText) !== -1 || subjectText.indexOf(studentText) !== -1;
+      }
+
+      function resolveJikboInstructorDisplay_(student, eventItem, subjectDefinition, override, permissionMap) {
+        var defaultDateKey = getJikboPreviousDateKey_(eventItem.isoDate);
+        var resolvedDateKey = formatDateInputValue_(override && override.overrideDate) || defaultDateKey;
+
+        if (override && override.instructorId) {
+          return {
+            subjectName: eventItem.subjectName,
+            dateKey: resolvedDateKey,
+            status: 'assigned',
+            instructorLabel: override.instructorName || resolveInstructorNameById_(override.instructorId) || override.instructorId
+          };
+        }
+
+        if (!subjectDefinition || subjectDefinition.isEnabled === false) {
+          return {
+            subjectName: eventItem.subjectName,
+            dateKey: resolvedDateKey,
+            status: 'missing-subject',
+            instructorLabel: ''
+          };
+        }
+
+        var allowedInstructorIds = permissionMap[student.studentId] || [];
+        var categories = subjectDefinition.instructorSubjectCategories || [];
+        var matchedNames = APP_STATE.instructors.filter(function(instructor) {
+          return allowedInstructorIds.indexOf(instructor.userId) !== -1 &&
+            matchesJikboInstructorCategories_(instructor.subject, categories);
+        }).map(function(instructor) {
+          return instructor.name || instructor.userId;
+        });
+
+        if (!matchedNames.length) {
+          return {
+            subjectName: eventItem.subjectName,
+            dateKey: resolvedDateKey,
+            status: 'unassigned',
+            instructorLabel: ''
+          };
+        }
+
+        return {
+          subjectName: eventItem.subjectName,
+          dateKey: resolvedDateKey,
+          status: 'assigned',
+          instructorLabel: matchedNames.join(', ')
+        };
+      }
+
+      function matchesJikboInstructorCategories_(instructorSubject, categories) {
+        var instructorText = normalizeSearchText(instructorSubject);
+        if (!instructorText) {
+          return false;
+        }
+        return (categories || []).some(function(category) {
+          var categoryText = normalizeSearchText(category);
+          return categoryText && (instructorText.indexOf(categoryText) !== -1 || categoryText.indexOf(instructorText) !== -1);
+        });
+      }
+
+      function resolveInstructorNameById_(userId) {
+        var matched = APP_STATE.instructors.find(function(item) {
+          return item.userId === userId;
+        });
+        return matched ? (matched.name || matched.userId) : '';
+      }
+
+      function getJikboPreviousDateKey_(value) {
+        var parsed = parseEventDateForClient_(value);
+        if (!parsed) {
+          return '';
+        }
+        parsed.setDate(parsed.getDate() - 1);
+        return formatDateKey_(parsed);
+      }
+
+      function getJikboEventRange_(events) {
+        if (!events || !events.length) {
+          return {
+            startLabel: '-',
+            endLabel: '-'
+          };
+        }
+        var sorted = events.slice().sort(function(a, b) {
+          return String(a.isoDate || '').localeCompare(String(b.isoDate || ''));
+        });
+        return {
+          startLabel: formatJikboRangeLabel_(sorted[0].isoDate || sorted[0].date),
+          endLabel: formatJikboRangeLabel_(sorted[sorted.length - 1].isoDate || sorted[sorted.length - 1].date)
+        };
+      }
+
+      function formatJikboRangeLabel_(value) {
+        var parsed = parseEventDateForClient_(value);
+        if (!parsed) {
+          return value || '-';
+        }
+        return String(parsed.getMonth() + 1).padStart(2, '0') + '월 ' + String(parsed.getDate()).padStart(2, '0') + '일';
+      }
+
+      function normalizeJikboGradeForClient_(value) {
+        return String(value === null || value === undefined ? '' : value).replace(/학년/g, '').trim();
+      }
+
+      function isSameJikboSchoolGrade_(studentSchool, studentGrade, eventSchool, eventGrade) {
+        return normalizeSearchText(studentSchool) === normalizeSearchText(eventSchool) &&
+          normalizeJikboGradeForClient_(studentGrade) === normalizeJikboGradeForClient_(eventGrade);
+      }
+
+      function compareJikboStudents_(a, b) {
+        return [
+          a.subject || 'zzzz',
+          a.studentName || '',
+          a.studentId || ''
+        ].join('|').localeCompare([
+          b.subject || 'zzzz',
+          b.studentName || '',
+          b.studentId || ''
+        ].join('|'));
+      }
+
+      function isJikboWeekend_(date) {
+        var day = date.getDay();
+        return day === 0 || day === 6;
+      }
+
+      function populateJikboOverrideFormOptions_() {
+        var students = (APP_STATE.allStudents && APP_STATE.allStudents.length ? APP_STATE.allStudents : APP_STATE.activeStudents).slice().sort(compareJikboStudents_);
+        fillSelectWithOptionPairs_(
+          'jikboOverrideStudentSelect',
+          students.map(function(student) { return student.studentId; }),
+          students.map(function(student) {
+            return [student.studentName || '-', student.school || '-', normalizeJikboGradeForClient_(student.grade) || '-'].join(' · ');
+          }),
+          '학생 선택'
+        );
+
+        var instructorValues = [''].concat(APP_STATE.instructors.map(function(instructor) {
+          return instructor.userId;
+        }));
+        var instructorLabels = ['자동 판별'].concat(APP_STATE.instructors.map(function(instructor) {
+          return (instructor.name || instructor.userId) + (instructor.subject ? ' · ' + instructor.subject : '');
+        }));
+        fillSelectWithOptionPairs_('jikboOverrideInstructorSelect', instructorValues, instructorLabels, '강사 자동 판별');
+
+        document.getElementById('jikboOverrideSubjectList').innerHTML = getUniqueJikboSubjectNames_().map(function(subjectName) {
+          return '<option value="' + escapeAttribute(subjectName) + '"></option>';
+        }).join('');
+        syncJikboOverrideFormMode_();
+      }
+
+      function getUniqueJikboSubjectNames_() {
+        return uniqueList_(
+          (APP_STATE.jikboSubjectDefinitions || []).map(function(item) { return item.subjectName; })
+            .concat((APP_STATE.jikboExamEvents || []).map(function(item) { return item.subjectName; }))
+            .filter(Boolean)
+        ).sort();
+      }
+
+      function renderJikboSubjectFormState_() {
+        var isEditing = Boolean(APP_STATE.editingJikboSubjectRowNumber);
+        document.getElementById('jikboSubjectEditBanner').classList.toggle('hidden', !isEditing);
+        document.getElementById('saveJikboSubjectButton').textContent = isEditing ? '직보 과목 수정 저장' : '직보 과목 저장';
+      }
+
+      function clearJikboSubjectEditMode_() {
+        APP_STATE.editingJikboSubjectRowNumber = '';
+        document.getElementById('jikboSubjectForm').reset();
+        document.getElementById('jikboSubjectEnabledInput').checked = true;
+        document.getElementById('jikboSubjectEditBannerText').textContent = '선택한 직보 과목 정보를 수정한 뒤 저장하세요.';
+        renderJikboSubjectFormState_();
+      }
+
+      function enterJikboSubjectEditMode_(rowNumber) {
+        var item = findJikboSubjectByRow_(rowNumber);
+        if (!item) {
+          setNotice('수정할 직보 과목을 찾을 수 없습니다.', 'warning');
+          return;
+        }
+        APP_STATE.editingJikboSubjectRowNumber = String(item.rowNumber || '');
+        document.getElementById('jikboSubjectNameInput').value = item.subjectName || '';
+        document.getElementById('jikboInstructorCategoryInput').value = item.instructorSubjectCategory || '';
+        document.getElementById('jikboStudentKeywordsInput').value = (item.studentSubjectKeywords || []).join(', ');
+        document.getElementById('jikboSubjectEnabledInput').checked = item.isEnabled !== false;
+        document.getElementById('jikboSubjectEditBannerText').textContent = (item.subjectName || '-') + ' 과목을 수정 중입니다.';
+        renderJikboSubjectFormState_();
+        document.getElementById('jikboSubjectNameInput').focus();
+      }
+
+      function findJikboSubjectByRow_(rowNumber) {
+        var target = String(rowNumber || '');
+        return (APP_STATE.jikboSubjectDefinitions || []).find(function(item) {
+          return String(item.rowNumber || '') === target;
+        }) || null;
+      }
+
+      function renderJikboSubjectTable_() {
+        var wrap = document.getElementById('jikboSubjectTableWrap');
+        var rows = (APP_STATE.jikboSubjectDefinitions || []).slice().sort(function(a, b) {
+          return String(a.subjectName || '').localeCompare(String(b.subjectName || ''));
+        });
+
+        if (!rows.length) {
+          wrap.innerHTML = '<div class="empty-state">아직 등록된 직보 과목이 없습니다.<br>시험 과목명을 먼저 등록하면 보드 자동 매칭이 시작됩니다.</div>';
+          return;
+        }
+
+        wrap.innerHTML = [
+          '<div class="data-table-wrap">',
+          '  <table class="data-table">',
+          '    <thead><tr><th>과목명</th><th>강사과목분류</th><th>학생과목키워드</th><th>사용</th><th>작업</th></tr></thead>',
+          '    <tbody>',
+          rows.map(function(item) {
+            return [
+              '<tr>',
+              '  <td>' + renderMaterialSubjectLabel_(item.subjectName || '-') + '</td>',
+              '  <td>' + escapeHtml(item.instructorSubjectCategory || '-') + '</td>',
+              '  <td>' + escapeHtml((item.studentSubjectKeywords || []).join(', ') || '-') + '</td>',
+              '  <td><span class="pill ' + (item.isEnabled !== false ? 'pill-mint' : 'pill-slate') + '">' + escapeHtml(item.isEnabled !== false ? '사용 중' : '중지') + '</span></td>',
+              '  <td><div class="material-action-group"><button type="button" class="material-edit-button" data-jikbo-subject-edit="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button><button type="button" class="material-delete-button" data-jikbo-subject-delete="' + escapeAttribute(String(item.rowNumber || '')) + '">삭제</button></div></td>',
+              '</tr>'
+            ].join('');
+          }).join(''),
+          '    </tbody>',
+          '  </table>',
+          '</div>'
+        ].join('');
+      }
+
+      function handleJikboSubjectSave_(event) {
+        event.preventDefault();
+        setLoading(APP_STATE.editingJikboSubjectRowNumber ? '직보 과목을 수정하는 중입니다.' : '직보 과목을 저장하는 중입니다.');
+        apiRequest('saveJikboSubject', {
+          token: APP_STATE.token,
+          subjectRowNumber: APP_STATE.editingJikboSubjectRowNumber,
+          subjectName: document.getElementById('jikboSubjectNameInput').value.trim(),
+          instructorSubjectCategory: document.getElementById('jikboInstructorCategoryInput').value.trim(),
+          studentSubjectKeywords: document.getElementById('jikboStudentKeywordsInput').value.trim(),
+          enabled: document.getElementById('jikboSubjectEnabledInput').checked ? 'TRUE' : 'FALSE'
+        })
+          .then(function(result) {
+            APP_STATE.jikboSubjectDefinitions = result.subjectDefinitions || APP_STATE.jikboSubjectDefinitions;
+            clearJikboSubjectEditMode_();
+            renderJikboView();
+            setNotice(result.message || '직보 과목이 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function handleJikboSubjectDelete_(rowNumber) {
+        if (!window.confirm('이 직보 과목을 삭제할까요?')) {
+          return;
+        }
+        setLoading('직보 과목을 삭제하는 중입니다.');
+        apiRequest('deleteJikboSubject', {
+          token: APP_STATE.token,
+          subjectRowNumber: rowNumber
+        })
+          .then(function(result) {
+            APP_STATE.jikboSubjectDefinitions = result.subjectDefinitions || [];
+            if (String(APP_STATE.editingJikboSubjectRowNumber || '') === String(rowNumber || '')) {
+              clearJikboSubjectEditMode_();
+            }
+            renderJikboView();
+            setNotice(result.message || '직보 과목이 삭제되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function renderJikboOverrideFormState_() {
+        var isEditing = Boolean(APP_STATE.editingJikboOverrideRowNumber);
+        document.getElementById('jikboOverrideEditBanner').classList.toggle('hidden', !isEditing);
+        document.getElementById('saveJikboOverrideButton').textContent = isEditing ? '학생별 예외 수정 저장' : '학생별 예외 저장';
+        syncJikboOverrideFormMode_();
+      }
+
+      function syncJikboOverrideFormMode_() {
+        var isExclude = document.getElementById('jikboOverrideApplyModeInput').value === 'EXCLUDE';
+        var instructorSelect = document.getElementById('jikboOverrideInstructorSelect');
+        var dateInput = document.getElementById('jikboOverrideDateInput');
+        instructorSelect.disabled = isExclude;
+        dateInput.disabled = isExclude;
+        if (isExclude && !APP_STATE.editingJikboOverrideRowNumber) {
+          instructorSelect.value = '';
+          dateInput.value = '';
+        }
+      }
+
+      function clearJikboOverrideEditMode_() {
+        APP_STATE.editingJikboOverrideRowNumber = '';
+        document.getElementById('jikboOverrideForm').reset();
+        document.getElementById('jikboOverrideApplyModeInput').value = 'INCLUDE';
+        document.getElementById('jikboOverrideEditBannerText').textContent = '선택한 학생별 직보 예외를 수정한 뒤 저장하세요.';
+        populateJikboOverrideFormOptions_();
+        renderJikboOverrideFormState_();
+      }
+
+      function findJikboOverrideByRow_(rowNumber) {
+        var target = String(rowNumber || '');
+        return (APP_STATE.jikboStudentOverrides || []).find(function(item) {
+          return String(item.rowNumber || '') === target;
+        }) || null;
+      }
+
+      function enterJikboOverrideEditMode_(rowNumber) {
+        var item = findJikboOverrideByRow_(rowNumber);
+        if (!item) {
+          setNotice('수정할 학생별 직보 예외를 찾을 수 없습니다.', 'warning');
+          return;
+        }
+        APP_STATE.editingJikboOverrideRowNumber = String(item.rowNumber || '');
+        populateJikboOverrideFormOptions_();
+        document.getElementById('jikboOverrideStudentSelect').value = item.studentId || '';
+        document.getElementById('jikboOverrideSubjectInput').value = item.subjectName || '';
+        document.getElementById('jikboOverrideApplyModeInput').value = item.applyMode || 'INCLUDE';
+        document.getElementById('jikboOverrideInstructorSelect').value = item.instructorId || '';
+        document.getElementById('jikboOverrideDateInput').value = item.overrideDate || '';
+        document.getElementById('jikboOverrideEditBannerText').textContent = (item.studentName || '-') + ' / ' + (item.subjectName || '-') + ' 예외를 수정 중입니다.';
+        renderJikboOverrideFormState_();
+      }
+
+      function renderJikboOverrideTable_() {
+        var wrap = document.getElementById('jikboOverrideTableWrap');
+        var rows = (APP_STATE.jikboStudentOverrides || []).slice().sort(function(a, b) {
+          return [a.studentName || '', a.subjectName || ''].join('|').localeCompare([b.studentName || '', b.subjectName || ''].join('|'));
+        });
+
+        if (!rows.length) {
+          wrap.innerHTML = '<div class="empty-state">아직 등록된 학생별 직보 예외가 없습니다.<br>과목 포함/제외, 강사 지정, 직보일자 오버라이드를 여기서 관리합니다.</div>';
+          return;
+        }
+
+        wrap.innerHTML = [
+          '<div class="data-table-wrap">',
+          '  <table class="data-table">',
+          '    <thead><tr><th>학생</th><th>과목</th><th>적용방식</th><th>강사 지정</th><th>직보일자</th><th>작업</th></tr></thead>',
+          '    <tbody>',
+          rows.map(function(item) {
+            return [
+              '<tr>',
+              '  <td><strong>' + escapeHtml(item.studentName || '-') + '</strong><div class="helper-text">' + escapeHtml(item.studentId || '-') + '</div></td>',
+              '  <td>' + renderMaterialSubjectLabel_(item.subjectName || '-') + '</td>',
+              '  <td><span class="pill ' + (item.applyMode === 'EXCLUDE' ? 'pill-gold' : 'pill-blue') + '">' + escapeHtml(item.applyMode || '-') + '</span></td>',
+              '  <td>' + escapeHtml(item.instructorName || item.instructorId || '자동 판별') + '</td>',
+              '  <td>' + escapeHtml(item.overrideDate || '자동 계산') + '</td>',
+              '  <td><div class="material-action-group"><button type="button" class="material-edit-button" data-jikbo-override-edit="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button><button type="button" class="material-delete-button" data-jikbo-override-delete="' + escapeAttribute(String(item.rowNumber || '')) + '">삭제</button></div></td>',
+              '</tr>'
+            ].join('');
+          }).join(''),
+          '    </tbody>',
+          '  </table>',
+          '</div>'
+        ].join('');
+      }
+
+      function handleJikboOverrideSave_(event) {
+        event.preventDefault();
+        setLoading(APP_STATE.editingJikboOverrideRowNumber ? '학생별 직보 예외를 수정하는 중입니다.' : '학생별 직보 예외를 저장하는 중입니다.');
+        apiRequest('saveJikboStudentOverride', {
+          token: APP_STATE.token,
+          overrideRowNumber: APP_STATE.editingJikboOverrideRowNumber,
+          studentId: document.getElementById('jikboOverrideStudentSelect').value,
+          subjectName: document.getElementById('jikboOverrideSubjectInput').value.trim(),
+          applyMode: document.getElementById('jikboOverrideApplyModeInput').value,
+          instructorId: document.getElementById('jikboOverrideInstructorSelect').value,
+          overrideDate: document.getElementById('jikboOverrideDateInput').value
+        })
+          .then(function(result) {
+            APP_STATE.jikboStudentOverrides = result.studentOverrides || APP_STATE.jikboStudentOverrides;
+            clearJikboOverrideEditMode_();
+            renderJikboView();
+            setNotice(result.message || '학생별 직보 예외가 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function handleJikboOverrideDelete_(rowNumber) {
+        if (!window.confirm('이 학생별 직보 예외를 삭제할까요?')) {
+          return;
+        }
+        setLoading('학생별 직보 예외를 삭제하는 중입니다.');
+        apiRequest('deleteJikboStudentOverride', {
+          token: APP_STATE.token,
+          overrideRowNumber: rowNumber
+        })
+          .then(function(result) {
+            APP_STATE.jikboStudentOverrides = result.studentOverrides || [];
+            if (String(APP_STATE.editingJikboOverrideRowNumber || '') === String(rowNumber || '')) {
+              clearJikboOverrideEditMode_();
+            }
+            renderJikboView();
+            setNotice(result.message || '학생별 직보 예외가 삭제되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
       function handleEventSave(event) {
         event.preventDefault();
 
@@ -6719,6 +8003,8 @@
         })
           .then(function(result) {
             APP_STATE.events = result.events || [];
+            APP_STATE.jikboLoaded = false;
+            APP_STATE.jikboExamEvents = [];
             document.getElementById('eventForm').reset();
             clearEventEditMode_();
             APP_STATE.isEventEditorOpen = false;
@@ -8041,7 +9327,7 @@
       }
 
       function switchView(viewName) {
-        if ((viewName === 'permissions' || viewName === 'homeroom') && !APP_STATE.isAdmin) {
+        if ((viewName === 'permissions' || viewName === 'homeroom' || viewName === 'jikbo') && !APP_STATE.isAdmin) {
           viewName = 'students';
         }
 
@@ -8091,6 +9377,16 @@
         APP_STATE.events = [];
         APP_STATE.eventSearchKeyword = '';
         APP_STATE.editingEventRowNumber = '';
+        APP_STATE.jikboPanelMode = 'board';
+        APP_STATE.jikboSubjectDefinitions = [];
+        APP_STATE.jikboStudentOverrides = [];
+        APP_STATE.jikboExamEvents = [];
+        APP_STATE.editingJikboSubjectRowNumber = '';
+        APP_STATE.editingJikboOverrideRowNumber = '';
+        APP_STATE.jikboLoaded = false;
+        APP_STATE.jikboLoading = false;
+        APP_STATE.jikboCalendarYear = new Date().getFullYear();
+        APP_STATE.jikboCalendarMonth = new Date().getMonth();
         APP_STATE.materialsLoaded = false;
         APP_STATE.eventsLoaded = false;
         APP_STATE.materialsLoading = false;
@@ -8133,7 +9429,11 @@
           'deleteMaterial',
           'saveMaterialSettingOption',
           'addEvent',
-          'updateEvent'
+          'updateEvent',
+          'saveJikboSubject',
+          'deleteJikboSubject',
+          'saveJikboStudentOverride',
+          'deleteJikboStudentOverride'
         ].indexOf(action) !== -1;
 
         if (shouldUsePost) {
