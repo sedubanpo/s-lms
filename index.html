@@ -4770,6 +4770,7 @@
         jikboExamEvents: [],
         jikboScheduleStatuses: [],
         jikboStatusDraftMap: {},
+        selectedJikboStatusDraft: null,
         editingJikboSubjectRowNumber: '',
         editingJikboOverrideRowNumber: '',
         jikboLoaded: false,
@@ -7311,6 +7312,7 @@
 
       function closeJikboStatusModal_() {
         APP_STATE.selectedJikboStatusKey = '';
+        APP_STATE.selectedJikboStatusDraft = null;
         document.getElementById('jikboStatusModal').classList.add('hidden');
         document.getElementById('jikboStatusModal').dataset.statusKey = '';
       }
@@ -7321,13 +7323,36 @@
         }
       }
 
-      function openJikboStatusModal_(statusKey) {
-        var draft = statusKey ? (APP_STATE.jikboStatusDraftMap[statusKey] || null) : null;
+      function openJikboStatusModal_(source) {
+        var statusKey = '';
+        var draft = null;
+        if (source && typeof source === 'object' && source.getAttribute) {
+          statusKey = source.getAttribute('data-jikbo-status-open') || '';
+          draft = {
+            studentId: source.getAttribute('data-jikbo-student-id') || '',
+            studentName: source.getAttribute('data-jikbo-student-name') || '',
+            school: source.getAttribute('data-jikbo-school') || '',
+            grade: source.getAttribute('data-jikbo-grade') || '',
+            subjectName: source.getAttribute('data-jikbo-subject') || '',
+            examDate: source.getAttribute('data-jikbo-exam-date') || '',
+            jikboDate: source.getAttribute('data-jikbo-date') || '',
+            instructorId: source.getAttribute('data-jikbo-instructor-id') || '',
+            instructorName: source.getAttribute('data-jikbo-instructor-name') || '',
+            instructorLabel: source.getAttribute('data-jikbo-instructor-label') || '',
+            progressStatus: source.getAttribute('data-jikbo-progress-status') || '',
+            confirmedTime: source.getAttribute('data-jikbo-confirmed-time') || '',
+            note: source.getAttribute('data-jikbo-note') || ''
+          };
+        } else {
+          statusKey = String(source || '');
+          draft = statusKey ? (APP_STATE.jikboStatusDraftMap[statusKey] || null) : null;
+        }
         if (!draft || !draft.studentId || !draft.subjectName || !draft.examDate || !draft.jikboDate) {
           setNotice('직보 상태 정보를 열 수 없습니다.', 'warning');
           return;
         }
 
+        APP_STATE.selectedJikboStatusDraft = draft;
         APP_STATE.selectedJikboStatusKey = statusKey || buildJikboStatusKey_(
           draft.studentId,
           draft.subjectName,
@@ -7365,7 +7390,7 @@
 
       function handleJikboStatusSave_() {
         var statusKey = document.getElementById('jikboStatusModal').dataset.statusKey || APP_STATE.selectedJikboStatusKey || '';
-        var draft = statusKey ? (APP_STATE.jikboStatusDraftMap[statusKey] || null) : null;
+        var draft = APP_STATE.selectedJikboStatusDraft || (statusKey ? (APP_STATE.jikboStatusDraftMap[statusKey] || null) : null);
         if (!draft) {
           setNotice('저장할 직보 정보를 찾을 수 없습니다.', 'warning');
           return;
@@ -7485,7 +7510,7 @@
 
         var statusButton = event.target.closest('[data-jikbo-status-open]');
         if (statusButton) {
-          openJikboStatusModal_(statusButton.getAttribute('data-jikbo-status-open'));
+          openJikboStatusModal_(statusButton);
         }
       }
 
@@ -7812,7 +7837,23 @@
           } else if (item.progressStatus === '미정' || item.progressStatus === '미진행') {
             textParts.push(item.progressStatus);
           }
-          return '<button type="button" class="jikbo-chip class ' + escapeAttribute(statusClass) + '" data-jikbo-status-open="' + escapeAttribute(statusKey) + '"' + (item.note ? ' title="' + escapeAttribute(item.note) + '"' : '') + '>' + escapeHtml(textParts.join(' · ')) + '</button>';
+          return '<button type="button" class="jikbo-chip class ' + escapeAttribute(statusClass) + '"' +
+            ' data-jikbo-status-open="' + escapeAttribute(statusKey) + '"' +
+            ' data-jikbo-student-id="' + escapeAttribute(item.studentId) + '"' +
+            ' data-jikbo-student-name="' + escapeAttribute(item.studentName) + '"' +
+            ' data-jikbo-school="' + escapeAttribute(item.school) + '"' +
+            ' data-jikbo-grade="' + escapeAttribute(item.grade) + '"' +
+            ' data-jikbo-subject="' + escapeAttribute(item.subjectName) + '"' +
+            ' data-jikbo-exam-date="' + escapeAttribute(item.examDate) + '"' +
+            ' data-jikbo-date="' + escapeAttribute(item.dateKey) + '"' +
+            ' data-jikbo-instructor-id="' + escapeAttribute(item.instructorId) + '"' +
+            ' data-jikbo-instructor-name="' + escapeAttribute(item.instructorName) + '"' +
+            ' data-jikbo-instructor-label="' + escapeAttribute(item.instructorLabel) + '"' +
+            ' data-jikbo-progress-status="' + escapeAttribute(item.progressStatus) + '"' +
+            ' data-jikbo-confirmed-time="' + escapeAttribute(item.confirmedTime) + '"' +
+            ' data-jikbo-note="' + escapeAttribute(item.note) + '"' +
+            (item.note ? ' title="' + escapeAttribute(item.note) + '"' : '') +
+            '>' + escapeHtml(textParts.join(' · ')) + '</button>';
         }).join('') + '</div>';
       }
 
@@ -9829,6 +9870,7 @@
         APP_STATE.jikboExamEvents = [];
         APP_STATE.jikboScheduleStatuses = [];
         APP_STATE.jikboStatusDraftMap = {};
+        APP_STATE.selectedJikboStatusDraft = null;
         APP_STATE.editingJikboSubjectRowNumber = '';
         APP_STATE.editingJikboOverrideRowNumber = '';
         APP_STATE.jikboLoaded = false;
