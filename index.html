@@ -7342,7 +7342,7 @@
               var subjectDefinition = subjectDefinitionMap[normalizeSearchText(eventItem.subjectName)] || null;
               var overrideKey = buildJikboOverrideKey_(student.studentId, eventItem.subjectName);
               var override = overrideMap[overrideKey] || null;
-              var shouldInclude = shouldIncludeJikboSubject_(student, eventItem, subjectDefinition, override);
+              var shouldInclude = shouldIncludeJikboSubject_(student, eventItem, subjectDefinition, override, permissionMap);
               if (!shouldInclude) {
                 return;
               }
@@ -7556,7 +7556,7 @@
         return [String(studentId || ''), normalizeSearchText(subjectName)].join('|');
       }
 
-      function shouldIncludeJikboSubject_(student, eventItem, subjectDefinition, override) {
+      function shouldIncludeJikboSubject_(student, eventItem, subjectDefinition, override, permissionMap) {
         if (override && override.applyMode === 'EXCLUDE') {
           return false;
         }
@@ -7566,7 +7566,10 @@
         if (!subjectDefinition || subjectDefinition.isEnabled === false) {
           return matchesJikboSubjectFallback_(student, eventItem.subjectName);
         }
-        return matchesJikboStudentKeywords_(student, subjectDefinition.studentSubjectKeywords || []);
+        if (matchesJikboStudentKeywords_(student, subjectDefinition.studentSubjectKeywords || [])) {
+          return true;
+        }
+        return hasJikboInstructorSubjectMatch_(student, subjectDefinition, permissionMap);
       }
 
       function matchesJikboStudentKeywords_(student, keywords) {
@@ -7587,6 +7590,24 @@
           return false;
         }
         return studentText.indexOf(subjectText) !== -1 || subjectText.indexOf(studentText) !== -1;
+      }
+
+      function hasJikboInstructorSubjectMatch_(student, subjectDefinition, permissionMap) {
+        if (!student || !subjectDefinition) {
+          return false;
+        }
+        var allowedInstructorIds = (permissionMap && permissionMap[student.studentId]) || [];
+        if (!allowedInstructorIds.length) {
+          return false;
+        }
+        var categories = subjectDefinition.instructorSubjectCategories || [];
+        if (!categories.length) {
+          return false;
+        }
+        return APP_STATE.instructors.some(function(instructor) {
+          return allowedInstructorIds.indexOf(instructor.userId) !== -1 &&
+            matchesJikboInstructorCategories_(instructor.subject, categories);
+        });
       }
 
       function resolveJikboInstructorDisplay_(student, eventItem, subjectDefinition, override, permissionMap) {
