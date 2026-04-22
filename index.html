@@ -2022,6 +2022,24 @@
         font-weight: 900;
       }
 
+      .student-subject-input {
+        min-width: 180px;
+        min-height: 38px;
+        padding: 9px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(214, 226, 247, 0.95);
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--text-main);
+        font-size: 0.74rem;
+      }
+
+      .student-subject-meta {
+        margin-top: 4px;
+        color: var(--text-soft);
+        font-size: 0.68rem;
+        line-height: 1.45;
+      }
+
       .dense-table-shell,
       .dense-side-shell {
         padding: 12px;
@@ -6834,6 +6852,10 @@
               return matched ? matched.name : id;
             })
           : [];
+        var subjectLabel = student.subject || '과목 미지정';
+        var subjectSourceLabel = student.subjectOverride && student.subjectOverride.subject
+          ? '직보 보완값'
+          : (student.baseSubject ? '원본 과목' : '미설정');
 
         wrap.innerHTML = [
           '<h4>' + escapeHtml(student.studentName) + '</h4>',
@@ -6854,6 +6876,7 @@
           }).join(''),
           '</div>',
           '<div class="dense-summary-list">',
+          '  <div class="dense-summary-item"><span>현재 적용 과목</span><strong>' + escapeHtml(subjectLabel) + ' (' + escapeHtml(subjectSourceLabel) + ')</strong></div>',
           '  <div class="dense-summary-item"><span>현재 허용 강사 수</span><strong>' + escapeHtml(String(selected.length)) + '명</strong></div>',
           '  <div class="dense-summary-item"><span>허용 강사 목록</span><strong>' + escapeHtml(summary.length ? summary.join(', ') : '없음') + '</strong></div>',
           '</div>'
@@ -7124,16 +7147,27 @@
         wrap.innerHTML = [
           '<div class="data-table-wrap">',
           '  <table class="data-table">',
-          '    <thead><tr><th>학생명</th><th>원</th><th>학년</th><th>상태</th><th>작업</th></tr></thead>',
+          '    <thead><tr><th>학생명</th><th>원</th><th>학년</th><th>과목 보완</th><th>상태</th><th>작업</th></tr></thead>',
           '    <tbody>',
           students.map(function(student) {
+            var effectiveSubject = student.subject || '';
+            var baseSubject = student.baseSubject || '';
+            var hasOverride = Boolean(student.subjectOverride && student.subjectOverride.subject);
             return [
               '<tr>',
               '  <td>' + escapeHtml(student.studentName || '-') + '</td>',
               '  <td>' + escapeHtml(student.school || '-') + '</td>',
               '  <td>' + escapeHtml(student.grade ? String(student.grade) : '-') + '</td>',
+              '  <td>',
+              '    <input type="text" class="student-subject-input" data-student-subject-input="' + escapeAttribute(student.studentId) + '" value="' + escapeAttribute(effectiveSubject) + '" placeholder="예: 수학, 국어, 과학">',
+              '    <div class="student-subject-meta">' + escapeHtml(
+                     hasOverride
+                       ? '보완값 사용 중'
+                       : (baseSubject ? '원본 과목: ' + baseSubject : '현재 과목 미지정')
+                   ) + '</div>',
+              '  </td>',
               '  <td><span class="student-status-chip ' + (student.isActive ? 'active' : 'inactive') + '">' + (student.isActive ? '등록' : '중지') + '</span></td>',
-              '  <td><button type="button" class="student-status-button" data-student-status-toggle="' + escapeAttribute(student.studentId) + '" data-next-status="' + escapeAttribute(student.isActive ? 'inactive' : 'active') + '">' + escapeHtml(student.isActive ? '중지' : '재등록') + '</button></td>',
+              '  <td><div class="material-action-group"><button type="button" class="student-status-button" data-student-subject-save="' + escapeAttribute(student.studentId) + '">과목 저장</button><button type="button" class="student-status-button" data-student-status-toggle="' + escapeAttribute(student.studentId) + '" data-next-status="' + escapeAttribute(student.isActive ? 'inactive' : 'active') + '">' + escapeHtml(student.isActive ? '중지' : '재등록') + '</button></div></td>',
               '</tr>'
             ].join('');
           }).join(''),
@@ -7246,6 +7280,29 @@
       }
 
       function handleStudentManageTableClick(event) {
+        var subjectSaveButton = event.target.closest('[data-student-subject-save]');
+        if (subjectSaveButton) {
+          var subjectStudentId = subjectSaveButton.getAttribute('data-student-subject-save') || '';
+          var subjectInput = document.querySelector('[data-student-subject-input="' + subjectStudentId + '"]');
+          var subjectValue = subjectInput ? subjectInput.value.trim() : '';
+
+          setLoading(subjectValue ? '학생 과목을 저장하는 중입니다.' : '학생 과목 보완값을 삭제하는 중입니다.');
+          apiRequest('saveStudentSubject', {
+            token: APP_STATE.token,
+            studentId: subjectStudentId,
+            subject: subjectValue
+          })
+            .then(function(result) {
+              hydrateStudentDataOnly(result);
+              renderAll();
+              switchView('permissions');
+              setNotice(result.message || (subjectValue ? '학생 과목이 저장되었습니다.' : '학생 과목 보완값이 삭제되었습니다.'), 'success');
+            })
+            .catch(handleApiError_)
+            .finally(clearLoading);
+          return;
+        }
+
         var button = event.target.closest('[data-student-status-toggle]');
         if (!button) {
           return;
@@ -10247,6 +10304,7 @@
 
         var shouldUsePost = [
           'savePermissions',
+          'saveStudentSubject',
           'saveHomeroomAssignments',
           'saveHomeroomAssignmentsByInstructor',
           'addStudentLog',
