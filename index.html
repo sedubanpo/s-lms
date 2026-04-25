@@ -3616,6 +3616,51 @@
         -webkit-line-clamp: 2;
       }
 
+      .jikbo-summary-status-badges {
+        display: inline-flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 4px;
+      }
+
+      .jikbo-status-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 22px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(203, 213, 225, 0.86);
+        background: rgba(241, 245, 249, 0.94);
+        color: #475569;
+        font-size: 0.68rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .jikbo-status-badge.pending {
+        background: rgba(255, 244, 214, 0.96);
+        border-color: rgba(217, 119, 6, 0.24);
+        color: #a16207;
+      }
+
+      .jikbo-status-badge.confirmed {
+        background: rgba(227, 247, 234, 0.96);
+        border-color: rgba(22, 128, 76, 0.24);
+        color: #166534;
+      }
+
+      .jikbo-status-badge.not-held {
+        background: rgba(241, 245, 249, 0.98);
+        border-color: rgba(100, 116, 139, 0.26);
+        color: #475569;
+      }
+
+      .jikbo-status-badge.substitute {
+        background: rgba(232, 245, 255, 0.98);
+        border-color: rgba(14, 116, 144, 0.24);
+        color: #0e7490;
+      }
+
       .jikbo-summary-empty {
         padding: 20px 16px;
         border-radius: 16px;
@@ -8111,6 +8156,7 @@
                 title: [student.studentName || '-', student.school || '-'].join(' · '),
                 meta: unresolvedPreviewItems.join(' / '),
                 count: unresolvedJikboItems.length,
+                progressStatus: '미정',
                 preview: [student.studentName || '-', String(unresolvedJikboItems.length) + '건 미확정'].join(' · ')
               });
               stats.unresolvedStudentCount += 1;
@@ -8194,14 +8240,16 @@
             description: '오늘 직보 학생과 과목',
             count: (summary.todayJikbos || []).length,
             items: summary.todayJikbos || [],
-            emptyText: '오늘 직보 학생이 없습니다.'
+            emptyText: '오늘 직보 학생이 없습니다.',
+            compactGrid: true
           },
           tomorrowJikbos: {
             title: '내일 직보',
             description: '내일 직보 학생과 과목',
             count: (summary.tomorrowJikbos || []).length,
             items: summary.tomorrowJikbos || [],
-            emptyText: '내일 직보 학생이 없습니다.'
+            emptyText: '내일 직보 학생이 없습니다.',
+            compactGrid: true
           },
           todayExams: {
             title: '오늘 시험',
@@ -8263,11 +8311,38 @@
           '<div class="jikbo-summary-detail-head"><div><h4>' + escapeHtml(panel.title || '-') + '</h4><p>' + escapeHtml(panel.description || '') + '</p></div><span class="jikbo-summary-badge ' + (panel.alert ? 'alert' : '') + '">' + escapeHtml(String(panel.count || 0)) + '건</span></div>',
           (panel.items || []).length
             ? '<div class="jikbo-summary-detail-list ' + (panel.compactGrid ? 'compact-grid' : '') + '">' + panel.items.map(function(item) {
-              return '<article class="jikbo-summary-detail-item ' + (panel.alert ? 'alert' : '') + '"><div class="jikbo-summary-detail-item-title"><span>' + escapeHtml(item.title || '-') + '</span>' + (panel.compactGrid && item.count ? '<span class="jikbo-summary-badge alert">' + escapeHtml(String(item.count)) + '건</span>' : '') + '</div><div class="jikbo-summary-detail-item-meta">' + escapeHtml(item.meta || '') + '</div></article>';
+              return '<article class="jikbo-summary-detail-item ' + (panel.alert ? 'alert' : '') + '"><div class="jikbo-summary-detail-item-title"><span>' + escapeHtml(item.title || '-') + '</span>' + renderJikboSummaryItemBadges_(item, panel) + '</div><div class="jikbo-summary-detail-item-meta">' + escapeHtml(item.meta || '') + '</div></article>';
             }).join('') + '</div>'
             : '<div class="jikbo-summary-empty">' + escapeHtml(panel.emptyText || '표시할 항목이 없습니다.') + '</div>',
           '</section>'
         ].join('');
+      }
+
+      function renderJikboSummaryItemBadges_(item, panel) {
+        if (!panel || !panel.compactGrid) {
+          return '';
+        }
+        var badges = [];
+        if (item && item.progressStatus) {
+          badges.push('<span class="jikbo-status-badge ' + escapeAttribute(getJikboStatusBadgeClass_(item.progressStatus)) + '">' + escapeHtml(item.progressStatus) + '</span>');
+        }
+        if (item && item.count) {
+          badges.push('<span class="jikbo-summary-badge ' + (panel.alert ? 'alert' : '') + '">' + escapeHtml(String(item.count)) + '건</span>');
+        }
+        return badges.length ? '<span class="jikbo-summary-status-badges">' + badges.join('') + '</span>' : '';
+      }
+
+      function getJikboStatusBadgeClass_(progressStatus) {
+        if (progressStatus === '확정') {
+          return 'confirmed';
+        }
+        if (progressStatus === '미진행') {
+          return 'not-held';
+        }
+        if (progressStatus === '대체진행') {
+          return 'substitute';
+        }
+        return 'pending';
       }
 
       function collectJikboScheduleSummaryItem_(summary, seenMap, item, todayKey, tomorrowKey) {
@@ -8283,13 +8358,16 @@
           return;
         }
         seenMap[bucket][key] = true;
+        var progressStatus = item.progressStatus || '미정';
         summary[bucket].push({
           title: [item.studentName || '-', item.subjectName || '-'].join(' · '),
           meta: [
             [item.school || '-', item.grade ? String(item.grade) + '학년' : ''].filter(Boolean).join(' '),
             item.instructorLabel || '강사 미배정',
-            item.progressStatus || '미정'
+            progressStatus === '확정' && item.confirmedTime ? item.confirmedTime : '',
+            progressStatus === '대체진행' && item.substituteDate ? item.substituteDate : ''
           ].filter(Boolean).join(' · '),
+          progressStatus: progressStatus,
           preview: [item.studentName || '-', item.subjectName || '-'].join(' · ')
         });
       }
