@@ -4067,12 +4067,56 @@
         cursor: pointer;
       }
 
+      .jikbo-chip.class.subject-math {
+        background: rgba(227, 238, 255, 0.96);
+        border-color: rgba(37, 99, 235, 0.2);
+        color: #2458ca;
+      }
+
+      .jikbo-chip.class.subject-korean {
+        background: rgba(255, 239, 225, 0.96);
+        border-color: rgba(201, 107, 16, 0.2);
+        color: #c96b10;
+      }
+
+      .jikbo-chip.class.subject-english {
+        background: rgba(227, 248, 234, 0.96);
+        border-color: rgba(22, 128, 76, 0.2);
+        color: #16804c;
+      }
+
+      .jikbo-chip.class.subject-science {
+        background: rgba(235, 232, 255, 0.96);
+        border-color: rgba(111, 66, 201, 0.2);
+        color: #6f42c9;
+      }
+
+      .jikbo-chip.class.subject-social {
+        background: rgba(255, 243, 214, 0.96);
+        border-color: rgba(183, 121, 8, 0.2);
+        color: #b77908;
+      }
+
       .jikbo-chip.class.missing-subject {
         cursor: pointer;
       }
 
       .jikbo-chip.class:hover {
         transform: translateY(-1px);
+      }
+
+      .jikbo-student-exam-row.exam-finished .jikbo-day-cell,
+      .jikbo-student-class-row.exam-finished .jikbo-day-cell,
+      .student-cell.exam-finished {
+        background: linear-gradient(180deg, rgba(226, 232, 240, 0.92), rgba(203, 213, 225, 0.82));
+        color: rgba(71, 85, 105, 0.72);
+        filter: grayscale(0.5);
+      }
+
+      .jikbo-student-exam-row.exam-finished .jikbo-day-cell *,
+      .jikbo-student-class-row.exam-finished .jikbo-day-cell *,
+      .student-cell.exam-finished * {
+        opacity: 0.78;
       }
 
       .jikbo-inline-status {
@@ -8131,6 +8175,7 @@
           return [a.school || '', a.grade || ''].join('|').localeCompare([b.school || '', b.grade || ''].join('|'));
         }).map(function(group) {
           var groupMatchesKeyword = !keyword || normalizeSearchText(group.school).indexOf(keyword) !== -1;
+          var isGroupExamFinished = isJikboGroupExamFinished_(group.events, todayKey);
           var students = APP_STATE.activeStudents.filter(function(student) {
             return isSameJikboSchoolGrade_(student.school, student.grade, group.school, group.grade);
           }).filter(function(student) {
@@ -8232,7 +8277,8 @@
               student: student,
               cellMap: cellMap,
               matchedExamCount: matchedExamCount,
-              hasUnconfirmedJikbo: hasUnconfirmedJikbo
+              hasUnconfirmedJikbo: hasUnconfirmedJikbo,
+              isExamFinished: isGroupExamFinished
             };
           });
 
@@ -8244,7 +8290,8 @@
                 studentId: ''
               },
               cellMap: {},
-              matchedExamCount: 0
+              matchedExamCount: 0,
+              isExamFinished: isGroupExamFinished
             });
           }
 
@@ -8458,6 +8505,16 @@
         });
       }
 
+      function isJikboGroupExamFinished_(events, todayKey) {
+        var examDateKeys = (events || []).map(function(item) {
+          return item && item.isoDate ? item.isoDate : '';
+        }).filter(Boolean).sort();
+        if (!examDateKeys.length) {
+          return false;
+        }
+        return examDateKeys[examDateKeys.length - 1] < todayKey;
+      }
+
       function renderJikboBoardTable_(model) {
         if (!model.groups.length) {
           return '<div class="empty-state">조건에 맞는 직보 데이터가 없습니다.<br>주요일정에 `학교|학년` 또는 `학교 1학년`, 과목명, 시험구분 형식으로 입력한 시험만 직보 보드에 반영됩니다.</div>';
@@ -8492,18 +8549,19 @@
               renderedSchoolMap[group.school] = true;
             }
             return group.rows.map(function(row, rowIndex) {
+              var examFinishedClass = row.isExamFinished ? ' exam-finished' : '';
               return [
-                '<tr class="jikbo-student-exam-row">',
+                '<tr class="jikbo-student-exam-row' + examFinishedClass + '">',
                 (!isSchoolRendered && rowIndex === 0 ? '<td class="sticky-col sticky-school school-cell" rowspan="' + escapeAttribute(String(schoolRowSpanMap[group.school] || (group.rowCount * 2))) + '">' + escapeHtml(group.school || '-') + '</td>' : ''),
                 (rowIndex === 0 ? '<td class="sticky-col sticky-start range-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.eventRange.startLabel) + '</td>' : ''),
                 (rowIndex === 0 ? '<td class="sticky-col sticky-end range-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.eventRange.endLabel) + '</td>' : ''),
                 (rowIndex === 0 ? '<td class="sticky-col sticky-grade grade-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.grade || '-') + '</td>' : ''),
-                '<td class="sticky-col sticky-student student-cell split ' + (row.hasUnconfirmedJikbo ? 'has-unconfirmed-jikbo' : '') + '" rowspan="2">' + renderJikboStudentLabel_(row.student, row.matchedExamCount, row.hasUnconfirmedJikbo) + '<span class="jikbo-student-split-label">시험일정</span><span class="jikbo-student-split-label">직보</span></td>',
+                '<td class="sticky-col sticky-student student-cell split ' + (row.hasUnconfirmedJikbo ? 'has-unconfirmed-jikbo ' : '') + (row.isExamFinished ? 'exam-finished' : '') + '" rowspan="2">' + renderJikboStudentLabel_(row.student, row.matchedExamCount, row.hasUnconfirmedJikbo) + '<span class="jikbo-student-split-label">시험일정</span><span class="jikbo-student-split-label">직보</span></td>',
                 model.monthDateKeys.map(function(dateKey, dateIndex) {
                   return '<td class="jikbo-day-cell ' + (isJikboWeekend_(model.monthDates[dateIndex]) ? 'weekend' : '') + '">' + renderJikboExamCell_(row.cellMap[dateKey]) + '</td>';
                 }).join(''),
                 '</tr>',
-                '<tr class="jikbo-student-class-row">',
+                '<tr class="jikbo-student-class-row' + examFinishedClass + '">',
                 model.monthDateKeys.map(function(dateKey, dateIndex) {
                   return '<td class="jikbo-day-cell jikbo-class-cell ' + (isJikboWeekend_(model.monthDates[dateIndex]) ? 'weekend' : '') + '">' + renderJikboClassCell_(row.cellMap[dateKey]) + '</td>';
                 }).join(''),
@@ -8544,6 +8602,7 @@
 
         return '<div class="jikbo-cell-section"><span class="jikbo-row-label">직보</span>' + model.jikbos.map(function(item) {
           var statusClass = getJikboProgressToneClass_(item.progressStatus, item.status);
+          var subjectToneClass = getSubjectToneClass_(item.subjectName);
           var detailParts = [item.instructorLabel || (item.status === 'missing-subject' ? '과목 미설정' : '미배정')];
           var statusKey = item.scheduleStatusKey || buildJikboStatusKey_(item.studentId, item.subjectName, item.examDate, item.dateKey, item.instructorId, item.instructorName);
           APP_STATE.jikboStatusDraftMap[statusKey] = {
@@ -8570,7 +8629,7 @@
             detailParts.push(item.progressStatus);
           }
           return '<div class="jikbo-inline-status" data-jikbo-inline-status="' + escapeAttribute(statusKey) + '">' +
-            '<button type="button" class="jikbo-chip class ' + escapeAttribute(statusClass) + '"' +
+            '<button type="button" class="jikbo-chip class ' + escapeAttribute(statusClass + ' ' + subjectToneClass) + '"' +
             ' data-jikbo-status-open="' + escapeAttribute(statusKey) + '"' +
             ' data-jikbo-student-id="' + escapeAttribute(item.studentId) + '"' +
             ' data-jikbo-student-name="' + escapeAttribute(item.studentName) + '"' +
@@ -8587,7 +8646,7 @@
             ' data-jikbo-note="' + escapeAttribute(item.note) + '"' +
             ' data-jikbo-substitute-date="' + escapeAttribute(item.substituteDate) + '"' +
             (item.note ? ' title="' + escapeAttribute(item.note) + '"' : '') +
-            '><span class="jikbo-chip-subject-badge ' + escapeAttribute(getSubjectToneClass_(item.subjectName)) + '">' + escapeHtml(item.subjectName || '-') + '</span><span class="jikbo-chip-meta">' + escapeHtml(detailParts.filter(Boolean).join(' · ')) + '</span></button>' +
+            '><span class="jikbo-chip-subject-badge ' + escapeAttribute(subjectToneClass) + '">' + escapeHtml(item.subjectName || '-') + '</span><span class="jikbo-chip-meta">' + escapeHtml(detailParts.filter(Boolean).join(' · ')) + '</span></button>' +
             '<select aria-label="직보 상태" data-jikbo-inline-progress="' + escapeAttribute(statusKey) + '">' + renderJikboProgressOptions_(item.progressStatus) + '</select>' +
             '<input aria-label="직보 확정 시간" class="' + (item.progressStatus === '확정' ? '' : 'hidden') + '" type="time" value="' + escapeAttribute(item.confirmedTime || '') + '" data-jikbo-inline-time="' + escapeAttribute(statusKey) + '"' + (item.progressStatus === '확정' ? '' : ' disabled') + '>' +
             '<input aria-label="대체 진행일" class="' + (item.progressStatus === '대체진행' ? '' : 'hidden') + '" type="date" value="' + escapeAttribute(item.substituteDate || '') + '" data-jikbo-inline-substitute-date="' + escapeAttribute(statusKey) + '"' + (item.progressStatus === '대체진행' ? '' : ' disabled') + '>' +
