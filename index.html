@@ -4554,10 +4554,10 @@
                   <div class="panel-head">
                     <div>
                       <h3>과목 사전</h3>
-                      <p>시험 과목명을 exact match 로 등록하고, 학생과목키워드와 강사과목분류를 함께 관리합니다.</p>
+                      <p>시험 과목명과 학생과목키워드로 시험 이벤트를 매칭하고, 강사과목분류를 함께 관리합니다.</p>
                     </div>
                   </div>
-                  <div id="jikboSubjectHint" class="hint-box">등록된 시험 과목은 직보 보드 자동 매칭에 바로 반영됩니다.</div>
+                  <div id="jikboSubjectHint" class="hint-box">등록된 시험 과목명과 학생과목키워드는 직보 보드 자동 매칭에 바로 반영됩니다.</div>
                   <div id="jikboSubjectEditBanner" class="material-edit-banner hidden">
                     <div>
                       <strong>직보 과목 수정 모드</strong>
@@ -8577,6 +8577,17 @@
             return;
           }
           map[normalizeSearchText(item.subjectName)] = item;
+        });
+        (APP_STATE.jikboSubjectDefinitions || []).forEach(function(item) {
+          if (!item || item.isEnabled === false) {
+            return;
+          }
+          (item.studentSubjectKeywords || []).forEach(function(keyword) {
+            var key = normalizeSearchText(keyword);
+            if (key && !map[key]) {
+              map[key] = item;
+            }
+          });
         });
         return map;
       }
