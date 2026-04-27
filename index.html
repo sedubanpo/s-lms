@@ -3247,6 +3247,30 @@
         color: var(--text-soft);
       }
 
+      .material-count-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 0 9px;
+        border-radius: 999px;
+        border: 1px solid #d8e3f4;
+        background: #ffffff;
+        color: #475569;
+        font-size: 0.7rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .material-count-pill.gold-premium {
+        border-color: #f1cc76;
+      }
+
+      .material-count-pill.warning {
+        border-color: #fecaca;
+        background: #fff1f2;
+        color: #b91c1c;
+      }
+
       .material-primary-cell {
         display: flex;
         flex-direction: column;
@@ -5487,8 +5511,10 @@
       }
 
       .material-summary-card {
+        position: relative;
+        overflow: hidden;
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-columns: auto minmax(0, 1fr) minmax(54px, auto);
         gap: 10px;
         align-items: center;
         min-height: 76px;
@@ -5496,6 +5522,14 @@
         border: 1px solid #d8e3f4;
         border-radius: 8px;
         background: #f8fafc;
+        text-align: left;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+      }
+
+      .material-summary-card:hover {
+        border-color: #b8c9e4;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+        transform: translateY(-1px);
       }
 
       .material-summary-icon {
@@ -5509,7 +5543,7 @@
         color: #0b55d9;
       }
 
-      .material-summary-card span {
+      .material-summary-body > span {
         display: block;
         color: #64748b;
         font-size: 0.75rem;
@@ -5523,12 +5557,60 @@
         font-weight: 900;
       }
 
+      .material-summary-card small {
+        display: block;
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 800;
+      }
+
+      .material-summary-visual {
+        justify-self: end;
+        width: 62px;
+        height: 34px;
+      }
+
+      .summary-sparkline {
+        display: flex;
+        align-items: end;
+        gap: 3px;
+        height: 34px;
+      }
+
+      .summary-sparkline span {
+        flex: 1;
+        min-width: 4px;
+        border-radius: 999px 999px 3px 3px;
+        background: #8bb9ff;
+      }
+
+      .summary-sparkline.warning span {
+        background: #f59e0b;
+      }
+
+      .summary-mini-lines {
+        display: grid;
+        align-content: center;
+        gap: 5px;
+        height: 34px;
+      }
+
+      .summary-mini-lines span {
+        display: block;
+        height: 5px;
+        border-radius: 999px;
+        background: #dbeafe;
+      }
+
       .gold-premium {
         position: relative;
         overflow: hidden;
         border-color: #d6a531 !important;
-        background: #fff4d6 !important;
+        background:
+          radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.58) 0 1px, transparent 1px 4px),
+          linear-gradient(135deg, #fff7d6 0%, #ffefb8 58%, #fff8e6 100%) !important;
         color: #6f4500 !important;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
       }
 
       .gold-premium::after {
@@ -5558,13 +5640,19 @@
         border-color: #d6a531 !important;
       }
 
+      .material-summary-card.gold-premium strong,
+      .material-summary-card.gold-premium small,
+      .material-summary-card.gold-premium .material-summary-body > span {
+        color: #6f4500;
+      }
+
       .material-search-console {
         display: grid;
-        gap: 10px;
-        padding: 12px;
+        gap: 12px;
+        padding: 14px;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
-        background: #f8fafc;
+        background: #fbfdff;
       }
 
       .material-search-main {
@@ -5575,9 +5663,11 @@
       }
 
       .material-search-main .field-input {
-        min-height: 42px;
+        min-height: 44px;
         border-radius: 8px;
         background: #fff;
+        border-color: #cfdcf0;
+        box-shadow: none;
       }
 
       .material-quick-schools,
@@ -5615,10 +5705,27 @@
         font-weight: 800;
       }
 
+      .material-chip-button span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 18px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 0.68rem;
+        font-weight: 900;
+      }
+
       .material-chip-button.active {
-        border-color: #93c5fd;
-        background: #eaf2ff;
-        color: #174ea6;
+        border-color: #0b55d9;
+        background: #0b55d9;
+        color: #fff;
+      }
+
+      .material-chip-button.active span {
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
       }
 
       .material-active-filter button {
@@ -5688,6 +5795,10 @@
         background: #fff;
       }
 
+      .material-navigator {
+        align-self: start;
+      }
+
       .material-panel-title {
         display: flex;
         align-items: center;
@@ -5711,11 +5822,26 @@
         padding: 12px;
       }
 
+      .material-insight-body section {
+        padding: 10px;
+        border: 1px solid #edf2f7;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .material-insight-link {
+        padding: 0;
+        background: transparent;
+        color: #0b55d9;
+        font-size: 0.7rem;
+        font-weight: 900;
+      }
+
       .material-nav-school {
         display: grid;
-        gap: 8px;
-        padding: 10px;
-        border: 1px solid #e2e8f0;
+        gap: 7px;
+        padding: 9px 10px;
+        border: 1px solid transparent;
         border-radius: 8px;
         background: #f8fafc;
       }
@@ -5723,6 +5849,7 @@
       .material-nav-school.active {
         border-color: #93c5fd;
         background: #edf5ff;
+        box-shadow: inset 3px 0 0 #0b55d9;
       }
 
       .material-nav-school button {
@@ -5731,6 +5858,37 @@
         color: #0f172a;
         text-align: left;
         font-weight: 900;
+      }
+
+      .material-nav-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+
+      .material-nav-meta span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 20px;
+        padding: 0 7px;
+        border-radius: 999px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+        font-size: 0.67rem;
+        font-weight: 900;
+      }
+
+      .material-nav-meta span.scope {
+        border-color: #f3c76b;
+        background: #fff7dd;
+        color: #a16207;
+      }
+
+      .material-nav-footer {
+        display: flex;
+        justify-content: center;
+        padding-top: 4px;
       }
 
       .material-nav-years {
@@ -5764,6 +5922,13 @@
         padding: 12px;
         background: #f8fafc;
         border-bottom: 1px solid #e2e8f0;
+      }
+
+      .material-group-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
       }
 
       .material-group-head strong {
@@ -5810,7 +5975,24 @@
 
       .material-dense-row.gold-row {
         background: #fffaf0;
-        box-shadow: inset 3px 0 0 #d6a531;
+      }
+
+      .material-dense-row.gold-row td {
+        background: #fff8e7;
+        border-bottom-color: #f4dfb0;
+      }
+
+      .material-dense-row.gold-row td:first-child {
+        box-shadow: inset 4px 0 0 #d6a531;
+      }
+
+      .material-dense-row.gold-row:hover td {
+        background: #fff3d7;
+        box-shadow: inset 0 1px 0 rgba(214, 165, 49, 0.28), inset 0 -1px 0 rgba(214, 165, 49, 0.28);
+      }
+
+      .material-dense-row.gold-row:hover td:first-child {
+        box-shadow: inset 4px 0 0 #d6a531, inset 0 1px 0 rgba(214, 165, 49, 0.28), inset 0 -1px 0 rgba(214, 165, 49, 0.28);
       }
 
       .material-dense-table th:nth-child(1),
@@ -5863,6 +6045,47 @@
         word-break: keep-all;
       }
 
+      .gold-row .material-title-cell strong {
+        color: #8a4b08;
+      }
+
+      .gold-row .material-title-cell span {
+        color: #9a6810;
+      }
+
+      .material-school-cell {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      .material-school-cell strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .material-gold-marker {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        flex: 0 0 auto;
+        border-radius: 6px;
+        border: 1px solid #d6a531;
+        background: #f6c453;
+        color: #6f4500;
+        box-shadow: 0 6px 14px rgba(214, 165, 49, 0.22);
+      }
+
+      .material-gold-marker svg {
+        width: 13px;
+        height: 13px;
+        fill: currentColor;
+      }
+
       .material-scope-badge {
         display: inline-flex;
         align-items: center;
@@ -5876,6 +6099,12 @@
         font-size: 0.7rem;
         font-weight: 900;
         white-space: nowrap;
+      }
+
+      .material-scope-badge.gold-premium svg {
+        width: 13px;
+        height: 13px;
+        fill: currentColor;
       }
 
       .material-action-icon {
@@ -5927,7 +6156,7 @@
         align-items: center;
         width: 100%;
         min-width: 0;
-        padding: 0;
+        padding: 4px 0;
         border: 0;
         background: transparent;
         color: #0f172a;
@@ -5945,6 +6174,7 @@
       }
 
       .insight-track {
+        display: block;
         height: 8px;
         overflow: hidden;
         border-radius: 999px;
@@ -5952,14 +6182,16 @@
       }
 
       .insight-fill {
+        display: block;
         height: 100%;
         border-radius: inherit;
         background: #0b55d9;
+        box-shadow: 0 0 0 1px rgba(11, 85, 217, 0.08);
       }
 
       .material-stacked-bar {
         display: flex;
-        height: 12px;
+        height: 14px;
         overflow: hidden;
         border-radius: 999px;
         background: #e2e8f0;
@@ -5976,10 +6208,15 @@
       }
 
       .material-mini-item {
+        display: grid;
+        gap: 3px;
+        width: 100%;
         padding: 8px;
+        border: 1px solid transparent;
         border-radius: 8px;
         background: #f8fafc;
         font-size: 0.74rem;
+        text-align: left;
       }
 
       .material-mini-item strong {
@@ -5991,6 +6228,37 @@
         display: block;
         margin-top: 3px;
         color: #64748b;
+      }
+
+      .material-mini-item.gold-mini {
+        border-color: #f1cc76;
+        background: #fff8e7;
+      }
+
+      .material-mini-item.warning {
+        border-color: #fed7aa;
+        background: #fff7ed;
+      }
+
+      .material-mini-head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      .material-mini-head > i,
+      .material-mini-head > svg {
+        width: 14px;
+        height: 14px;
+        color: #f59e0b;
+        flex: 0 0 auto;
+      }
+
+      .material-mini-head strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
     </style>
   </head>
@@ -12631,7 +12899,7 @@
             return [
               '<section class="material-school-group">',
               '  <div class="material-group-head">',
-              '    <div><strong>' + escapeHtml(schoolKey) + '</strong><span>자료 ' + escapeHtml(String(schoolItemCount)) + '건 · 최근 ' + escapeHtml(String(recentCount)) + '건 · 범위 ' + escapeHtml(String(scopeCount)) + '건</span></div>',
+              '    <div><div class="material-group-title">' + (scopeCount ? '<span class="material-gold-marker" aria-label="시험일정 및 범위 포함"><i data-lucide="star"></i></span>' : '') + '<strong>' + escapeHtml(schoolKey) + '</strong>' + renderMaterialCountPill_('자료 ' + schoolItemCount + '건', '') + renderMaterialCountPill_('최근 ' + recentCount + '건', '') + renderMaterialCountPill_('범위 ' + scopeCount + '건', scopeCount ? 'gold-premium' : '') + '</div></div>',
               '    <button type="button" class="material-chip-button" data-material-school="' + escapeAttribute(schoolKey) + '">학교 필터</button>',
               '  </div>',
               visibleYearKeys.map(function(yearKey) {
@@ -12688,16 +12956,16 @@
           '<tbody>',
           items.slice().sort(compareMaterialRows_).map(function(item) {
             var isGold = isExamScopeMaterial_(item);
-            var titleHint = item.note || [item.fileType, item.materialType].filter(Boolean).join(' · ') || '열기 버튼으로 자료 확인';
+            var titleHint = item.note || [item.fileType, getMaterialPrimaryTypeLabel_(item)].filter(Boolean).join(' · ') || '열기 버튼으로 자료 확인';
             return [
               '<tr class="material-dense-row ' + (isGold ? 'gold-row' : '') + '" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">',
-              '<td><strong>' + escapeHtml(item.school || schoolContext || '-') + '</strong></td>',
+              '<td>' + renderMaterialSchoolCell_(item, schoolContext) + '</td>',
               '<td>' + escapeHtml([item.grade || '-', item.term || '-'].join(' · ')) + '</td>',
               '<td>' + renderMaterialMetaBadge_(item.examType || '-', 'exam') + '</td>',
               '<td>' + renderMaterialSubjectLabel_(item.subject || '-') + '</td>',
-              '<td>' + renderMaterialTypeBadge_(item.materialType || '-') + '</td>',
+              '<td>' + renderMaterialTypeBadge_(getMaterialPrimaryTypeLabel_(item)) + '</td>',
               '<td class="material-title-cell"><button type="button" class="material-title-button" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link || '') + '"><strong>' + escapeHtml(buildMaterialDisplayTitle_(item)) + '</strong><span>' + escapeHtml(titleHint) + '</span></button></td>',
-              '<td><div class="chip-row">' + [renderMaterialMetaBadge_(item.year || '-', 'year'), renderMaterialMetaBadge_(item.fileType || '-', 'file')].join('') + '</div></td>',
+              '<td><div class="chip-row">' + renderMaterialTagPills_(item) + '</div></td>',
               '<td>' + escapeHtml(formatMaterialDate_(item.createdAt || item.updatedAt || item.year || '-')) + '</td>',
               '<td>' + escapeHtml(item.createdBy || item.updatedBy || '-') + '</td>',
               '<td>' + renderMaterialActionButtons_(item) + '</td>',
@@ -12733,45 +13001,62 @@
           return '<div class="empty-state">탐색할 학교 자료가 없습니다.</div>';
         }
         var selectedSchool = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value || '';
+        var totalSchools = getVisibleMaterialSchools_(APP_STATE.materials).length;
         return schools.map(function(school) {
           var schoolItems = source.filter(function(item) { return item.school === school; });
+          var recentCount = schoolItems.filter(isRecentMaterial_).length;
+          var scopeCount = schoolItems.filter(isExamScopeMaterial_).length;
           var years = getVisibleMaterialYears_(school, schoolItems).slice(0, 4);
           return [
             '<div class="material-nav-school ' + (selectedSchool === school ? 'active' : '') + '">',
             '<button type="button" data-material-school="' + escapeAttribute(school) + '">' + escapeHtml(school) + '</button>',
-            '<div class="helper-text">자료 ' + escapeHtml(String(schoolItems.length)) + '건 · 범위 ' + escapeHtml(String(schoolItems.filter(isExamScopeMaterial_).length)) + '건</div>',
+            '<div class="material-nav-meta"><span>자료 ' + escapeHtml(String(schoolItems.length)) + '</span><span>최근 ' + escapeHtml(String(recentCount)) + '</span><span class="scope">범위 ' + escapeHtml(String(scopeCount)) + '</span></div>',
             '<div class="material-nav-years">' + years.map(function(year) {
-              var isActive = String(APP_STATE.selectedMaterialYearTab || '') === String(year || '');
-              return '<button type="button" class="material-nav-year ' + (isActive ? 'active' : '') + '" data-material-school-year="' + escapeAttribute(year) + '" data-material-school-name="' + escapeAttribute(school) + '">' + escapeHtml(year) + '</button>';
+              var activeYear = selectedSchool === school ? APP_STATE.selectedMaterialYearTab : (APP_STATE.materialYearTabsBySchool[school] || '');
+              var isActive = String(activeYear || '') === String(year || '');
+              return '<button type="button" class="material-nav-year ' + (isActive ? 'active' : '') + '" data-material-school-year="' + escapeAttribute(year) + '" data-material-school-name="' + escapeAttribute(school) + '">' + escapeHtml(year) + '년</button>';
             }).join('') + '</div>',
             '</div>'
           ].join('');
-        }).join('');
+        }).join('') + '<div class="material-nav-footer"><button type="button" class="material-chip-button" data-material-school="">전체 학교 보기 (' + escapeHtml(String(totalSchools)) + '개)</button></div>';
       }
 
       function renderMaterialInsightPanel_(materials) {
         return [
-          '<section><div class="ops-card-title"><h4>자료 완성도</h4><span class="material-scope-badge">자료유형별</span></div>' + renderMaterialStackedBar_(materials) + '</section>',
-          '<section><div class="ops-card-title"><h4>학교별 자료 Top 5</h4></div>' + renderMaterialTopSchools_(materials) + '</section>',
-          '<section><div class="ops-card-title"><h4>최근 등록 자료</h4></div>' + renderMaterialRecentList_(materials) + '</section>',
-          '<section><div class="ops-card-title"><h4>누락 확인</h4></div>' + renderMaterialMissingList_(materials) + '</section>'
+          '<section><div class="ops-card-title"><h4>자료 완성도</h4><button type="button" class="material-insight-link" data-material-summary-action="all">자세히</button></div>' + renderMaterialStackedBar_(materials) + '</section>',
+          '<section><div class="ops-card-title"><h4>학교별 자료 Top 5</h4><button type="button" class="material-insight-link" data-material-summary-action="schools">자세히</button></div>' + renderMaterialTopSchools_(materials) + '</section>',
+          '<section><div class="ops-card-title"><h4>최근 등록 자료</h4><button type="button" class="material-insight-link" data-material-summary-action="recent">더보기</button></div>' + renderMaterialRecentList_(materials) + '</section>',
+          '<section><div class="ops-card-title"><h4>누락 확인</h4><button type="button" class="material-insight-link" data-material-summary-action="missing">더보기</button></div>' + renderMaterialMissingList_(materials) + '</section>'
         ].join('');
       }
 
       function renderMaterialStackedBar_(materials) {
         var total = Math.max(1, materials.length);
-        var colors = ['#0b55d9', '#0f9a6a', '#f59e0b', '#64748b', '#d6a531'];
-        var types = uniqueList_(materials.map(function(item) { return item.materialType || '기타'; })).slice(0, 5);
+        var types = [
+          { label: '문제', color: '#0b55d9', matcher: function(item) { return /문제/.test(String(item.fileType || item.materialType || '')); } },
+          { label: '해설', color: '#0f9a6a', matcher: function(item) { return /해설|답안/.test(String(item.fileType || item.materialType || '')); } },
+          { label: '시험일정 및 범위', color: '#d6a531', matcher: isExamScopeMaterial_ },
+          { label: '학교유인물', color: '#8b5cf6', matcher: function(item) { return /학교유인물/.test(String(item.fileType || item.materialType || '')); } },
+          { label: '기타', color: '#64748b', matcher: function() { return true; } }
+        ].map(function(type, index, array) {
+          var previousMatchers = array.slice(0, index).map(function(item) { return item.matcher; });
+          var count = materials.filter(function(item) {
+            if (previousMatchers.some(function(matcher) { return matcher(item); })) {
+              return false;
+            }
+            return type.matcher(item);
+          }).length;
+          return Object.assign({}, type, { count: count });
+        }).filter(function(type) { return type.count > 0; });
         return [
           '<div class="material-stacked-bar">',
-          types.map(function(type, index) {
-            var width = Math.round(materials.filter(function(item) { return (item.materialType || '기타') === type; }).length / total * 100);
-            return '<span style="width:' + width + '%;background:' + colors[index % colors.length] + '"></span>';
+          types.map(function(type) {
+            var width = Math.max(4, Math.round(type.count / total * 100));
+            return '<span title="' + escapeAttribute(type.label + ' ' + type.count + '건') + '" style="width:' + width + '%;background:' + type.color + '"></span>';
           }).join(''),
           '</div>',
-          '<div class="stacked-legend">' + types.map(function(type, index) {
-            var count = materials.filter(function(item) { return (item.materialType || '기타') === type; }).length;
-            return '<span><b class="legend-dot" style="background:' + colors[index % colors.length] + '"></b>' + escapeHtml(type) + ' ' + escapeHtml(String(count)) + '건</span>';
+          '<div class="stacked-legend">' + types.map(function(type) {
+            return '<span><b class="legend-dot" style="background:' + type.color + '"></b>' + escapeHtml(type.label) + ' ' + escapeHtml(String(type.count)) + '건</span>';
           }).join('') + '</div>'
         ].join('');
       }
@@ -12795,7 +13080,7 @@
           return String(b.createdAt || b.updatedAt || b.year || '').localeCompare(String(a.createdAt || a.updatedAt || a.year || ''));
         }).slice(0, 4);
         return '<div class="material-recent-list">' + rows.map(function(item) {
-          return '<div class="material-mini-item"><strong>' + escapeHtml(buildMaterialDisplayTitle_(item)) + '</strong><span>' + escapeHtml([formatMaterialDate_(item.createdAt || item.updatedAt || ''), item.createdBy || '-'].filter(Boolean).join(' · ')) + '</span></div>';
+          return '<div class="material-mini-item ' + (isExamScopeMaterial_(item) ? 'gold-mini' : '') + '"><div class="material-mini-head">' + (isExamScopeMaterial_(item) ? '<span class="material-gold-marker"><i data-lucide="star"></i></span>' : '') + '<strong>' + escapeHtml(buildMaterialDisplayTitle_(item)) + '</strong></div><span>' + escapeHtml([item.school || '-', formatMaterialDate_(item.createdAt || item.updatedAt || ''), item.createdBy || '-'].filter(Boolean).join(' · ')) + '</span></div>';
         }).join('') + '</div>';
       }
 
@@ -12808,7 +13093,7 @@
           if (hasScope && hasSolution) {
             return '';
           }
-          return '<button type="button" class="material-mini-item" data-material-school="' + escapeAttribute(school) + '"><strong>' + escapeHtml(school) + '</strong><span>' + escapeHtml(hasScope ? '해설/답안 확인 필요' : '시험일정 및 범위 미등록') + '</span></button>';
+          return '<button type="button" class="material-mini-item warning" data-material-school="' + escapeAttribute(school) + '"><div class="material-mini-head"><i data-lucide="triangle-alert"></i><strong>' + escapeHtml(school) + '</strong>' + renderMaterialCountPill_('미등록', 'warning') + '</div><span>' + escapeHtml(hasScope ? '해설/답안 확인 필요' : '시험일정 및 범위 미등록') + '</span></button>';
         }).filter(Boolean);
         return '<div class="material-warning-list">' + (rows.join('') || '<div class="empty-state">우선 확인할 누락 항목이 없습니다.</div>') + '</div>';
       }
@@ -12820,16 +13105,29 @@
         var scopeCount = APP_STATE.materials.filter(isExamScopeMaterial_).length;
         var missing = getMaterialMissingCount_(APP_STATE.materials);
         document.getElementById('materialsSummaryWrap').innerHTML = [
-          renderMaterialSummaryCard_('folder-open', '전체 자료', total + '건', '전체 등록 자료 수', '', 'all'),
-          renderMaterialSummaryCard_('clock-3', '최근 등록', recent + '건', '최근 7일 기준', '', 'recent'),
-          renderMaterialSummaryCard_('school', '학교 수', schoolCount + '개', '자료 보유 학교 수', '', 'schools'),
-          renderMaterialSummaryCard_('crown', '시험일정 및 범위', scopeCount + '건', '프리미엄 자료', 'gold-premium', 'scope'),
-          renderMaterialSummaryCard_('triangle-alert', '누락 자료', missing + '건', '자료 누락 확인 필요', '', 'missing')
+          renderMaterialSummaryCard_('folder-open', '전체 자료', total + '건', '전체 등록 자료 수', '', 'all', 'lines'),
+          renderMaterialSummaryCard_('clock-3', '최근 등록', recent + '건', '최근 7일 기준', '', 'recent', 'spark'),
+          renderMaterialSummaryCard_('school', '학교 수', schoolCount + '개', '자료 보유 학교 수', '', 'schools', 'lines'),
+          renderMaterialSummaryCard_('crown', '시험일정 및 범위', scopeCount + '건', '프리미엄 자료', 'gold-premium', 'scope', 'gold'),
+          renderMaterialSummaryCard_('triangle-alert', '누락 자료', missing + '건', '자료 누락 확인 필요', '', 'missing', 'warning')
         ].join('');
       }
 
-      function renderMaterialSummaryCard_(icon, label, value, hint, extraClass, action) {
-        return '<button type="button" class="material-summary-card ' + escapeAttribute(extraClass || '') + '" ' + (action ? 'data-material-summary-action="' + escapeAttribute(action) + '"' : '') + '><span class="material-summary-icon"><i data-lucide="' + escapeAttribute(icon) + '"></i></span><span><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong><small>' + escapeHtml(hint) + '</small></span></button>';
+      function renderMaterialSummaryCard_(icon, label, value, hint, extraClass, action, visualType) {
+        return '<button type="button" class="material-summary-card ' + escapeAttribute(extraClass || '') + '" ' + (action ? 'data-material-summary-action="' + escapeAttribute(action) + '"' : '') + '><span class="material-summary-icon"><i data-lucide="' + escapeAttribute(icon) + '"></i></span><span class="material-summary-body"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong><small>' + escapeHtml(hint) + '</small></span>' + renderMaterialSummaryVisual_(visualType) + '</button>';
+      }
+
+      function renderMaterialSummaryVisual_(visualType) {
+        if (visualType === 'spark' || visualType === 'warning') {
+          var heights = visualType === 'warning' ? [34, 18, 26, 31, 14, 30, 36] : [12, 24, 18, 30, 22, 34, 28];
+          return '<div class="material-summary-visual summary-sparkline ' + (visualType === 'warning' ? 'warning' : '') + '">' + heights.map(function(height) {
+            return '<span style="height:' + height + 'px"></span>';
+          }).join('') + '</div>';
+        }
+        if (visualType === 'gold') {
+          return '<div class="material-summary-visual summary-mini-lines"><span style="width:100%"></span><span style="width:72%;background:#f6c453"></span><span style="width:86%"></span></div>';
+        }
+        return '<div class="material-summary-visual summary-mini-lines"><span style="width:94%"></span><span style="width:68%"></span><span style="width:82%"></span></div>';
       }
 
       function renderMaterialTypeBadge_(value) {
@@ -12837,8 +13135,50 @@
         return '<button type="button" class="material-scope-badge ' + (isGold ? 'gold-premium' : '') + '" data-material-type-badge="' + escapeAttribute(value || '') + '">' + (isGold ? '<i data-lucide="crown"></i>' : '') + escapeHtml(value || '-') + '</button>';
       }
 
+      function renderMaterialCountPill_(label, extraClass) {
+        return '<span class="material-count-pill ' + escapeAttribute(extraClass || '') + '">' + escapeHtml(label || '-') + '</span>';
+      }
+
+      function renderMaterialSchoolCell_(item, schoolContext) {
+        var isGold = isExamScopeMaterial_(item);
+        return [
+          '<span class="material-school-cell">',
+          isGold ? '<span class="material-gold-marker" aria-label="시험일정 및 범위"><i data-lucide="star"></i></span>' : '',
+          '<strong>' + escapeHtml(item.school || schoolContext || '-') + '</strong>',
+          '</span>'
+        ].join('');
+      }
+
+      function getMaterialPrimaryTypeLabel_(item) {
+        return isExamScopeMaterial_(item) ? '시험일정 및 범위' : (item.materialType || item.fileType || '-');
+      }
+
+      function renderMaterialTagPills_(item) {
+        var tags = [];
+        if (isExamScopeMaterial_(item)) {
+          tags.push(renderMaterialMetaBadge_('범위', 'type'));
+        }
+        tags.push(renderMaterialMetaBadge_(item.year || '-', 'year'));
+        if (item.examType) {
+          tags.push(renderMaterialMetaBadge_(getShortExamTypeLabel_(item.examType), 'exam'));
+        }
+        tags.push(renderMaterialMetaBadge_(item.fileType || '-', 'file'));
+        return tags.join('');
+      }
+
+      function getShortExamTypeLabel_(examType) {
+        var text = String(examType || '');
+        if (text.indexOf('중간') !== -1) {
+          return '중간';
+        }
+        if (text.indexOf('기말') !== -1) {
+          return '기말';
+        }
+        return text || '-';
+      }
+
       function buildMaterialDisplayTitle_(item) {
-        return [item.school, item.year, item.term, item.examType, item.subject, item.fileType || item.materialType].filter(Boolean).join(' ');
+        return [item.school, item.year, item.term, item.examType, item.subject, getMaterialPrimaryTypeLabel_(item)].filter(Boolean).join(' ');
       }
 
       function formatMaterialDate_(value) {
@@ -13181,7 +13521,11 @@
           return;
         }
         APP_STATE.materialYearTabsBySchool[school] = year;
+        APP_STATE.selectedMaterialSchoolTab = school;
+        APP_STATE.selectedMaterialYearTab = year;
         APP_STATE.materialQuickFilter = '';
+        document.getElementById('materialSchoolFilter').value = school;
+        document.getElementById('materialYearFilter').value = year;
         renderMaterials();
       }
 
@@ -13562,6 +13906,12 @@
         var refreshInsightButton = event.target.closest('[data-material-refresh-insight]');
         if (refreshInsightButton) {
           renderMaterials();
+          return;
+        }
+
+        var summaryActionButton = event.target.closest('[data-material-summary-action]');
+        if (summaryActionButton) {
+          handleMaterialSummaryClick_(event);
           return;
         }
 
