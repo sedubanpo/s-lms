@@ -7,7 +7,9 @@
     <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
       :root {
         --bg: #e5edf9;
@@ -47,7 +49,7 @@
       }
 
       body {
-        font-family: 'Noto Sans KR', sans-serif;
+        font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
         color: var(--text);
         background:
           radial-gradient(circle at 14% 18%, rgba(15, 183, 194, 0.14), transparent 24%),
@@ -225,99 +227,108 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 24px;
+        padding: 48px 32px;
+        background: #eef3f8;
       }
 
       .login-stage {
-        width: min(1100px, 100%);
-        min-height: min(720px, calc(100vh - 48px));
+        width: min(1520px, 100%);
+        min-height: min(860px, calc(100vh - 96px));
         display: grid;
-        grid-template-columns: 1.08fr 0.92fr;
-        border-radius: 34px;
+        grid-template-columns: 52fr 48fr;
+        border-radius: 8px;
         overflow: hidden;
+        background: #ffffff;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        box-shadow: 0 22px 60px rgba(15, 23, 42, 0.12);
       }
 
       .login-story {
-        padding: 34px;
-        background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
-          linear-gradient(135deg, rgba(9, 25, 63, 0.95), rgba(23, 63, 166, 0.9));
+        padding: 88px 96px;
+        background: #073887;
         color: #fff;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: center;
       }
 
       .story-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 10px 14px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.12);
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        font-size: 0.84rem;
-        font-weight: 700;
+        display: none;
+      }
+
+      .story-brand {
+        max-width: 520px;
       }
 
       .story-brand img {
-        width: 76px;
-        height: 76px;
-        border-radius: 22px;
-        padding: 10px;
-        background: rgba(255, 255, 255, 0.94);
-        box-shadow: 0 20px 40px rgba(4, 9, 26, 0.24);
+        width: 118px;
+        height: 118px;
+        border-radius: 8px;
+        padding: 14px;
+        background: #ffffff;
+        box-shadow: none;
       }
 
       .story-brand h1 {
-        margin: 22px 0 12px;
-        font-size: clamp(2.1rem, 4vw, 3.5rem);
+        margin: 48px 0 14px;
+        font-size: clamp(3.4rem, 5vw, 5rem);
         line-height: 1.02;
-        letter-spacing: -0.05em;
+        letter-spacing: 0;
       }
 
       .story-brand p {
         margin: 0;
-        max-width: 470px;
-        font-size: 1rem;
-        line-height: 1.72;
-        color: rgba(230, 238, 255, 0.9);
+        max-width: 520px;
+        font-size: 1.12rem;
+        font-weight: 700;
+        line-height: 1.5;
+        color: rgba(239, 246, 255, 0.94);
       }
 
-      .story-metrics {
+      .story-lines {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+        margin-top: 52px;
+        padding-top: 34px;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .story-line {
+        display: flex;
+        align-items: center;
         gap: 14px;
+        color: rgba(255, 255, 255, 0.94);
+        font-size: 1.02rem;
+        font-weight: 800;
       }
 
-      .story-card {
-        padding: 18px;
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.12);
+      .story-line i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        color: rgba(255, 255, 255, 0.92);
       }
 
-      .story-card strong {
-        display: block;
-        margin-top: 10px;
-        font-size: 1.28rem;
-        letter-spacing: -0.04em;
-      }
-
-      .story-card span {
-        font-size: 0.84rem;
-        color: rgba(231, 239, 255, 0.88);
+      .story-line svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
       }
 
       .login-access {
-        padding: 36px;
+        padding: 88px 94px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(251, 253, 255, 0.78);
+        background: #ffffff;
       }
 
       .access-panel {
-        width: min(430px, 100%);
+        width: min(560px, 100%);
       }
 
       .eyebrow {
@@ -330,24 +341,153 @@
       }
 
       .access-panel h2 {
-        margin: 12px 0 8px;
-        font-size: 2.1rem;
-        letter-spacing: -0.05em;
+        margin: 0 0 12px;
+        font-size: 3rem;
+        letter-spacing: 0;
         line-height: 1.08;
       }
 
       .access-panel p {
-        margin: 0 0 18px;
-        line-height: 1.75;
+        margin: 0 0 32px;
+        line-height: 1.6;
         color: var(--text-soft);
+      }
+
+      .login-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        margin-bottom: 28px;
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: #ffffff;
+      }
+
+      .login-mark img {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+      }
+
+      .login-password-wrap {
+        position: relative;
+      }
+
+      .login-password-wrap .field-input {
+        padding-right: 52px;
+      }
+
+      .password-toggle-button {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        color: #475569;
+        background: transparent;
+        transform: translateY(-50%);
+      }
+
+      .password-toggle-button:hover {
+        background: rgba(15, 23, 42, 0.06);
+      }
+
+      .password-toggle-button svg {
+        width: 19px;
+        height: 19px;
+      }
+
+      .login-options {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-top: -2px;
+        font-size: 0.9rem;
+      }
+
+      .login-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #475569;
+        font-weight: 700;
+      }
+
+      .login-check input {
+        width: 18px;
+        height: 18px;
+        accent-color: #0b4bb3;
+      }
+
+      .login-link-button {
+        padding: 0;
+        color: #0b4bb3;
+        background: transparent;
+        font-weight: 800;
+      }
+
+      .login-help {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 42px;
+        padding-top: 24px;
+        border-top: 1px solid rgba(148, 163, 184, 0.3);
+        color: #64748b;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      .login-help svg {
+        width: 20px;
+        height: 20px;
+        color: #475569;
+      }
+
+      .login-access .field-input {
+        min-height: 58px;
+        border-radius: 8px;
+        background: #ffffff;
+        box-shadow: none;
+      }
+
+      .login-access .field-input:focus {
+        transform: none;
+        box-shadow: 0 0 0 3px rgba(11, 75, 179, 0.12);
+      }
+
+      .login-access .button-primary {
+        min-height: 60px;
+        border-radius: 8px;
+        background: #0b4bb3;
+        box-shadow: none;
+        font-size: 1rem;
+      }
+
+      .login-access .button-primary:hover {
+        background: #083d94;
+        transform: none;
+        box-shadow: none;
       }
 
       .notice-bar {
         padding: 13px 16px;
-        border-radius: 16px;
+        border-radius: 8px;
         border: 1px solid transparent;
         font-size: 0.9rem;
         font-weight: 700;
+      }
+
+      .login-access .notice-bar {
+        margin-bottom: 18px !important;
+        border-radius: 8px;
       }
 
       .notice-info {
@@ -4204,7 +4344,7 @@
         }
 
         .login-scene {
-          padding: 14px;
+          padding: 18px;
         }
 
         .login-stage {
@@ -4214,7 +4354,22 @@
 
         .login-story,
         .login-access {
-          padding: 22px;
+          padding: 34px 24px;
+        }
+
+        .story-brand img {
+          width: 82px;
+          height: 82px;
+        }
+
+        .story-brand h1 {
+          margin-top: 28px;
+          font-size: 2.8rem;
+        }
+
+        .story-lines {
+          margin-top: 32px;
+          padding-top: 24px;
         }
 
         .story-metrics {
@@ -4353,53 +4508,64 @@
     </div>
 
     <section id="loginScreen" class="login-scene">
-      <div class="login-stage glass-panel">
+      <div class="login-stage">
         <section class="login-story">
-          <div>
-            <div class="story-badge">Premium Learning Dashboard</div>
-            <div class="story-brand" style="margin-top:22px;">
-              <img id="loginLogo" src="https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png" alt="S-LMS 로고">
-              <h1 id="loginTitle">S-LMS (에스-엘엠에스)</h1>
-              <p>학생 관리, 티칭로그, 권한 제어, 자료 공유를 하나의 운영 대시보드에서 연결하는 학원 전용 SaaS 스타일 워크스페이스입니다.</p>
-            </div>
+          <div class="story-brand">
+            <img id="loginLogo" src="https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png" alt="S-LMS 로고">
+            <h1 id="loginTitle">S-LMS</h1>
+            <p>학원 운영을 정확하게 연결하는 관리 시스템</p>
           </div>
-          <div class="story-metrics">
-            <div class="story-card">
-              <span>학생 데이터</span>
-              <strong>등록 상태 기반 동기화</strong>
+          <div class="story-lines">
+            <div class="story-line">
+              <i data-lucide="user-round"></i>
+              <span>학생 정보와 수업 기록</span>
             </div>
-            <div class="story-card">
-              <span>강사 권한</span>
-              <strong>허용된 학생만 열람</strong>
+            <div class="story-line">
+              <i data-lucide="refresh-cw"></i>
+              <span>보강·결석 흐름 추적</span>
             </div>
-            <div class="story-card">
-              <span>티칭로그</span>
-              <strong>태그 기반 관리</strong>
-            </div>
-            <div class="story-card">
-              <span>자료 아카이브</span>
-              <strong>학교/년도/과목 검색</strong>
+            <div class="story-line">
+              <i data-lucide="calendar-days"></i>
+              <span>학교 일정과 내신 자료 관리</span>
             </div>
           </div>
         </section>
 
         <section class="login-access">
           <div class="access-panel">
-            <span class="eyebrow">Secure Login</span>
-            <h2>강사 계정 접속</h2>
-            <p>등록된 휴대전화 번호로 로그인합니다. 휴대전화 번호는 하이픈 없이 입력해도 되고, 뒤 8자리만 입력해도 접속할 수 있습니다. 비밀번호가 설정되지 않은 계정은 휴대전화 번호와 동일하게 로그인됩니다.</p>
-            <div id="loginNoticeBar" class="notice-bar notice-info hidden" style="margin-bottom:16px;"></div>
+            <div class="login-mark">
+              <img id="loginFormLogo" src="https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png" alt="S-LMS 로고">
+            </div>
+            <h2>로그인</h2>
+            <p>등록된 계정으로 S-LMS에 접속하세요.</p>
+            <div id="loginNoticeBar" class="notice-bar notice-error hidden" style="margin-bottom:16px;">아이디 또는 비밀번호를 확인해 주세요.</div>
             <form id="loginForm" class="form-grid">
               <div class="field-shell">
                 <label class="field-label" for="userIdInput">아이디</label>
-                <input id="userIdInput" class="field-input" type="text" placeholder="휴대전화 번호 또는 뒤 8자리">
+                <input id="userIdInput" class="field-input" type="text" placeholder="휴대폰 번호 또는 아이디" autocomplete="username">
               </div>
               <div class="field-shell">
                 <label class="field-label" for="passwordInput">비밀번호</label>
-                <input id="passwordInput" class="field-input" type="password" placeholder="비밀번호 또는 휴대전화 번호">
+                <div class="login-password-wrap">
+                  <input id="passwordInput" class="field-input" type="password" placeholder="비밀번호" autocomplete="current-password">
+                  <button id="passwordToggleButton" class="password-toggle-button" type="button" aria-label="비밀번호 보기">
+                    <i data-lucide="eye-off"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="login-options">
+                <label class="login-check" for="rememberIdInput">
+                  <input id="rememberIdInput" type="checkbox">
+                  <span>아이디 저장</span>
+                </label>
+                <button id="forgotPasswordButton" class="login-link-button" type="button">비밀번호 찾기</button>
               </div>
               <button type="submit" class="button-primary">로그인</button>
             </form>
+            <div class="login-help">
+              <i data-lucide="headphones"></i>
+              <span>접속 권한은 관리자에게 문의하세요.</span>
+            </div>
           </div>
         </section>
       </div>
@@ -5085,6 +5251,7 @@
       const SESSION_STORAGE_KEY = 'slms_api_session';
       const DASHBOARD_CACHE_KEY = 'slms_dashboard_snapshot';
       const DASHBOARD_CACHE_MAX_AGE_MS = 1000 * 60 * 15;
+      const LOGIN_ID_STORAGE_KEY = 'slms_saved_login_id';
       const LOG_TAG_OPTIONS = [
         '수업현황',
         '첫수업 정보',
@@ -5245,6 +5412,9 @@
         bindEvents();
         initializeMaterialFormOptions();
         syncBranding();
+        hydrateSavedLoginId_();
+        renderLucideIcons_();
+        window.addEventListener('load', renderLucideIcons_);
         updateHeaderClock();
         setInterval(updateHeaderClock, 1000);
         setInterval(rotateLoadingMessage, 1000);
@@ -5267,6 +5437,10 @@
 
       function bindEvents() {
         document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        document.getElementById('passwordToggleButton').addEventListener('click', handlePasswordToggle_);
+        document.getElementById('forgotPasswordButton').addEventListener('click', function() {
+          setNotice('비밀번호 재설정은 관리자에게 문의하세요.', 'info');
+        });
         document.getElementById('logoutButton').addEventListener('click', handleLogout);
         document.getElementById('topLogoutButton').addEventListener('click', handleLogout);
         document.getElementById('refreshButton').addEventListener('click', refreshDashboard);
@@ -5391,10 +5565,48 @@
       }
 
       function syncBranding() {
-        document.getElementById('loginTitle').textContent = APP_STATE.appName;
+        document.getElementById('loginTitle').textContent = 'S-LMS';
         document.getElementById('sidebarTitle').textContent = APP_STATE.appName;
         document.getElementById('loginLogo').src = APP_STATE.logoUrl;
+        document.getElementById('loginFormLogo').src = APP_STATE.logoUrl;
         document.getElementById('sidebarLogo').src = APP_STATE.logoUrl;
+        renderLucideIcons_();
+      }
+
+      function renderLucideIcons_() {
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          window.lucide.createIcons();
+        }
+      }
+
+      function hydrateSavedLoginId_() {
+        var savedId = window.localStorage ? (localStorage.getItem(LOGIN_ID_STORAGE_KEY) || '') : '';
+        if (!savedId) {
+          return;
+        }
+        document.getElementById('userIdInput').value = savedId;
+        document.getElementById('rememberIdInput').checked = true;
+      }
+
+      function persistSavedLoginId_(userId) {
+        if (!window.localStorage) {
+          return;
+        }
+        if (document.getElementById('rememberIdInput').checked && userId) {
+          localStorage.setItem(LOGIN_ID_STORAGE_KEY, userId);
+          return;
+        }
+        localStorage.removeItem(LOGIN_ID_STORAGE_KEY);
+      }
+
+      function handlePasswordToggle_() {
+        var input = document.getElementById('passwordInput');
+        var button = document.getElementById('passwordToggleButton');
+        var shouldShow = input.type === 'password';
+        input.type = shouldShow ? 'text' : 'password';
+        button.setAttribute('aria-label', shouldShow ? '비밀번호 숨기기' : '비밀번호 보기');
+        button.innerHTML = '<i data-lucide="' + (shouldShow ? 'eye' : 'eye-off') + '"></i>';
+        renderLucideIcons_();
       }
 
       function updateHeaderClock() {
@@ -5579,6 +5791,7 @@
             APP_STATE.user = result.user || null;
             APP_STATE.appName = result.appName || APP_STATE.appName;
             APP_STATE.logoUrl = result.logoUrl || APP_STATE.logoUrl;
+            persistSavedLoginId_(userId);
             writeStoredSession();
             syncBranding();
             showAppOnly();
@@ -5590,7 +5803,7 @@
               setNotice('로그인은 되었지만 초기 데이터 동기화 중 문제가 발생했습니다. 실시간 동기화로 다시 시도해주세요.', 'warning');
               return;
             }
-            handleApiError_(error);
+            setNotice('아이디 또는 비밀번호를 확인해 주세요.', 'error');
           })
           .finally(clearLoading);
       }
