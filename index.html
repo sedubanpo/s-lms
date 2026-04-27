@@ -5839,11 +5839,11 @@
 
       .material-nav-school {
         display: grid;
-        gap: 7px;
-        padding: 9px 10px;
+        gap: 8px;
+        padding: 0;
         border: 1px solid transparent;
         border-radius: 8px;
-        background: #f8fafc;
+        background: #fff;
       }
 
       .material-nav-school.active {
@@ -5852,12 +5852,61 @@
         box-shadow: inset 3px 0 0 #0b55d9;
       }
 
-      .material-nav-school button {
-        padding: 0;
+      .material-nav-school.expanded {
+        border-color: #d8e3f4;
+        background: #f8fbff;
+      }
+
+      .material-nav-school-head {
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        width: 100%;
+        min-height: 44px;
+        padding: 8px 10px;
         background: transparent;
         color: #0f172a;
         text-align: left;
         font-weight: 900;
+      }
+
+      .material-nav-school-head svg {
+        width: 16px;
+        height: 16px;
+        color: #64748b;
+      }
+
+      .material-nav-school-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .material-nav-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 24px;
+        min-width: 46px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 900;
+      }
+
+      .material-nav-school.expanded .material-nav-count,
+      .material-nav-school.active .material-nav-count {
+        background: #eaf2ff;
+        color: #174ea6;
+      }
+
+      .material-nav-details {
+        display: grid;
+        gap: 10px;
+        padding: 0 10px 10px 32px;
       }
 
       .material-nav-meta {
@@ -5892,26 +5941,42 @@
       }
 
       .material-nav-years {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
+        display: grid;
+        gap: 7px;
       }
 
       .material-nav-year {
-        min-height: 24px;
-        padding: 0 8px;
-        border-radius: 999px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        min-height: 36px;
+        padding: 0 10px;
+        border-radius: 8px;
         background: #fff;
         border: 1px solid #d8e3f4;
         color: #475569;
-        font-size: 0.7rem;
-        font-weight: 800;
+        font-size: 0.78rem;
+        font-weight: 900;
+        text-align: left;
+      }
+
+      .material-nav-year .material-count-badge {
+        min-height: 22px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
       }
 
       .material-nav-year.active {
         background: #0b55d9;
         color: #fff;
         border-color: #0b55d9;
+      }
+
+      .material-nav-year.active .material-count-badge {
+        background: rgba(255, 255, 255, 0.18);
+        border-color: rgba(255, 255, 255, 0.25);
+        color: #fff;
       }
 
       .material-group-head {
@@ -5996,9 +6061,12 @@
       }
 
       .material-dense-table th:nth-child(1),
-      .material-dense-table td:nth-child(1) { width: 74px; }
+      .material-dense-table td:nth-child(1) {
+        width: 118px;
+        overflow: visible;
+      }
       .material-dense-table th:nth-child(2),
-      .material-dense-table td:nth-child(2) { width: 92px; }
+      .material-dense-table td:nth-child(2) { width: 98px; }
       .material-dense-table th:nth-child(3),
       .material-dense-table td:nth-child(3) { width: 86px; }
       .material-dense-table th:nth-child(4),
@@ -6006,13 +6074,9 @@
       .material-dense-table th:nth-child(5),
       .material-dense-table td:nth-child(5) { width: 118px; }
       .material-dense-table th:nth-child(7),
-      .material-dense-table td:nth-child(7) { width: 108px; }
+      .material-dense-table td:nth-child(7) { width: 150px; }
       .material-dense-table th:nth-child(8),
-      .material-dense-table td:nth-child(8) { width: 82px; }
-      .material-dense-table th:nth-child(9),
-      .material-dense-table td:nth-child(9) { width: 70px; }
-      .material-dense-table th:nth-child(10),
-      .material-dense-table td:nth-child(10) { width: 116px; }
+      .material-dense-table td:nth-child(8) { width: 74px; }
 
       .material-title-button {
         display: grid;
@@ -6062,8 +6126,9 @@
       }
 
       .material-school-cell strong {
-        overflow: hidden;
-        text-overflow: ellipsis;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: nowrap;
       }
 
       .material-gold-marker {
@@ -6129,8 +6194,10 @@
       }
 
       .material-action-group {
-        display: inline-flex;
+        display: grid;
+        grid-template-columns: repeat(2, 28px);
         align-items: center;
+        justify-content: start;
         gap: 4px;
         white-space: nowrap;
       }
@@ -12952,7 +13019,7 @@
         return [
           '<div class="student-index-table-wrap">',
           '<table class="material-dense-table">',
-          '<thead><tr><th>학교</th><th>학년·학기</th><th>시험</th><th>과목</th><th>자료유형</th><th>파일명/설명</th><th>태그</th><th>등록일</th><th>등록자</th><th>작업</th></tr></thead>',
+          '<thead><tr><th>학교</th><th>학년·학기</th><th>시험</th><th>과목</th><th>자료유형</th><th>파일명/설명</th><th>태그</th><th>작업</th></tr></thead>',
           '<tbody>',
           items.slice().sort(compareMaterialRows_).map(function(item) {
             var isGold = isExamScopeMaterial_(item);
@@ -12966,8 +13033,6 @@
               '<td>' + renderMaterialTypeBadge_(getMaterialPrimaryTypeLabel_(item)) + '</td>',
               '<td class="material-title-cell"><button type="button" class="material-title-button" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link || '') + '"><strong>' + escapeHtml(buildMaterialDisplayTitle_(item)) + '</strong><span>' + escapeHtml(titleHint) + '</span></button></td>',
               '<td><div class="chip-row">' + renderMaterialTagPills_(item) + '</div></td>',
-              '<td>' + escapeHtml(formatMaterialDate_(item.createdAt || item.updatedAt || item.year || '-')) + '</td>',
-              '<td>' + escapeHtml(item.createdBy || item.updatedBy || '-') + '</td>',
               '<td>' + renderMaterialActionButtons_(item) + '</td>',
               '</tr>'
             ].join('');
@@ -13001,21 +13066,30 @@
           return '<div class="empty-state">탐색할 학교 자료가 없습니다.</div>';
         }
         var selectedSchool = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value || '';
+        var expandedSchool = selectedSchool || schools[0] || '';
         var totalSchools = getVisibleMaterialSchools_(APP_STATE.materials).length;
         return schools.map(function(school) {
           var schoolItems = source.filter(function(item) { return item.school === school; });
           var recentCount = schoolItems.filter(isRecentMaterial_).length;
           var scopeCount = schoolItems.filter(isExamScopeMaterial_).length;
           var years = getVisibleMaterialYears_(school, schoolItems).slice(0, 4);
+          var isExpanded = school === expandedSchool;
           return [
-            '<div class="material-nav-school ' + (selectedSchool === school ? 'active' : '') + '">',
-            '<button type="button" data-material-school="' + escapeAttribute(school) + '">' + escapeHtml(school) + '</button>',
-            '<div class="material-nav-meta"><span>자료 ' + escapeHtml(String(schoolItems.length)) + '</span><span>최근 ' + escapeHtml(String(recentCount)) + '</span><span class="scope">범위 ' + escapeHtml(String(scopeCount)) + '</span></div>',
+            '<div class="material-nav-school ' + (selectedSchool === school ? 'active ' : '') + (isExpanded ? 'expanded' : '') + '">',
+            '<button type="button" class="material-nav-school-head" data-material-school="' + escapeAttribute(school) + '"><i data-lucide="' + (isExpanded ? 'chevron-down' : 'chevron-right') + '"></i><span class="material-nav-school-name">' + escapeHtml(school) + '</span><span class="material-nav-count">자료 ' + escapeHtml(String(schoolItems.length)) + '</span></button>',
+            isExpanded ? [
+            '<div class="material-nav-details">',
+            '<div class="material-nav-meta"><span>최근 ' + escapeHtml(String(recentCount)) + '</span><span class="scope">범위 ' + escapeHtml(String(scopeCount)) + '</span></div>',
             '<div class="material-nav-years">' + years.map(function(year) {
               var activeYear = selectedSchool === school ? APP_STATE.selectedMaterialYearTab : (APP_STATE.materialYearTabsBySchool[school] || '');
               var isActive = String(activeYear || '') === String(year || '');
-              return '<button type="button" class="material-nav-year ' + (isActive ? 'active' : '') + '" data-material-school-year="' + escapeAttribute(year) + '" data-material-school-name="' + escapeAttribute(school) + '">' + escapeHtml(year) + '년</button>';
+              var count = schoolItems.filter(function(item) {
+                return String(item.year || '') === String(year || '');
+              }).length;
+              return '<button type="button" class="material-nav-year ' + (isActive ? 'active' : '') + '" data-material-school-year="' + escapeAttribute(year) + '" data-material-school-name="' + escapeAttribute(school) + '"><span>' + escapeHtml(year) + '년</span><span class="material-count-badge">' + escapeHtml(String(count)) + '</span></button>';
             }).join('') + '</div>',
+            '</div>'
+            ].join('') : '',
             '</div>'
           ].join('');
         }).join('') + '<div class="material-nav-footer"><button type="button" class="material-chip-button" data-material-school="">전체 학교 보기 (' + escapeHtml(String(totalSchools)) + '개)</button></div>';
