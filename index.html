@@ -6556,7 +6556,7 @@
       const LOGO_URL = 'https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png';
       const SESSION_STORAGE_KEY = 'slms_api_session';
       const DASHBOARD_CACHE_KEY = 'slms_dashboard_snapshot';
-      const DASHBOARD_CACHE_MAX_AGE_MS = 1000 * 60 * 15;
+      const DASHBOARD_CACHE_MAX_AGE_MS = 1000 * 60 * 60;
       const LOGIN_ID_STORAGE_KEY = 'slms_saved_login_id';
       const LOG_TAG_OPTIONS = [
         '수업현황',
@@ -7310,9 +7310,9 @@
               APP_STATE.materialSettings = materialData && materialData.settings ? materialData.settings : APP_STATE.materialSettings;
               APP_STATE.materialOpenLogs = materialData && materialData.openLogs ? materialData.openLogs : [];
               APP_STATE.materialsLoaded = true;
+              writeDashboardSnapshot_();
               if (!config.silent) {
                 renderMaterials();
-                writeDashboardSnapshot_();
               }
             })
             .finally(function() {
@@ -7335,9 +7335,9 @@
             .then(function(eventData) {
               APP_STATE.events = eventData && eventData.events ? eventData.events : [];
               APP_STATE.eventsLoaded = true;
+              writeDashboardSnapshot_();
               if (!config.silent) {
                 renderEvents();
-                writeDashboardSnapshot_();
               }
             })
             .finally(function() {
@@ -13598,15 +13598,16 @@
         if (viewName === 'students') {
           ensureViewDataLoaded_('materials', { silent: true }).then(function() {
             renderStudents();
-          }).catch(function() {});
-          ensureViewDataLoaded_('events', { silent: true }).then(function() {
+            return ensureViewDataLoaded_('events', { silent: true });
+          }).then(function() {
+            renderStudents();
+            if (!APP_STATE.isAdmin) {
+              return null;
+            }
+            return ensureViewDataLoaded_('jikbo', { silent: true });
+          }).then(function() {
             renderStudents();
           }).catch(function() {});
-          if (APP_STATE.isAdmin) {
-            ensureViewDataLoaded_('jikbo', { silent: true }).then(function() {
-              renderStudents();
-            }).catch(function() {});
-          }
         }
       }
 
