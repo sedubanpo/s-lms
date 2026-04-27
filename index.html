@@ -6828,9 +6828,12 @@
         materialYearTabsBySchool: {},
         editingMaterialRowNumber: '',
         materialOpenLogs: [],
+        materialOpenLogsLoaded: false,
+        materialOpenLogsLoading: false,
         isMaterialOpenLogsCollapsed: true,
         events: [],
         eventSearchKeyword: '',
+        isEventSearchComposing: false,
         editingEventRowNumber: '',
         isEventEditorOpen: false,
         jikboPanelMode: 'board',
@@ -6847,12 +6850,14 @@
         jikboLoaded: false,
         jikboLoading: false,
         jikboSearchKeyword: '',
+        isJikboSearchComposing: false,
         selectedJikboStatusKey: '',
         jikboCalendarYear: new Date().getFullYear(),
         jikboCalendarMonth: new Date().getMonth(),
         selectedJikboSummaryPanel: '',
         materialsLoaded: false,
         eventsLoaded: false,
+        pendingStudentRenderAfterComposition: false,
         materialsLoading: false,
         eventsLoading: false,
         isAddingStudent: false,
@@ -6960,6 +6965,7 @@
         document.getElementById('globalSearchInput').addEventListener('compositionend', function(event) {
           APP_STATE.isStudentSearchComposing = false;
           handleGlobalStudentSearch_(event);
+          flushPendingStudentRenderAfterComposition_();
         });
         document.getElementById('globalSearchInput').addEventListener('input', handleGlobalStudentSearch_);
         document.getElementById('studentViewToggle').addEventListener('click', handleStudentViewModeClick_);
@@ -6978,6 +6984,7 @@
           if (event.target.closest('[data-student-filter-input]')) {
             APP_STATE.isStudentSearchComposing = false;
             handleStudentListInput_(event);
+            flushPendingStudentRenderAfterComposition_();
           }
         });
         document.getElementById('view-events').addEventListener('click', handleEventsViewClick);
@@ -7028,8 +7035,16 @@
         document.getElementById('materialSettingsModal').addEventListener('click', handleMaterialSettingsBackdropClick);
         document.getElementById('materialSettingsModal').addEventListener('click', handleMaterialSettingsSaveClick);
         document.getElementById('eventForm').addEventListener('submit', handleEventSave);
+        document.getElementById('eventSearchInput').addEventListener('compositionstart', function() {
+          APP_STATE.isEventSearchComposing = true;
+        });
+        document.getElementById('eventSearchInput').addEventListener('compositionend', handleEventSearchCompositionEnd_);
         document.getElementById('eventSearchInput').addEventListener('input', handleEventSearchInput_);
         document.getElementById('jikboPanelTabs').addEventListener('click', handleJikboPanelTabClick_);
+        document.getElementById('jikboSearchInput').addEventListener('compositionstart', function() {
+          APP_STATE.isJikboSearchComposing = true;
+        });
+        document.getElementById('jikboSearchInput').addEventListener('compositionend', handleJikboSearchCompositionEnd_);
         document.getElementById('jikboSearchInput').addEventListener('input', handleJikboSearchInput_);
         document.getElementById('jikboSubjectForm').addEventListener('submit', handleJikboSubjectSave_);
         document.getElementById('cancelJikboSubjectEditButton').addEventListener('click', clearJikboSubjectEditMode_);
@@ -7239,7 +7254,6 @@
           },
           materials: APP_STATE.materials,
           materialSettings: APP_STATE.materialSettings,
-          materialOpenLogs: APP_STATE.materialOpenLogs,
           events: APP_STATE.events,
           materialsLoaded: APP_STATE.materialsLoaded,
           eventsLoaded: APP_STATE.eventsLoaded
@@ -7258,7 +7272,8 @@
         hydrateStudentDataOnly(snapshot.studentData || {});
         APP_STATE.materials = snapshot.materials || [];
         APP_STATE.materialSettings = snapshot.materialSettings || APP_STATE.materialSettings;
-        APP_STATE.materialOpenLogs = snapshot.materialOpenLogs || [];
+        APP_STATE.materialOpenLogs = [];
+        APP_STATE.materialOpenLogsLoaded = false;
         APP_STATE.events = snapshot.events || [];
         APP_STATE.materialsLoaded = Boolean(snapshot.materialsLoaded);
         APP_STATE.eventsLoaded = Boolean(snapshot.eventsLoaded);
@@ -7428,7 +7443,10 @@
         APP_STATE.homeroomAssignments = studentData.homeroomAssignments || [];
         APP_STATE.materials = materialData && materialData.materials ? materialData.materials : APP_STATE.materials;
         APP_STATE.materialSettings = materialData && materialData.settings ? materialData.settings : APP_STATE.materialSettings;
-        APP_STATE.materialOpenLogs = materialData && materialData.openLogs ? materialData.openLogs : APP_STATE.materialOpenLogs;
+        if (materialData && materialData.openLogs) {
+          APP_STATE.materialOpenLogs = materialData.openLogs || [];
+          APP_STATE.materialOpenLogsLoaded = true;
+        }
         APP_STATE.materialsLoaded = APP_STATE.materialsLoaded || Boolean(materialData);
         APP_STATE.materialYearTabsBySchool = {};
         APP_STATE.editingMaterialRowNumber = '';
@@ -7482,7 +7500,10 @@
             .then(function(materialData) {
               APP_STATE.materials = materialData && materialData.materials ? materialData.materials : [];
               APP_STATE.materialSettings = materialData && materialData.settings ? materialData.settings : APP_STATE.materialSettings;
-              APP_STATE.materialOpenLogs = materialData && materialData.openLogs ? materialData.openLogs : [];
+              if (materialData && materialData.openLogs) {
+                APP_STATE.materialOpenLogs = materialData.openLogs || [];
+                APP_STATE.materialOpenLogsLoaded = true;
+              }
               APP_STATE.materialsLoaded = true;
               writeDashboardSnapshot_();
               if (!config.silent) {
@@ -7701,6 +7722,25 @@
             b.studentId || ''
           ].join('|'));
         });
+      }
+
+      function renderStudentsAfterBackgroundDataChange_() {
+        if (APP_STATE.currentView !== 'students') {
+          return;
+        }
+        if (APP_STATE.isStudentSearchComposing) {
+          APP_STATE.pendingStudentRenderAfterComposition = true;
+          return;
+        }
+        renderStudents();
+      }
+
+      function flushPendingStudentRenderAfterComposition_() {
+        if (!APP_STATE.pendingStudentRenderAfterComposition || APP_STATE.isStudentSearchComposing) {
+          return;
+        }
+        APP_STATE.pendingStudentRenderAfterComposition = false;
+        renderStudents();
       }
 
       function renderStudents() {
@@ -9237,7 +9277,6 @@
       function handleHomeroomTeacherSearchCompositionEnd_(event) {
         APP_STATE.isHomeroomTeacherComposing = false;
         handleHomeroomTeacherSearchInput_(event);
-        handleHomeroomTeacherSearchCommit_();
       }
 
       function handleHomeroomTeacherSearchKeydown_(event) {
@@ -10022,6 +10061,7 @@
             }
             if (result.openLogs) {
               APP_STATE.materialOpenLogs = result.openLogs || [];
+              APP_STATE.materialOpenLogsLoaded = true;
             }
             document.getElementById('materialForm').reset();
             initializeMaterialFormOptions();
@@ -10111,6 +10151,7 @@
             APP_STATE.materials = result.materials || [];
             if (result.openLogs) {
               APP_STATE.materialOpenLogs = result.openLogs || [];
+              APP_STATE.materialOpenLogsLoaded = true;
             }
             if (String(APP_STATE.editingMaterialRowNumber || '') === String(row)) {
               clearMaterialEditMode_();
@@ -10579,6 +10620,15 @@
 
       function handleJikboSearchInput_(event) {
         APP_STATE.jikboSearchKeyword = event.target.value || '';
+        if (APP_STATE.isJikboSearchComposing || event.isComposing) {
+          return;
+        }
+        renderJikboBoard_();
+      }
+
+      function handleJikboSearchCompositionEnd_(event) {
+        APP_STATE.isJikboSearchComposing = false;
+        APP_STATE.jikboSearchKeyword = event.target.value || '';
         renderJikboBoard_();
       }
 
@@ -10670,7 +10720,7 @@
         var monthLabel = formatCalendarMonthLabel_(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth);
         document.getElementById('jikboMonthTitle').textContent = monthLabel + ' 직보 보드';
         document.getElementById('jikboMonthDescription').textContent = '주요일정의 시험 이벤트를 읽어 학교와 학년별 직보 배정을 월간 표로 정리합니다.';
-        document.getElementById('jikboSearchInput').value = APP_STATE.jikboSearchKeyword || '';
+        setInputValueIfNotActive_('jikboSearchInput', APP_STATE.jikboSearchKeyword || '');
         APP_STATE.jikboStatusDraftMap = {};
 
         if (APP_STATE.jikboLoading && !APP_STATE.jikboLoaded) {
@@ -12143,6 +12193,15 @@
 
       function handleEventSearchInput_(event) {
         APP_STATE.eventSearchKeyword = event.target.value || '';
+        if (APP_STATE.isEventSearchComposing || event.isComposing) {
+          return;
+        }
+        renderEvents();
+      }
+
+      function handleEventSearchCompositionEnd_(event) {
+        APP_STATE.isEventSearchComposing = false;
+        APP_STATE.eventSearchKeyword = event.target.value || '';
         renderEvents();
       }
 
@@ -12160,7 +12219,7 @@
         }
         document.getElementById('eventMonthTitle').textContent = monthLabel + ' 주요일정';
         document.getElementById('eventMonthDescription').textContent = '선택한 달의 일정을 달력과 목록으로 함께 확인합니다.';
-        document.getElementById('eventSearchInput').value = APP_STATE.eventSearchKeyword || '';
+        setInputValueIfNotActive_('eventSearchInput', APP_STATE.eventSearchKeyword || '');
         renderEventFormState_();
         renderEventEditorState_();
         if (APP_STATE.eventsLoading && !APP_STATE.eventsLoaded) {
@@ -12446,6 +12505,17 @@
           '-',
           String(date.getDate()).padStart(2, '0')
         ].join('');
+      }
+
+      function setInputValueIfNotActive_(inputId, value) {
+        var input = document.getElementById(inputId);
+        if (!input || document.activeElement === input) {
+          return;
+        }
+        var nextValue = String(value || '');
+        if (input.value !== nextValue) {
+          input.value = nextValue;
+        }
       }
 
       function isToday_(date) {
@@ -12927,8 +12997,7 @@
             item.materialType,
             item.fileType,
             item.note,
-            item.createdBy,
-            item.link
+            item.createdBy
           ].join(' '));
 
           var matchesKeyword = !filterState.keyword || searchText.indexOf(filterState.keyword) !== -1;
@@ -13382,6 +13451,18 @@
           return;
         }
 
+        if (APP_STATE.materialOpenLogsLoading) {
+          wrap.innerHTML = [
+            '<section class="material-open-log-shell">',
+            '  <div class="materials-coverage-head">',
+            '    <div><h4>최근 자료 열람 기록</h4><p>열람 이력을 불러오는 중입니다.</p></div>',
+            '    <button type="button" class="material-open-log-toggle" data-material-log-toggle="true" data-next-state="collapse">접기</button>',
+            '  </div>',
+            '</section>'
+          ].join('');
+          return;
+        }
+
         var logs = (APP_STATE.materialOpenLogs || []).filter(function(log) {
           return normalizeSearchText(log.openedByRole) !== 'admin' &&
             normalizeSearchText(log.openedByName) !== normalizeSearchText('에스에듀');
@@ -13395,7 +13476,7 @@
             '    <div><h4>최근 자료 열람 기록</h4><p>기본은 접힌 상태입니다. 필요할 때만 펼쳐 최근 열람 이력을 확인하세요.</p></div>',
             '    <div class="material-action-group">' + (logs.length ? '<span class="coverage-badge">최근 ' + escapeHtml(String(logs.length)) + '건</span>' : '') + '<button type="button" class="material-open-log-toggle" data-material-log-toggle="true" data-next-state="expand">펼치기</button></div>',
             '  </div>',
-            '  <div class="material-open-log-collapsed"><p>' + escapeHtml(logs.length ? '강사 열람 기록이 있습니다. 펼치면 최근 기록을 확인할 수 있습니다.' : '강사 열람 이력이 아직 없습니다.') + '</p></div>',
+            '  <div class="material-open-log-collapsed"><p>' + escapeHtml(APP_STATE.materialOpenLogsLoaded ? (logs.length ? '강사 열람 기록이 있습니다. 펼치면 최근 기록을 확인할 수 있습니다.' : '강사 열람 이력이 아직 없습니다.') : '펼치면 최근 열람 이력을 불러옵니다.') + '</p></div>',
             '</section>'
           ].join('');
           return;
@@ -13441,14 +13522,40 @@
         ].join('');
       }
 
+      function ensureMaterialOpenLogsLoaded_() {
+        if (!APP_STATE.isAdmin || APP_STATE.materialOpenLogsLoaded || APP_STATE.materialOpenLogsLoading) {
+          return Promise.resolve();
+        }
+
+        APP_STATE.materialOpenLogsLoading = true;
+        renderMaterialsOpenLogs_();
+        return apiRequest('getMaterialOpenLogs', { token: APP_STATE.token })
+          .then(function(result) {
+            APP_STATE.materialOpenLogs = result && result.openLogs ? result.openLogs : [];
+            APP_STATE.materialOpenLogsLoaded = true;
+            renderMaterialsOpenLogs_();
+          })
+          .catch(function(error) {
+            handleApiError_(error);
+          })
+          .finally(function() {
+            APP_STATE.materialOpenLogsLoading = false;
+            renderMaterialsOpenLogs_();
+          });
+      }
+
       function handleMaterialOpenLogWrapClick(event) {
         var button = event.target.closest('[data-material-log-toggle]');
         if (!button) {
           return;
         }
 
-        APP_STATE.isMaterialOpenLogsCollapsed = button.getAttribute('data-next-state') !== 'expand';
+        var isExpanding = button.getAttribute('data-next-state') === 'expand';
+        APP_STATE.isMaterialOpenLogsCollapsed = !isExpanding;
         renderMaterialsOpenLogs_();
+        if (isExpanding) {
+          ensureMaterialOpenLogsLoaded_();
+        }
       }
 
       function handleMaterialTableClick(event) {
@@ -13516,6 +13623,7 @@
         }).then(function(result) {
           if (APP_STATE.isAdmin && result && result.openLogs) {
             APP_STATE.materialOpenLogs = result.openLogs;
+            APP_STATE.materialOpenLogsLoaded = true;
             renderMaterialsOpenLogs_();
           }
         }).catch(function() {});
@@ -13771,16 +13879,16 @@
         ensureViewDataLoaded_(viewName);
         if (viewName === 'students') {
           ensureViewDataLoaded_('materials', { silent: true }).then(function() {
-            renderStudents();
+            renderStudentsAfterBackgroundDataChange_();
             return ensureViewDataLoaded_('events', { silent: true });
           }).then(function() {
-            renderStudents();
+            renderStudentsAfterBackgroundDataChange_();
             if (!APP_STATE.isAdmin) {
               return null;
             }
             return ensureViewDataLoaded_('jikbo', { silent: true });
           }).then(function() {
-            renderStudents();
+            renderStudentsAfterBackgroundDataChange_();
           }).catch(function() {});
         }
       }
@@ -13810,9 +13918,12 @@
         APP_STATE.materialYearTabsBySchool = {};
         APP_STATE.editingMaterialRowNumber = '';
         APP_STATE.materialOpenLogs = [];
+        APP_STATE.materialOpenLogsLoaded = false;
+        APP_STATE.materialOpenLogsLoading = false;
         APP_STATE.isMaterialOpenLogsCollapsed = true;
         APP_STATE.events = [];
         APP_STATE.eventSearchKeyword = '';
+        APP_STATE.isEventSearchComposing = false;
         APP_STATE.editingEventRowNumber = '';
         APP_STATE.jikboPanelMode = 'board';
         APP_STATE.jikboSubjectDefinitions = [];
@@ -13821,6 +13932,8 @@
         APP_STATE.jikboScheduleStatuses = [];
         APP_STATE.jikboStatusDraftMap = {};
         APP_STATE.jikboSummaryDraftMap = {};
+        APP_STATE.isJikboSearchComposing = false;
+        APP_STATE.pendingStudentRenderAfterComposition = false;
         APP_STATE.selectedJikboAssignmentKey = '';
         APP_STATE.selectedJikboStatusDraft = null;
         APP_STATE.editingJikboSubjectRowNumber = '';
