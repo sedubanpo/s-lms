@@ -5508,6 +5508,14 @@
         margin-top: 12px;
       }
 
+      .material-library-layout.mode-list {
+        grid-template-columns: minmax(0, 1fr) 320px;
+      }
+
+      .material-library-layout.mode-list .material-navigator {
+        display: none;
+      }
+
       .material-navigator,
       .material-list-panel,
       .material-insight-panel {
@@ -5609,6 +5617,7 @@
         width: 100%;
         border-collapse: collapse;
         font-size: 0.78rem;
+        table-layout: fixed;
       }
 
       .material-dense-table th,
@@ -5617,6 +5626,11 @@
         border-bottom: 1px solid #edf2f7;
         vertical-align: middle;
         text-align: left;
+        line-height: 1.35;
+        white-space: nowrap;
+        word-break: keep-all;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .material-dense-table th {
@@ -5635,15 +5649,54 @@
         box-shadow: inset 3px 0 0 #d6a531;
       }
 
+      .material-dense-table th:nth-child(1),
+      .material-dense-table td:nth-child(1) { width: 74px; }
+      .material-dense-table th:nth-child(2),
+      .material-dense-table td:nth-child(2) { width: 92px; }
+      .material-dense-table th:nth-child(3),
+      .material-dense-table td:nth-child(3) { width: 86px; }
+      .material-dense-table th:nth-child(4),
+      .material-dense-table td:nth-child(4) { width: 92px; }
+      .material-dense-table th:nth-child(5),
+      .material-dense-table td:nth-child(5) { width: 118px; }
+      .material-dense-table th:nth-child(7),
+      .material-dense-table td:nth-child(7) { width: 108px; }
+      .material-dense-table th:nth-child(8),
+      .material-dense-table td:nth-child(8) { width: 82px; }
+      .material-dense-table th:nth-child(9),
+      .material-dense-table td:nth-child(9) { width: 70px; }
+      .material-dense-table th:nth-child(10),
+      .material-dense-table td:nth-child(10) { width: 116px; }
+
+      .material-title-button {
+        display: grid;
+        gap: 2px;
+        width: 100%;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        text-align: left;
+      }
+
       .material-title-cell strong {
         display: block;
         color: #0f172a;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        word-break: keep-all;
       }
 
       .material-title-cell span {
         display: block;
         margin-top: 3px;
         color: #64748b;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        word-break: keep-all;
       }
 
       .material-scope-badge {
@@ -5682,6 +5735,13 @@
         height: 15px;
       }
 
+      .material-action-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+      }
+
       .material-card-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -5698,11 +5758,26 @@
 
       .insight-bar-row {
         display: grid;
-        grid-template-columns: 76px minmax(0, 1fr) 42px;
+        grid-template-columns: minmax(78px, 1fr) minmax(72px, 1.3fr) 48px;
         gap: 8px;
         align-items: center;
+        width: 100%;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: #0f172a;
+        text-align: left;
         font-size: 0.74rem;
         font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .insight-bar-row > span:first-child,
+      .insight-bar-row > strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .insight-track {
@@ -6572,6 +6647,7 @@
         selectedMaterialSchoolTab: '',
         selectedMaterialYearTab: '',
         materialPanelMode: 'group',
+        materialQuickFilter: '',
         materialCreateOpen: false,
         isMaterialSearchComposing: false,
         isStudentSearchComposing: false,
@@ -6801,22 +6877,42 @@
         document.getElementById('materialSchoolFilter').addEventListener('change', function(event) {
           APP_STATE.selectedMaterialSchoolTab = event.target.value || '';
           APP_STATE.selectedMaterialYearTab = '';
+          APP_STATE.materialQuickFilter = '';
           document.getElementById('materialYearFilter').value = '';
           renderMaterials();
         });
-        document.getElementById('materialGradeFilter').addEventListener('change', renderMaterials);
-        document.getElementById('materialTermFilter').addEventListener('change', renderMaterials);
+        document.getElementById('materialGradeFilter').addEventListener('change', function() {
+          APP_STATE.materialQuickFilter = '';
+          renderMaterials();
+        });
+        document.getElementById('materialTermFilter').addEventListener('change', function() {
+          APP_STATE.materialQuickFilter = '';
+          renderMaterials();
+        });
         document.getElementById('materialYearFilter').addEventListener('change', function(event) {
           APP_STATE.selectedMaterialYearTab = event.target.value || '';
+          APP_STATE.materialQuickFilter = '';
           if (APP_STATE.selectedMaterialSchoolTab) {
             APP_STATE.materialYearTabsBySchool[APP_STATE.selectedMaterialSchoolTab] = APP_STATE.selectedMaterialYearTab || '';
           }
           renderMaterials();
         });
-        document.getElementById('materialSubjectFilter').addEventListener('change', renderMaterials);
-        document.getElementById('materialExamTypeFilter').addEventListener('change', renderMaterials);
-        document.getElementById('materialTypeFilter').addEventListener('change', renderMaterials);
-        document.getElementById('materialFileTypeFilter').addEventListener('change', renderMaterials);
+        document.getElementById('materialSubjectFilter').addEventListener('change', function() {
+          APP_STATE.materialQuickFilter = '';
+          renderMaterials();
+        });
+        document.getElementById('materialExamTypeFilter').addEventListener('change', function() {
+          APP_STATE.materialQuickFilter = '';
+          renderMaterials();
+        });
+        document.getElementById('materialTypeFilter').addEventListener('change', function() {
+          APP_STATE.materialQuickFilter = '';
+          renderMaterials();
+        });
+        document.getElementById('materialFileTypeFilter').addEventListener('change', function() {
+          APP_STATE.materialQuickFilter = '';
+          renderMaterials();
+        });
         document.getElementById('materialsPanelTabs').addEventListener('click', handleMaterialPanelTabClick);
         document.getElementById('materialsSchoolTabs').addEventListener('click', handleMaterialSchoolTabClick);
         document.getElementById('materialsYearTabs').addEventListener('click', handleMaterialYearTabClick);
@@ -12208,7 +12304,7 @@
         var groupedSource = filtered.slice().sort(compareMaterialRows_);
         renderMaterialSummaryCards_(filtered);
         var wrap = document.getElementById('materialsTableWrap');
-        if (APP_STATE.materialsLoading && !APP_STATE.materialsLoaded) {
+        if (APP_STATE.materialsLoading && !APP_STATE.materialsLoaded && !APP_STATE.materials.length) {
           document.getElementById('materialsCoverageWrap').innerHTML = '';
           document.getElementById('materialsOpenLogWrap').innerHTML = '';
           document.getElementById('materialsSummaryWrap').innerHTML = '';
@@ -12233,8 +12329,9 @@
       }
 
       function renderMaterialLibraryLayout_(materials, mainHtml) {
+        var mode = APP_STATE.materialPanelMode || 'group';
         return [
-          '<div class="material-library-layout">',
+          '<div class="material-library-layout mode-' + escapeAttribute(mode) + '">',
           '  <aside class="material-navigator">',
           '    <div class="material-panel-title"><h3>학교/연도 그룹 탐색</h3><span class="material-scope-badge">' + escapeHtml(String(getVisibleMaterialSchools_(materials).length)) + '개</span></div>',
           '    <div class="material-nav-list">' + renderMaterialNavigator_(materials) + '</div>',
@@ -12347,6 +12444,7 @@
           '<tbody>',
           items.slice().sort(compareMaterialRows_).map(function(item) {
             var isGold = isExamScopeMaterial_(item);
+            var titleHint = item.note || [item.fileType, item.materialType].filter(Boolean).join(' · ') || '열기 버튼으로 자료 확인';
             return [
               '<tr class="material-dense-row ' + (isGold ? 'gold-row' : '') + '" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">',
               '<td><strong>' + escapeHtml(item.school || schoolContext || '-') + '</strong></td>',
@@ -12354,7 +12452,7 @@
               '<td>' + renderMaterialMetaBadge_(item.examType || '-', 'exam') + '</td>',
               '<td>' + renderMaterialSubjectLabel_(item.subject || '-') + '</td>',
               '<td>' + renderMaterialTypeBadge_(item.materialType || '-') + '</td>',
-              '<td class="material-title-cell"><strong>' + escapeHtml(buildMaterialDisplayTitle_(item)) + '</strong><span>' + escapeHtml(item.note || item.link || '-') + '</span></td>',
+              '<td class="material-title-cell"><button type="button" class="material-title-button" data-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link || '') + '"><strong>' + escapeHtml(buildMaterialDisplayTitle_(item)) + '</strong><span>' + escapeHtml(titleHint) + '</span></button></td>',
               '<td><div class="chip-row">' + [renderMaterialMetaBadge_(item.year || '-', 'year'), renderMaterialMetaBadge_(item.fileType || '-', 'file')].join('') + '</div></td>',
               '<td>' + escapeHtml(formatMaterialDate_(item.createdAt || item.updatedAt || item.year || '-')) + '</td>',
               '<td>' + escapeHtml(item.createdBy || item.updatedBy || '-') + '</td>',
@@ -12377,7 +12475,7 @@
               renderMaterialMetaBadge_(item.grade || '-', 'grade'),
               renderMaterialMetaBadge_(item.examType || '-', 'exam')
             ].join('') + '</div>',
-            '<p class="helper-text">' + escapeHtml(item.note || item.link || '-') + '</p>',
+            '<p class="helper-text">' + escapeHtml(item.note || [item.fileType, item.materialType].filter(Boolean).join(' · ') || '열기 버튼으로 자료 확인') + '</p>',
             renderMaterialActionButtons_(item),
             '</article>'
           ].join('');
@@ -12478,11 +12576,11 @@
         var scopeCount = APP_STATE.materials.filter(isExamScopeMaterial_).length;
         var missing = getMaterialMissingCount_(APP_STATE.materials);
         document.getElementById('materialsSummaryWrap').innerHTML = [
-          renderMaterialSummaryCard_('folder-open', '전체 자료', total + '건', '전체 등록 자료 수', ''),
-          renderMaterialSummaryCard_('clock-3', '최근 등록', recent + '건', '최근 7일 기준', ''),
-          renderMaterialSummaryCard_('school', '학교 수', schoolCount + '개', '자료 보유 학교 수', ''),
+          renderMaterialSummaryCard_('folder-open', '전체 자료', total + '건', '전체 등록 자료 수', '', 'all'),
+          renderMaterialSummaryCard_('clock-3', '최근 등록', recent + '건', '최근 7일 기준', '', 'recent'),
+          renderMaterialSummaryCard_('school', '학교 수', schoolCount + '개', '자료 보유 학교 수', '', 'schools'),
           renderMaterialSummaryCard_('crown', '시험일정 및 범위', scopeCount + '건', '프리미엄 자료', 'gold-premium', 'scope'),
-          renderMaterialSummaryCard_('triangle-alert', '누락 자료', missing + '건', '자료 누락 확인 필요', '')
+          renderMaterialSummaryCard_('triangle-alert', '누락 자료', missing + '건', '자료 누락 확인 필요', '', 'missing')
         ].join('');
       }
 
@@ -12560,6 +12658,10 @@
       }
 
       function getMaterialMissingCount_(materials) {
+        return getMaterialMissingSchools_(materials).length;
+      }
+
+      function getMaterialMissingSchools_(materials) {
         var schoolMap = {};
         (materials || []).forEach(function(item) {
           if (!item.school) {
@@ -12572,7 +12674,7 @@
         });
         return Object.keys(schoolMap).filter(function(school) {
           return !schoolMap[school].some(isExamScopeMaterial_);
-        }).length;
+        });
       }
 
       function getMaterialPriority_(item) {
@@ -12638,6 +12740,8 @@
 
       function filterMaterialsByCurrentFilters_(options) {
         var filterState = getCurrentMaterialFilterState_(options);
+        var quickFilter = options && options.ignoreQuickFilter ? '' : (APP_STATE.materialQuickFilter || '');
+        var missingSchools = quickFilter === 'missing' ? getMaterialMissingSchools_(APP_STATE.materials) : [];
         return APP_STATE.materials.filter(function(item) {
           var searchText = normalizeSearchText([
             item.school,
@@ -12662,7 +12766,15 @@
           var matchesExamType = !filterState.examType || item.examType === filterState.examType;
           var matchesMaterialType = !filterState.materialType || item.materialType === filterState.materialType;
           var matchesFileType = !filterState.fileType || item.fileType === filterState.fileType;
-          return matchesKeyword && matchesSchool && matchesGrade && matchesTerm && matchesYear && matchesSubject && matchesExamType && matchesMaterialType && matchesFileType;
+          var matchesQuick = true;
+          if (quickFilter === 'recent') {
+            matchesQuick = isRecentMaterial_(item);
+          } else if (quickFilter === 'scope') {
+            matchesQuick = isExamScopeMaterial_(item);
+          } else if (quickFilter === 'missing') {
+            matchesQuick = missingSchools.indexOf(item.school || '') !== -1;
+          }
+          return matchesKeyword && matchesSchool && matchesGrade && matchesTerm && matchesYear && matchesSubject && matchesExamType && matchesMaterialType && matchesFileType && matchesQuick;
         });
       }
 
@@ -12787,6 +12899,7 @@
         var school = button.getAttribute('data-material-school') || '';
         APP_STATE.selectedMaterialSchoolTab = school;
         APP_STATE.selectedMaterialYearTab = '';
+        APP_STATE.materialQuickFilter = '';
         document.getElementById('materialSchoolFilter').value = school;
         document.getElementById('materialYearFilter').value = '';
         renderMaterials();
@@ -12810,6 +12923,7 @@
 
         var year = button.getAttribute('data-material-year') || '';
         APP_STATE.selectedMaterialYearTab = year;
+        APP_STATE.materialQuickFilter = '';
         if (APP_STATE.selectedMaterialSchoolTab) {
           APP_STATE.materialYearTabsBySchool[APP_STATE.selectedMaterialSchoolTab] = year;
         }
@@ -12824,6 +12938,7 @@
           return;
         }
         APP_STATE.materialYearTabsBySchool[school] = year;
+        APP_STATE.materialQuickFilter = '';
         renderMaterials();
       }
 
@@ -12871,7 +12986,8 @@
           { key: 'subject', label: document.getElementById('materialSubjectFilter').value },
           { key: 'examType', label: document.getElementById('materialExamTypeFilter').value },
           { key: 'materialType', label: document.getElementById('materialTypeFilter').value },
-          { key: 'fileType', label: document.getElementById('materialFileTypeFilter').value }
+          { key: 'fileType', label: document.getElementById('materialFileTypeFilter').value },
+          { key: 'quick', label: getMaterialQuickFilterLabel_(APP_STATE.materialQuickFilter) }
         ].filter(function(item) { return item.label; });
         if (!filters.length) {
           wrap.innerHTML = '<span class="helper-text">활성 필터가 없습니다.</span>';
@@ -12910,6 +13026,10 @@
           });
           APP_STATE.selectedMaterialSchoolTab = '';
           APP_STATE.selectedMaterialYearTab = '';
+          APP_STATE.materialQuickFilter = '';
+          document.getElementById('materialKeywordInput').value = '';
+        } else if (key === 'quick') {
+          APP_STATE.materialQuickFilter = '';
         } else if (idMap[key]) {
           document.getElementById(idMap[key]).value = '';
           if (key === 'school') {
@@ -12927,10 +13047,65 @@
         if (!button) {
           return;
         }
-        if (button.getAttribute('data-material-summary-action') === 'scope') {
+        var action = button.getAttribute('data-material-summary-action') || '';
+        if (action === 'all') {
+          resetMaterialFilters_();
+          APP_STATE.materialPanelMode = 'group';
+          renderMaterials();
+          return;
+        }
+        if (action === 'recent') {
+          resetMaterialFilters_({ keepKeyword: true });
+          APP_STATE.materialQuickFilter = 'recent';
+          APP_STATE.materialPanelMode = 'list';
+          renderMaterials();
+          return;
+        }
+        if (action === 'schools') {
+          resetMaterialFilters_();
+          APP_STATE.materialPanelMode = 'group';
+          renderMaterials();
+          return;
+        }
+        if (action === 'missing') {
+          resetMaterialFilters_({ keepKeyword: true });
+          APP_STATE.materialQuickFilter = 'missing';
+          APP_STATE.materialPanelMode = 'group';
+          renderMaterials();
+          return;
+        }
+        if (action === 'scope') {
+          resetMaterialFilters_({ keepKeyword: true });
+          APP_STATE.materialQuickFilter = 'scope';
           document.getElementById('materialTypeFilter').value = getExamScopeFilterValue_();
           renderMaterials();
         }
+      }
+
+      function resetMaterialFilters_(options) {
+        var config = options || {};
+        ['materialSchoolFilter', 'materialGradeFilter', 'materialTermFilter', 'materialYearFilter', 'materialSubjectFilter', 'materialExamTypeFilter', 'materialTypeFilter', 'materialFileTypeFilter'].forEach(function(id) {
+          document.getElementById(id).value = '';
+        });
+        if (!config.keepKeyword) {
+          document.getElementById('materialKeywordInput').value = '';
+        }
+        APP_STATE.selectedMaterialSchoolTab = '';
+        APP_STATE.selectedMaterialYearTab = '';
+        APP_STATE.materialQuickFilter = '';
+      }
+
+      function getMaterialQuickFilterLabel_(value) {
+        if (value === 'recent') {
+          return '최근 등록';
+        }
+        if (value === 'scope') {
+          return '시험일정 및 범위';
+        }
+        if (value === 'missing') {
+          return '누락 자료';
+        }
+        return '';
       }
 
       function getExamScopeFilterValue_() {
@@ -13103,6 +13278,12 @@
       }
 
       function handleMaterialTableClick(event) {
+        var refreshInsightButton = event.target.closest('[data-material-refresh-insight]');
+        if (refreshInsightButton) {
+          renderMaterials();
+          return;
+        }
+
         var schoolButton = event.target.closest('[data-material-school]');
         if (schoolButton) {
           handleMaterialSchoolTabClick(event);
@@ -13272,8 +13453,7 @@
 
       function renderMaterialSubjectLabel_(subject) {
         var text = subject || '-';
-        var emoji = getSubjectEmoji_(text);
-        return '<span class="material-subject-name ' + escapeAttribute(getSubjectToneClass_(text) + ' ' + getMaterialSubjectKeywordClass_(text)) + '">' + escapeHtml(emoji + ' ' + text) + '</span>';
+        return '<span class="material-subject-name ' + escapeAttribute(getSubjectToneClass_(text) + ' ' + getMaterialSubjectKeywordClass_(text)) + '">' + escapeHtml(text) + '</span>';
       }
 
       function hasImportantMaterialKeyword_(value, keyword) {
