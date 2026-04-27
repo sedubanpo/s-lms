@@ -4985,9 +4985,28 @@
       .student-index-table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 920px;
+        min-width: 1040px;
+        table-layout: fixed;
         font-size: 0.8rem;
       }
+
+      .student-index-table th:nth-child(1),
+      .student-index-table td:nth-child(1) { width: 168px; }
+
+      .student-index-table th:nth-child(2),
+      .student-index-table td:nth-child(2) { width: 210px; }
+
+      .student-index-table th:nth-child(3),
+      .student-index-table td:nth-child(3) { width: 230px; }
+
+      .student-index-table th:nth-child(4),
+      .student-index-table td:nth-child(4) { width: 160px; }
+
+      .student-index-table th:nth-child(5),
+      .student-index-table td:nth-child(5) { width: 112px; }
+
+      .student-index-table th:nth-child(6),
+      .student-index-table td:nth-child(6) { width: 104px; }
 
       .student-index-table th {
         position: sticky;
@@ -5035,24 +5054,131 @@
         font-size: 0.75rem;
       }
 
+      .permission-cell {
+        display: grid;
+        gap: 5px;
+        align-content: center;
+      }
+
+      .permission-count-text {
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .teacher-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 7px;
+        border: 1px solid #d8e3f4;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 0.72rem;
+        font-weight: 900;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      button.teacher-chip {
+        cursor: pointer;
+      }
+
+      .teacher-chip.primary {
+        border-color: #bfdbfe;
+        background: #eaf2ff;
+        color: #174ea6;
+      }
+
+      .teacher-chip.extra {
+        color: #475569;
+        background: #f1f5f9;
+      }
+
+      .teacher-chip.unassigned {
+        border-color: #fecaca;
+        background: #fff0f0;
+        color: #b91c1c;
+      }
+
       .status-grid {
         display: flex;
         flex-wrap: wrap;
         gap: 5px;
       }
 
+      .student-status-badge,
+      .school-link-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 7px;
+        border: 1px solid #d8e3f4;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.72rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .student-status-badge.teal {
+        border-color: #bcebe4;
+        background: #e7f8f6;
+        color: #0f766e;
+      }
+
+      .student-status-badge.green,
+      .school-link-badge.green {
+        border-color: #bbf7d0;
+        background: #ecfdf5;
+        color: #047857;
+      }
+
+      .student-status-badge.blue,
+      .school-link-badge.blue {
+        border-color: #bfdbfe;
+        background: #eaf2ff;
+        color: #174ea6;
+      }
+
+      .student-status-badge.orange {
+        border-color: #fed7aa;
+        background: #fff4e5;
+        color: #b45309;
+      }
+
+      .student-status-badge.slate,
+      .school-link-badge.slate {
+        border-color: #d9e2ec;
+        background: #f1f5f9;
+        color: #64748b;
+      }
+
       .action-cluster {
-        display: flex;
+        display: grid;
+        grid-template-columns: repeat(3, 30px);
         gap: 6px;
       }
 
       .icon-mini {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         width: 30px;
         height: 30px;
         border: 1px solid #d6e2f7;
         border-radius: 8px;
         background: #fff;
         color: #174ea6;
+      }
+
+      .icon-mini svg {
+        width: 16px;
+        height: 16px;
+        stroke-width: 1.9;
       }
 
       .profile-board-body {
@@ -5066,6 +5192,10 @@
         grid-template-columns: auto minmax(0, 1fr);
         gap: 12px;
         align-items: center;
+        padding: 13px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fbff;
       }
 
       .profile-avatar {
@@ -5092,6 +5222,32 @@
         font-size: 0.82rem;
       }
 
+      .student-subject-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 8px;
+      }
+
+      .student-subject-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 7px;
+        border: 1px solid #bfdbfe;
+        background: #eaf2ff;
+        color: #174ea6;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .student-subject-chip.slate {
+        border-color: #d9e2ec;
+        background: #f1f5f9;
+        color: #64748b;
+      }
+
       .profile-block {
         padding: 13px;
         border: 1px solid #e2e8f0;
@@ -5107,7 +5263,7 @@
 
       .permission-map {
         display: grid;
-        grid-template-columns: minmax(90px, 0.55fr) minmax(0, 1fr);
+        grid-template-columns: minmax(90px, 0.42fr) minmax(0, 1fr);
         gap: 10px;
         align-items: center;
       }
@@ -5127,6 +5283,36 @@
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
+      }
+
+      .permission-relation {
+        display: inline-grid;
+        grid-template-columns: auto auto;
+        align-items: center;
+        gap: 6px;
+        min-height: 28px;
+        padding: 0 8px;
+        border-radius: 7px;
+        border: 1px solid #d8e3f4;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .permission-relation b {
+        color: #64748b;
+        font-size: 0.66rem;
+      }
+
+      .permission-relation.primary {
+        border-color: #bfdbfe;
+        background: #eaf2ff;
+        color: #174ea6;
+      }
+
+      .permission-relation.primary b {
+        color: #174ea6;
       }
 
       .preview-list {
@@ -5150,9 +5336,52 @@
         color: #0f172a;
       }
 
+      .profile-empty {
+        padding: 13px;
+        border: 1px dashed #bfd0e7;
+        border-radius: 8px;
+        background: #fbfdff;
+        color: #64748b;
+        text-align: center;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .exam-jikbo-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .exam-jikbo-row {
+        display: grid;
+        grid-template-columns: 62px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border-radius: 8px;
+        background: #f8fafc;
+        font-size: 0.78rem;
+      }
+
+      .exam-jikbo-row strong {
+        color: #0f172a;
+      }
+
+      .profile-link-button {
+        min-height: 26px;
+        padding: 0 8px;
+        border-radius: 7px;
+        border: 1px solid #bfdbfe;
+        background: #eaf2ff;
+        color: #174ea6;
+        font-size: 0.72rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
       .school-resource-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 8px;
       }
 
@@ -8124,7 +8353,7 @@
       function populateStudentFilters() {
         fillSelectWithOptions('studentSchoolFilter', APP_STATE.visibleStudents.map(function(student) {
           return student.school;
-        }), '전체 원');
+        }), '전체 학교');
 
         var allTags = [];
         APP_STATE.visibleStudents.forEach(function(student) {
@@ -8165,7 +8394,7 @@
             '  <section class="student-index-panel ops-surface">',
                  renderStudentIndex_(students, emptyHtml),
             '  </section>',
-            '  <aside class="profile-board ops-surface">',
+            '  <aside class="profile-board ops-surface" data-student-id="' + escapeAttribute(selected && selected.studentId ? selected.studentId : '') + '">',
                  renderStudentProfileBoard_(selected),
             '  </aside>',
             '</div>'
@@ -8346,15 +8575,15 @@
         var eventInfo = getSchoolEventInfo_(student.school, student.grade);
         return [
           '<tr class="student-index-row' + selected + '" data-student-id="' + escapeAttribute(student.studentId || '') + '">',
-          '  <td class="student-name-cell"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</span><div class="chip-row">' + renderStudentTagChips_(student).join('') + '</div></td>',
-          '  <td><div class="chip-row">' + renderPermissionChips_(permissions, 2) + '</div><div class="helper-text">권한 ' + escapeHtml(String(permissions.length)) + '건</div></td>',
+          '  <td class="student-name-cell"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</span></td>',
+          '  <td><div class="permission-cell"><div class="chip-row">' + renderPermissionChips_(permissions, 2) + '</div><div class="permission-count-text">권한 ' + escapeHtml(String(permissions.length)) + '건</div></div></td>',
           '  <td><div class="status-grid">' + [
-               renderStatusChip_('상담', logs.length ? 'ok' : 'muted'),
-               renderStatusChip_('직보 ' + jikbo.total, jikbo.unconfirmed ? 'warn' : 'ok'),
-               renderStatusChip_('자료 ' + materialInfo.available, materialInfo.available ? 'ok' : 'muted'),
+               renderStatusChip_('상담', logs.length ? 'slate' : 'muted'),
+               renderStatusChip_('직보 ' + jikbo.total, jikbo.unconfirmed ? 'warn' : (jikbo.total ? 'teal' : 'muted')),
+               renderStatusChip_('자료 ' + materialInfo.available, materialInfo.available ? 'green' : 'muted'),
                renderStatusChip_('일정 ' + eventInfo.count, eventInfo.count ? 'blue' : 'muted')
              ].join('') + '</div></td>',
-          '  <td><div class="status-grid">' + renderStatusChip_('학교 일정', eventInfo.count ? 'blue' : 'muted') + renderStatusChip_('내신 자료', materialInfo.available ? 'ok' : 'muted') + '</div></td>',
+          '  <td><div class="status-grid">' + renderSchoolConnectionChip_('학교 일정', eventInfo.count ? 'blue' : 'muted') + renderSchoolConnectionChip_('내신 자료', materialInfo.available ? 'green' : 'muted') + '</div></td>',
           '  <td>' + escapeHtml(recent) + '</td>',
           '  <td><div class="action-cluster"><button class="icon-mini" type="button" data-action="show-student-profile" title="상세 보기"><i data-lucide="panel-right-open"></i></button><button class="icon-mini" type="button" data-action="manage-student-permission" title="권한 관리"><i data-lucide="shield"></i></button><button class="icon-mini" type="button" data-action="show-log-detail-latest" title="메모"><i data-lucide="sticky-note"></i></button></div></td>',
           '</tr>'
@@ -8363,30 +8592,45 @@
 
       function renderStudentTagChips_(student) {
         var tags = [];
-        if (student.subject) {
-          tags.push('<span class="ops-chip slate">' + escapeHtml(student.subject) + '</span>');
-        }
         collectStudentTagSet(student).slice(0, 2).forEach(function(tag) {
           tags.push('<span class="ops-chip teal">' + escapeHtml(tag) + '</span>');
         });
         return tags;
       }
 
+      function renderStudentSubjectChips_(student) {
+        var subjects = String(student && student.subject ? student.subject : '')
+          .split(/[,/|·]+/)
+          .map(function(item) { return item.trim(); })
+          .filter(Boolean);
+        if (!subjects.length) {
+          return '<span class="student-subject-chip slate">과목 미지정</span>';
+        }
+        return subjects.slice(0, 4).map(function(subject) {
+          return '<span class="student-subject-chip">' + escapeHtml(subject) + '</span>';
+        }).join('');
+      }
+
       function renderPermissionChips_(permissions, limit) {
         var visible = permissions.slice(0, limit || permissions.length);
         var html = visible.map(function(item, index) {
-          var tone = index === 0 ? 'blue' : 'slate';
-          return '<button type="button" class="ops-chip ' + tone + '" data-action="filter-instructor" data-instructor-id="' + escapeAttribute(item.userId || item.instructorId || '') + '">' + escapeHtml(item.name || item.instructorName || item.userId || '-') + '</button>';
+          var tone = index === 0 ? 'primary' : 'secondary';
+          return '<button type="button" class="teacher-chip ' + tone + '" data-action="filter-instructor" data-instructor-id="' + escapeAttribute(item.userId || item.instructorId || '') + '">' + escapeHtml(item.name || item.instructorName || item.userId || '-') + '</button>';
         }).join('');
         if (permissions.length > visible.length) {
-          html += '<span class="ops-chip slate">+' + escapeHtml(String(permissions.length - visible.length)) + '</span>';
+          html += '<span class="teacher-chip extra">+' + escapeHtml(String(permissions.length - visible.length)) + '</span>';
         }
-        return html || '<span class="ops-chip red">미배정</span>';
+        return html || '<span class="teacher-chip unassigned">미배정</span>';
       }
 
       function renderStatusChip_(label, tone) {
-        var toneClass = tone === 'ok' ? 'teal' : (tone === 'warn' ? 'orange' : (tone === 'blue' ? 'blue' : 'slate'));
-        return '<span class="ops-chip ' + toneClass + '">' + escapeHtml(label) + '</span>';
+        var toneClass = tone === 'warn' ? 'orange' : (tone === 'green' ? 'green' : (tone === 'blue' ? 'blue' : ((tone === 'teal' || tone === 'ok') ? 'teal' : 'slate')));
+        return '<span class="student-status-badge ' + toneClass + '">' + escapeHtml(label) + '</span>';
+      }
+
+      function renderSchoolConnectionChip_(label, tone) {
+        var toneClass = tone === 'green' ? 'green' : (tone === 'blue' ? 'blue' : 'slate');
+        return '<span class="school-link-badge ' + toneClass + '">' + escapeHtml(label) + '</span>';
       }
 
       function renderStudentProfileBoard_(student) {
@@ -8403,19 +8647,67 @@
           '<div class="profile-board-body">',
           '  <section class="profile-summary">',
           '    <div class="profile-avatar">' + escapeHtml(getInitial(student.studentName)) + '</div>',
-          '    <div><h4>' + escapeHtml(student.studentName || '-') + '</h4><p>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정', student.subject || '과목 미지정'].join(' · ')) + '</p><div class="chip-row">' + renderStudentTagChips_(student).join('') + '</div></div>',
+          '    <div><h4>' + escapeHtml(student.studentName || '-') + '</h4><p>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</p><div class="student-subject-row">' + renderStudentSubjectChips_(student) + '</div></div>',
           '  </section>',
-          '  <section class="profile-block"><h4>강사 권한 맵</h4><div class="permission-map"><div class="permission-node">' + escapeHtml(student.studentName || '-') + '</div><div class="permission-chip-grid">' + renderPermissionChips_(permissions, 8) + '</div></div></section>',
+          '  <section class="profile-block"><h4>강사 권한 맵</h4>' + renderPermissionRelationMap_(student, permissions) + '</section>',
           '  <section class="profile-block"><h4>상담 기록 preview</h4>' + renderPreviewList_(recentLogs.map(function(log) { return { date: formatTeachingLogDateTime(log.createdAt), title: (log.tags || [])[0] || '관리 기록', meta: truncateText_(log.content || '-', 42), tone: 'teal' }; })) + '</section>',
-          '  <section class="profile-block"><h4>시험 대비/직보 상태</h4>' + renderPreviewList_(examItems.map(function(item) { return { date: formatDateShort_(item.isoDate || item.date), title: item.subjectName || item.eventName || '시험 일정', meta: (jikbo.unconfirmed ? '미확정 직보 ' + jikbo.unconfirmed + '건' : '직보 구성 확인'), tone: jikbo.unconfirmed ? 'orange' : 'blue' }; })) + '</section>',
-          '  <section class="profile-block"><h4>내신 자료 연결</h4><div class="school-resource-grid"><div class="resource-metric"><span>사용 가능한 자료</span><strong>' + escapeHtml(String(materialInfo.available)) + '건</strong></div><div class="resource-metric"><span>누락 자료</span><strong>' + escapeHtml(String(materialInfo.missing)) + '건</strong></div></div>' + renderPreviewList_(materialInfo.recent.map(function(item) { return { date: item.year || '-', title: item.subject || item.materialType || '자료', meta: item.fileType || item.examType || '-', tone: 'blue' }; })) + '</section>',
+          '  <section class="profile-block"><h4>시험 대비/직보 상태</h4>' + renderStudentExamJikboPanel_(examItems, jikbo) + '</section>',
+          '  <section class="profile-block"><h4>내신 자료 연결</h4>' + renderStudentMaterialConnectionPanel_(student, materialInfo) + '</section>',
           '</div>'
+        ].join('');
+      }
+
+      function renderPermissionRelationMap_(student, permissions) {
+        if (!permissions.length) {
+          return '<div class="profile-empty">연결된 강사 권한이 없습니다.</div>';
+        }
+        return [
+          '<div class="permission-map">',
+          '  <div class="permission-node">' + escapeHtml(student.studentName || '-') + '</div>',
+          '  <div class="permission-chip-grid">',
+               permissions.slice(0, 8).map(function(item, index) {
+                 return '<span class="permission-relation ' + (index === 0 ? 'primary' : '') + '"><b>' + (index === 0 ? '담당' : '열람') + '</b><span>' + escapeHtml(item.name || item.instructorName || item.userId || '-') + '</span></span>';
+               }).join(''),
+          '  </div>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderStudentExamJikboPanel_(examItems, jikbo) {
+        var rows = (examItems || []).slice(0, 3).map(function(item) {
+          var status = jikbo && jikbo.unconfirmed ? '미확정 ' + jikbo.unconfirmed + '건' : '구성 확인';
+          return [
+            '<div class="exam-jikbo-row">',
+            '  <span>' + escapeHtml(formatDateShort_(item.isoDate || item.date) || '-') + '</span>',
+            '  <strong>' + escapeHtml(item.subjectName || item.eventName || '시험 일정') + '</strong>',
+            '  <button type="button" class="profile-link-button" data-action="open-jikbo-board">' + escapeHtml(status) + '</button>',
+            '</div>'
+          ].join('');
+        });
+        if (!rows.length && jikbo && jikbo.total) {
+          rows.push('<div class="exam-jikbo-row"><span>-</span><strong>직보 대상 ' + escapeHtml(String(jikbo.total)) + '건</strong><button type="button" class="profile-link-button" data-action="open-jikbo-board">직보 구성 확인</button></div>');
+        }
+        return rows.length ? '<div class="exam-jikbo-list">' + rows.join('') + '</div>' : '<div class="profile-empty">연결된 시험/직보 일정이 없습니다.</div>';
+      }
+
+      function renderStudentMaterialConnectionPanel_(student, materialInfo) {
+        var schoolKey = normalizeSearchText(student && student.school);
+        var scopeCount = getScopedMaterials_().filter(function(item) {
+          return normalizeSearchText(item.school) === schoolKey && isExamScopeMaterial_(item);
+        }).length;
+        return [
+          '<div class="school-resource-grid">',
+          '  <div class="resource-metric"><span>사용 가능한 자료</span><strong>' + escapeHtml(String(materialInfo.available)) + '건</strong></div>',
+          '  <div class="resource-metric"><span>누락 자료</span><strong>' + escapeHtml(String(materialInfo.missing)) + '건</strong></div>',
+          '  <div class="resource-metric"><span>시험일정 및 범위</span><strong>' + escapeHtml(String(scopeCount)) + '건</strong></div>',
+          '</div>',
+          renderPreviewList_(materialInfo.recent.map(function(item) { return { date: item.year || '-', title: item.subject || item.materialType || '자료', meta: item.fileType || item.examType || '-', tone: isExamScopeMaterial_(item) ? 'orange' : 'blue' }; }))
         ].join('');
       }
 
       function renderPreviewList_(items) {
         if (!items.length) {
-          return '<div class="empty-state" style="padding:14px;">표시할 항목이 없습니다.</div>';
+          return '<div class="profile-empty">표시할 항목이 없습니다.</div>';
         }
         return '<div class="preview-list">' + items.map(function(item) {
           return '<div class="preview-row"><span>' + escapeHtml(item.date || '-') + '</span><strong>' + escapeHtml(item.title || '-') + '</strong><span class="ops-chip ' + escapeAttribute(item.tone || 'slate') + '">' + escapeHtml(item.meta || '-') + '</span></div>';
@@ -8926,6 +9218,16 @@
           } else {
             setNotice('아직 연결된 상담/관리 기록이 없습니다.', 'info');
           }
+          return;
+        }
+
+        var jikboBoardButton = event.target.closest('[data-action="open-jikbo-board"]');
+        if (jikboBoardButton) {
+          if (!APP_STATE.isAdmin) {
+            setNotice('직보 구성 화면은 관리자만 사용할 수 있습니다.', 'warning');
+            return;
+          }
+          switchView('jikbo');
           return;
         }
 
