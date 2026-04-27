@@ -111,108 +111,272 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(230, 237, 249, 0.58);
-        backdrop-filter: blur(8px);
+        padding: 24px;
+        background: rgba(15, 23, 42, 0.18);
+        backdrop-filter: blur(10px) saturate(0.82);
+        -webkit-backdrop-filter: blur(10px) saturate(0.82);
       }
 
       .loading-card {
-        min-width: 280px;
-        padding: 28px 26px;
-        border-radius: 28px;
+        width: min(520px, calc(100vw - 48px));
+        min-height: 260px;
+        padding: 30px 34px 28px;
+        border-radius: 8px;
         text-align: center;
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.7);
-        box-shadow: var(--shadow-xl);
+        background: #ffffff;
+        border: 1px solid #d8e3f4;
+        box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
       }
 
-      .book-loader {
-        position: relative;
-        width: 86px;
-        height: 60px;
-        margin: 0 auto 16px;
-        perspective: 200px;
-      }
-
-      .book-loader::before,
-      .book-loader::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        height: 100%;
-        border-radius: 10px;
-        border: 3px solid rgba(36, 86, 214, 0.16);
-        background: linear-gradient(180deg, #ffffff 0%, #eef3ff 100%);
-      }
-
-      .book-loader::before {
-        left: 0;
-        width: 44px;
-        border-right: 0;
-        border-radius: 12px 0 0 12px;
-        box-shadow:
-          inset -6px 0 8px rgba(36, 86, 214, 0.06),
-          0 10px 20px rgba(36, 86, 214, 0.08);
-      }
-
-      .book-loader::after {
-        right: 0;
-        width: 42px;
-        border-left: 1px solid rgba(36, 86, 214, 0.14);
-        border-radius: 0 12px 12px 0;
-        transform-origin: left center;
-        background:
-          linear-gradient(90deg, rgba(36, 86, 214, 0.08), transparent 18%),
-          repeating-linear-gradient(
-            180deg,
-            rgba(36, 86, 214, 0.22) 0,
-            rgba(36, 86, 214, 0.22) 2px,
-            transparent 2px,
-            transparent 10px
-          ),
-          linear-gradient(180deg, #ffffff 0%, #eef3ff 100%);
-        animation: bookFlip 1s ease-in-out infinite;
-        box-shadow:
-          10px 8px 18px rgba(36, 86, 214, 0.12),
-          inset 1px 0 0 rgba(255, 255, 255, 0.7);
-      }
-
-      .book-loader span {
-        position: absolute;
-        inset: 0;
-        display: block;
-      }
-
-      .book-loader span::before,
-      .book-loader span::after {
-        content: '';
-        position: absolute;
-        top: 6px;
-        bottom: 6px;
-        width: 3px;
+      .loading-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 26px;
+        padding: 0 12px;
+        margin: 0 auto 14px;
+        border: 1px solid #bfdbfe;
         border-radius: 999px;
-        background: rgba(36, 86, 214, 0.16);
+        background: #f8fbff;
+        color: #174ea6;
+        font-size: 0.75rem;
+        font-weight: 900;
       }
 
-      .book-loader span::before {
-        left: 40px;
+      .sync-notebook {
+        position: relative;
+        width: 156px;
+        height: 92px;
+        margin: 0 auto 18px;
+        perspective: 520px;
+        animation: notebookSettle 1.68s ease-in-out infinite;
       }
 
-      .book-loader span::after {
-        left: 44px;
+      .notebook-surface,
+      .notebook-page-flip {
+        position: absolute;
+        border: 2px solid #16356f;
+        background: #ffffff;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.1);
       }
 
-      @keyframes bookFlip {
-        0% {
+      .notebook-left {
+        left: 0;
+        top: 10px;
+        width: 76px;
+        height: 70px;
+        border-radius: 8px 0 0 8px;
+        border-right: 1px solid #c7d7ef;
+      }
+
+      .notebook-right {
+        right: 0;
+        top: 10px;
+        width: 78px;
+        height: 70px;
+        border-radius: 0 8px 8px 0;
+        border-left: 1px solid #c7d7ef;
+      }
+
+      .notebook-page-flip {
+        left: 77px;
+        top: 10px;
+        width: 38px;
+        height: 70px;
+        transform-origin: left center;
+        border-radius: 0 8px 8px 0;
+        border-left: 0;
+        background: #edf5ff;
+        animation: notebookPageFlip 1.68s ease-in-out infinite;
+      }
+
+      .notebook-rings {
+        position: absolute;
+        left: 73px;
+        top: 16px;
+        width: 10px;
+        height: 58px;
+        display: grid;
+        gap: 6px;
+        z-index: 4;
+      }
+
+      .notebook-rings span {
+        display: block;
+        height: 4px;
+        border-radius: 999px;
+        background: #16356f;
+      }
+
+      .notebook-row,
+      .notebook-data-row {
+        position: absolute;
+        height: 3px;
+        border-radius: 999px;
+        background: #c6d5ec;
+        animation: notebookRowAlign 1.68s ease-in-out infinite;
+      }
+
+      .notebook-left .row-1 { left: 16px; top: 20px; width: 42px; }
+      .notebook-left .row-2 { left: 16px; top: 34px; width: 48px; animation-delay: 0.08s; }
+      .notebook-left .row-3 { left: 16px; top: 48px; width: 36px; animation-delay: 0.16s; }
+
+      .notebook-data-row {
+        left: 14px;
+        width: 45px;
+        height: 9px;
+        background: #dceafe;
+      }
+
+      .notebook-right .data-1 { top: 16px; }
+      .notebook-right .data-2 { top: 32px; animation-delay: 0.08s; }
+      .notebook-right .data-3 { top: 48px; animation-delay: 0.16s; }
+
+      .notebook-check {
+        position: absolute;
+        right: 6px;
+        bottom: 6px;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: #0f9a6a;
+        transform: scale(0.74);
+        opacity: 0;
+        animation: notebookCheck 1.68s ease-in-out infinite;
+      }
+
+      .notebook-check::after {
+        content: '';
+        position: absolute;
+        left: 7px;
+        top: 5px;
+        width: 6px;
+        height: 10px;
+        border: solid #ffffff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+
+      .loading-message {
+        margin: 0;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #0f172a;
+        font-size: 1.28rem;
+        font-weight: 900;
+        letter-spacing: 0;
+        white-space: nowrap;
+      }
+
+      .loading-subtext {
+        margin-top: 8px;
+        color: #64748b;
+        font-size: 0.88rem;
+        font-weight: 700;
+      }
+
+      .loading-progress-dots {
+        display: inline-flex;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .loading-progress-dots span {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: #94a3b8;
+        animation: loadingDotPulse 1.24s ease-in-out infinite;
+      }
+
+      .loading-progress-dots span:nth-child(1) {
+        background: #0b55d9;
+      }
+
+      .loading-progress-dots span:nth-child(2) {
+        animation-delay: 0.16s;
+      }
+
+      .loading-progress-dots span:nth-child(3) {
+        animation-delay: 0.32s;
+      }
+
+      @keyframes notebookPageFlip {
+        0%, 18% {
           transform: rotateY(0deg);
         }
-        40% {
-          transform: rotateY(-165deg);
+        45%, 58% {
+          transform: rotateY(-158deg);
         }
-        60% {
-          transform: rotateY(-165deg);
+        82%, 100% {
+          transform: rotateY(0deg);
+        }
+      }
+
+      @keyframes notebookRowAlign {
+        0%, 28% {
+          transform: translateX(-4px);
+          opacity: 0.55;
+        }
+        46%, 76% {
+          transform: translateX(0);
+          opacity: 1;
         }
         100% {
-          transform: rotateY(0deg);
+          transform: translateX(2px);
+          opacity: 0.65;
+        }
+      }
+
+      @keyframes notebookCheck {
+        0%, 50% {
+          opacity: 0;
+          transform: scale(0.74);
+        }
+        62%, 80% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(0.84);
+        }
+      }
+
+      @keyframes notebookSettle {
+        0%, 100% {
+          transform: translateY(0);
+        }
+        54% {
+          transform: translateY(-2px);
+        }
+      }
+
+      @keyframes loadingDotPulse {
+        0%, 100% {
+          opacity: 0.35;
+          transform: translateY(0);
+        }
+        50% {
+          opacity: 1;
+          transform: translateY(-2px);
+        }
+      }
+
+      @media (max-width: 560px) {
+        .loading-card {
+          min-height: 250px;
+          padding: 26px 22px;
+        }
+
+        .sync-notebook {
+          transform: scale(0.92);
+          margin-bottom: 12px;
+        }
+
+        .loading-message {
+          font-size: 1.05rem;
         }
       }
 
@@ -5833,8 +5997,25 @@
   <body>
     <div id="loadingOverlay" class="loading-overlay hidden">
       <div class="loading-card">
-        <div class="book-loader"><span></span></div>
-        <div id="loadingMessage">구글 스프레드시트와 열심히 밀당하는 중... 💻</div>
+        <div class="loading-chip">S-LMS 동기화</div>
+        <div class="sync-notebook" aria-hidden="true">
+          <div class="notebook-surface notebook-left">
+            <span class="notebook-row row-1"></span>
+            <span class="notebook-row row-2"></span>
+            <span class="notebook-row row-3"></span>
+          </div>
+          <div class="notebook-surface notebook-right">
+            <span class="notebook-data-row data-1"></span>
+            <span class="notebook-data-row data-2"></span>
+            <span class="notebook-data-row data-3"></span>
+            <span class="notebook-check"></span>
+          </div>
+          <div class="notebook-page-flip"></div>
+          <div class="notebook-rings"><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div id="loadingMessage" class="loading-message">자료를 가지런히 펼치는 중입니다.</div>
+        <div class="loading-subtext">잠시만 기다려 주세요.</div>
+        <div class="loading-progress-dots" aria-hidden="true"><span></span><span></span><span></span></div>
       </div>
     </div>
 
@@ -6592,23 +6773,16 @@
         '기타'
       ];
       const LOADING_MESSAGES = [
-        '급하게 카페인 수혈하는 중... ☕',
-        '채점용 빨간펜 잉크 채우는 중... 🖊️',
-        '당 떨어졌습니다. 초콜릿 까먹는 중... 🍫',
-        '오늘 저녁 메뉴 진지하게 고민하는 중... 🍕',
-        '강사실 커피 머신 예열하는 중... ♨️',
-        '수업 전 목 푸는 중... 아-아- 마이크 테스트 🎤',
-        '지각생의 화려한 변명 예측하는 중... 🤔',
-        '구글 스프레드시트와 열심히 밀당하는 중... 💻',
-        '흩어진 학생 데이터 영혼까지 끌어모으는 중... 🌪️',
-        '에스-로그(S-Log) 예쁘게 포장하는 중... 🎁',
-        '기출문제 보물창고 문 여는 중... 🗝️',
-        '0과 1 사이를 땀나게 달리는 중... 🏃‍♂️💨',
-        '\'아 맞다, 교재 안 가져왔어요\' 대처법 생각하는 중... 🤦',
-        '\'선생님 숙제 다 했어요!\'라는 거짓말 감별하는 중... 🕵️',
-        '질문 폭격 방어막 전개하는 중... 🛡️',
-        '우리 학원 에이스들 명단 예쁘게 정렬하는 중... ✨',
-        '보강 스케줄 테트리스 하는 중... 🧩'
+        '자료를 가지런히 펼치는 중입니다.',
+        '명단을 예쁘게 정렬하는 중입니다.',
+        '권한 범위를 확인하는 중입니다.',
+        '시험 범위를 찾는 중입니다.',
+        '보강 기록을 맞춰보는 중입니다.',
+        '학생 정보를 불러오는 중입니다.',
+        '자료실 서랍을 여는 중입니다.',
+        '상담 기록을 정돈하는 중입니다.',
+        '학교 일정을 맞춰보는 중입니다.',
+        '필터를 차분히 적용하는 중입니다.'
       ];
 
       var APP_STATE = {
@@ -6729,7 +6903,7 @@
         window.addEventListener('load', renderLucideIcons_);
         updateHeaderClock();
         setInterval(updateHeaderClock, 1000);
-        setInterval(rotateLoadingMessage, 1000);
+        setInterval(rotateLoadingMessage, 1800);
 
         var savedSession = readStoredSession();
         if (savedSession && savedSession.token) {
