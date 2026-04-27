@@ -5532,6 +5532,22 @@
         transform: translateY(-1px);
       }
 
+      .material-summary-card.active {
+        border-color: #0b55d9;
+        background: #eef5ff;
+        box-shadow: inset 0 0 0 1px rgba(11, 85, 217, 0.12), 0 12px 24px rgba(11, 85, 217, 0.1);
+      }
+
+      .material-summary-card.active .material-summary-icon {
+        background: #0b55d9;
+        color: #fff;
+      }
+
+      .material-summary-card.gold-premium.active {
+        border-color: #b7791f !important;
+        box-shadow: inset 0 0 0 1px rgba(183, 121, 31, 0.2), 0 12px 24px rgba(183, 121, 31, 0.16);
+      }
+
       .material-summary-icon {
         display: inline-flex;
         align-items: center;
@@ -7157,6 +7173,7 @@
         selectedMaterialYearTab: '',
         materialPanelMode: 'group',
         materialQuickFilter: '',
+        activeMaterialSummaryAction: '',
         materialCreateOpen: false,
         isMaterialSearchComposing: false,
         isStudentSearchComposing: false,
@@ -7402,20 +7419,24 @@
           APP_STATE.selectedMaterialSchoolTab = event.target.value || '';
           APP_STATE.selectedMaterialYearTab = '';
           APP_STATE.materialQuickFilter = '';
+          APP_STATE.activeMaterialSummaryAction = '';
           document.getElementById('materialYearFilter').value = '';
           renderMaterials();
         });
         document.getElementById('materialGradeFilter').addEventListener('change', function() {
           APP_STATE.materialQuickFilter = '';
+          APP_STATE.activeMaterialSummaryAction = '';
           renderMaterials();
         });
         document.getElementById('materialTermFilter').addEventListener('change', function() {
           APP_STATE.materialQuickFilter = '';
+          APP_STATE.activeMaterialSummaryAction = '';
           renderMaterials();
         });
         document.getElementById('materialYearFilter').addEventListener('change', function(event) {
           APP_STATE.selectedMaterialYearTab = event.target.value || '';
           APP_STATE.materialQuickFilter = '';
+          APP_STATE.activeMaterialSummaryAction = '';
           if (APP_STATE.selectedMaterialSchoolTab) {
             APP_STATE.materialYearTabsBySchool[APP_STATE.selectedMaterialSchoolTab] = APP_STATE.selectedMaterialYearTab || '';
           }
@@ -7423,18 +7444,22 @@
         });
         document.getElementById('materialSubjectFilter').addEventListener('change', function() {
           APP_STATE.materialQuickFilter = '';
+          APP_STATE.activeMaterialSummaryAction = '';
           renderMaterials();
         });
         document.getElementById('materialExamTypeFilter').addEventListener('change', function() {
           APP_STATE.materialQuickFilter = '';
+          APP_STATE.activeMaterialSummaryAction = '';
           renderMaterials();
         });
         document.getElementById('materialTypeFilter').addEventListener('change', function() {
           APP_STATE.materialQuickFilter = '';
+          APP_STATE.activeMaterialSummaryAction = '';
           renderMaterials();
         });
         document.getElementById('materialFileTypeFilter').addEventListener('change', function() {
           APP_STATE.materialQuickFilter = '';
+          APP_STATE.activeMaterialSummaryAction = '';
           renderMaterials();
         });
         document.getElementById('materialsPanelTabs').addEventListener('click', handleMaterialPanelTabClick);
@@ -12909,11 +12934,12 @@
 
       function renderMaterialLibraryLayout_(materials, mainHtml) {
         var mode = APP_STATE.materialPanelMode || 'group';
+        var navigatorMaterials = APP_STATE.materials || [];
         return [
           '<div class="material-library-layout mode-' + escapeAttribute(mode) + '">',
           '  <aside class="material-navigator">',
-          '    <div class="material-panel-title"><h3>학교/연도 그룹 탐색</h3><span class="material-scope-badge">' + escapeHtml(String(getVisibleMaterialSchools_(materials).length)) + '개</span></div>',
-          '    <div class="material-nav-list">' + renderMaterialNavigator_(materials) + '</div>',
+          '    <div class="material-panel-title"><h3>학교/연도 그룹 탐색</h3><span class="material-scope-badge">' + escapeHtml(String(getVisibleMaterialSchools_(navigatorMaterials).length)) + '개</span></div>',
+          '    <div class="material-nav-list">' + renderMaterialNavigator_(navigatorMaterials) + '</div>',
           '  </aside>',
           '  <section class="material-list-panel">' + mainHtml + '</section>',
           '  <aside class="material-insight-panel">',
@@ -13061,11 +13087,15 @@
 
       function renderMaterialNavigator_(materials) {
         var source = materials && materials.length ? materials : APP_STATE.materials;
-        var schools = getVisibleMaterialSchools_(source).slice(0, 12);
+        var allSchools = getVisibleMaterialSchools_(source);
+        var selectedSchool = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value || '';
+        var schools = allSchools.slice(0, 12);
+        if (selectedSchool && allSchools.indexOf(selectedSchool) !== -1 && schools.indexOf(selectedSchool) === -1) {
+          schools = [selectedSchool].concat(schools.slice(0, 11));
+        }
         if (!schools.length) {
           return '<div class="empty-state">탐색할 학교 자료가 없습니다.</div>';
         }
-        var selectedSchool = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value || '';
         var expandedSchool = selectedSchool || schools[0] || '';
         var totalSchools = getVisibleMaterialSchools_(APP_STATE.materials).length;
         return schools.map(function(school) {
@@ -13188,7 +13218,9 @@
       }
 
       function renderMaterialSummaryCard_(icon, label, value, hint, extraClass, action, visualType) {
-        return '<button type="button" class="material-summary-card ' + escapeAttribute(extraClass || '') + '" ' + (action ? 'data-material-summary-action="' + escapeAttribute(action) + '"' : '') + '><span class="material-summary-icon"><i data-lucide="' + escapeAttribute(icon) + '"></i></span><span class="material-summary-body"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong><small>' + escapeHtml(hint) + '</small></span>' + renderMaterialSummaryVisual_(visualType) + '</button>';
+        var isActive = action && APP_STATE.activeMaterialSummaryAction === action;
+        var classes = ['material-summary-card', extraClass || '', isActive ? 'active' : ''].filter(Boolean).join(' ');
+        return '<button type="button" class="' + escapeAttribute(classes) + '" ' + (action ? 'data-material-summary-action="' + escapeAttribute(action) + '" aria-pressed="' + (isActive ? 'true' : 'false') + '"' : '') + '><span class="material-summary-icon"><i data-lucide="' + escapeAttribute(icon) + '"></i></span><span class="material-summary-body"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong><small>' + escapeHtml(hint) + '</small></span>' + renderMaterialSummaryVisual_(visualType) + '</button>';
       }
 
       function renderMaterialSummaryVisual_(visualType) {
@@ -13557,6 +13589,7 @@
         APP_STATE.selectedMaterialSchoolTab = school;
         APP_STATE.selectedMaterialYearTab = '';
         APP_STATE.materialQuickFilter = '';
+        APP_STATE.activeMaterialSummaryAction = '';
         document.getElementById('materialSchoolFilter').value = school;
         document.getElementById('materialYearFilter').value = '';
         renderMaterials();
@@ -13581,6 +13614,7 @@
         var year = button.getAttribute('data-material-year') || '';
         APP_STATE.selectedMaterialYearTab = year;
         APP_STATE.materialQuickFilter = '';
+        APP_STATE.activeMaterialSummaryAction = '';
         if (APP_STATE.selectedMaterialSchoolTab) {
           APP_STATE.materialYearTabsBySchool[APP_STATE.selectedMaterialSchoolTab] = year;
         }
@@ -13598,6 +13632,7 @@
         APP_STATE.selectedMaterialSchoolTab = school;
         APP_STATE.selectedMaterialYearTab = year;
         APP_STATE.materialQuickFilter = '';
+        APP_STATE.activeMaterialSummaryAction = '';
         document.getElementById('materialSchoolFilter').value = school;
         document.getElementById('materialYearFilter').value = year;
         renderMaterials();
@@ -13688,11 +13723,14 @@
           APP_STATE.selectedMaterialSchoolTab = '';
           APP_STATE.selectedMaterialYearTab = '';
           APP_STATE.materialQuickFilter = '';
+          APP_STATE.activeMaterialSummaryAction = '';
           document.getElementById('materialKeywordInput').value = '';
         } else if (key === 'quick') {
           APP_STATE.materialQuickFilter = '';
+          APP_STATE.activeMaterialSummaryAction = '';
         } else if (idMap[key]) {
           document.getElementById(idMap[key]).value = '';
+          APP_STATE.activeMaterialSummaryAction = '';
           if (key === 'school') {
             APP_STATE.selectedMaterialSchoolTab = '';
           }
@@ -13709,6 +13747,7 @@
           return;
         }
         var action = button.getAttribute('data-material-summary-action') || '';
+        APP_STATE.activeMaterialSummaryAction = action;
         if (action === 'all') {
           resetMaterialFilters_();
           APP_STATE.materialPanelMode = 'group';
