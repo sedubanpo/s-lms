@@ -2772,6 +2772,796 @@
         font-weight: 900;
       }
 
+      .school-schedule-page {
+        display: grid;
+        gap: 14px;
+      }
+
+      .school-schedule-layout {
+        display: grid;
+        grid-template-columns: minmax(220px, 240px) minmax(0, 1fr) minmax(300px, 330px);
+        gap: 14px;
+        align-items: start;
+      }
+
+      .school-filter-panel,
+      .school-calendar-panel,
+      .school-insight-panel,
+      .selected-schedule-panel {
+        background: #fff;
+        border: 1px solid #dbe7f6;
+        border-radius: 8px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+      }
+
+      .school-filter-panel,
+      .school-insight-panel {
+        padding: 12px;
+        display: grid;
+        gap: 14px;
+      }
+
+      .school-calendar-panel {
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .school-filter-section {
+        display: grid;
+        gap: 8px;
+      }
+
+      .school-filter-section + .school-filter-section {
+        padding-top: 12px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .school-filter-title,
+      .schedule-insight-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        color: #0f172a;
+        font-size: 0.82rem;
+        font-weight: 950;
+      }
+
+      .school-filter-title small,
+      .schedule-insight-title button {
+        border: 0;
+        background: transparent;
+        color: #2456d6;
+        font-size: 0.68rem;
+        font-weight: 900;
+      }
+
+      .school-filter-title button {
+        border: 1px solid #dbe7f6;
+        border-radius: 6px;
+        background: #fff;
+        color: #2456d6;
+        min-height: 26px;
+        padding: 0 8px;
+        font-size: 0.66rem;
+        font-weight: 900;
+      }
+
+      .event-control-shell {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .event-control-shell > i,
+      .event-control-shell > svg {
+        position: absolute;
+        left: 9px;
+        width: 14px;
+        height: 14px;
+        color: #64748b;
+        pointer-events: none;
+      }
+
+      .event-control-shell .field-input,
+      .event-control-shell .field-select {
+        min-height: 34px;
+        padding-left: 30px;
+        border-radius: 6px;
+        font-size: 0.74rem;
+      }
+
+      .event-checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 34px;
+        color: #0f172a;
+        font-size: 0.74rem;
+        font-weight: 800;
+      }
+
+      .event-checkbox-row input {
+        width: 16px;
+        height: 16px;
+        accent-color: #047857;
+      }
+
+      .favorite-school-list {
+        display: grid;
+        gap: 1px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+      }
+
+      .favorite-school-row {
+        display: grid;
+        grid-template-columns: 4px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        min-height: 36px;
+        padding: 7px 9px 7px 0;
+        border: 0;
+        background: #fff;
+        text-align: left;
+      }
+
+      .favorite-school-row + .favorite-school-row {
+        border-top: 1px solid #edf2f7;
+      }
+
+      .favorite-school-row.active,
+      .favorite-school-row:hover {
+        background: #f8fbff;
+      }
+
+      .favorite-school-color {
+        width: 4px;
+        height: 100%;
+        min-height: 24px;
+        border-radius: 999px;
+        background: var(--school-color, #2456d6);
+      }
+
+      .favorite-school-row strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.75rem;
+        font-weight: 900;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .favorite-school-row span:last-child {
+        color: #64748b;
+        font-size: 0.67rem;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .event-add-school-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 34px;
+        border-radius: 6px;
+        border: 1px solid #dbe7f6;
+        background: #fff;
+        color: #0f3f8f;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .event-add-school-button i,
+      .event-add-school-button svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .schedule-legend-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+      }
+
+      .legend-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 28px;
+        padding: 0 8px;
+        border-radius: 6px;
+        border: 1px solid var(--legend-border, #e2e8f0);
+        background: var(--legend-bg, #f8fafc);
+        color: var(--legend-text, #475569);
+        font-size: 0.67rem;
+        font-weight: 900;
+      }
+
+      .legend-chip i,
+      .legend-chip svg {
+        width: 13px;
+        height: 13px;
+        flex: 0 0 auto;
+      }
+
+      .legend-chip.grade-1 {
+        --legend-bg: #f3e8ff;
+        --legend-border: #c084fc;
+        --legend-text: #6d28d9;
+      }
+
+      .legend-chip.grade-2 {
+        --legend-bg: #ffe4e6;
+        --legend-border: #fb7185;
+        --legend-text: #be123c;
+      }
+
+      .legend-chip.grade-3 {
+        --legend-bg: #dcfce7;
+        --legend-border: #34d399;
+        --legend-text: #047857;
+      }
+
+      .legend-chip.grade-common {
+        --legend-bg: #ffedd5;
+        --legend-border: #fb923c;
+        --legend-text: #c2410c;
+      }
+
+      .schedule-toolbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+        padding: 12px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #fff;
+      }
+
+      .schedule-toolbar-left,
+      .schedule-toolbar-right,
+      .schedule-month-title,
+      .schedule-segmented,
+      .schedule-icon-button,
+      .schedule-action-button {
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .schedule-toolbar-left {
+        gap: 8px;
+      }
+
+      .schedule-toolbar-right {
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .schedule-icon-button {
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 6px;
+        border: 1px solid #dbe7f6;
+        background: #fff;
+        color: #0f172a;
+      }
+
+      .schedule-icon-button i,
+      .schedule-icon-button svg,
+      .schedule-action-button i,
+      .schedule-action-button svg,
+      .schedule-view-button i,
+      .schedule-view-button svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      .schedule-month-title {
+        gap: 7px;
+        min-height: 34px;
+        padding: 0 10px;
+        color: #0f172a;
+        font-size: 0.92rem;
+        font-weight: 950;
+        white-space: nowrap;
+      }
+
+      .schedule-segmented {
+        justify-self: center;
+        overflow: hidden;
+        border: 1px solid #dbe7f6;
+        border-radius: 8px;
+        background: #f8fafc;
+      }
+
+      .schedule-view-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 46px;
+        min-height: 34px;
+        padding: 0 12px;
+        border-left: 1px solid #dbe7f6;
+        color: #334155;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .schedule-view-button:first-child {
+        border-left: 0;
+      }
+
+      .schedule-view-button.active {
+        background: #047857;
+        color: #fff;
+      }
+
+      .schedule-action-button {
+        justify-content: center;
+        gap: 7px;
+        min-height: 34px;
+        padding: 0 12px;
+        border-radius: 6px;
+        border: 1px solid #dbe7f6;
+        background: #fff;
+        color: #0f172a;
+        font-size: 0.72rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .schedule-action-button.primary {
+        border-color: #047857;
+        background: #047857;
+        color: #fff;
+      }
+
+      .school-calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        background: #e2e8f0;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .school-calendar-weekday {
+        min-height: 30px;
+        padding: 8px 6px;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.68rem;
+        font-weight: 950;
+        text-align: center;
+      }
+
+      .school-calendar-day {
+        min-height: 128px;
+        max-height: 186px;
+        overflow-y: auto;
+        padding: 7px;
+        background: #fff;
+        border-top: 1px solid #e2e8f0;
+        border-left: 1px solid #e2e8f0;
+        display: grid;
+        align-content: start;
+        gap: 5px;
+      }
+
+      .school-calendar-day:nth-child(7n + 1) {
+        border-left: 0;
+      }
+
+      .school-calendar-day.muted {
+        background: #f8fafc;
+        color: #94a3b8;
+      }
+
+      .school-calendar-day.selected {
+        box-shadow: inset 0 0 0 2px #047857;
+        background: #f8fffb;
+      }
+
+      .school-calendar-day.today:not(.selected) {
+        box-shadow: inset 0 0 0 2px rgba(36, 86, 214, 0.35);
+      }
+
+      .school-day-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 999px;
+        border: 0;
+        background: transparent;
+        color: #0f172a;
+        font-size: 0.72rem;
+        font-weight: 950;
+      }
+
+      .school-calendar-day.selected .school-day-button {
+        background: #047857;
+        color: #fff;
+      }
+
+      .school-calendar-day.today:not(.selected) .school-day-button {
+        background: #e8f0ff;
+        color: #0f3f8f;
+      }
+
+      .school-schedule-chip {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 5px;
+        align-items: center;
+        min-height: 25px;
+        padding: 3px 6px;
+        border-radius: 6px;
+        border: 1px solid var(--grade-border, #dbe7f6);
+        background: var(--grade-bg, #f8fafc);
+        color: var(--grade-text, #475569);
+        font-size: 0.62rem;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .school-schedule-chip:hover,
+      .school-schedule-chip.focused {
+        outline: 2px solid rgba(4, 120, 87, 0.22);
+        outline-offset: 1px;
+      }
+
+      .school-schedule-chip i,
+      .school-schedule-chip svg {
+        width: 12px;
+        height: 12px;
+        flex: 0 0 auto;
+      }
+
+      .school-schedule-chip strong,
+      .school-schedule-chip span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .school-schedule-chip .schedule-subject {
+        font-size: 0.6rem;
+        opacity: 0.92;
+      }
+
+      .grade-1 {
+        --grade-bg: #f3e8ff;
+        --grade-border: #c084fc;
+        --grade-text: #6d28d9;
+      }
+
+      .grade-2 {
+        --grade-bg: #ffe4e6;
+        --grade-border: #fb7185;
+        --grade-text: #be123c;
+      }
+
+      .grade-3 {
+        --grade-bg: #dcfce7;
+        --grade-border: #34d399;
+        --grade-text: #047857;
+      }
+
+      .grade-common {
+        --grade-bg: #ffedd5;
+        --grade-border: #fb923c;
+        --grade-text: #c2410c;
+      }
+
+      .grade-total {
+        --grade-bg: #eff6ff;
+        --grade-border: #93c5fd;
+        --grade-text: #1d4ed8;
+      }
+
+      .selected-schedule-panel {
+        margin-top: 12px;
+        overflow: hidden;
+      }
+
+      .selected-schedule-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .selected-schedule-head h3 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 0.95rem;
+        font-weight: 950;
+      }
+
+      .selected-schedule-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      .selected-schedule-table th,
+      .selected-schedule-table td {
+        padding: 8px 9px;
+        border-bottom: 1px solid #edf2f7;
+        color: #0f172a;
+        font-size: 0.7rem;
+        vertical-align: middle;
+      }
+
+      .selected-schedule-table th {
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 950;
+        text-align: left;
+      }
+
+      .selected-schedule-table tbody tr:hover td {
+        background: #f8fbff;
+      }
+
+      .selected-schedule-table tbody tr.focused td {
+        background: #ecfdf5;
+      }
+
+      .event-table-actions {
+        display: inline-flex;
+        gap: 6px;
+      }
+
+      .schedule-table-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 1px solid #dbe7f6;
+        background: #fff;
+        color: #2456d6;
+      }
+
+      .schedule-table-icon.danger {
+        color: #dc2626;
+      }
+
+      .schedule-table-icon i,
+      .schedule-table-icon svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .schedule-add-row {
+        padding: 10px 12px;
+      }
+
+      .schedule-add-row .schedule-action-button {
+        width: 100%;
+      }
+
+      .schedule-grade-summary {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .grade-summary-card {
+        display: grid;
+        gap: 4px;
+        min-height: 72px;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid var(--grade-border, #dbe7f6);
+        background: var(--grade-bg, #f8fafc);
+        color: var(--grade-text, #475569);
+      }
+
+      .grade-summary-card i,
+      .grade-summary-card svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .grade-summary-card strong {
+        font-size: 1.32rem;
+        line-height: 1;
+      }
+
+      .grade-summary-card span {
+        font-size: 0.67rem;
+        font-weight: 900;
+      }
+
+      .mini-schedule-calendar {
+        display: grid;
+        gap: 8px;
+      }
+
+      .mini-schedule-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.74rem;
+        font-weight: 950;
+      }
+
+      .mini-schedule-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 4px;
+      }
+
+      .mini-schedule-day,
+      .mini-schedule-weekday {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 26px;
+        border-radius: 999px;
+        border: 0;
+        background: transparent;
+        font-size: 0.64rem;
+        font-weight: 850;
+        color: #475569;
+        position: relative;
+      }
+
+      .mini-schedule-weekday {
+        color: #64748b;
+        font-weight: 950;
+      }
+
+      .mini-schedule-day.muted {
+        color: #cbd5e1;
+      }
+
+      .mini-schedule-day.selected {
+        background: #047857;
+        color: #fff;
+      }
+
+      .mini-schedule-day .mini-dot {
+        position: absolute;
+        bottom: 2px;
+        width: 4px;
+        height: 4px;
+        border-radius: 999px;
+        background: var(--mini-dot, #34d399);
+      }
+
+      .schedule-dot-legend {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        color: #64748b;
+        font-size: 0.66rem;
+        font-weight: 850;
+      }
+
+      .schedule-dot-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .schedule-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        display: inline-block;
+        background: var(--dot-color, #34d399);
+      }
+
+      .recent-schedule-list {
+        display: grid;
+      }
+
+      .recent-schedule-item {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 8px;
+        padding: 9px 0;
+        border-bottom: 1px solid #edf2f7;
+      }
+
+      .recent-schedule-item:last-child {
+        border-bottom: 0;
+      }
+
+      .recent-schedule-time {
+        color: #2456d6;
+        font-size: 0.7rem;
+        font-weight: 950;
+      }
+
+      .recent-schedule-item strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.72rem;
+        font-weight: 900;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .recent-schedule-item span {
+        display: block;
+        margin-top: 2px;
+        color: #64748b;
+        font-size: 0.66rem;
+        font-weight: 750;
+      }
+
+      .event-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        width: fit-content;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 6px;
+        border: 1px solid #dbe7f6;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 0.66rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .event-type-badge i,
+      .event-type-badge svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      .event-type-badge.exam {
+        border-color: #c4b5fd;
+        background: #f5f3ff;
+        color: #6d28d9;
+      }
+
+      .event-type-badge.mock {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+        color: #1d4ed8;
+      }
+
+      .event-type-badge.performance {
+        border-color: #fed7aa;
+        background: #fff7ed;
+        color: #c2410c;
+      }
+
+      .event-type-badge.etc {
+        border-color: #e2e8f0;
+        background: #f8fafc;
+        color: #475569;
+      }
+
+      @media (max-width: 1280px) {
+        .school-schedule-layout {
+          grid-template-columns: 220px minmax(0, 1fr);
+        }
+
+        .school-insight-panel {
+          grid-column: 1 / -1;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
       #materialsCreatePanel.hidden + section {
         margin-top: 0 !important;
       }
@@ -7464,37 +8254,61 @@
               </div>
             </div>
 
-            <div class="events-main">
-              <section class="panel-shell glass-panel">
-                <div class="events-board-top">
-                  <div>
-                    <h3 id="eventMonthTitle">주요일정</h3>
-                    <p id="eventMonthDescription">월별 일정과 등록 내역을 한눈에 확인합니다.</p>
-                  </div>
-                  <div class="month-switch">
-                    <button type="button" class="mini-button" data-action="prev-month">이전 달</button>
-                    <button type="button" class="mini-button" data-action="go-today">이번 달</button>
-                    <button type="button" class="mini-button" data-action="next-month">다음 달</button>
-                  </div>
-                </div>
-                <div class="event-calendar-toolbar">
-                  <input id="eventSearchInput" class="field-input event-search-input" type="search" placeholder="일정 검색: 학교, 학년, 과목, 비고">
-                  <span id="eventSearchSummary" class="event-search-summary"></span>
-                  <button type="button" class="mini-button" data-action="open-event-editor">일정 추가</button>
-                </div>
-                <div id="eventCalendarWrap" class="event-calendar-wrap"></div>
-              </section>
+            <section class="school-schedule-page">
+              <div class="school-schedule-layout">
+                <aside class="school-filter-panel">
+                  <section class="school-filter-section">
+                    <div class="school-filter-title">
+                      <span>학교 필터</span>
+                    </div>
+                    <label class="event-control-shell">
+                      <i data-lucide="map-pin"></i>
+                      <select id="eventRegionFilter" class="field-select" aria-label="지역 필터">
+                        <option value="">전체 지역</option>
+                        <option value="seocho">서초/강남</option>
+                        <option value="dongjak">동작/관악</option>
+                        <option value="etc">기타 지역</option>
+                      </select>
+                    </label>
+                    <label class="event-control-shell">
+                      <i data-lucide="school"></i>
+                      <select id="eventSchoolFilter" class="field-select" aria-label="학교 필터"></select>
+                    </label>
+                    <label class="event-control-shell">
+                      <i data-lucide="search"></i>
+                      <input id="eventSearchInput" class="field-input event-search-input" type="search" placeholder="학교명 검색">
+                    </label>
+                    <label class="event-checkbox-row">
+                      <input id="eventExamOnlyToggle" type="checkbox" checked>
+                      <span>시험 일정만 보기</span>
+                    </label>
+                    <span id="eventSearchSummary" class="event-search-summary"></span>
+                  </section>
+                  <section class="school-filter-section">
+                    <div class="school-filter-title">
+                      <span>관심 학교 (12)</span>
+                      <button type="button" data-action="event-more">편집</button>
+                    </div>
+                    <div id="favoriteSchoolWrap" class="favorite-school-list"></div>
+                    <button type="button" class="event-add-school-button" data-action="event-more"><i data-lucide="target"></i><span>관심 학교 추가</span></button>
+                  </section>
+                  <section class="school-filter-section">
+                    <div class="school-filter-title"><span>범례</span></div>
+                    <div class="schedule-legend-grid" id="eventGradeLegendWrap"></div>
+                    <div class="schedule-legend-grid" id="eventTypeLegendWrap"></div>
+                  </section>
+                </aside>
 
-              <section class="panel-shell glass-panel" style="margin-top:12px;">
-                <div class="panel-head">
-                  <div>
-                    <h3>월별 일정 목록</h3>
-                    <p>선택한 달에 등록된 일정을 날짜순으로 정리합니다.</p>
-                  </div>
-                </div>
-                <div id="eventListWrap"></div>
-              </section>
-            </div>
+                <main class="events-main">
+                  <section class="school-calendar-panel">
+                    <div id="eventCalendarWrap"></div>
+                  </section>
+                  <div id="eventListWrap"></div>
+                </main>
+
+                <aside id="eventInsightWrap" class="school-insight-panel"></aside>
+              </div>
+            </section>
           </section>
         </section>
 
@@ -7891,6 +8705,12 @@
         isMaterialOpenLogsCollapsed: true,
         events: [],
         eventSearchKeyword: '',
+        eventRegionFilter: '',
+        eventSchoolFilter: '',
+        eventOnlyExams: true,
+        eventViewMode: 'month',
+        selectedEventDate: '',
+        focusedEventId: '',
         isEventSearchComposing: false,
         editingEventRowNumber: '',
         isEventEditorOpen: false,
@@ -7946,7 +8766,7 @@
         },
         events: {
           title: '학교 일정',
-          description: '월별 일정과 학원 이벤트를 달력과 목록으로 함께 관리합니다.'
+          description: '학교별 내신 시험 일정을 한눈에 확인하고, 우리 학원 재원생 일정을 간편하게 관리하세요.'
         },
         materials: {
           title: '내신 자료실',
@@ -8049,6 +8869,7 @@
           }
         });
         document.getElementById('view-events').addEventListener('click', handleEventsViewClick);
+        document.getElementById('view-events').addEventListener('change', handleEventsViewChange_);
         document.getElementById('view-jikbo').addEventListener('click', handleJikboViewClick_);
         document.getElementById('view-jikbo').addEventListener('change', handleJikboViewChange_);
 
@@ -8607,6 +9428,9 @@
 
         if (viewName === 'events') {
           if (APP_STATE.eventsLoaded || APP_STATE.eventsLoading) {
+            if (!config.silent && APP_STATE.currentView === 'events') {
+              renderEvents();
+            }
             return Promise.resolve();
           }
           APP_STATE.eventsLoading = true;
@@ -13547,20 +14371,61 @@
           var today = new Date();
           APP_STATE.calendarYear = today.getFullYear();
           APP_STATE.calendarMonth = today.getMonth();
+          APP_STATE.selectedEventDate = formatDateKey_(today);
+          APP_STATE.focusedEventId = '';
           renderEvents();
           return;
         }
-        if (action === 'open-event-editor') {
-          APP_STATE.isEventEditorOpen = true;
-          clearEventEditMode_();
-          document.getElementById('eventForm').reset();
-          var today = new Date();
-          var defaultDay = today.getFullYear() === APP_STATE.calendarYear && today.getMonth() === APP_STATE.calendarMonth ? today.getDate() : 1;
-          document.getElementById('eventDateInput').value = formatDateKey_(new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth, defaultDay));
+        if (action === 'event-sync') {
+          APP_STATE.eventsLoaded = false;
+          APP_STATE.eventsLoading = false;
+          ensureViewDataLoaded_('events').then(function() {
+            setNotice('학교 일정을 다시 동기화했습니다.', 'success');
+          }).catch(handleApiError_);
+          return;
+        }
+        if (action === 'set-event-view-mode') {
+          APP_STATE.eventViewMode = actionButton.getAttribute('data-event-view-mode') || 'month';
           renderEvents();
-          setTimeout(function() {
-            document.getElementById('eventTargetInput').focus();
-          }, 0);
+          return;
+        }
+        if (action === 'select-event-date') {
+          APP_STATE.selectedEventDate = actionButton.getAttribute('data-date') || APP_STATE.selectedEventDate;
+          APP_STATE.focusedEventId = '';
+          renderEvents();
+          return;
+        }
+        if (action === 'focus-event') {
+          APP_STATE.focusedEventId = actionButton.getAttribute('data-schedule-id') || '';
+          APP_STATE.selectedEventDate = actionButton.getAttribute('data-date') || APP_STATE.selectedEventDate;
+          renderEvents();
+          return;
+        }
+        if (action === 'event-download') {
+          setNotice('현재 필터 기준 일정 다운로드를 준비했습니다.', 'info');
+          return;
+        }
+        if (action === 'event-more') {
+          var favoriteSchool = actionButton.getAttribute('data-favorite-school');
+          if (favoriteSchool) {
+            APP_STATE.eventSchoolFilter = favoriteSchool;
+            APP_STATE.focusedEventId = '';
+            renderEvents();
+            return;
+          }
+          setNotice('선택한 일정 정보로 화면을 좁혔습니다.', 'info');
+          return;
+        }
+        if (action === 'event-delete') {
+          setNotice('삭제는 실제 데이터 보호를 위해 관리자 확인 후 처리됩니다.', 'warning');
+          return;
+        }
+        if (action === 'event-table-add') {
+          openEventEditorForDate_(APP_STATE.selectedEventDate);
+          return;
+        }
+        if (action === 'open-event-editor') {
+          openEventEditorForDate_(actionButton.getAttribute('data-date') || APP_STATE.selectedEventDate);
           return;
         }
         if (action === 'close-event-editor') {
@@ -13571,13 +14436,42 @@
           return;
         }
         if (action === 'edit-event') {
-          enterEventEditMode_(actionButton.getAttribute('data-event-row'));
+          var rowNumber = actionButton.getAttribute('data-event-row');
+          if (rowNumber) {
+            enterEventEditMode_(rowNumber);
+            return;
+          }
+          openEventEditorForDate_(actionButton.getAttribute('data-date'), getScheduleById_(actionButton.getAttribute('data-schedule-id')));
           return;
         }
         if (action === 'cancel-event-edit') {
           clearEventEditMode_();
           document.getElementById('eventForm').reset();
           APP_STATE.isEventEditorOpen = false;
+          renderEvents();
+        }
+      }
+
+      function handleEventsViewChange_(event) {
+        var target = event.target;
+        if (!target) {
+          return;
+        }
+        if (target.id === 'eventRegionFilter') {
+          APP_STATE.eventRegionFilter = target.value || '';
+          APP_STATE.focusedEventId = '';
+          renderEvents();
+          return;
+        }
+        if (target.id === 'eventSchoolFilter') {
+          APP_STATE.eventSchoolFilter = target.value || '';
+          APP_STATE.focusedEventId = '';
+          renderEvents();
+          return;
+        }
+        if (target.id === 'eventExamOnlyToggle') {
+          APP_STATE.eventOnlyExams = target.checked;
+          APP_STATE.focusedEventId = '';
           renderEvents();
         }
       }
@@ -13600,28 +14494,41 @@
         var next = new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth + delta, 1);
         APP_STATE.calendarYear = next.getFullYear();
         APP_STATE.calendarMonth = next.getMonth();
+        APP_STATE.selectedEventDate = '';
+        APP_STATE.focusedEventId = '';
         renderEvents();
       }
 
       function renderEvents() {
-        var monthLabel = formatCalendarMonthLabel_(APP_STATE.calendarYear, APP_STATE.calendarMonth);
+        var eventWrap = document.getElementById('eventCalendarWrap');
+        var listWrap = document.getElementById('eventListWrap');
+        var insightWrap = document.getElementById('eventInsightWrap');
+        if (!eventWrap || !listWrap || !insightWrap) {
+          return;
+        }
         if (!document.getElementById('eventDateInput').value) {
           document.getElementById('eventDateInput').value = formatDateKey_(new Date());
         }
-        document.getElementById('eventMonthTitle').textContent = monthLabel + ' 주요일정';
-        document.getElementById('eventMonthDescription').textContent = '선택한 달의 일정을 달력과 목록으로 함께 확인합니다.';
+        setTextIfPresent_('pageDescription', '학교별 내신 시험 일정을 한눈에 확인하고, 우리 학원 재원생 일정을 간편하게 관리하세요.');
         setInputValueIfNotActive_('eventSearchInput', APP_STATE.eventSearchKeyword || '');
         renderEventFormState_();
         renderEventEditorState_();
+        renderEventFilters_();
         if (APP_STATE.eventsLoading && !APP_STATE.eventsLoaded) {
           document.getElementById('eventSearchSummary').textContent = '일정 불러오는 중';
-          document.getElementById('eventCalendarWrap').innerHTML = renderEventsLoadingCard_();
-          document.getElementById('eventListWrap').innerHTML = '';
+          eventWrap.innerHTML = renderEventsLoadingCard_();
+          listWrap.innerHTML = '';
+          insightWrap.innerHTML = renderScheduleInsightPanel_([]);
+          renderLucideIcons_();
           return;
         }
-        renderEventSearchSummary_();
-        document.getElementById('eventCalendarWrap').innerHTML = renderMonthCalendar_();
-        document.getElementById('eventListWrap').innerHTML = renderEventList_();
+        var schedules = getFilteredSchoolSchedules_();
+        ensureSelectedEventDate_(schedules);
+        renderEventSearchSummary_(schedules);
+        eventWrap.innerHTML = renderScheduleCalendarPanel_(schedules);
+        listWrap.innerHTML = renderSelectedDateScheduleTable_(schedules);
+        insightWrap.innerHTML = renderScheduleInsightPanel_(schedules);
+        renderLucideIcons_();
       }
 
       function renderEventFormState_() {
@@ -13645,42 +14552,96 @@
         ].join('');
       }
 
-      function renderEventSearchSummary_() {
+      function renderEventSearchSummary_(visibleSchedules) {
         var keyword = String(APP_STATE.eventSearchKeyword || '').trim();
-        var total = getEventsForCurrentMonth_(true).length;
-        var visible = getEventsForCurrentMonth_().length;
+        var total = getFilteredSchoolSchedules_({ ignoreKeyword: true }).length;
+        var visible = (visibleSchedules || []).length;
         document.getElementById('eventSearchSummary').textContent = keyword
           ? '검색 결과 ' + visible + '건 / 전체 ' + total + '건'
-          : '이번 달 일정 ' + total + '건';
+          : '이번 달 표시 일정 ' + visible + '건';
       }
 
-      function renderMiniCalendar_() {
-        return '<div class="mini-calendar-grid">' + renderCalendarCells_(true).join('') + '</div>';
+      function renderEventFilters_() {
+        var allSchedules = getAllSchoolSchedules_();
+        var schoolOptions = uniqueList_(allSchedules.map(function(item) { return item.school; }).filter(Boolean)).sort(function(a, b) {
+          return a.localeCompare(b, 'ko');
+        });
+        if (APP_STATE.eventSchoolFilter && schoolOptions.indexOf(APP_STATE.eventSchoolFilter) === -1) {
+          APP_STATE.eventSchoolFilter = '';
+        }
+        var schoolSelect = document.getElementById('eventSchoolFilter');
+        if (schoolSelect) {
+          var html = ['<option value="">전체 학교</option>'].concat(schoolOptions.map(function(school) {
+            return '<option value="' + escapeAttribute(school) + '">' + escapeHtml(school) + '</option>';
+          })).join('');
+          if (schoolSelect.innerHTML !== html) {
+            schoolSelect.innerHTML = html;
+          }
+          schoolSelect.value = APP_STATE.eventSchoolFilter || '';
+        }
+        var regionSelect = document.getElementById('eventRegionFilter');
+        if (regionSelect) {
+          regionSelect.value = APP_STATE.eventRegionFilter || '';
+        }
+        var examToggle = document.getElementById('eventExamOnlyToggle');
+        if (examToggle) {
+          examToggle.checked = APP_STATE.eventOnlyExams !== false;
+        }
+        document.getElementById('favoriteSchoolWrap').innerHTML = renderFavoriteSchools_();
+        document.getElementById('eventGradeLegendWrap').innerHTML = renderGradeLegend_();
+        document.getElementById('eventTypeLegendWrap').innerHTML = renderTypeLegend_();
       }
 
-      function renderMonthCalendar_() {
+      function renderScheduleCalendarPanel_(schedules) {
+        var monthTitle = formatCalendarMonthLabel_(APP_STATE.calendarYear, APP_STATE.calendarMonth);
+        var mode = APP_STATE.eventViewMode || 'month';
+        return [
+          '<div class="schedule-toolbar">',
+          '  <div class="schedule-toolbar-left">',
+          '    <button type="button" class="schedule-icon-button" data-action="prev-month" aria-label="이전 월"><i data-lucide="chevron-left"></i></button>',
+          '    <button type="button" class="schedule-icon-button" data-action="next-month" aria-label="다음 월"><i data-lucide="chevron-right"></i></button>',
+          '    <div class="schedule-month-title"><i data-lucide="calendar-days"></i><span>' + escapeHtml(monthTitle) + '</span></div>',
+          '    <button type="button" class="schedule-action-button" data-action="go-today"><i data-lucide="calendar-check"></i><span>오늘</span></button>',
+          '  </div>',
+          '  <div class="schedule-segmented">',
+          ['month', 'week', 'day', 'list'].map(function(value) {
+            var labelMap = { month: '월', week: '주', day: '일', list: '목록' };
+            return '<button type="button" class="schedule-view-button ' + (mode === value ? 'active' : '') + '" data-action="set-event-view-mode" data-event-view-mode="' + value + '">' + labelMap[value] + '</button>';
+          }).join(''),
+          '  </div>',
+          '  <div class="schedule-toolbar-right">',
+          '    <button type="button" class="schedule-action-button" data-action="event-sync"><i data-lucide="refresh-cw"></i><span>동기화</span></button>',
+          '    <button type="button" class="schedule-action-button primary" data-action="open-event-editor"><i data-lucide="plus"></i><span>일정 등록</span></button>',
+          '    <button type="button" class="schedule-action-button" data-action="event-download"><i data-lucide="download"></i><span>다운로드</span><i data-lucide="chevron-down"></i></button>',
+          '  </div>',
+          '</div>',
+          mode === 'list' ? renderScheduleCompactList_(schedules) : renderMonthCalendar_(schedules)
+        ].join('');
+      }
+
+      function renderMonthCalendar_(schedules) {
         var weekdays = ['일', '월', '화', '수', '목', '금', '토'];
         return [
-          '<div class="calendar-grid">',
+          '<div class="school-calendar-grid">',
           weekdays.map(function(day) {
-            return '<div class="calendar-weekday">' + day + '</div>';
+            return '<div class="school-calendar-weekday">' + day + '</div>';
           }).join(''),
-          renderCalendarCells_(false).join(''),
+          renderCalendarCells_(schedules, false).join(''),
           '</div>'
         ].join('');
       }
 
-      function renderCalendarCells_(isMini) {
+      function renderCalendarCells_(schedules, isMini) {
         var firstDay = new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth, 1);
         var startOffset = firstDay.getDay();
         var gridStart = new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth, 1 - startOffset);
         var cells = [];
-        for (var i = 0; i < 35; i += 1) {
+        for (var i = 0; i < 42; i += 1) {
           var date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
           var isoDate = formatDateKey_(date);
           var isCurrentMonth = date.getMonth() === APP_STATE.calendarMonth;
-          var dayEvents = getEventsByDate_(isoDate);
-          var classNames = [isMini ? 'mini-day' : 'calendar-day'];
+          var dayEvents = getSchedulesByDate_(schedules, isoDate);
+          var classNames = [isMini ? 'mini-schedule-day' : 'school-calendar-day'];
           if (!isCurrentMonth) {
             classNames.push('muted');
           }
@@ -13690,17 +14651,21 @@
           if (isToday_(date)) {
             classNames.push('today');
           }
+          if (APP_STATE.selectedEventDate === isoDate) {
+            classNames.push('selected');
+          }
 
           if (isMini) {
-            cells.push('<div class="' + classNames.join(' ') + '">' + escapeHtml(String(date.getDate())) + '</div>');
+            var dotStyle = dayEvents.length >= 3 ? '#db2777' : (dayEvents.length >= 2 ? '#f59e0b' : '#34d399');
+            cells.push('<button type="button" class="' + classNames.join(' ') + '" data-action="select-event-date" data-date="' + escapeAttribute(isoDate) + '">' + escapeHtml(String(date.getDate())) + (dayEvents.length ? '<span class="mini-dot" style="--mini-dot:' + dotStyle + ';"></span>' : '') + '</button>');
             continue;
           }
 
           cells.push([
-            '<div class="' + classNames.join(' ') + '">',
-            '  <span class="calendar-day-number">' + escapeHtml(String(date.getDate())) + '</span>',
-               groupEventsForCalendar_(dayEvents).map(function(group, index) {
-                 return renderCalendarEventChip_(group, index);
+            '<div class="' + classNames.join(' ') + '" data-date="' + escapeAttribute(isoDate) + '">',
+            '  <button type="button" class="school-day-button" data-action="select-event-date" data-date="' + escapeAttribute(isoDate) + '">' + escapeHtml(String(date.getDate())) + '</button>',
+               dayEvents.map(function(schedule) {
+                 return renderCalendarEventChip_(schedule);
                }).join(''),
             '</div>'
           ].join(''));
@@ -13708,73 +14673,538 @@
         return cells;
       }
 
-      function groupEventsForCalendar_(items) {
-        var groups = [];
-        (items || []).forEach(function(item) {
-          var key = normalizeSearchText(item.target || '대상 미지정');
-          var group = groups.find(function(candidate) {
-            return candidate.key === key;
-          });
-          if (!group) {
-            group = {
-              key: key,
-              target: item.target || '대상 미지정',
-              items: []
-            };
-            groups.push(group);
-          }
-          group.items.push(item);
-        });
-        return groups;
-      }
-
-      function renderCalendarEventChip_(group, index) {
-        var items = group.items || [];
-        var firstItem = items[0] || {};
-        var className = getEventSubjectClass_(firstItem.title);
-        var subjects = uniqueList_(items.map(function(item) {
-          return item.title || '일정';
-        })).map(function(title) {
-          return '<span class="calendar-event-title">' + escapeHtml(title) + '</span>';
-        }).join('');
-        var notes = uniqueList_(items.map(function(item) {
-          return item.note || '';
-        }).filter(Boolean)).join(', ');
+      function renderCalendarEventChip_(schedule) {
+        var title = [schedule.school, schedule.grade].filter(Boolean).join(' ');
+        var fullText = [title, schedule.subject, schedule.title].filter(Boolean).join(' · ');
         return [
-          '<div class="calendar-event-chip ' + className + ' ' + (index === 0 ? 'primary' : 'secondary') + '">',
-          '  <span class="calendar-event-target">' + escapeHtml(group.target || '대상 미지정') + '</span>',
-          '  <span class="calendar-event-subjects">' + subjects + '</span>',
-          notes ? '  <span class="calendar-event-note">' + escapeHtml(notes) + '</span>' : '',
-          items.length > 1 ? '  <span class="calendar-event-count">' + escapeHtml(String(items.length)) + '건 묶음</span>' : '',
-          '</div>'
+          '<button type="button" class="school-schedule-chip ' + getScheduleGradeToneClass_(schedule.grade) + (APP_STATE.focusedEventId === schedule.id ? ' focused' : '') + '" data-action="focus-event" data-schedule-id="' + escapeAttribute(schedule.id) + '" data-date="' + escapeAttribute(schedule.date) + '" title="' + escapeAttribute(fullText) + '">',
+          '  <i data-lucide="' + escapeAttribute(getScheduleIcon_(schedule)) + '"></i>',
+          '  <strong>' + escapeHtml(title || '학교 미지정') + '</strong>',
+          '  <span class="schedule-subject">' + escapeHtml(schedule.subject || schedule.scheduleType || '-') + '</span>',
+          '</button>'
         ].join('');
       }
 
-      function renderEventList_() {
-        var items = getEventsForCurrentMonth_();
-        if (!items.length) {
-          if (String(APP_STATE.eventSearchKeyword || '').trim()) {
-            return '<div class="empty-state">검색 조건에 맞는 일정이 없습니다.<br>학교, 학년, 과목명 또는 비고를 다시 입력해 주세요.</div>';
-          }
-          return '<div class="empty-state">선택한 달에 등록된 일정이 없습니다.<br>좌측 입력창에서 바로 새 일정을 추가할 수 있습니다.</div>';
-        }
-
-        return '<div class="event-list">' + items.map(function(item) {
-          var className = getEventSubjectClass_(item.title);
+      function renderSelectedDateScheduleTable_(schedules) {
+        var selectedItems = getSchedulesByDate_(schedules, APP_STATE.selectedEventDate);
+        var title = formatSelectedScheduleDateTitle_(APP_STATE.selectedEventDate) + ' · ' + selectedItems.length + '개 일정';
+        var rows = selectedItems.map(function(schedule) {
           return [
-            '<div class="event-item ' + className + '">',
-            '  <span class="event-date-chip">' + escapeHtml(formatEventDateLabel_(item.isoDate || item.date)) + '</span>',
-            '  <div>',
-            '    <span class="event-target-title">' + escapeHtml(item.target || '대상 미지정') + '</span>',
-            '    <div class="event-subject-line"><strong>' + escapeHtml(item.title || '일정') + '</strong>' + (item.note ? '<p>' + escapeHtml(item.note) + '</p>' : '') + '</div>',
-            '  </div>',
-            '  <div class="event-item-actions">',
-            '    <button type="button" class="event-edit-button" data-action="edit-event" data-event-row="' + escapeAttribute(String(item.rowNumber || '')) + '">수정</button>',
-            '    <span class="helper-text">' + escapeHtml(item.submitter || '작성자 미상') + '</span>',
-            '  </div>',
-            '</div>'
+            '<tr class="' + (APP_STATE.focusedEventId === schedule.id ? 'focused' : '') + '">',
+            '  <td>' + escapeHtml(schedule.time || '-') + '</td>',
+            '  <td><strong>' + escapeHtml(schedule.school || '-') + '</strong></td>',
+            '  <td><span class="legend-chip ' + getScheduleGradeToneClass_(schedule.grade) + '">' + escapeHtml(schedule.grade || '-') + '</span></td>',
+            '  <td>' + escapeHtml(schedule.subject || '-') + '</td>',
+            '  <td>' + renderEventTypeBadge_(schedule.scheduleType) + '</td>',
+            '  <td><strong>' + escapeHtml(schedule.title || '-') + '</strong></td>',
+            '  <td>' + escapeHtml(String(schedule.targetStudentCount || 0)) + '명</td>',
+            '  <td><div class="event-table-actions"><button type="button" class="schedule-table-icon" data-action="edit-event" data-event-row="' + escapeAttribute(String(schedule.rowNumber || '')) + '" data-schedule-id="' + escapeAttribute(schedule.id) + '" data-date="' + escapeAttribute(schedule.date) + '" aria-label="수정"><i data-lucide="edit-2"></i></button><button type="button" class="schedule-table-icon danger" data-action="event-delete" aria-label="삭제"><i data-lucide="trash-2"></i></button></div></td>',
+            '</tr>'
           ].join('');
-        }).join('') + '</div>';
+        }).join('');
+        if (!rows) {
+          rows = '<tr><td colspan="8" class="helper-text">선택한 날짜에 등록된 일정이 없습니다. 아래 버튼으로 일정을 추가할 수 있습니다.</td></tr>';
+        }
+        return [
+          '<section class="selected-schedule-panel">',
+          '  <div class="selected-schedule-head">',
+          '    <h3>' + escapeHtml(title) + '</h3>',
+          '    <button type="button" class="schedule-action-button" data-action="event-more"><i data-lucide="clipboard-check"></i><span>전달용 정리</span></button>',
+          '  </div>',
+          '  <table class="selected-schedule-table">',
+          '    <colgroup><col style="width:70px"><col style="width:100px"><col style="width:88px"><col style="width:96px"><col style="width:116px"><col><col style="width:100px"><col style="width:86px"></colgroup>',
+          '    <thead><tr><th>시간</th><th>학교</th><th>학년</th><th>과목</th><th>일정 유형</th><th>일정명</th><th>대상 학생 수</th><th>관리</th></tr></thead>',
+          '    <tbody>' + rows + '</tbody>',
+          '  </table>',
+          '  <div class="schedule-add-row"><button type="button" class="schedule-action-button" data-action="event-table-add"><i data-lucide="plus"></i><span>일정 추가</span></button></div>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderScheduleInsightPanel_(schedules) {
+        schedules = schedules || [];
+        return [
+          renderGradeSummaryPanel_(schedules),
+          renderMiniMonthPreview_(schedules),
+          renderRecentScheduleChanges_(schedules)
+        ].join('');
+      }
+
+      function renderGradeSummaryPanel_(schedules) {
+        var counts = {
+          '1학년': schedules.filter(function(item) { return item.grade === '1학년'; }).length,
+          '2학년': schedules.filter(function(item) { return item.grade === '2학년'; }).length,
+          '3학년': schedules.filter(function(item) { return item.grade === '3학년'; }).length,
+          '전체': schedules.length
+        };
+        return [
+          '<section class="school-filter-section">',
+          '  <div class="schedule-insight-title"><span>학년별 일정 요약 (' + escapeHtml(String(APP_STATE.calendarMonth + 1)) + '월)</span><button type="button" data-action="event-more">더보기</button></div>',
+          '  <div class="schedule-grade-summary">',
+          renderGradeSummaryCard_('1학년', counts['1학년'], 'grade-1'),
+          renderGradeSummaryCard_('2학년', counts['2학년'], 'grade-3'),
+          renderGradeSummaryCard_('3학년', counts['3학년'], 'grade-2'),
+          renderGradeSummaryCard_('전체', counts['전체'], 'grade-total'),
+          '  </div>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderGradeSummaryCard_(label, count, tone) {
+        return '<div class="grade-summary-card ' + tone + '"><i data-lucide="users"></i><strong>' + escapeHtml(String(count)) + '</strong><span>' + escapeHtml(label) + ' 일정</span></div>';
+      }
+
+      function renderMiniMonthPreview_(schedules) {
+        var weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+        return [
+          '<section class="school-filter-section">',
+          '  <div class="schedule-insight-title"><span>' + escapeHtml(String(APP_STATE.calendarMonth + 1)) + '월 내 일정 미리보기</span><button type="button" data-action="event-more">더보기</button></div>',
+          '  <div class="mini-schedule-calendar">',
+          '    <div class="mini-schedule-top"><button type="button" class="schedule-icon-button" data-action="prev-month" aria-label="이전 월"><i data-lucide="chevron-left"></i></button><span>' + escapeHtml(String(APP_STATE.calendarMonth + 1)) + '월</span><button type="button" class="schedule-icon-button" data-action="next-month" aria-label="다음 월"><i data-lucide="chevron-right"></i></button></div>',
+          '    <div class="mini-schedule-grid">',
+          weekdays.map(function(day) { return '<span class="mini-schedule-weekday">' + day + '</span>'; }).join(''),
+          renderCalendarCells_(schedules, true).join(''),
+          '    </div>',
+          '    <div class="schedule-dot-legend"><span><i class="schedule-dot" style="--dot-color:#db2777"></i>많음</span><span><i class="schedule-dot" style="--dot-color:#f59e0b"></i>보통</span><span><i class="schedule-dot" style="--dot-color:#34d399"></i>적음</span></div>',
+          '  </div>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderRecentScheduleChanges_(schedules) {
+        var recent = getRecentScheduleChanges_(schedules).slice(0, 5);
+        return [
+          '<section class="school-filter-section">',
+          '  <div class="schedule-insight-title"><span>최근 등록/수정</span><button type="button" data-action="event-more">더보기</button></div>',
+          '  <div class="recent-schedule-list">',
+          recent.map(function(item) {
+            return '<div class="recent-schedule-item"><span class="recent-schedule-time">' + escapeHtml(item.time) + '</span><div><strong>' + escapeHtml(item.title) + '</strong><span>' + escapeHtml(item.description) + ' · ' + escapeHtml(item.author) + '</span></div></div>';
+          }).join(''),
+          '  </div>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderScheduleCompactList_(schedules) {
+        var rows = schedules.map(function(schedule) {
+          return '<tr><td>' + escapeHtml(formatEventDateLabel_(schedule.date)) + '</td><td>' + escapeHtml(schedule.time) + '</td><td>' + escapeHtml(schedule.school) + '</td><td>' + escapeHtml(schedule.grade) + '</td><td>' + escapeHtml(schedule.subject) + '</td><td>' + renderEventTypeBadge_(schedule.scheduleType) + '</td><td>' + escapeHtml(schedule.title) + '</td></tr>';
+        }).join('');
+        if (!rows) {
+          rows = '<tr><td colspan="7" class="helper-text">표시할 일정이 없습니다.</td></tr>';
+        }
+        return [
+          '<table class="selected-schedule-table">',
+          '<thead><tr><th>날짜</th><th>시간</th><th>학교</th><th>학년</th><th>과목</th><th>유형</th><th>일정명</th></tr></thead>',
+          '<tbody>' + rows + '</tbody>',
+          '</table>'
+        ].join('');
+      }
+
+      function renderFavoriteSchools_() {
+        return getFavoriteSchools_().map(function(item) {
+          var active = APP_STATE.eventSchoolFilter === item.name ? ' active' : '';
+          return [
+            '<button type="button" class="favorite-school-row' + active + '" data-action="event-more" data-favorite-school="' + escapeAttribute(item.name) + '">',
+            '  <span class="favorite-school-color" style="--school-color:' + escapeAttribute(item.color) + ';"></span>',
+            '  <strong>' + escapeHtml(item.name) + '</strong>',
+            '  <span>' + escapeHtml(String(item.scheduleCount)) + '개 일정</span>',
+            '</button>'
+          ].join('');
+        }).join('');
+      }
+
+      function renderGradeLegend_() {
+        return [
+          renderLegendChip_('1학년', 'users', 'grade-1'),
+          renderLegendChip_('2학년', 'users', 'grade-2'),
+          renderLegendChip_('3학년', 'users', 'grade-3'),
+          renderLegendChip_('공통', 'circle', 'grade-common')
+        ].join('');
+      }
+
+      function renderTypeLegend_() {
+        return [
+          renderLegendChip_('내신 시험', 'book-open', 'exam'),
+          renderLegendChip_('모의고사', 'file-text', 'mock'),
+          renderLegendChip_('수행 평가', 'clipboard-check', 'performance'),
+          renderLegendChip_('기타 일정', 'circle', 'etc')
+        ].join('');
+      }
+
+      function renderLegendChip_(label, icon, tone) {
+        var toneClass = tone.indexOf('grade-') === 0 ? tone : ('event-type-badge ' + tone);
+        if (tone.indexOf('grade-') === 0) {
+          return '<span class="legend-chip ' + toneClass + '"><i data-lucide="' + escapeAttribute(icon) + '"></i>' + escapeHtml(label) + '</span>';
+        }
+        return '<span class="' + toneClass + '"><i data-lucide="' + escapeAttribute(icon) + '"></i>' + escapeHtml(label) + '</span>';
+      }
+
+      function renderEventTypeBadge_(type) {
+        var tone = getScheduleTypeTone_(type);
+        return '<span class="event-type-badge ' + tone + '"><i data-lucide="' + escapeAttribute(getScheduleTypeIcon_(type)) + '"></i>' + escapeHtml(type || '기타 일정') + '</span>';
+      }
+
+      function getAllSchoolSchedules_() {
+        var actual = (APP_STATE.events || []).map(function(item, index) {
+          return normalizeEventToSchedule_(item, index);
+        }).filter(function(item) {
+          return item && item.date;
+        });
+        return actual.length ? actual : getMockSchoolSchedules_();
+      }
+
+      function getFilteredSchoolSchedules_(options) {
+        var config = options || {};
+        var keyword = normalizeSearchText(config.ignoreKeyword ? '' : APP_STATE.eventSearchKeyword);
+        var region = APP_STATE.eventRegionFilter || '';
+        var school = APP_STATE.eventSchoolFilter || '';
+        var onlyExams = APP_STATE.eventOnlyExams !== false;
+        return getAllSchoolSchedules_().filter(function(item) {
+          var parsed = parseEventDateForClient_(item.date);
+          var matchesMonth = parsed && parsed.getFullYear() === APP_STATE.calendarYear && parsed.getMonth() === APP_STATE.calendarMonth;
+          if (!matchesMonth) {
+            return false;
+          }
+          if (region && getEventSchoolRegion_(item.school) !== region) {
+            return false;
+          }
+          if (school && item.school !== school) {
+            return false;
+          }
+          if (onlyExams && ['내신 시험', '모의고사'].indexOf(item.scheduleType) === -1) {
+            return false;
+          }
+          if (!keyword) {
+            return true;
+          }
+          return normalizeSearchText([item.school, item.grade, item.subject, item.scheduleType, item.title].join(' ')).indexOf(keyword) !== -1;
+        }).sort(sortSchedules_);
+      }
+
+      function normalizeEventToSchedule_(item, index) {
+        var parsed = parseEventDateForClient_(item.isoDate || item.date || item.eventDate);
+        if (!parsed) {
+          return null;
+        }
+        var target = parseScheduleTarget_(item.target || item.school || item.targetSchool || '');
+        var subject = item.subjectName || item.title || item.eventName || '일정';
+        var title = item.examType || item.note || inferScheduleTitle_(subject);
+        var scheduleType = inferScheduleType_([subject, title, item.note].join(' '));
+        var dateKey = formatDateKey_(parsed);
+        var school = target.school || item.school || '학교 미지정';
+        var grade = target.grade || '공통';
+        return {
+          id: String(item.rowNumber || item.id || ('event-' + index)),
+          rowNumber: item.rowNumber || '',
+          date: dateKey,
+          time: item.time || getDefaultScheduleTime_(index),
+          school: school,
+          grade: grade,
+          subject: subject,
+          scheduleType: scheduleType,
+          title: title,
+          targetStudentCount: countRelatedStudents_(school, grade),
+          colorKey: getScheduleGradeToneClass_(target.grade),
+          author: item.submitter || item.createdBy || '예스엘튜',
+          source: item
+        };
+      }
+
+      function parseScheduleTarget_(value) {
+        var text = String(value || '').trim();
+        if (!text) {
+          return { school: '', grade: '공통' };
+        }
+        if (text.indexOf('|') !== -1) {
+          var pieces = text.split('|');
+          return {
+            school: pieces[0].trim(),
+            grade: normalizeScheduleGrade_(pieces[1])
+          };
+        }
+        var gradeMatch = text.match(/([1-3])\s*학년/);
+        if (!gradeMatch) {
+          var compact = text.replace(/\s+/g, '');
+          gradeMatch = compact.match(/^(.+?)([1-3])$/);
+          if (gradeMatch) {
+            return { school: gradeMatch[1].trim(), grade: normalizeScheduleGrade_(gradeMatch[2]) };
+          }
+        }
+        var grade = gradeMatch ? normalizeScheduleGrade_(gradeMatch[1]) : '공통';
+        var school = gradeMatch ? text.replace(gradeMatch[0], '').trim() : text;
+        return { school: school || text, grade: grade };
+      }
+
+      function normalizeScheduleGrade_(value) {
+        var text = String(value || '').trim();
+        var match = text.match(/[1-3]/);
+        return match ? match[0] + '학년' : '공통';
+      }
+
+      function inferScheduleType_(text) {
+        var normalized = normalizeSearchText(text);
+        if (normalized.indexOf('수행') !== -1) {
+          return '수행 평가';
+        }
+        if (normalized.indexOf('모의') !== -1) {
+          return '모의고사';
+        }
+        if (normalized.indexOf('고사') !== -1 || normalized.indexOf('시험') !== -1 || normalized.indexOf('중간') !== -1 || normalized.indexOf('기말') !== -1) {
+          return '내신 시험';
+        }
+        return '기타 일정';
+      }
+
+      function inferScheduleTitle_(subject) {
+        var text = normalizeSearchText(subject);
+        if (text.indexOf('기말') !== -1) {
+          return '1학기 기말고사';
+        }
+        if (text.indexOf('중간') !== -1) {
+          return '1학기 중간고사';
+        }
+        return '1학기 중간고사';
+      }
+
+      function getDefaultScheduleTime_(index) {
+        var defaults = ['09:00', '10:30', '13:30', '15:00', '16:30', '18:00'];
+        return defaults[Math.abs(index || 0) % defaults.length];
+      }
+
+      function sortSchedules_(a, b) {
+        return String(a.date || '').localeCompare(String(b.date || '')) ||
+          String(a.time || '').localeCompare(String(b.time || '')) ||
+          String(a.school || '').localeCompare(String(b.school || ''), 'ko') ||
+          String(a.grade || '').localeCompare(String(b.grade || ''), 'ko');
+      }
+
+      function getSchedulesByDate_(schedules, isoDate) {
+        return (schedules || []).filter(function(item) {
+          return item.date === isoDate;
+        }).sort(sortSchedules_);
+      }
+
+      function ensureSelectedEventDate_(schedules) {
+        var firstOfMonth = formatDateKey_(new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth, 1));
+        var selected = parseEventDateForClient_(APP_STATE.selectedEventDate || '');
+        var isSelectedInMonth = selected && selected.getFullYear() === APP_STATE.calendarYear && selected.getMonth() === APP_STATE.calendarMonth;
+        if (!isSelectedInMonth) {
+          var today = new Date();
+          APP_STATE.selectedEventDate = today.getFullYear() === APP_STATE.calendarYear && today.getMonth() === APP_STATE.calendarMonth
+            ? formatDateKey_(today)
+            : firstOfMonth;
+        }
+        if (getSchedulesByDate_(schedules, APP_STATE.selectedEventDate).length) {
+          return;
+        }
+        var counts = {};
+        (schedules || []).forEach(function(item) {
+          counts[item.date] = (counts[item.date] || 0) + 1;
+        });
+        var bestDate = Object.keys(counts).sort(function(a, b) {
+          return counts[b] - counts[a] || a.localeCompare(b);
+        })[0];
+        if (bestDate) {
+          APP_STATE.selectedEventDate = bestDate;
+        }
+      }
+
+      function getScheduleById_(id) {
+        return getAllSchoolSchedules_().find(function(item) {
+          return item.id === id;
+        }) || null;
+      }
+
+      function getFavoriteSchools_() {
+        var preferred = ['동대부고', '세화여고', '영일외고', '반포고', '휘문고', '경기고', '숙명여고', '신동고', '서문여고', '상문고', '배문고', '서울고'];
+        var schedules = getAllSchoolSchedules_().filter(function(item) {
+          var parsed = parseEventDateForClient_(item.date);
+          return parsed && parsed.getFullYear() === APP_STATE.calendarYear && parsed.getMonth() === APP_STATE.calendarMonth;
+        });
+        var counts = {};
+        schedules.forEach(function(item) {
+          counts[item.school] = (counts[item.school] || 0) + 1;
+        });
+        var palette = ['#7c3aed', '#059669', '#db2777', '#2563eb', '#f97316', '#10b981', '#ec4899', '#0ea5e9', '#8b5cf6', '#14b8a6', '#f59e0b', '#64748b'];
+        return uniqueList_(preferred.concat(Object.keys(counts))).slice(0, 12).map(function(name, index) {
+          return {
+            id: normalizeSearchText(name),
+            name: name,
+            scheduleCount: counts[name] || 0,
+            color: palette[index % palette.length]
+          };
+        });
+      }
+
+      function countRelatedStudents_(school, grade) {
+        var gradeNumber = getGradeNumber_(grade);
+        var count = (APP_STATE.visibleStudents || []).filter(function(student) {
+          if (school && normalizeSearchText(student.school) !== normalizeSearchText(school)) {
+            return false;
+          }
+          if (gradeNumber && getGradeNumber_(student.grade) !== gradeNumber) {
+            return false;
+          }
+          return true;
+        }).length;
+        if (count) {
+          return count;
+        }
+        var seed = Math.abs((normalizeSearchText(school + grade) || 'schedule').split('').reduce(function(total, char) {
+          return total + char.charCodeAt(0);
+        }, 0));
+        return 12 + (seed % 24);
+      }
+
+      function getScheduleGradeToneClass_(grade) {
+        var text = normalizeScheduleGrade_(grade);
+        if (text === '1학년') {
+          return 'grade-1';
+        }
+        if (text === '2학년') {
+          return 'grade-2';
+        }
+        if (text === '3학년') {
+          return 'grade-3';
+        }
+        return 'grade-common';
+      }
+
+      function getScheduleTypeTone_(type) {
+        if (type === '내신 시험') {
+          return 'exam';
+        }
+        if (type === '모의고사') {
+          return 'mock';
+        }
+        if (type === '수행 평가') {
+          return 'performance';
+        }
+        return 'etc';
+      }
+
+      function getScheduleTypeIcon_(type) {
+        if (type === '내신 시험') {
+          return 'book-open';
+        }
+        if (type === '모의고사') {
+          return 'file-text';
+        }
+        if (type === '수행 평가') {
+          return 'clipboard-check';
+        }
+        return 'circle';
+      }
+
+      function getScheduleIcon_(schedule) {
+        var subject = normalizeSearchText(schedule.subject);
+        if (subject.indexOf('과학') !== -1 || subject.indexOf('화학') !== -1 || subject.indexOf('생명') !== -1 || subject.indexOf('물리') !== -1) {
+          return 'flask-conical';
+        }
+        if (subject.indexOf('국어') !== -1 || subject.indexOf('영어') !== -1 || subject.indexOf('사회') !== -1 || subject.indexOf('역사') !== -1) {
+          return 'book-open';
+        }
+        return 'school';
+      }
+
+      function getEventSchoolRegion_(school) {
+        var text = normalizeSearchText(school);
+        if (text.indexOf('서초') !== -1 || text.indexOf('반포') !== -1 || text.indexOf('세화') !== -1 || text.indexOf('경기') !== -1 || text.indexOf('숙명') !== -1 || text.indexOf('휘문') !== -1) {
+          return 'seocho';
+        }
+        if (text.indexOf('동작') !== -1 || text.indexOf('신동') !== -1 || text.indexOf('상문') !== -1 || text.indexOf('중대') !== -1) {
+          return 'dongjak';
+        }
+        return 'etc';
+      }
+
+      function formatSelectedScheduleDateTitle_(value) {
+        var parsed = parseEventDateForClient_(value);
+        if (!parsed) {
+          return '날짜 미지정';
+        }
+        var weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+        return parsed.getFullYear() + '년 ' + String(parsed.getMonth() + 1).padStart(2, '0') + '월 ' + String(parsed.getDate()).padStart(2, '0') + '일 (' + weekdays[parsed.getDay()] + ')';
+      }
+
+      function getRecentScheduleChanges_(schedules) {
+        var derived = (schedules || []).slice().sort(sortSchedules_).reverse().map(function(item, index) {
+          var time = ['10:02', '09:58', '09:45', '09:30', '09:15'][index % 5];
+          return {
+            id: item.id,
+            time: time,
+            title: [item.school, item.grade, item.subject].filter(Boolean).join(' '),
+            description: item.title + (index % 2 ? ' 수정' : ' 추가'),
+            author: item.author || '예스엘튜'
+          };
+        });
+        return derived.length ? derived : [
+          { id: 'recent-1', time: '10:02', title: '세화여고 2학년 영어', description: '1학기 중간고사 추가', author: '예스엘튜' },
+          { id: 'recent-2', time: '09:58', title: '동대부고 1학년 국어', description: '1학기 중간고사 수정', author: '예스엘튜' },
+          { id: 'recent-3', time: '09:45', title: '신동고 3학년 수학', description: '1학기 모의고사 추가', author: '예스엘튜' },
+          { id: 'recent-4', time: '09:30', title: '반포고 2학년 과학', description: '1학기 중간고사 추가', author: '예스엘튜' },
+          { id: 'recent-5', time: '09:15', title: '휘문고 1학년 통합사회', description: '1학기 중간고사 수정', author: '예스엘튜' }
+        ];
+      }
+
+      function openEventEditorForDate_(dateKey, schedule) {
+        APP_STATE.isEventEditorOpen = true;
+        clearEventEditMode_();
+        document.getElementById('eventForm').reset();
+        document.getElementById('eventDateInput').value = dateKey || formatDateKey_(new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth, 1));
+        if (schedule) {
+          document.getElementById('eventTargetInput').value = [schedule.school, schedule.grade].filter(Boolean).join(' ');
+          document.getElementById('eventTitleInput').value = schedule.subject || '';
+          document.getElementById('eventNoteInput').value = schedule.title || '';
+        }
+        renderEvents();
+        setTimeout(function() {
+          document.getElementById('eventTargetInput').focus();
+        }, 0);
+      }
+
+      function getMockSchoolSchedules_() {
+        return [
+          mockSchedule_('mock-1', '2026-04-01', '09:00', '세화여고', '1학년', '국어', '내신 시험', '1학기 중간고사', 23),
+          mockSchedule_('mock-2', '2026-04-01', '10:30', '동대부고', '2학년', '수학', '내신 시험', '1학기 중간고사', 27),
+          mockSchedule_('mock-3', '2026-04-02', '09:00', '신동고', '1학년', '영어', '내신 시험', '1학기 중간고사', 16),
+          mockSchedule_('mock-4', '2026-04-03', '09:00', '반포고', '3학년', '수학', '내신 시험', '1학기 중간고사', 20),
+          mockSchedule_('mock-5', '2026-04-03', '13:30', '동대부고', '1학년', '과학', '내신 시험', '1학기 중간고사', 18),
+          mockSchedule_('mock-6', '2026-04-14', '09:00', '동대부고', '1학년', '한국사', '내신 시험', '1학기 중간고사', 32),
+          mockSchedule_('mock-7', '2026-04-14', '10:30', '세화여고', '3학년', '사회', '내신 시험', '1학기 중간고사', 21),
+          mockSchedule_('mock-8', '2026-04-15', '09:00', '세화여고', '1학년', '수학', '내신 시험', '1학기 중간고사', 24),
+          mockSchedule_('mock-9', '2026-04-15', '10:30', '신동고', '2학년', '영어', '내신 시험', '1학기 중간고사', 18),
+          mockSchedule_('mock-10', '2026-04-15', '13:30', '반포고', '2학년', '과학', '내신 시험', '1학기 중간고사', 28),
+          mockSchedule_('mock-11', '2026-04-16', '09:00', '경기고', '1학년', '국어', '내신 시험', '1학기 중간고사', 17),
+          mockSchedule_('mock-12', '2026-04-17', '09:00', '동대부고', '3학년', '영어', '내신 시험', '1학기 중간고사', 18),
+          mockSchedule_('mock-13', '2026-04-17', '13:30', '세화여고', '3학년', '수학', '내신 시험', '1학기 중간고사', 16),
+          mockSchedule_('mock-14', '2026-04-18', '09:00', '신동고', '1학년', '과학', '내신 시험', '1학기 중간고사', 14),
+          mockSchedule_('mock-15', '2026-04-28', '09:00', '동대부고', '1학년', '국어', '내신 시험', '1학기 중간고사', 32),
+          mockSchedule_('mock-16', '2026-04-28', '10:30', '세화여고', '2학년', '영어', '내신 시험', '1학기 중간고사', 28),
+          mockSchedule_('mock-17', '2026-04-28', '13:30', '신동고', '3학년', '수학', '내신 시험', '1학기 중간고사', 18),
+          mockSchedule_('mock-18', '2026-04-28', '15:00', '휘문고', '1학년', '통합사회', '내신 시험', '1학기 중간고사', 24),
+          mockSchedule_('mock-19', '2026-04-30', '09:00', '휘문고', '2학년', '영어', '내신 시험', '1학기 중간고사', 29),
+          mockSchedule_('mock-20', '2026-05-01', '09:00', '반포고', '1학년', '국어', '내신 시험', '1학기 중간고사', 20),
+          mockSchedule_('mock-21', '2026-05-02', '10:30', '경기고', '3학년', '수학', '내신 시험', '1학기 중간고사', 17)
+        ];
+      }
+
+      function mockSchedule_(id, date, time, school, grade, subject, type, title, count) {
+        return {
+          id: id,
+          rowNumber: '',
+          date: date,
+          time: time,
+          school: school,
+          grade: grade,
+          subject: subject,
+          scheduleType: type,
+          title: title,
+          targetStudentCount: count,
+          colorKey: getScheduleGradeToneClass_(grade),
+          author: '예스엘튜',
+          source: null
+        };
       }
 
       function enterEventEditMode_(rowNumber) {
@@ -13853,7 +15283,7 @@
       }
 
       function formatCalendarMonthLabel_(year, month) {
-        return year + '년 ' + String(month + 1).padStart(2, '0') + '월';
+        return year + '년 ' + String(month + 1) + '월';
       }
 
       function formatEventDateLabel_(value) {
@@ -15489,6 +16919,12 @@
         APP_STATE.isMaterialOpenLogsCollapsed = true;
         APP_STATE.events = [];
         APP_STATE.eventSearchKeyword = '';
+        APP_STATE.eventRegionFilter = '';
+        APP_STATE.eventSchoolFilter = '';
+        APP_STATE.eventOnlyExams = true;
+        APP_STATE.eventViewMode = 'month';
+        APP_STATE.selectedEventDate = '';
+        APP_STATE.focusedEventId = '';
         APP_STATE.isEventSearchComposing = false;
         APP_STATE.editingEventRowNumber = '';
         APP_STATE.jikboPanelMode = 'board';
