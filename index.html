@@ -9278,6 +9278,7 @@
         materialCreateOpen: false,
         isMaterialSearchComposing: false,
         isStudentSearchComposing: false,
+        studentSearchRenderTimer: null,
         materialYearTabsBySchool: {},
         editingMaterialRowNumber: '',
         materialOpenLogs: [],
@@ -9421,19 +9422,22 @@
         document.getElementById('closeJikboAssignmentModalButton').addEventListener('click', closeJikboAssignmentModal_);
         document.getElementById('jikboAssignmentModal').addEventListener('click', handleJikboAssignmentModalClick_);
 
-        document.getElementById('studentSearchInput').addEventListener('input', renderStudents);
+        document.getElementById('studentSearchInput').addEventListener('input', function() {
+          scheduleStudentSearchRender_(80);
+        });
         document.getElementById('globalSearchInput').addEventListener('compositionstart', function() {
           APP_STATE.isStudentSearchComposing = true;
         });
         document.getElementById('globalSearchInput').addEventListener('compositionend', function(event) {
           APP_STATE.isStudentSearchComposing = false;
           handleGlobalStudentSearch_(event);
+          scheduleStudentSearchRender_(30);
           flushPendingStudentRenderAfterComposition_();
         });
         document.getElementById('globalSearchInput').addEventListener('input', handleGlobalStudentSearch_);
         document.getElementById('studentViewToggle').addEventListener('click', handleStudentViewModeClick_);
-        document.getElementById('studentSchoolFilter').addEventListener('change', renderStudents);
-        document.getElementById('studentTagFilter').addEventListener('change', renderStudents);
+        document.getElementById('studentSchoolFilter').addEventListener('change', renderStudentsPreservingSearchFocus_);
+        document.getElementById('studentTagFilter').addEventListener('change', renderStudentsPreservingSearchFocus_);
 
         document.getElementById('studentList').addEventListener('click', handleStudentListClick);
         document.getElementById('studentList').addEventListener('input', handleStudentListInput_);
@@ -9447,6 +9451,7 @@
           if (event.target.closest('[data-student-filter-input]')) {
             APP_STATE.isStudentSearchComposing = false;
             handleStudentListInput_(event);
+            scheduleStudentSearchRender_(30);
             flushPendingStudentRenderAfterComposition_();
           }
         });
@@ -10316,7 +10321,7 @@
           APP_STATE.pendingStudentRenderAfterComposition = true;
           return;
         }
-        renderStudents();
+        renderStudentsPreservingSearchFocus_();
       }
 
       function flushPendingStudentRenderAfterComposition_() {
@@ -10324,7 +10329,79 @@
           return;
         }
         APP_STATE.pendingStudentRenderAfterComposition = false;
+        scheduleStudentSearchRender_(30);
+      }
+
+      function scheduleStudentSearchRender_(delay) {
+        if (APP_STATE.studentSearchRenderTimer) {
+          window.clearTimeout(APP_STATE.studentSearchRenderTimer);
+        }
+        APP_STATE.studentSearchRenderTimer = window.setTimeout(function() {
+          APP_STATE.studentSearchRenderTimer = null;
+          if (APP_STATE.currentView !== 'students') {
+            return;
+          }
+          if (APP_STATE.isStudentSearchComposing) {
+            APP_STATE.pendingStudentRenderAfterComposition = true;
+            return;
+          }
+          renderStudentsPreservingSearchFocus_();
+        }, typeof delay === 'number' ? delay : 0);
+      }
+
+      function captureStudentSearchFocus_() {
+        var active = document.activeElement;
+        if (!active || !active.matches) {
+          return null;
+        }
+        var isStudentSearch = active.matches('[data-student-filter-input]');
+        var isGlobalSearch = active.id === 'globalSearchInput' && APP_STATE.currentView === 'students';
+        if (!isStudentSearch && !isGlobalSearch) {
+          return null;
+        }
+        return {
+          target: isStudentSearch ? 'student' : 'global',
+          value: active.value || '',
+          selectionStart: typeof active.selectionStart === 'number' ? active.selectionStart : null,
+          selectionEnd: typeof active.selectionEnd === 'number' ? active.selectionEnd : null
+        };
+      }
+
+      function restoreStudentSearchFocus_(snapshot) {
+        if (!snapshot) {
+          return;
+        }
+        var target = snapshot.target === 'student'
+          ? document.querySelector('[data-student-filter-input]')
+          : document.getElementById('globalSearchInput');
+        if (!target) {
+          return;
+        }
+        if (target.value !== snapshot.value) {
+          target.value = snapshot.value;
+        }
+        try {
+          target.focus({ preventScroll: true });
+        } catch (error) {
+          target.focus();
+        }
+        if (typeof target.setSelectionRange === 'function' && snapshot.selectionStart !== null && snapshot.selectionEnd !== null) {
+          try {
+            target.setSelectionRange(snapshot.selectionStart, snapshot.selectionEnd);
+          } catch (error) {
+            // Some input types do not expose selection ranges consistently.
+          }
+        }
+      }
+
+      function renderStudentsPreservingSearchFocus_() {
+        var focusSnapshot = captureStudentSearchFocus_();
         renderStudents();
+        if (focusSnapshot) {
+          window.requestAnimationFrame(function() {
+            restoreStudentSearchFocus_(focusSnapshot);
+          });
+        }
       }
 
       function renderStudents() {
@@ -11721,9 +11798,14 @@
       function handleGlobalStudentSearch_(event) {
         var value = event.target.value || '';
         document.getElementById('studentSearchInput').value = value;
-        if (APP_STATE.currentView === 'students' && !APP_STATE.isStudentSearchComposing) {
-          renderStudents();
+        if (APP_STATE.currentView !== 'students') {
+          return;
         }
+        if (APP_STATE.isStudentSearchComposing || event.isComposing) {
+          APP_STATE.pendingStudentRenderAfterComposition = true;
+          return;
+        }
+        scheduleStudentSearchRender_(80);
       }
 
       function handleStudentListInput_(event) {
@@ -11733,22 +11815,24 @@
         }
         document.getElementById('studentSearchInput').value = input.value || '';
         document.getElementById('globalSearchInput').value = input.value || '';
-        if (!APP_STATE.isStudentSearchComposing) {
-          renderStudents();
+        if (APP_STATE.isStudentSearchComposing || event.isComposing) {
+          APP_STATE.pendingStudentRenderAfterComposition = true;
+          return;
         }
+        scheduleStudentSearchRender_(80);
       }
 
       function handleStudentListChange_(event) {
         var schoolSelect = event.target.closest('[data-student-school-select]');
         if (schoolSelect) {
           document.getElementById('studentSchoolFilter').value = schoolSelect.value || '';
-          renderStudents();
+          renderStudentsPreservingSearchFocus_();
           return;
         }
         var tagSelect = event.target.closest('[data-student-tag-select]');
         if (tagSelect) {
           document.getElementById('studentTagFilter').value = tagSelect.value || '';
-          renderStudents();
+          renderStudentsPreservingSearchFocus_();
         }
       }
 
@@ -17860,6 +17944,10 @@
         APP_STATE.jikboStatusDraftMap = {};
         APP_STATE.jikboSummaryDraftMap = {};
         APP_STATE.isJikboSearchComposing = false;
+        if (APP_STATE.studentSearchRenderTimer) {
+          window.clearTimeout(APP_STATE.studentSearchRenderTimer);
+        }
+        APP_STATE.studentSearchRenderTimer = null;
         APP_STATE.pendingStudentRenderAfterComposition = false;
         APP_STATE.selectedJikboAssignmentKey = '';
         APP_STATE.selectedJikboStatusDraft = null;
