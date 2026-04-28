@@ -6075,7 +6075,7 @@
       }
 
       .student-index-table th:nth-child(1),
-      .student-index-table td:nth-child(1) { width: 168px; }
+      .student-index-table td:nth-child(1) { width: 190px; }
 
       .student-index-table th:nth-child(2),
       .student-index-table td:nth-child(2) { width: 210px; }
@@ -6125,17 +6125,52 @@
         color: #334155;
       }
 
-      .student-name-cell strong {
+      .student-name-cell-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .student-name-main {
+        min-width: 0;
+      }
+
+      .student-name-main strong {
         display: block;
         color: #0f172a;
         font-size: 0.9rem;
       }
 
-      .student-name-cell span {
+      .student-name-main span {
         display: block;
         margin-top: 4px;
         color: #64748b;
         font-size: 0.75rem;
+      }
+
+      .student-record-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-width: 34px;
+        height: 24px;
+        padding: 0 7px;
+        border: 1px solid #bfdbfe;
+        border-radius: 7px;
+        background: #eff6ff;
+        color: #174ea6;
+        font-size: 0.72rem;
+        font-weight: 900;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      .student-record-count svg {
+        width: 14px;
+        height: 14px;
+        stroke-width: 2;
       }
 
       .permission-cell {
@@ -6968,6 +7003,195 @@
         font-weight: 900;
       }
 
+      .school-distribution-panel {
+        display: grid;
+        gap: 16px;
+        padding: 18px;
+      }
+
+      .school-distribution-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .school-distribution-head h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 900;
+      }
+
+      .school-distribution-head p {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .school-chart-layout {
+        display: grid;
+        grid-template-columns: minmax(280px, 0.7fr) minmax(0, 1.3fr);
+        gap: 16px;
+        align-items: stretch;
+      }
+
+      .school-donut-card,
+      .school-ring-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .school-donut-card {
+        display: grid;
+        justify-items: center;
+        gap: 16px;
+        padding: 18px;
+      }
+
+      .school-donut {
+        position: relative;
+        width: 220px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+      }
+
+      .school-donut::after {
+        content: "";
+        position: absolute;
+        inset: 42px;
+        border-radius: 50%;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+      }
+
+      .school-donut-center {
+        position: absolute;
+        inset: 54px;
+        z-index: 1;
+        display: grid;
+        place-content: center;
+        text-align: center;
+      }
+
+      .school-donut-center strong {
+        color: #0f172a;
+        font-size: 1.6rem;
+        font-weight: 950;
+        line-height: 1;
+      }
+
+      .school-donut-center span {
+        margin-top: 6px;
+        color: #64748b;
+        font-size: 0.75rem;
+        font-weight: 850;
+      }
+
+      .school-donut-legend {
+        width: 100%;
+        display: grid;
+        gap: 8px;
+      }
+
+      .school-legend-row {
+        display: grid;
+        grid-template-columns: 10px minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 8px;
+        color: #334155;
+        font-size: 0.78rem;
+        font-weight: 850;
+      }
+
+      .school-legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .school-legend-row span:nth-child(2) {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .school-legend-row em {
+        color: #64748b;
+        font-style: normal;
+      }
+
+      .school-ring-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(150px, 1fr));
+        gap: 12px;
+      }
+
+      .school-ring-card {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+        min-height: 112px;
+        padding: 13px;
+      }
+
+      .school-mini-ring {
+        position: relative;
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+      }
+
+      .school-mini-ring::after {
+        content: "";
+        position: absolute;
+        inset: 11px;
+        border-radius: 50%;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+      }
+
+      .school-mini-ring span {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        display: grid;
+        place-items: center;
+        color: #0f172a;
+        font-size: 0.72rem;
+        font-weight: 950;
+      }
+
+      .school-ring-card strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.9rem;
+        font-weight: 950;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .school-ring-card small {
+        display: block;
+        margin-top: 4px;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .school-ring-card .mini-grade-line {
+        display: block;
+        margin-top: 8px;
+        color: #475569;
+        font-size: 0.7rem;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
       .priority-list,
       .timeline-list,
       .bar-list {
@@ -7047,13 +7271,15 @@
         .material-search-row,
         .dense-form-grid,
         .events-shell,
-        .jikbo-manager-stack {
+        .jikbo-manager-stack,
+        .school-chart-layout {
           grid-template-columns: 1fr;
         }
 
         .stats-grid,
         .students-grid,
-        .jikbo-summary-grid {
+        .jikbo-summary-grid,
+        .school-ring-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
@@ -10344,8 +10570,8 @@
         var eventInfo = getSchoolEventInfo_(student.school, student.grade);
         return [
           '<tr class="student-index-row' + selected + '" data-student-id="' + escapeAttribute(student.studentId || '') + '">',
-          '  <td class="student-name-cell"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</span></td>',
-          '  <td><div class="permission-cell"><div class="chip-row">' + renderPermissionChips_(permissions, 2) + '</div><div class="permission-count-text">권한 ' + escapeHtml(String(permissions.length)) + '건</div></div></td>',
+          '  <td class="student-name-cell"><div class="student-name-cell-inner"><div class="student-name-main"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</span></div>' + renderStudentRecordCountBadge_(logs.length) + '</div></td>',
+          '  <td><div class="permission-cell"><div class="chip-row">' + renderPermissionChips_(permissions, 2) + '</div></div></td>',
           '  <td><div class="status-grid">' + [
                renderStatusChip_('상담', logs.length ? 'slate' : 'muted'),
                renderStatusChip_('직보 ' + jikbo.total, jikbo.unconfirmed ? 'warn' : (jikbo.total ? 'teal' : 'muted')),
@@ -10357,6 +10583,13 @@
           '  <td><div class="action-cluster"><button class="icon-mini" type="button" data-action="show-student-profile" title="상세 보기"><i data-lucide="panel-right-open"></i></button><button class="icon-mini" type="button" data-action="manage-student-permission" title="권한 관리"><i data-lucide="shield"></i></button><button class="icon-mini" type="button" data-action="show-log-detail-latest" title="메모"><i data-lucide="sticky-note"></i></button></div></td>',
           '</tr>'
         ].join('');
+      }
+
+      function renderStudentRecordCountBadge_(count) {
+        if (!count) {
+          return '';
+        }
+        return '<span class="student-record-count" title="상담/관리 기록 ' + escapeAttribute(String(count)) + '건"><i data-lucide="message-circle"></i>' + escapeHtml(String(count)) + '</span>';
       }
 
       function renderStudentTagChips_(student) {
@@ -10777,7 +11010,103 @@
       }
 
       function renderSchoolMode_(students) {
-        return '<section class="ops-surface" style="padding:16px;"><div class="ops-card-title"><h3>학교별 학생 분포</h3><span class="ops-chip blue">학교 그룹</span></div>' + renderSchoolHeatmap_(students) + '</section>';
+        var distribution = buildSchoolDistributionForChart_(students);
+        if (!distribution.items.length) {
+          return '<section class="ops-surface school-distribution-panel"><div class="empty-state">학교 분포 데이터가 없습니다.</div></section>';
+        }
+        return [
+          '<section class="ops-surface school-distribution-panel">',
+          '  <div class="school-distribution-head">',
+          '    <div><h3>학교별 학생 분포</h3><p>' + escapeHtml(APP_STATE.isAdmin ? '관리자 전체 보기 기준' : '현재 강사 권한 범위 기준') + ' · ' + escapeHtml(String(distribution.total)) + '명</p></div>',
+          '    <span class="ops-chip blue">' + escapeHtml(String(distribution.items.length)) + '개 학교</span>',
+          '  </div>',
+          '  <div class="school-chart-layout">',
+          '    <article class="school-donut-card">',
+          '      <div class="school-donut" style="background:' + escapeAttribute(buildSchoolDonutGradient_(distribution.items)) + '"><div class="school-donut-center"><strong>' + escapeHtml(String(distribution.total)) + '</strong><span>학생 · ' + escapeHtml(String(distribution.items.length)) + '개 학교</span></div></div>',
+          '      <div class="school-donut-legend">' + distribution.items.slice(0, 10).map(renderSchoolLegendRow_).join('') + '</div>',
+          '    </article>',
+          '    <div class="school-ring-grid">' + distribution.items.slice(0, 12).map(function(item) { return renderSchoolRingCard_(item, distribution.total); }).join('') + '</div>',
+          '  </div>',
+          '</section>'
+        ].join('');
+      }
+
+      function buildSchoolDistributionForChart_(students) {
+        var map = {};
+        (students || []).forEach(function(student) {
+          var school = student.school || '학교 미지정';
+          var grade = String(student.grade || '미정');
+          if (!map[school]) {
+            map[school] = { school: school, count: 0, grades: { '1': 0, '2': 0, '3': 0, '미정': 0 } };
+          }
+          map[school].count += 1;
+          if (grade === '1' || grade === '2' || grade === '3') {
+            map[school].grades[grade] += 1;
+          } else {
+            map[school].grades['미정'] += 1;
+          }
+        });
+        var items = Object.keys(map).map(function(school, index) {
+          map[school].color = getStudentSchoolChartColor_(school, index);
+          return map[school];
+        }).sort(function(a, b) {
+          if (b.count !== a.count) {
+            return b.count - a.count;
+          }
+          return a.school.localeCompare(b.school);
+        });
+        var total = items.reduce(function(sum, item) { return sum + item.count; }, 0);
+        items.forEach(function(item, index) {
+          item.color = getStudentSchoolChartColor_(item.school, index);
+          item.percent = total ? Math.round((item.count / total) * 100) : 0;
+        });
+        return { total: total, items: items };
+      }
+
+      function getStudentSchoolChartColor_(school, index) {
+        var palette = ['#0b55d9', '#0f9a6a', '#f59e0b', '#ef4444', '#7c3aed', '#0891b2', '#db2777', '#64748b', '#16a34a', '#ea580c', '#2563eb', '#9333ea'];
+        var hash = 0;
+        String(school || '').split('').forEach(function(char) {
+          hash = ((hash << 5) - hash) + char.charCodeAt(0);
+          hash |= 0;
+        });
+        return palette[Math.abs(hash + index) % palette.length];
+      }
+
+      function buildSchoolDonutGradient_(items) {
+        var total = (items || []).reduce(function(sum, item) { return sum + item.count; }, 0);
+        if (!total) {
+          return '#e2e8f0';
+        }
+        var cursor = 0;
+        return 'conic-gradient(' + items.map(function(item) {
+          var start = cursor;
+          cursor += (item.count / total) * 360;
+          return item.color + ' ' + start.toFixed(2) + 'deg ' + cursor.toFixed(2) + 'deg';
+        }).join(', ') + ')';
+      }
+
+      function renderSchoolLegendRow_(item) {
+        return [
+          '<div class="school-legend-row">',
+          '  <b class="school-legend-dot" style="background:' + escapeAttribute(item.color) + '"></b>',
+          '  <span title="' + escapeAttribute(item.school) + '">' + escapeHtml(item.school) + '</span>',
+          '  <strong>' + escapeHtml(String(item.count)) + '명</strong>',
+          '  <em>' + escapeHtml(String(item.percent)) + '%</em>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderSchoolRingCard_(item, total) {
+        var degree = total ? Math.max(4, Math.round((item.count / total) * 360)) : 0;
+        var ringStyle = 'background:conic-gradient(' + item.color + ' 0deg ' + degree + 'deg, #e2e8f0 ' + degree + 'deg 360deg)';
+        var gradeLine = '1학년 ' + (item.grades['1'] || 0) + ' · 2학년 ' + (item.grades['2'] || 0) + ' · 3학년 ' + (item.grades['3'] || 0);
+        return [
+          '<article class="school-ring-card">',
+          '  <div class="school-mini-ring" style="' + escapeAttribute(ringStyle) + '"><span>' + escapeHtml(String(item.percent)) + '%</span></div>',
+          '  <div><strong title="' + escapeAttribute(item.school) + '">' + escapeHtml(item.school) + '</strong><small>' + escapeHtml(String(item.count)) + '명 · 현재 범위</small><span class="mini-grade-line">' + escapeHtml(gradeLine) + '</span></div>',
+          '</article>'
+        ].join('');
       }
 
       function renderPermissionMode_(students) {
@@ -10786,7 +11115,7 @@
           var instructors = getStudentPermissionInstructors_(student.studentId);
           return [
             '<tr class="student-index-row" data-student-id="' + escapeAttribute(student.studentId || '') + '">',
-            '<td class="student-name-cell"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '-', student.grade ? student.grade + '학년' : '-'].join(' · ')) + '</span></td>',
+            '<td class="student-name-cell"><div class="student-name-cell-inner"><div class="student-name-main"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '-', student.grade ? student.grade + '학년' : '-'].join(' · ')) + '</span></div></div></td>',
             '<td>' + renderPermissionChips_(instructors, 8) + '</td>',
             '<td>' + escapeHtml(String((permissionMap[student.studentId] || []).length)) + '건</td>',
             '<td>' + (instructors.length ? renderStatusChip_('연결됨', 'ok') : renderStatusChip_('미배정', 'warn')) + '</td>',
