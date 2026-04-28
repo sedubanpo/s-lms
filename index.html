@@ -5515,6 +5515,277 @@
         font-size: 1.2rem;
       }
 
+      .profile-block-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .profile-block-title-row h4 {
+        margin: 0;
+      }
+
+      .student-log-preview-block {
+        display: grid;
+        gap: 10px;
+      }
+
+      .student-log-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .student-log-tab {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 7px;
+        border: 1px solid #d8e3f4;
+        background: #ffffff;
+        color: #475569;
+        font-size: 0.72rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .student-log-tab.active {
+        border-color: #0b55d9;
+        background: #0b55d9;
+        color: #ffffff;
+      }
+
+      .student-log-bubble-list {
+        display: grid;
+        gap: 9px;
+      }
+
+      .student-log-bubble {
+        position: relative;
+        display: grid;
+        gap: 7px;
+        padding: 10px 12px 10px 14px;
+        border: 1px solid #d8e3f4;
+        border-radius: 8px;
+        background: #f8fbff;
+      }
+
+      .student-log-bubble::before {
+        content: '';
+        position: absolute;
+        left: -5px;
+        top: 18px;
+        width: 9px;
+        height: 9px;
+        transform: rotate(45deg);
+        background: inherit;
+        border-left: 1px solid #d8e3f4;
+        border-bottom: 1px solid #d8e3f4;
+      }
+
+      .student-log-bubble.admin {
+        background: #eef5ff;
+        border-color: #bfdbfe;
+      }
+
+      .student-log-bubble-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .student-log-bubble-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 850;
+      }
+
+      .student-log-bubble-text {
+        color: #1e293b;
+        font-size: 0.8rem;
+        font-weight: 700;
+        line-height: 1.65;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .student-log-bubble .tag-cloud {
+        margin-top: 0;
+        gap: 5px;
+      }
+
+      .student-log-bubble .tag-badge {
+        min-height: 22px;
+        padding: 0 7px;
+        border-radius: 7px;
+        font-size: 0.68rem;
+      }
+
+      .student-detail-modal-card {
+        width: min(1180px, 100%);
+        max-height: min(840px, calc(100vh - 44px));
+        overflow: hidden;
+        padding: 0;
+        border-radius: 8px;
+        background: #ffffff;
+        border: 1px solid #d8e3f4;
+      }
+
+      .student-detail-modal-card .modal-top {
+        margin: 0;
+        padding: 18px 20px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .student-detail-modal-body {
+        max-height: min(730px, calc(100vh - 136px));
+        overflow: auto;
+        padding: 16px 20px 20px;
+        gap: 14px;
+      }
+
+      .student-detail-dashboard {
+        display: grid;
+        grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1.18fr);
+        gap: 14px;
+      }
+
+      .student-detail-column {
+        display: grid;
+        gap: 12px;
+        align-content: start;
+      }
+
+      .student-detail-card {
+        padding: 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .student-detail-hero {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+        background: #f8fbff;
+      }
+
+      .student-detail-hero h4 {
+        margin: 0;
+        font-size: 1.18rem;
+      }
+
+      .student-detail-hero p {
+        margin: 5px 0 0;
+        color: #64748b;
+        font-size: 0.82rem;
+        font-weight: 800;
+      }
+
+      .student-detail-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .student-detail-kpi {
+        padding: 11px;
+        border-radius: 8px;
+        background: #f8fafc;
+        border: 1px solid #edf2f7;
+      }
+
+      .student-detail-kpi span {
+        display: block;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 850;
+      }
+
+      .student-detail-kpi strong {
+        display: block;
+        margin-top: 4px;
+        color: #0f172a;
+        font-size: 1.18rem;
+        font-weight: 900;
+      }
+
+      .student-detail-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .student-detail-section-head h4 {
+        margin: 0;
+        font-size: 0.92rem;
+        font-weight: 900;
+      }
+
+      .student-detail-grid-two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .student-detail-material-list,
+      .student-detail-exam-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .student-detail-material-item,
+      .student-detail-exam-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #edf2f7;
+        background: #f8fafc;
+      }
+
+      .student-detail-material-item.gold {
+        border-color: #e6bd4e;
+        background: #fff8e6;
+      }
+
+      .student-detail-material-item strong,
+      .student-detail-exam-item strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.8rem;
+      }
+
+      .student-detail-material-item span,
+      .student-detail-exam-item span {
+        display: block;
+        margin-top: 4px;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      @media (max-width: 980px) {
+        .student-detail-dashboard,
+        .student-detail-grid-two {
+          grid-template-columns: 1fr;
+        }
+      }
+
       .ops-widget-grid {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -7389,6 +7660,19 @@
       </div>
     </div>
 
+    <div id="studentDetailModal" class="modal-backdrop hidden">
+      <div class="modal-card student-detail-modal-card">
+        <div class="modal-top">
+          <div>
+            <h3 id="studentDetailModalTitle">학생 상세 보기</h3>
+            <p id="studentDetailModalDescription">상담, 권한, 시험, 내신 자료 연결 상태를 한 화면에서 확인합니다.</p>
+          </div>
+          <button id="closeStudentDetailModalButton" type="button" class="icon-button" aria-label="학생 상세창 닫기">×</button>
+        </div>
+        <div id="studentDetailContent" class="modal-body student-detail-modal-body"></div>
+      </div>
+    </div>
+
     <div id="materialSettingsModal" class="modal-backdrop hidden">
       <div class="modal-card">
         <div class="modal-top">
@@ -7569,6 +7853,7 @@
         homeroomAssignments: [],
         studentLogTabs: {},
         selectedStudentId: '',
+        selectedStudentDetailId: '',
         studentViewMode: 'summary',
         selectedHomeroomInstructorId: '',
         homeroomTeacherSearchKeyword: '',
@@ -7725,6 +8010,8 @@
         document.getElementById('permissionModal').addEventListener('click', handlePermissionModalBackdropClick);
         document.getElementById('closeTeachingLogDetailButton').addEventListener('click', closeTeachingLogDetailModal);
         document.getElementById('teachingLogDetailModal').addEventListener('click', handleTeachingLogDetailBackdropClick);
+        document.getElementById('closeStudentDetailModalButton').addEventListener('click', closeStudentDetailModal_);
+        document.getElementById('studentDetailModal').addEventListener('click', handleStudentDetailModalClick_);
         document.getElementById('closeJikboStatusModalButton').addEventListener('click', closeJikboStatusModal_);
         document.getElementById('jikboStatusModal').addEventListener('click', handleJikboStatusModalBackdropClick_);
         document.getElementById('jikboStatusProgressInput').addEventListener('change', syncJikboStatusFormMode_);
@@ -8850,7 +9137,6 @@
           return '<div class="profile-board-body"><div class="empty-state">선택된 학생이 없습니다.</div></div>';
         }
         var permissions = getStudentPermissionInstructors_(student.studentId);
-        var recentLogs = (student.logs || []).slice(0, 3);
         var examItems = getStudentUpcomingEvents_(student).slice(0, 3);
         var materialInfo = getSchoolMaterialInfo_(student.school);
         var jikbo = buildStudentJikboSummaryMap_()[student.studentId] || { total: 0, unconfirmed: 0 };
@@ -8862,7 +9148,7 @@
           '    <div><h4>' + escapeHtml(student.studentName || '-') + '</h4><p>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</p><div class="student-subject-row">' + renderStudentSubjectChips_(student) + '</div></div>',
           '  </section>',
           '  <section class="profile-block"><h4>강사 권한 맵</h4>' + renderPermissionRelationMap_(student, permissions) + '</section>',
-          '  <section class="profile-block"><h4>상담 기록 preview</h4>' + renderPreviewList_(recentLogs.map(function(log) { return { date: formatTeachingLogDateTime(log.createdAt), title: (log.tags || [])[0] || '관리 기록', meta: truncateText_(log.content || '-', 42), tone: 'teal' }; })) + '</section>',
+          '  <section class="profile-block"><div class="profile-block-title-row"><h4>상담 기록 preview</h4><span class="ops-chip slate">' + escapeHtml(String((student.logs || []).length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { limit: 3, showMore: true }) + '</section>',
           '  <section class="profile-block"><h4>시험 대비/직보 상태</h4>' + renderStudentExamJikboPanel_(examItems, jikbo) + '</section>',
           '  <section class="profile-block"><h4>내신 자료 연결</h4>' + renderStudentMaterialConnectionPanel_(student, materialInfo) + '</section>',
           '</div>'
@@ -8915,6 +9201,234 @@
           '</div>',
           renderPreviewList_(materialInfo.recent.map(function(item) { return { date: item.year || '-', title: item.subject || item.materialType || '자료', meta: item.fileType || item.examType || '-', tone: isExamScopeMaterial_(item) ? 'orange' : 'blue' }; }))
         ].join('');
+      }
+
+      function getStudentLogTabOptions_() {
+        return [
+          { value: '전체', label: '전체' },
+          { value: '학부모상담', label: '학부모 상담' },
+          { value: '학생상담', label: '학생 상담' },
+          { value: '첫수업 정보', label: '첫수업 정보' },
+          { value: '수업현황', label: '수업 현황' },
+          { value: '테스트결과', label: '테스트 결과' }
+        ];
+      }
+
+      function renderStudentLogTabs_(student, activeTab) {
+        return '<div class="student-log-tabs">' + getStudentLogTabOptions_().map(function(option) {
+          var isActive = (activeTab || '전체') === option.value;
+          return '<button type="button" class="student-log-tab' + (isActive ? ' active' : '') + '" data-action="set-log-tab" data-student-id="' + escapeAttribute(student.studentId || '') + '" data-log-tab="' + escapeAttribute(option.value) + '">' + escapeHtml(option.label) + '</button>';
+        }).join('') + '</div>';
+      }
+
+      function renderStudentLogPreviewPanel_(student, options) {
+        var config = options || {};
+        var activeTab = getStudentLogTab_(student.studentId);
+        if (!getStudentLogTabOptions_().some(function(option) { return option.value === activeTab; })) {
+          activeTab = '전체';
+        }
+        var logs = getFilteredTeachingLogsByTab_(student, activeTab);
+        var limit = config.limit || 3;
+        return [
+          '<div class="student-log-preview-block">',
+          renderStudentLogTabs_(student, activeTab),
+          renderStudentLogBubbleList_(logs.slice(0, limit)),
+          config.showMore && logs.length > limit
+            ? '<button type="button" class="profile-link-button" data-action="show-student-profile">전체 상담 기록 ' + escapeHtml(String(logs.length)) + '건 보기</button>'
+            : '',
+          '</div>'
+        ].join('');
+      }
+
+      function renderStudentLogBubbleList_(logs) {
+        if (!logs.length) {
+          return '<div class="profile-empty">표시할 상담/관리 기록이 없습니다.</div>';
+        }
+        return '<div class="student-log-bubble-list">' + logs.map(renderStudentLogBubble_).join('') + '</div>';
+      }
+
+      function renderStudentLogBubble_(log) {
+        var isAdmin = (log.createdByRole || '').toUpperCase() === 'ADMIN';
+        var author = isAdmin ? (log.createdByName || '관리자') : ((log.createdByName || '강사') + ' 강사');
+        var detailButton = log.rowNumber
+          ? '<button type="button" class="profile-link-button" data-action="show-log-detail" data-log-row="' + escapeAttribute(log.rowNumber) + '">원문</button>'
+          : '';
+        return [
+          '<article class="student-log-bubble ' + (isAdmin ? 'admin' : '') + '">',
+          '  <div class="student-log-bubble-head">',
+          '    <div class="student-log-bubble-meta"><strong>' + escapeHtml((log.tags || [])[0] || '관리 기록') + '</strong><span>' + escapeHtml(formatTeachingLogDateTime(log.createdAt)) + '</span><span>' + escapeHtml(author) + '</span></div>',
+               detailButton,
+          '  </div>',
+          '  <div class="student-log-bubble-text">' + escapeHtml(log.content || '-') + '</div>',
+             renderLogTags(log.tags || []),
+          '</article>'
+        ].join('');
+      }
+
+      function getStudentConnectedMaterials_(student) {
+        var schoolKey = normalizeSearchText(student && student.school);
+        if (!schoolKey) {
+          return [];
+        }
+        var gradeNumber = getGradeNumber_(student && student.grade);
+        return getScopedMaterials_().filter(function(item) {
+          var materialGrade = normalizeSearchText(item.grade);
+          if (normalizeSearchText(item.school) !== schoolKey) {
+            return false;
+          }
+          if (!materialGrade || materialGrade === '-' || /전학년/.test(materialGrade)) {
+            return true;
+          }
+          if (!gradeNumber) {
+            return true;
+          }
+          return materialGrade.indexOf(gradeNumber) !== -1;
+        }).sort(function(a, b) {
+          return String(b.createdAt || b.updatedAt || b.year || '').localeCompare(String(a.createdAt || a.updatedAt || a.year || ''));
+        });
+      }
+
+      function getGradeNumber_(grade) {
+        var match = String(grade || '').match(/[1-3]/);
+        return match ? match[0] : '';
+      }
+
+      function findStudentById_(studentId) {
+        var target = String(studentId || '');
+        return (APP_STATE.visibleStudents || []).find(function(student) {
+          return String(student.studentId || '') === target;
+        }) || null;
+      }
+
+      function openStudentDetailModal_(studentId) {
+        var student = findStudentById_(studentId || APP_STATE.selectedStudentId);
+        if (!student) {
+          setNotice('상세 보기할 학생을 찾을 수 없습니다.', 'warning');
+          return;
+        }
+        APP_STATE.selectedStudentId = student.studentId || APP_STATE.selectedStudentId;
+        APP_STATE.selectedStudentDetailId = student.studentId || '';
+        renderStudentDetailModal_();
+        document.getElementById('studentDetailModal').classList.remove('hidden');
+        renderLucideIcons_();
+      }
+
+      function closeStudentDetailModal_() {
+        APP_STATE.selectedStudentDetailId = '';
+        document.getElementById('studentDetailModal').classList.add('hidden');
+      }
+
+      function handleStudentDetailModalClick_(event) {
+        if (event.target.id === 'studentDetailModal') {
+          closeStudentDetailModal_();
+          return;
+        }
+
+        var tabButton = event.target.closest('[data-action="set-log-tab"]');
+        if (tabButton) {
+          APP_STATE.studentLogTabs[tabButton.getAttribute('data-student-id')] = tabButton.getAttribute('data-log-tab') || '전체';
+          renderStudentDetailModal_();
+          renderStudents();
+          return;
+        }
+
+        var logDetailButton = event.target.closest('[data-action="show-log-detail"]');
+        if (logDetailButton) {
+          closeStudentDetailModal_();
+          openTeachingLogDetailModal(logDetailButton.getAttribute('data-log-row'));
+          return;
+        }
+
+        var materialOpenButton = event.target.closest('[data-student-material-open]');
+        if (materialOpenButton) {
+          openMaterialLinkAndRecord_(materialOpenButton.getAttribute('data-material-row'), materialOpenButton.getAttribute('data-material-link'));
+          return;
+        }
+
+        var jikboButton = event.target.closest('[data-action="open-jikbo-board"]');
+        if (jikboButton) {
+          closeStudentDetailModal_();
+          if (!APP_STATE.isAdmin) {
+            setNotice('직보 구성 화면은 관리자만 사용할 수 있습니다.', 'warning');
+            return;
+          }
+          switchView('jikbo');
+        }
+      }
+
+      function renderStudentDetailModal_() {
+        var student = findStudentById_(APP_STATE.selectedStudentDetailId || APP_STATE.selectedStudentId);
+        if (!student) {
+          document.getElementById('studentDetailContent').innerHTML = '<div class="empty-state">학생 정보를 찾을 수 없습니다.</div>';
+          return;
+        }
+        document.getElementById('studentDetailModalTitle').textContent = (student.studentName || '-') + ' 상세 보기';
+        document.getElementById('studentDetailModalDescription').textContent = '상담, 권한, 시험, 내신 자료 연결 상태를 한 화면에서 확인합니다.';
+        document.getElementById('studentDetailContent').innerHTML = renderStudentDetailDashboard_(student);
+        renderLucideIcons_();
+      }
+
+      function renderStudentDetailDashboard_(student) {
+        var permissions = getStudentPermissionInstructors_(student.studentId);
+        var logs = student.logs || [];
+        var materials = getStudentConnectedMaterials_(student);
+        var examItems = getStudentUpcomingEvents_(student).slice(0, 5);
+        var jikbo = buildStudentJikboSummaryMap_()[student.studentId] || { total: 0, unconfirmed: 0 };
+        return [
+          '<div class="student-detail-dashboard">',
+          '  <div class="student-detail-column">',
+          '    <section class="student-detail-card student-detail-hero">',
+          '      <div class="profile-avatar">' + escapeHtml(getInitial(student.studentName)) + '</div>',
+          '      <div><h4>' + escapeHtml(student.studentName || '-') + '</h4><p>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</p><div class="student-subject-row">' + renderStudentSubjectChips_(student) + '</div></div>',
+          '    </section>',
+          '    <section class="student-detail-card"><div class="student-detail-kpi-grid">' + [
+                 renderStudentDetailKpi_('상담 기록', logs.length + '건'),
+                 renderStudentDetailKpi_('연결 권한', permissions.length + '건'),
+                 renderStudentDetailKpi_('내신 자료', materials.length + '건'),
+                 renderStudentDetailKpi_('직보 대상', jikbo.total + '건')
+               ].join('') + '</div></section>',
+          '    <section class="student-detail-card"><div class="student-detail-section-head"><h4>강사 권한 맵</h4><span class="ops-chip blue">' + escapeHtml(String(permissions.length)) + '건</span></div>' + renderPermissionRelationMap_(student, permissions) + '</section>',
+          '  </div>',
+          '  <div class="student-detail-column">',
+          '    <section class="student-detail-card"><div class="student-detail-section-head"><h4>상담 기록</h4><span class="ops-chip slate">' + escapeHtml(String(logs.length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { limit: 10 }) + '</section>',
+          '    <div class="student-detail-grid-two">',
+          '      <section class="student-detail-card"><div class="student-detail-section-head"><h4>시험 대비/직보</h4><span class="ops-chip teal">' + escapeHtml(String(examItems.length || jikbo.total)) + '건</span></div>' + renderStudentDetailExamList_(examItems, jikbo) + '</section>',
+          '      <section class="student-detail-card"><div class="student-detail-section-head"><h4>입력된 자료</h4><span class="ops-chip green">' + escapeHtml(String(materials.length)) + '건</span></div>' + renderStudentDetailMaterialList_(materials) + '</section>',
+          '    </div>',
+          '  </div>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderStudentDetailKpi_(label, value) {
+        return '<div class="student-detail-kpi"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>';
+      }
+
+      function renderStudentDetailExamList_(examItems, jikbo) {
+        var rows = (examItems || []).map(function(item) {
+          return [
+            '<div class="student-detail-exam-item">',
+            '  <div><strong>' + escapeHtml(item.subjectName || item.eventName || '시험 일정') + '</strong><span>' + escapeHtml([formatDateShort_(item.isoDate || item.date), item.school || '', item.grade ? item.grade + '학년' : ''].filter(Boolean).join(' · ')) + '</span></div>',
+            '  <button type="button" class="profile-link-button" data-action="open-jikbo-board">' + escapeHtml(jikbo && jikbo.unconfirmed ? '미확정 ' + jikbo.unconfirmed + '건' : '구성 확인') + '</button>',
+            '</div>'
+          ].join('');
+        });
+        if (!rows.length && jikbo && jikbo.total) {
+          rows.push('<div class="student-detail-exam-item"><div><strong>직보 대상 ' + escapeHtml(String(jikbo.total)) + '건</strong><span>시험 대비 구성을 확인하세요.</span></div><button type="button" class="profile-link-button" data-action="open-jikbo-board">직보 구성 확인</button></div>');
+        }
+        return rows.length ? '<div class="student-detail-exam-list">' + rows.join('') + '</div>' : '<div class="profile-empty">연결된 시험/직보 일정이 없습니다.</div>';
+      }
+
+      function renderStudentDetailMaterialList_(materials) {
+        var rows = (materials || []).slice(0, 8).map(function(item) {
+          return [
+            '<div class="student-detail-material-item ' + (isExamScopeMaterial_(item) ? 'gold' : '') + '">',
+            '  <div><strong>' + escapeHtml(buildMaterialDisplayTitle_(item)) + '</strong><span>' + escapeHtml([item.year || '-', item.examType || '-', getMaterialPrimaryTypeLabel_(item) || item.materialType || '-', item.fileType || '-'].filter(Boolean).join(' · ')) + '</span></div>',
+            item.link ? '<button type="button" class="profile-link-button" data-student-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link || '') + '">열기</button>' : '<span class="student-status-badge slate">링크 없음</span>',
+            '</div>'
+          ].join('');
+        });
+        return rows.length ? '<div class="student-detail-material-list">' + rows.join('') + '</div>' : '<div class="profile-empty">연결된 내신 자료가 없습니다.</div>';
       }
 
       function renderPreviewList_(items) {
@@ -9399,10 +9913,13 @@
         var viewProfileButton = event.target.closest('[data-action="show-student-profile"]');
         if (viewProfileButton) {
           var profileRow = event.target.closest('[data-student-id]');
+          var detailStudentId = '';
           if (profileRow) {
-            APP_STATE.selectedStudentId = profileRow.getAttribute('data-student-id') || APP_STATE.selectedStudentId;
+            detailStudentId = profileRow.getAttribute('data-student-id') || APP_STATE.selectedStudentId;
+            APP_STATE.selectedStudentId = detailStudentId;
             renderStudents();
           }
+          openStudentDetailModal_(detailStudentId || APP_STATE.selectedStudentId);
           return;
         }
 
@@ -14646,21 +15163,25 @@
           return;
         }
 
-        var link = button.getAttribute('data-material-link') || '';
-        var rowNumber = button.getAttribute('data-material-row') || '';
-        if (!link) {
+        openMaterialLinkAndRecord_(button.getAttribute('data-material-row'), button.getAttribute('data-material-link'));
+      }
+
+      function openMaterialLinkAndRecord_(rowNumber, link) {
+        var materialLink = link || '';
+        var materialRowNumber = rowNumber || '';
+        if (!materialLink) {
           return;
         }
 
-        window.open(link, '_blank', 'noopener,noreferrer');
+        window.open(materialLink, '_blank', 'noopener,noreferrer');
 
-        if (!APP_STATE.token || !rowNumber) {
+        if (!APP_STATE.token || !materialRowNumber) {
           return;
         }
 
         apiRequest('recordMaterialOpen', {
           token: APP_STATE.token,
-          materialRowNumber: rowNumber
+          materialRowNumber: materialRowNumber
         }).then(function(result) {
           if (APP_STATE.isAdmin && result && result.openLogs) {
             APP_STATE.materialOpenLogs = result.openLogs;
@@ -14945,6 +15466,8 @@
         APP_STATE.homeroomAssignments = [];
         APP_STATE.studentLogTabs = {};
         APP_STATE.selectedHomeroomInstructorId = '';
+        APP_STATE.selectedStudentId = '';
+        APP_STATE.selectedStudentDetailId = '';
         APP_STATE.homeroomTeacherSearchKeyword = '';
         APP_STATE.homeroomSubjectDraft = '';
         APP_STATE.homeroomSelectedStudentIds = [];
@@ -15002,6 +15525,7 @@
         closePermissionModal();
         closeMaterialSettingsModal();
         closeMaterialOpenLogModal_();
+        closeStudentDetailModal_();
         closeJikboStatusModal_();
         closeJikboAssignmentModal_();
         closeTeachingLogDetailModal();
