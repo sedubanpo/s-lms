@@ -6532,6 +6532,68 @@
         color: #ffffff;
       }
 
+      .student-log-compose {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid #d8e3f4;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .student-log-compose-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .student-log-compose-head strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.82rem;
+        font-weight: 950;
+      }
+
+      .student-log-compose-head span {
+        display: block;
+        margin-top: 2px;
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 750;
+        line-height: 1.45;
+      }
+
+      .student-log-compose-head > .ops-chip {
+        display: inline-flex;
+        margin-top: 0;
+        flex-shrink: 0;
+      }
+
+      .student-log-compose-grid {
+        display: grid;
+        grid-template-columns: minmax(130px, 0.42fr) minmax(0, 1fr);
+        gap: 8px;
+        align-items: start;
+      }
+
+      .student-log-compose textarea {
+        min-height: 72px;
+        resize: vertical;
+        line-height: 1.6;
+      }
+
+      .student-log-compose-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .student-log-compose-actions .helper-text {
+        font-size: 0.68rem;
+      }
+
       .student-log-bubble-list {
         display: grid;
         gap: 9px;
@@ -6570,6 +6632,13 @@
         align-items: center;
         justify-content: space-between;
         gap: 8px;
+      }
+
+      .student-log-bubble-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
       }
 
       .student-log-bubble-meta {
@@ -8648,10 +8717,10 @@
       <div class="modal-card detail-modal-card">
         <div class="modal-top">
           <div>
-            <h3>티칭로그 상세보기</h3>
-            <p>선택한 티칭로그의 전체 내용을 확인합니다.</p>
+            <h3>상담/관리 기록 상세보기</h3>
+            <p>선택한 학생 기록의 전체 내용과 작성 정보를 확인합니다.</p>
           </div>
-          <button id="closeTeachingLogDetailButton" type="button" class="icon-button" aria-label="티칭로그 상세창 닫기">×</button>
+          <button id="closeTeachingLogDetailButton" type="button" class="icon-button" aria-label="상담/관리 기록 상세창 닫기">×</button>
         </div>
         <div id="teachingLogDetailContent" class="modal-body"></div>
       </div>
@@ -10155,7 +10224,7 @@
           '    <div><h4>' + escapeHtml(student.studentName || '-') + '</h4><p>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</p><div class="student-subject-row">' + renderStudentSubjectChips_(student) + '</div></div>',
           '  </section>',
           '  <section class="profile-block"><h4>강사 권한 맵</h4>' + renderPermissionRelationMap_(student, permissions) + '</section>',
-          '  <section class="profile-block"><div class="profile-block-title-row"><h4>상담 기록 preview</h4><span class="ops-chip slate">' + escapeHtml(String((student.logs || []).length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { limit: 3, showMore: true }) + '</section>',
+          '  <section class="profile-block"><div class="profile-block-title-row"><h4>상담 기록 preview</h4><span class="ops-chip slate">' + escapeHtml(String((student.logs || []).length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { limit: 3, showMore: true, showComposer: true }) + '</section>',
           '  <section class="profile-block"><h4>시험 대비/직보 상태</h4>' + renderStudentExamJikboPanel_(examItems, jikbo) + '</section>',
           '  <section class="profile-block"><h4>내신 자료 연결</h4>' + renderStudentMaterialConnectionPanel_(student, materialInfo) + '</section>',
           '</div>'
@@ -10221,11 +10290,49 @@
         ];
       }
 
+      function getStudentLogComposeOptions_() {
+        var preferred = ['학부모상담', '학생상담', '첫수업 정보', '수업현황', '테스트결과', '보충필요', '과제미흡', '집중관리'];
+        var options = preferred.filter(function(tag, index) {
+          return preferred.indexOf(tag) === index && LOG_TAG_OPTIONS.indexOf(tag) !== -1;
+        });
+        LOG_TAG_OPTIONS.forEach(function(tag) {
+          if (options.indexOf(tag) === -1) {
+            options.push(tag);
+          }
+        });
+        return options;
+      }
+
       function renderStudentLogTabs_(student, activeTab) {
         return '<div class="student-log-tabs">' + getStudentLogTabOptions_().map(function(option) {
           var isActive = (activeTab || '전체') === option.value;
           return '<button type="button" class="student-log-tab' + (isActive ? ' active' : '') + '" data-action="set-log-tab" data-student-id="' + escapeAttribute(student.studentId || '') + '" data-log-tab="' + escapeAttribute(option.value) + '">' + escapeHtml(option.label) + '</button>';
         }).join('') + '</div>';
+      }
+
+      function renderStudentLogComposer_(student) {
+        if (!student || !student.studentId) {
+          return '';
+        }
+        var options = getStudentLogComposeOptions_().map(function(tag) {
+          return '<option value="' + escapeAttribute(tag) + '">' + escapeHtml(tag.replace('학부모상담', '학부모 상담').replace('학생상담', '학생 상담')) + '</option>';
+        }).join('');
+        return [
+          '<form class="student-log-compose" data-student-log-form data-student-id="' + escapeAttribute(student.studentId || '') + '" onsubmit="return false;">',
+          '  <div class="student-log-compose-head">',
+          '    <div><strong>특이사항 기록</strong><span>작성자와 작성 일자는 저장 시 자동으로 남습니다.</span></div>',
+          '    <span class="ops-chip slate">' + escapeHtml(student.studentName || '-') + '</span>',
+          '  </div>',
+          '  <div class="student-log-compose-grid">',
+          '    <select class="field-select" data-role="student-log-type" aria-label="기록 유형">' + options + '</select>',
+          '    <textarea class="field-textarea" data-role="student-log-content" rows="3" placeholder="학부모 상담, 학생 상담, 첫수업 정보 등 필요한 내용을 입력하세요."></textarea>',
+          '  </div>',
+          '  <div class="student-log-compose-actions">',
+          '    <span class="helper-text">상담 기록은 권한 범위와 작성자 기준으로 안전하게 표시됩니다.</span>',
+          '    <button type="button" class="button-primary" data-action="save-student-log-entry"><i data-lucide="save"></i> 기록 저장</button>',
+          '  </div>',
+          '</form>'
+        ].join('');
       }
 
       function renderStudentLogPreviewPanel_(student, options) {
@@ -10239,6 +10346,7 @@
         return [
           '<div class="student-log-preview-block">',
           renderStudentLogTabs_(student, activeTab),
+          config.showComposer ? renderStudentLogComposer_(student) : '',
           renderStudentLogBubbleList_(logs.slice(0, limit)),
           config.showMore && logs.length > limit
             ? '<button type="button" class="profile-link-button" data-action="show-student-profile">전체 상담 기록 ' + escapeHtml(String(logs.length)) + '건 보기</button>'
@@ -10257,14 +10365,18 @@
       function renderStudentLogBubble_(log) {
         var isAdmin = (log.createdByRole || '').toUpperCase() === 'ADMIN';
         var author = isAdmin ? (log.createdByName || '관리자') : ((log.createdByName || '강사') + ' 강사');
+        var canDelete = APP_STATE.isAdmin || (APP_STATE.user && APP_STATE.user.userId === log.createdById);
         var detailButton = log.rowNumber
           ? '<button type="button" class="profile-link-button" data-action="show-log-detail" data-log-row="' + escapeAttribute(log.rowNumber) + '">원문</button>'
+          : '';
+        var deleteButton = canDelete && log.rowNumber
+          ? '<button type="button" class="log-delete-button" data-action="delete-log" data-log-row="' + escapeAttribute(log.rowNumber) + '">삭제</button>'
           : '';
         return [
           '<article class="student-log-bubble ' + (isAdmin ? 'admin' : '') + '">',
           '  <div class="student-log-bubble-head">',
           '    <div class="student-log-bubble-meta"><strong>' + escapeHtml((log.tags || [])[0] || '관리 기록') + '</strong><span>' + escapeHtml(formatTeachingLogDateTime(log.createdAt)) + '</span><span>' + escapeHtml(author) + '</span></div>',
-               detailButton,
+          '    <div class="student-log-bubble-actions">' + detailButton + deleteButton + '</div>',
           '  </div>',
           '  <div class="student-log-bubble-text">' + escapeHtml(log.content || '-') + '</div>',
              renderLogTags(log.tags || []),
@@ -10339,6 +10451,18 @@
           return;
         }
 
+        var saveLogButton = event.target.closest('[data-action="save-student-log-entry"]');
+        if (saveLogButton) {
+          handleStudentLogSave_(saveLogButton);
+          return;
+        }
+
+        var deleteButton = event.target.closest('[data-action="delete-log"]');
+        if (deleteButton) {
+          handleTeachingLogDelete(deleteButton);
+          return;
+        }
+
         var logDetailButton = event.target.closest('[data-action="show-log-detail"]');
         if (logDetailButton) {
           closeStudentDetailModal_();
@@ -10397,7 +10521,7 @@
           '    <section class="student-detail-card"><div class="student-detail-section-head"><h4>강사 권한 맵</h4><span class="ops-chip blue">' + escapeHtml(String(permissions.length)) + '건</span></div>' + renderPermissionRelationMap_(student, permissions) + '</section>',
           '  </div>',
           '  <div class="student-detail-column">',
-          '    <section class="student-detail-card"><div class="student-detail-section-head"><h4>상담 기록</h4><span class="ops-chip slate">' + escapeHtml(String(logs.length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { limit: 10 }) + '</section>',
+          '    <section class="student-detail-card"><div class="student-detail-section-head"><h4>상담 기록</h4><span class="ops-chip slate">' + escapeHtml(String(logs.length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { limit: 10, showComposer: true }) + '</section>',
           '    <div class="student-detail-grid-two">',
           '      <section class="student-detail-card"><div class="student-detail-section-head"><h4>시험 대비/직보</h4><span class="ops-chip teal">' + escapeHtml(String(examItems.length || jikbo.total)) + '건</span></div>' + renderStudentDetailExamList_(examItems, jikbo) + '</section>',
           '      <section class="student-detail-card"><div class="student-detail-section-head"><h4>입력된 자료</h4><span class="ops-chip green">' + escapeHtml(String(materials.length)) + '건</span></div>' + renderStudentDetailMaterialList_(materials) + '</section>',
@@ -11012,6 +11136,12 @@
           return;
         }
 
+        var saveLogEntryButton = event.target.closest('[data-action="save-student-log-entry"]');
+        if (saveLogEntryButton) {
+          handleStudentLogSave_(saveLogEntryButton);
+          return;
+        }
+
         var deleteButton = event.target.closest('[data-action="delete-log"]');
         if (deleteButton) {
           handleTeachingLogDelete(deleteButton);
@@ -11109,23 +11239,84 @@
         renderStudents();
       }
 
-      function handleTeachingLogDelete(button) {
-        var logRowNumber = button.getAttribute('data-log-row');
-        if (!logRowNumber) {
-          setNotice('삭제할 티칭로그를 찾을 수 없습니다.', 'warning');
+      function handleStudentLogSave_(button) {
+        var form = button.closest('[data-student-log-form]');
+        if (!form) {
+          setNotice('기록 입력 영역을 찾을 수 없습니다.', 'warning');
           return;
         }
 
-        setLoading('티칭로그를 삭제하는 중입니다.');
+        var studentId = form.getAttribute('data-student-id') || '';
+        var typeInput = form.querySelector('[data-role="student-log-type"]');
+        var contentInput = form.querySelector('[data-role="student-log-content"]');
+        var tag = typeInput ? String(typeInput.value || '').trim() : '';
+        var content = contentInput ? contentInput.value.trim() : '';
+
+        if (!studentId) {
+          setNotice('기록할 학생을 선택해주세요.', 'warning');
+          return;
+        }
+        if (!tag) {
+          setNotice('기록 유형을 선택해주세요.', 'warning');
+          return;
+        }
+        if (!content) {
+          setNotice('상담/관리 기록 내용을 입력해주세요.', 'warning');
+          if (contentInput) {
+            contentInput.focus();
+          }
+          return;
+        }
+
+        button.disabled = true;
+        setLoading('상담/관리 기록을 저장하는 중입니다.');
+        apiRequest('addStudentLog', {
+          token: APP_STATE.token,
+          studentId: studentId,
+          content: content,
+          tags: JSON.stringify([tag])
+        })
+          .then(function(result) {
+            hydrateStudentDataOnly(result);
+            APP_STATE.selectedStudentId = studentId;
+            APP_STATE.studentLogTabs[studentId] = getStudentLogTabOptions_().some(function(option) {
+              return option.value === tag;
+            }) ? tag : '전체';
+            if (APP_STATE.selectedStudentDetailId) {
+              APP_STATE.selectedStudentDetailId = studentId;
+            }
+            renderStudents();
+            if (APP_STATE.selectedStudentDetailId) {
+              renderStudentDetailModal_();
+            }
+            setNotice('상담/관리 기록이 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(function() {
+            button.disabled = false;
+            clearLoading();
+          });
+      }
+
+      function handleTeachingLogDelete(button) {
+        var logRowNumber = button.getAttribute('data-log-row');
+        if (!logRowNumber) {
+          setNotice('삭제할 상담/관리 기록을 찾을 수 없습니다.', 'warning');
+          return;
+        }
+
+        setLoading('상담/관리 기록을 삭제하는 중입니다.');
         apiRequest('deleteStudentLog', {
           token: APP_STATE.token,
           logRowNumber: logRowNumber
         })
           .then(function(result) {
             hydrateStudentDataOnly(result);
-            renderAll();
-            switchView('students');
-            setNotice(result.message || '티칭로그가 삭제되었습니다.', 'success');
+            renderStudents();
+            if (APP_STATE.selectedStudentDetailId) {
+              renderStudentDetailModal_();
+            }
+            setNotice('상담/관리 기록이 삭제되었습니다.', 'success');
           })
           .catch(handleApiError_)
           .finally(clearLoading);
