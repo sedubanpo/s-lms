@@ -3759,6 +3759,111 @@
         white-space: nowrap;
       }
 
+      .material-open-log-modal-card {
+        width: min(980px, 100%);
+        max-height: min(760px, calc(100vh - 48px));
+        overflow: hidden;
+        border-radius: 8px;
+        background: #ffffff;
+        border-color: #d8e3f4;
+      }
+
+      .material-open-log-modal-card .modal-top {
+        padding-bottom: 14px;
+        margin-bottom: 0;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .material-open-log-modal-body {
+        max-height: min(620px, calc(100vh - 190px));
+        overflow: auto;
+        padding-top: 14px;
+        gap: 12px;
+      }
+
+      .material-open-log-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+      }
+
+      .material-open-log-summary strong {
+        color: #0f172a;
+        font-size: 0.9rem;
+      }
+
+      .material-open-log-summary span {
+        color: #64748b;
+        font-size: 0.76rem;
+        font-weight: 800;
+      }
+
+      .material-open-log-table {
+        display: grid;
+        border: 1px solid #d8e3f4;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .material-open-log-table-head,
+      .material-open-log-row {
+        display: grid;
+        grid-template-columns: 170px minmax(0, 1fr) 132px;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .material-open-log-table-head {
+        padding: 10px 12px;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 900;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .material-open-log-row {
+        padding: 12px;
+        background: #ffffff;
+        border-bottom: 1px solid #edf2f7;
+      }
+
+      .material-open-log-row:last-child {
+        border-bottom: 0;
+      }
+
+      .material-open-log-person,
+      .material-open-log-resource {
+        display: grid;
+        gap: 5px;
+        min-width: 0;
+      }
+
+      .material-open-log-person strong,
+      .material-open-log-resource strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #0f172a;
+        font-size: 0.82rem;
+        font-weight: 900;
+      }
+
+      .material-open-log-person span,
+      .material-open-log-resource span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+
       .material-edit-banner {
         display: flex;
         align-items: center;
@@ -5719,6 +5824,7 @@
       }
 
       .material-create-drawer {
+        padding: 16px;
         margin-bottom: 14px;
         border-radius: 8px;
         background: #fff;
@@ -5728,6 +5834,72 @@
 
       .material-create-drawer.hidden {
         display: none !important;
+      }
+
+      .material-create-drawer .panel-head {
+        align-items: center;
+        padding-bottom: 14px;
+        margin-bottom: 14px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .material-create-drawer .panel-head h3 {
+        font-size: 1rem;
+        letter-spacing: 0;
+      }
+
+      .material-create-drawer .panel-head p {
+        margin-top: 4px;
+        font-size: 0.78rem;
+      }
+
+      .material-create-drawer .material-action-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .material-create-drawer .mini-button {
+        min-height: 34px;
+        padding: 0 11px;
+        border-radius: 8px;
+      }
+
+      .material-form-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 12px;
+        align-items: end;
+      }
+
+      .material-form-grid .field-shell {
+        min-width: 0;
+        gap: 6px;
+      }
+
+      .material-form-grid .field-label {
+        color: #334155;
+        font-size: 0.76rem;
+        font-weight: 900;
+      }
+
+      .material-form-grid .field-input,
+      .material-form-grid .field-select {
+        min-height: 44px;
+        padding: 0 12px;
+        border-radius: 8px;
+        background: #ffffff;
+        box-shadow: none;
+      }
+
+      .material-form-grid .material-span-2 { grid-column: span 2; }
+      .material-form-grid .material-span-4 { grid-column: span 4; }
+
+      .material-save-button {
+        grid-column: span 2;
+        min-height: 44px;
+        border-radius: 8px;
+        box-shadow: none;
       }
 
       .material-console {
@@ -7074,48 +7246,48 @@
               </div>
               <button id="cancelMaterialEditButton" type="button" class="button-ghost">수정 취소</button>
             </div>
-            <form id="materialForm" class="dense-form-grid">
-              <div class="field-shell">
+            <form id="materialForm" class="material-form-grid">
+              <div class="field-shell material-span-2">
                 <label class="field-label" for="materialSchoolInput">학교</label>
                 <input id="materialSchoolInput" class="field-input" type="text" placeholder="반포고">
               </div>
-              <div class="field-shell">
+              <div class="field-shell material-span-2">
                 <label class="field-label" for="materialGradeInput">학년</label>
                 <input id="materialGradeInput" class="field-input" type="text" placeholder="3학년">
               </div>
-              <div class="field-shell">
+              <div class="field-shell material-span-2">
                 <label class="field-label" for="materialTermInput">학기</label>
                 <select id="materialTermInput" class="field-select"></select>
               </div>
-              <div class="field-shell">
+              <div class="field-shell material-span-2">
                 <label class="field-label" for="materialYearInput">대상 년도</label>
                 <input id="materialYearInput" class="field-input" type="text" placeholder="2026">
               </div>
-              <div class="field-shell">
+              <div class="field-shell material-span-2">
                 <label class="field-label" for="materialSubjectInput">과목</label>
                 <input id="materialSubjectInput" class="field-input" type="text" placeholder="수학">
               </div>
-              <div class="field-shell">
+              <div class="field-shell material-span-2">
                 <label class="field-label" for="materialExamTypeInput">시험구분</label>
                 <select id="materialExamTypeInput" class="field-select"></select>
               </div>
-              <div class="field-shell">
+              <div class="field-shell material-span-2">
                 <label class="field-label" for="materialTypeInput">자료유형</label>
                 <select id="materialTypeInput" class="field-select"></select>
               </div>
-              <div class="field-shell">
+              <div class="field-shell material-span-2">
                 <label class="field-label" for="materialFileTypeInput">파일유형</label>
                 <select id="materialFileTypeInput" class="field-select"></select>
               </div>
-              <div class="field-shell">
+              <div class="field-shell material-span-4">
                 <label class="field-label" for="materialLinkInput">링크</label>
                 <input id="materialLinkInput" class="field-input" type="url" placeholder="https://...">
               </div>
-              <div class="field-shell">
+              <div class="field-shell material-span-2">
                 <label class="field-label" for="materialNoteInput">비고 / 설명</label>
                 <input id="materialNoteInput" class="field-input" type="text" placeholder="자료 설명을 입력하세요">
               </div>
-              <button id="saveMaterialButton" type="submit" class="button-primary">자료 저장</button>
+              <button id="saveMaterialButton" type="submit" class="button-primary material-save-button">자료 저장</button>
             </form>
           </section>
 
@@ -7264,6 +7436,19 @@
             </section>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div id="materialOpenLogModal" class="modal-backdrop hidden">
+      <div class="modal-card material-open-log-modal-card">
+        <div class="modal-top">
+          <div>
+            <h3>최근 자료 열람 기록</h3>
+            <p>강사별 문제 자료실 열람 이력을 최근 순으로 확인합니다.</p>
+          </div>
+          <button id="closeMaterialOpenLogModalButton" type="button" class="icon-button" aria-label="자료 열람 기록창 닫기">×</button>
+        </div>
+        <div id="materialOpenLogModalBody" class="modal-body material-open-log-modal-body"></div>
       </div>
     </div>
 
@@ -7623,6 +7808,8 @@
         document.getElementById('closeMaterialSettingsButton').addEventListener('click', closeMaterialSettingsModal);
         document.getElementById('materialSettingsModal').addEventListener('click', handleMaterialSettingsBackdropClick);
         document.getElementById('materialSettingsModal').addEventListener('click', handleMaterialSettingsSaveClick);
+        document.getElementById('closeMaterialOpenLogModalButton').addEventListener('click', closeMaterialOpenLogModal_);
+        document.getElementById('materialOpenLogModal').addEventListener('click', handleMaterialOpenLogModalBackdropClick_);
         document.getElementById('eventForm').addEventListener('submit', handleEventSave);
         document.getElementById('eventSearchInput').addEventListener('compositionstart', function() {
           APP_STATE.isEventSearchComposing = true;
@@ -14262,34 +14449,32 @@
         var shouldShow = APP_STATE.isAdmin && APP_STATE.currentView === 'materials';
         button.classList.toggle('hidden', !shouldShow);
         button.classList.toggle('active', shouldShow && APP_STATE.isMaterialOpenLogsCollapsed === false);
-        button.textContent = APP_STATE.isMaterialOpenLogsCollapsed === false ? '열람 기록 닫기' : '열람 기록';
+        button.setAttribute('aria-pressed', shouldShow && APP_STATE.isMaterialOpenLogsCollapsed === false ? 'true' : 'false');
+        button.textContent = '열람 기록';
       }
 
       function renderMaterialsOpenLogs_() {
-        var wrap = document.getElementById('materialsOpenLogWrap');
+        var modal = document.getElementById('materialOpenLogModal');
+        var body = document.getElementById('materialOpenLogModalBody');
         syncMaterialOpenLogButton_();
         if (!APP_STATE.isAdmin) {
-          wrap.classList.add('hidden');
-          wrap.innerHTML = '';
+          modal.classList.add('hidden');
+          body.innerHTML = '';
           return;
         }
 
         var isCollapsed = APP_STATE.isMaterialOpenLogsCollapsed !== false;
-        wrap.classList.toggle('hidden', isCollapsed);
+        modal.classList.toggle('hidden', isCollapsed);
         if (isCollapsed) {
-          wrap.innerHTML = '';
           return;
         }
 
         if (APP_STATE.materialOpenLogsLoading) {
-          wrap.classList.remove('hidden');
-          wrap.innerHTML = [
-            '<section class="material-open-log-shell">',
-            '  <div class="materials-coverage-head">',
-            '    <div><h4>최근 자료 열람 기록</h4><p>열람 이력을 불러오는 중입니다.</p></div>',
-            '    <button type="button" class="material-open-log-toggle" data-material-log-toggle="true" data-next-state="collapse">접기</button>',
-            '  </div>',
-            '</section>'
+          modal.classList.remove('hidden');
+          body.innerHTML = [
+            '<div class="material-open-log-summary">',
+            '  <div><strong>열람 이력을 불러오는 중입니다.</strong><br><span>강사명, 자료명, 열람 시간을 정리하고 있습니다.</span></div>',
+            '</div>'
           ].join('');
           return;
         }
@@ -14300,43 +14485,45 @@
         }).slice(0, 12);
 
         if (!logs.length) {
-          wrap.innerHTML = [
-            '<section class="material-open-log-shell">',
-            '  <div class="materials-coverage-head">',
-            '    <div><h4>최근 자료 열람 기록</h4><p>강사별 자료 열람 이력이 아직 없습니다.</p></div>',
-            '    <button type="button" class="material-open-log-toggle" data-material-log-toggle="true" data-next-state="collapse">접기</button>',
-            '  </div>',
-            '</section>'
+          body.innerHTML = [
+            '<div class="material-open-log-summary">',
+            '  <div><strong>강사 열람 이력이 아직 없습니다.</strong><br><span>자료를 열람하면 이곳에 최근 기록이 표시됩니다.</span></div>',
+            '</div>'
           ].join('');
           return;
         }
 
-        wrap.innerHTML = [
-          '<section class="material-open-log-shell">',
-          '  <div class="materials-coverage-head">',
-          '    <div><h4>최근 자료 열람 기록</h4><p>강사 아이디별 문제 자료실 열람 이력을 최근 순으로 확인합니다.</p></div>',
-          '    <div class="material-action-group"><span class="coverage-badge">최근 ' + escapeHtml(String(logs.length)) + '건</span><button type="button" class="material-open-log-toggle" data-material-log-toggle="true" data-next-state="collapse">접기</button></div>',
-          '  </div>',
-          '  <div class="material-open-log-list">',
+        body.innerHTML = [
+          '<div class="material-open-log-summary">',
+          '  <div><strong>최근 ' + escapeHtml(String(logs.length)) + '건</strong><br><span>관리자 계정에서만 강사별 열람 기록을 확인할 수 있습니다.</span></div>',
+          '  <span>최신순</span>',
+          '</div>',
+          '<div class="material-open-log-table">',
+          '  <div class="material-open-log-table-head"><span>열람자</span><span>열람 자료</span><span>열람 시간</span></div>',
           logs.map(function(log) {
             return [
-              '<article class="material-open-log-item">',
-              '  <div class="material-open-log-main">',
+              '<article class="material-open-log-row">',
+              '  <div class="material-open-log-person">',
+              '    <strong>' + escapeHtml(log.openedByName || '-') + '</strong>',
+              '    <span>' + escapeHtml(log.openedById || '-') + '</span>',
+              '  </div>',
+              '  <div class="material-open-log-resource">',
               '    <div class="material-open-log-title">' + [
                     renderMaterialMetaBadge_(log.school, 'subject'),
                     renderMaterialMetaBadge_(log.year, 'year'),
                     renderMaterialMetaBadge_(log.subject, 'subject'),
                     renderMaterialMetaBadge_(log.examType, 'exam')
                   ].join('') + '</div>',
-              '    <div class="material-open-log-meta">' + escapeHtml((log.openedByName || '-') + ' · ' + (log.openedById || '-') + ' · ' + (log.materialType || '-') + ' / ' + (log.fileType || '-')) + '</div>',
+              '    <strong>' + escapeHtml(buildMaterialDisplayTitle_(log)) + '</strong>',
+              '    <span>' + escapeHtml((log.materialType || '-') + ' / ' + (log.fileType || '-')) + '</span>',
               '  </div>',
               '  <span class="material-open-log-time">' + escapeHtml(formatTeachingLogDateTime(log.openedAt)) + '</span>',
               '</article>'
             ].join('');
           }).join(''),
-          '  </div>',
-          '</section>'
+          '</div>'
         ].join('');
+        renderLucideIcons_();
       }
 
       function handleMaterialOpenLogButtonClick_() {
@@ -14345,10 +14532,28 @@
           return;
         }
 
-        APP_STATE.isMaterialOpenLogsCollapsed = APP_STATE.isMaterialOpenLogsCollapsed === false;
-        renderMaterialsOpenLogs_();
         if (APP_STATE.isMaterialOpenLogsCollapsed === false) {
-          ensureMaterialOpenLogsLoaded_();
+          closeMaterialOpenLogModal_();
+          return;
+        }
+
+        APP_STATE.isMaterialOpenLogsCollapsed = false;
+        renderMaterialsOpenLogs_();
+        ensureMaterialOpenLogsLoaded_();
+      }
+
+      function closeMaterialOpenLogModal_() {
+        APP_STATE.isMaterialOpenLogsCollapsed = true;
+        var modal = document.getElementById('materialOpenLogModal');
+        if (modal) {
+          modal.classList.add('hidden');
+        }
+        syncMaterialOpenLogButton_();
+      }
+
+      function handleMaterialOpenLogModalBackdropClick_(event) {
+        if (event.target.id === 'materialOpenLogModal') {
+          closeMaterialOpenLogModal_();
         }
       }
 
@@ -14796,6 +15001,7 @@
         clearDashboardSnapshot_();
         closePermissionModal();
         closeMaterialSettingsModal();
+        closeMaterialOpenLogModal_();
         closeJikboStatusModal_();
         closeJikboAssignmentModal_();
         closeTeachingLogDetailModal();
