@@ -7411,6 +7411,7 @@
         materialOpenLogs: [],
         materialOpenLogsLoaded: false,
         materialOpenLogsLoading: false,
+        materialLoadPromise: null,
         isMaterialOpenLogsCollapsed: true,
         events: [],
         eventSearchKeyword: '',
@@ -8078,14 +8079,28 @@
         }
 
         if (viewName === 'materials') {
-          if (APP_STATE.materialsLoaded || APP_STATE.materialsLoading) {
+          if (APP_STATE.materialsLoaded) {
+            if (!config.silent && APP_STATE.currentView === 'materials') {
+              renderMaterials();
+            }
             return Promise.resolve();
+          }
+          if (APP_STATE.materialsLoading) {
+            var pendingMaterials = APP_STATE.materialLoadPromise || Promise.resolve();
+            if (!config.silent && APP_STATE.currentView === 'materials') {
+              return pendingMaterials.finally(function() {
+                if (APP_STATE.currentView === 'materials') {
+                  renderMaterials();
+                }
+              });
+            }
+            return pendingMaterials;
           }
           APP_STATE.materialsLoading = true;
           if (!config.silent && APP_STATE.currentView === 'materials') {
             renderMaterials();
           }
-          return apiRequest('getMaterials', { token: APP_STATE.token })
+          APP_STATE.materialLoadPromise = apiRequest('getMaterials', { token: APP_STATE.token })
             .then(function(materialData) {
               APP_STATE.materials = materialData && materialData.materials ? materialData.materials : [];
               APP_STATE.materialSettings = materialData && materialData.settings ? materialData.settings : APP_STATE.materialSettings;
@@ -8095,16 +8110,18 @@
               }
               APP_STATE.materialsLoaded = true;
               writeDashboardSnapshot_();
-              if (!config.silent) {
+              if (!config.silent && APP_STATE.currentView === 'materials') {
                 renderMaterials();
               }
             })
             .finally(function() {
               APP_STATE.materialsLoading = false;
-              if (!config.silent && APP_STATE.currentView === 'materials') {
+              APP_STATE.materialLoadPromise = null;
+              if (APP_STATE.currentView === 'materials') {
                 renderMaterials();
               }
             });
+          return APP_STATE.materialLoadPromise;
         }
 
         if (viewName === 'events') {
@@ -13240,7 +13257,7 @@
         return [
           '<div class="material-library-layout mode-' + escapeAttribute(mode) + '">',
           '  <aside class="material-navigator">',
-          '    <div class="material-panel-title"><h3>학교/연도 그룹 탐색</h3><span class="material-scope-badge">' + escapeHtml(String(getVisibleMaterialSchools_(navigatorMaterials).length)) + '개</span></div>',
+          '    <div class="material-panel-title"><h3>학교/연도 그룹 탐색</h3><span class="material-scope-badge">' + escapeHtml(String(getMaterialNavigatorSchools_(navigatorMaterials).length)) + '개</span></div>',
           '    <div class="material-nav-list">' + renderMaterialNavigator_(navigatorMaterials) + '</div>',
           '  </aside>',
           '  <section class="material-list-panel">' + mainHtml + '</section>',
@@ -13389,7 +13406,7 @@
 
       function renderMaterialNavigator_(materials) {
         var source = materials && materials.length ? materials : APP_STATE.materials;
-        var allSchools = getVisibleMaterialSchools_(source);
+        var allSchools = getMaterialNavigatorSchools_(source);
         var selectedSchool = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value || '';
         var schools = allSchools.slice(0, 12);
         if (selectedSchool && allSchools.indexOf(selectedSchool) !== -1 && schools.indexOf(selectedSchool) === -1) {
@@ -13399,7 +13416,7 @@
           return '<div class="empty-state">탐색할 학교 자료가 없습니다.</div>';
         }
         var expandedSchool = selectedSchool || schools[0] || '';
-        var totalSchools = getVisibleMaterialSchools_(APP_STATE.materials).length;
+        var totalSchools = getMaterialNavigatorSchools_(APP_STATE.materials).length;
         return schools.map(function(school) {
           var schoolItems = source.filter(function(item) { return item.school === school; });
           var recentCount = schoolItems.filter(isRecentMaterial_).length;
@@ -14186,6 +14203,19 @@
         return firstYearWithData || years[0];
       }
 
+      function getMaterialNavigatorSchools_(materials) {
+        var source = materials || APP_STATE.materials || [];
+        return source
+          .map(function(item) { return item.school; })
+          .filter(Boolean)
+          .filter(function(value, index, array) {
+            return array.indexOf(value) === index;
+          })
+          .sort(function(a, b) {
+            return a.localeCompare(b);
+          });
+      }
+
       function getVisibleMaterialSchools_(materials) {
         var source = materials || APP_STATE.materials || [];
         var selectedSchool = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value || '';
@@ -14685,6 +14715,7 @@
         APP_STATE.materialOpenLogs = [];
         APP_STATE.materialOpenLogsLoaded = false;
         APP_STATE.materialOpenLogsLoading = false;
+        APP_STATE.materialLoadPromise = null;
         APP_STATE.isMaterialOpenLogsCollapsed = true;
         APP_STATE.events = [];
         APP_STATE.eventSearchKeyword = '';
