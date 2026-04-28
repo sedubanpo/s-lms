@@ -3193,6 +3193,125 @@
         color: #0f3f8f;
       }
 
+      .schedule-week-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 1px;
+        background: #e2e8f0;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .schedule-week-column {
+        min-height: 420px;
+        background: #fff;
+        padding: 10px 8px;
+        display: grid;
+        align-content: start;
+        gap: 7px;
+      }
+
+      .schedule-week-column.selected {
+        box-shadow: inset 0 0 0 2px #047857;
+        background: #f8fffb;
+      }
+
+      .schedule-week-date {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 2px;
+        color: #0f172a;
+        font-size: 0.72rem;
+        font-weight: 950;
+      }
+
+      .schedule-week-date button {
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+      }
+
+      .schedule-week-count {
+        border-radius: 999px;
+        background: #eef4ff;
+        color: #2456d6;
+        padding: 2px 7px;
+        font-size: 0.62rem;
+        font-weight: 950;
+      }
+
+      .schedule-day-view {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .schedule-day-card {
+        display: grid;
+        grid-template-columns: 58px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        min-height: 62px;
+        padding: 11px 12px;
+        border: 1px solid var(--grade-border, #dbe7f6);
+        border-radius: 8px;
+        background: var(--grade-bg, #fff);
+        color: var(--grade-text, #0f172a);
+      }
+
+      .schedule-day-card.focused {
+        outline: 2px solid rgba(4, 120, 87, 0.28);
+        outline-offset: 1px;
+      }
+
+      .schedule-day-time {
+        color: #0f172a;
+        font-size: 0.8rem;
+        font-weight: 950;
+      }
+
+      .schedule-day-main {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .schedule-day-main strong {
+        color: #0f172a;
+        font-size: 0.82rem;
+        font-weight: 950;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .schedule-day-main span {
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 800;
+      }
+
+      .schedule-day-meta {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .schedule-empty-state {
+        display: grid;
+        place-items: center;
+        min-height: 220px;
+        padding: 24px;
+        color: #64748b;
+        text-align: center;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
       .school-schedule-chip {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr) auto;
@@ -3503,6 +3622,70 @@
         color: #64748b;
         font-size: 0.66rem;
         font-weight: 750;
+      }
+
+      .upcoming-schedule-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .upcoming-schedule-item {
+        display: grid;
+        grid-template-columns: 5px minmax(0, 1fr) auto;
+        gap: 9px;
+        align-items: center;
+        min-height: 54px;
+        padding: 9px 10px 9px 0;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .upcoming-schedule-item:hover {
+        border-color: #c7d7f4;
+        background: #f8fbff;
+      }
+
+      .upcoming-school-color {
+        width: 5px;
+        height: 100%;
+        min-height: 34px;
+        border-radius: 999px;
+        background: var(--school-color, #2456d6);
+      }
+
+      .upcoming-schedule-main {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .upcoming-schedule-main strong {
+        color: #0f172a;
+        font-size: 0.72rem;
+        font-weight: 950;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .upcoming-schedule-main span {
+        color: #64748b;
+        font-size: 0.64rem;
+        font-weight: 800;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .upcoming-schedule-date {
+        display: grid;
+        justify-items: end;
+        gap: 3px;
+        color: #0f3f8f;
+        font-size: 0.66rem;
+        font-weight: 950;
+        white-space: nowrap;
       }
 
       .event-type-badge {
@@ -14409,6 +14592,8 @@
           var favoriteSchool = actionButton.getAttribute('data-favorite-school');
           if (favoriteSchool) {
             APP_STATE.eventSchoolFilter = favoriteSchool;
+            APP_STATE.eventRegionFilter = '';
+            APP_STATE.eventSearchKeyword = '';
             APP_STATE.focusedEventId = '';
             renderEvents();
             return;
@@ -14465,6 +14650,10 @@
         }
         if (target.id === 'eventSchoolFilter') {
           APP_STATE.eventSchoolFilter = target.value || '';
+          if (APP_STATE.eventSchoolFilter) {
+            APP_STATE.eventRegionFilter = '';
+          }
+          APP_STATE.eventSearchKeyword = '';
           APP_STATE.focusedEventId = '';
           renderEvents();
           return;
@@ -14615,7 +14804,49 @@
           '    <button type="button" class="schedule-action-button" data-action="event-download"><i data-lucide="download"></i><span>다운로드</span><i data-lucide="chevron-down"></i></button>',
           '  </div>',
           '</div>',
-          mode === 'list' ? renderScheduleCompactList_(schedules) : renderMonthCalendar_(schedules)
+          mode === 'week' ? renderWeekScheduleView_(schedules)
+            : mode === 'day' ? renderDayScheduleView_(schedules)
+              : mode === 'list' ? renderScheduleCompactList_(schedules)
+                : renderMonthCalendar_(schedules)
+        ].join('');
+      }
+
+      function renderWeekScheduleView_(schedules) {
+        var weekDates = getWeekDatesForSelected_();
+        return [
+          '<div class="schedule-week-grid">',
+          weekDates.map(function(date) {
+            var isoDate = formatDateKey_(date);
+            var items = getSchedulesByDate_(schedules, isoDate);
+            var className = 'schedule-week-column' + (APP_STATE.selectedEventDate === isoDate ? ' selected' : '');
+            return [
+              '<section class="' + className + '">',
+              '  <div class="schedule-week-date"><button type="button" data-action="select-event-date" data-date="' + escapeAttribute(isoDate) + '">' + escapeHtml(formatWeekDateLabel_(date)) + '</button><span class="schedule-week-count">' + items.length + '건</span></div>',
+              items.length ? items.map(function(schedule) { return renderCalendarEventChip_(schedule); }).join('') : '<div class="schedule-empty-state">일정 없음</div>',
+              '</section>'
+            ].join('');
+          }).join(''),
+          '</div>'
+        ].join('');
+      }
+
+      function renderDayScheduleView_(schedules) {
+        var selectedItems = getSchedulesByDate_(schedules, APP_STATE.selectedEventDate);
+        if (!selectedItems.length) {
+          return '<div class="schedule-day-view"><div class="schedule-empty-state">선택한 날짜에 등록된 일정이 없습니다.</div></div>';
+        }
+        return [
+          '<div class="schedule-day-view">',
+          selectedItems.map(function(schedule) {
+            return [
+              '<button type="button" class="schedule-day-card ' + getScheduleGradeToneClass_(schedule.grade) + (APP_STATE.focusedEventId === schedule.id ? ' focused' : '') + '" data-action="focus-event" data-schedule-id="' + escapeAttribute(schedule.id) + '" data-date="' + escapeAttribute(schedule.date) + '">',
+              '  <span class="schedule-day-time">' + escapeHtml(schedule.time || '-') + '</span>',
+              '  <span class="schedule-day-main"><strong>' + escapeHtml([schedule.school, schedule.grade, schedule.subject].filter(Boolean).join(' · ')) + '</strong><span>' + escapeHtml(schedule.title || '-') + '</span></span>',
+              '  <span class="schedule-day-meta">' + renderEventTypeBadge_(schedule.scheduleType) + '<span class="legend-chip ' + getScheduleGradeToneClass_(schedule.grade) + '">' + escapeHtml(schedule.grade || '-') + '</span></span>',
+              '</button>'
+            ].join('');
+          }).join(''),
+          '</div>'
         ].join('');
       }
 
@@ -14726,7 +14957,7 @@
         return [
           renderGradeSummaryPanel_(schedules),
           renderMiniMonthPreview_(schedules),
-          renderRecentScheduleChanges_(schedules)
+          renderUpcomingSchedulesPanel_(schedules)
         ].join('');
       }
 
@@ -14771,14 +15002,20 @@
         ].join('');
       }
 
-      function renderRecentScheduleChanges_(schedules) {
-        var recent = getRecentScheduleChanges_(schedules).slice(0, 5);
+      function renderUpcomingSchedulesPanel_(schedules) {
+        var upcoming = getUpcomingSchedules_(schedules).slice(0, 6);
         return [
           '<section class="school-filter-section">',
-          '  <div class="schedule-insight-title"><span>최근 등록/수정</span><button type="button" data-action="event-more">더보기</button></div>',
-          '  <div class="recent-schedule-list">',
-          recent.map(function(item) {
-            return '<div class="recent-schedule-item"><span class="recent-schedule-time">' + escapeHtml(item.time) + '</span><div><strong>' + escapeHtml(item.title) + '</strong><span>' + escapeHtml(item.description) + ' · ' + escapeHtml(item.author) + '</span></div></div>';
+          '  <div class="schedule-insight-title"><span>다가오는 일정</span><button type="button" data-action="event-more">더보기</button></div>',
+          '  <div class="upcoming-schedule-list">',
+          upcoming.map(function(item) {
+            return [
+              '<button type="button" class="upcoming-schedule-item" data-action="focus-event" data-schedule-id="' + escapeAttribute(item.id) + '" data-date="' + escapeAttribute(item.date) + '">',
+              '  <span class="upcoming-school-color" style="--school-color:' + escapeAttribute(getSchoolAccentColor_(item.school)) + ';"></span>',
+              '  <span class="upcoming-schedule-main"><strong>' + escapeHtml([item.school, item.grade, item.subject].filter(Boolean).join(' · ')) + '</strong><span>' + escapeHtml(item.title || item.scheduleType || '-') + '</span></span>',
+              '  <span class="upcoming-schedule-date"><span>' + escapeHtml(formatEventDateLabel_(item.date)) + '</span><span>' + escapeHtml(item.time || '-') + '</span></span>',
+              '</button>'
+            ].join('');
           }).join(''),
           '  </div>',
           '</section>'
@@ -14850,7 +15087,7 @@
         }).filter(function(item) {
           return item && item.date;
         });
-        return actual.length ? actual : getMockSchoolSchedules_();
+        return actual;
       }
 
       function getFilteredSchoolSchedules_(options) {
@@ -15016,7 +15253,6 @@
       }
 
       function getFavoriteSchools_() {
-        var preferred = ['동대부고', '세화여고', '영일외고', '반포고', '휘문고', '경기고', '숙명여고', '신동고', '서문여고', '상문고', '배문고', '서울고'];
         var schedules = getAllSchoolSchedules_().filter(function(item) {
           var parsed = parseEventDateForClient_(item.date);
           return parsed && parsed.getFullYear() === APP_STATE.calendarYear && parsed.getMonth() === APP_STATE.calendarMonth;
@@ -15025,15 +15261,25 @@
         schedules.forEach(function(item) {
           counts[item.school] = (counts[item.school] || 0) + 1;
         });
-        var palette = ['#7c3aed', '#059669', '#db2777', '#2563eb', '#f97316', '#10b981', '#ec4899', '#0ea5e9', '#8b5cf6', '#14b8a6', '#f59e0b', '#64748b'];
-        return uniqueList_(preferred.concat(Object.keys(counts))).slice(0, 12).map(function(name, index) {
+        return Object.keys(counts).sort(function(a, b) {
+          return counts[b] - counts[a] || a.localeCompare(b, 'ko');
+        }).slice(0, 12).map(function(name) {
           return {
             id: normalizeSearchText(name),
             name: name,
             scheduleCount: counts[name] || 0,
-            color: palette[index % palette.length]
+            color: getSchoolAccentColor_(name)
           };
         });
+      }
+
+      function getSchoolAccentColor_(school) {
+        var palette = ['#7c3aed', '#059669', '#db2777', '#2563eb', '#f97316', '#10b981', '#ec4899', '#0ea5e9', '#8b5cf6', '#14b8a6', '#f59e0b', '#64748b'];
+        var key = normalizeSearchText(school || 'school');
+        var seed = key.split('').reduce(function(total, char) {
+          return total + char.charCodeAt(0);
+        }, 0);
+        return palette[Math.abs(seed) % palette.length];
       }
 
       function countRelatedStudents_(school, grade) {
@@ -15127,24 +15373,27 @@
         return parsed.getFullYear() + '년 ' + String(parsed.getMonth() + 1).padStart(2, '0') + '월 ' + String(parsed.getDate()).padStart(2, '0') + '일 (' + weekdays[parsed.getDay()] + ')';
       }
 
-      function getRecentScheduleChanges_(schedules) {
-        var derived = (schedules || []).slice().sort(sortSchedules_).reverse().map(function(item, index) {
-          var time = ['10:02', '09:58', '09:45', '09:30', '09:15'][index % 5];
-          return {
-            id: item.id,
-            time: time,
-            title: [item.school, item.grade, item.subject].filter(Boolean).join(' '),
-            description: item.title + (index % 2 ? ' 수정' : ' 추가'),
-            author: item.author || '예스엘튜'
-          };
-        });
-        return derived.length ? derived : [
-          { id: 'recent-1', time: '10:02', title: '세화여고 2학년 영어', description: '1학기 중간고사 추가', author: '예스엘튜' },
-          { id: 'recent-2', time: '09:58', title: '동대부고 1학년 국어', description: '1학기 중간고사 수정', author: '예스엘튜' },
-          { id: 'recent-3', time: '09:45', title: '신동고 3학년 수학', description: '1학기 모의고사 추가', author: '예스엘튜' },
-          { id: 'recent-4', time: '09:30', title: '반포고 2학년 과학', description: '1학기 중간고사 추가', author: '예스엘튜' },
-          { id: 'recent-5', time: '09:15', title: '휘문고 1학년 통합사회', description: '1학기 중간고사 수정', author: '예스엘튜' }
-        ];
+      function getWeekDatesForSelected_() {
+        var selected = parseEventDateForClient_(APP_STATE.selectedEventDate || '') || new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth, 1);
+        var start = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate() - selected.getDay());
+        var dates = [];
+        for (var i = 0; i < 7; i += 1) {
+          dates.push(new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
+        }
+        return dates;
+      }
+
+      function formatWeekDateLabel_(date) {
+        var weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+        return String(date.getMonth() + 1) + '/' + String(date.getDate()) + ' (' + weekdays[date.getDay()] + ')';
+      }
+
+      function getUpcomingSchedules_(schedules) {
+        var selected = parseEventDateForClient_(APP_STATE.selectedEventDate || '') || new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth, 1);
+        var selectedKey = formatDateKey_(selected);
+        return (schedules || []).filter(function(item) {
+          return String(item.date || '') >= selectedKey;
+        }).sort(sortSchedules_);
       }
 
       function openEventEditorForDate_(dateKey, schedule) {
@@ -15161,50 +15410,6 @@
         setTimeout(function() {
           document.getElementById('eventTargetInput').focus();
         }, 0);
-      }
-
-      function getMockSchoolSchedules_() {
-        return [
-          mockSchedule_('mock-1', '2026-04-01', '09:00', '세화여고', '1학년', '국어', '내신 시험', '1학기 중간고사', 23),
-          mockSchedule_('mock-2', '2026-04-01', '10:30', '동대부고', '2학년', '수학', '내신 시험', '1학기 중간고사', 27),
-          mockSchedule_('mock-3', '2026-04-02', '09:00', '신동고', '1학년', '영어', '내신 시험', '1학기 중간고사', 16),
-          mockSchedule_('mock-4', '2026-04-03', '09:00', '반포고', '3학년', '수학', '내신 시험', '1학기 중간고사', 20),
-          mockSchedule_('mock-5', '2026-04-03', '13:30', '동대부고', '1학년', '과학', '내신 시험', '1학기 중간고사', 18),
-          mockSchedule_('mock-6', '2026-04-14', '09:00', '동대부고', '1학년', '한국사', '내신 시험', '1학기 중간고사', 32),
-          mockSchedule_('mock-7', '2026-04-14', '10:30', '세화여고', '3학년', '사회', '내신 시험', '1학기 중간고사', 21),
-          mockSchedule_('mock-8', '2026-04-15', '09:00', '세화여고', '1학년', '수학', '내신 시험', '1학기 중간고사', 24),
-          mockSchedule_('mock-9', '2026-04-15', '10:30', '신동고', '2학년', '영어', '내신 시험', '1학기 중간고사', 18),
-          mockSchedule_('mock-10', '2026-04-15', '13:30', '반포고', '2학년', '과학', '내신 시험', '1학기 중간고사', 28),
-          mockSchedule_('mock-11', '2026-04-16', '09:00', '경기고', '1학년', '국어', '내신 시험', '1학기 중간고사', 17),
-          mockSchedule_('mock-12', '2026-04-17', '09:00', '동대부고', '3학년', '영어', '내신 시험', '1학기 중간고사', 18),
-          mockSchedule_('mock-13', '2026-04-17', '13:30', '세화여고', '3학년', '수학', '내신 시험', '1학기 중간고사', 16),
-          mockSchedule_('mock-14', '2026-04-18', '09:00', '신동고', '1학년', '과학', '내신 시험', '1학기 중간고사', 14),
-          mockSchedule_('mock-15', '2026-04-28', '09:00', '동대부고', '1학년', '국어', '내신 시험', '1학기 중간고사', 32),
-          mockSchedule_('mock-16', '2026-04-28', '10:30', '세화여고', '2학년', '영어', '내신 시험', '1학기 중간고사', 28),
-          mockSchedule_('mock-17', '2026-04-28', '13:30', '신동고', '3학년', '수학', '내신 시험', '1학기 중간고사', 18),
-          mockSchedule_('mock-18', '2026-04-28', '15:00', '휘문고', '1학년', '통합사회', '내신 시험', '1학기 중간고사', 24),
-          mockSchedule_('mock-19', '2026-04-30', '09:00', '휘문고', '2학년', '영어', '내신 시험', '1학기 중간고사', 29),
-          mockSchedule_('mock-20', '2026-05-01', '09:00', '반포고', '1학년', '국어', '내신 시험', '1학기 중간고사', 20),
-          mockSchedule_('mock-21', '2026-05-02', '10:30', '경기고', '3학년', '수학', '내신 시험', '1학기 중간고사', 17)
-        ];
-      }
-
-      function mockSchedule_(id, date, time, school, grade, subject, type, title, count) {
-        return {
-          id: id,
-          rowNumber: '',
-          date: date,
-          time: time,
-          school: school,
-          grade: grade,
-          subject: subject,
-          scheduleType: type,
-          title: title,
-          targetStudentCount: count,
-          colorKey: getScheduleGradeToneClass_(grade),
-          author: '예스엘튜',
-          source: null
-        };
       }
 
       function enterEventEditMode_(rowNumber) {
