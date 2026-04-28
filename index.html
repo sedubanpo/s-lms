@@ -9831,6 +9831,7 @@
         gradeStudents: [],
         gradeSummary: null,
         gradesLoaded: false,
+        gradesRemoteLoaded: false,
         gradesLoading: false,
         gradeLoadPromise: null,
         gradeTab: 'input',
@@ -10702,7 +10703,7 @@
         }
 
         if (viewName === 'grades') {
-          if (APP_STATE.gradesLoaded) {
+          if (APP_STATE.gradesRemoteLoaded) {
             if (!config.silent && APP_STATE.currentView === 'grades') {
               renderGrades();
             }
@@ -10719,6 +10720,7 @@
             }
             return pendingGrades;
           }
+          ensureGradeFallbackData_();
           APP_STATE.gradesLoading = true;
           if (!config.silent && APP_STATE.currentView === 'grades') {
             renderGrades();
@@ -10727,6 +10729,7 @@
             .then(function(gradeData) {
               hydrateGradeData_(gradeData);
               APP_STATE.gradesLoaded = true;
+              APP_STATE.gradesRemoteLoaded = true;
               if (!config.silent && APP_STATE.currentView === 'grades') {
                 renderGrades();
               }
@@ -18453,6 +18456,19 @@
         }
       }
 
+      function ensureGradeFallbackData_() {
+        if (APP_STATE.gradesLoaded) {
+          return;
+        }
+        var fallbackStudents = (APP_STATE.visibleStudents || []).slice();
+        APP_STATE.gradeStudents = fallbackStudents;
+        APP_STATE.gradeSummary = buildGradeSummaryClient_(APP_STATE.grades || [], fallbackStudents);
+        APP_STATE.gradesLoaded = true;
+        if (!APP_STATE.selectedGradeStudentId && fallbackStudents.length) {
+          APP_STATE.selectedGradeStudentId = fallbackStudents[0].studentId || '';
+        }
+      }
+
       function renderGrades() {
         var container = document.getElementById('gradesConsole');
         if (!container) {
@@ -19008,12 +19024,15 @@
 
       function refreshGrades_() {
         APP_STATE.gradesLoaded = false;
+        APP_STATE.gradesRemoteLoaded = false;
         APP_STATE.gradesLoading = true;
+        ensureGradeFallbackData_();
         renderGrades();
         apiRequest('getGrades', { token: APP_STATE.token })
           .then(function(data) {
             hydrateGradeData_(data);
             APP_STATE.gradesLoaded = true;
+            APP_STATE.gradesRemoteLoaded = true;
             APP_STATE.gradeDrafts = {};
             APP_STATE.gradeRowMessages = {};
             setNotice('성적 데이터를 동기화했습니다.', 'success');
@@ -19488,6 +19507,7 @@
         APP_STATE.gradeStudents = [];
         APP_STATE.gradeSummary = null;
         APP_STATE.gradesLoaded = false;
+        APP_STATE.gradesRemoteLoaded = false;
         APP_STATE.gradesLoading = false;
         APP_STATE.gradeLoadPromise = null;
         APP_STATE.gradeTab = 'input';
