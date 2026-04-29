@@ -7245,6 +7245,698 @@
         background: #0f9a6a;
       }
 
+      .school-by-dashboard {
+        display: grid;
+        gap: 16px;
+      }
+
+      .school-kpi-strip {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .school-kpi-card {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+        padding: 16px;
+        border: 1px solid #dbe6f5;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.035);
+      }
+
+      .school-kpi-icon {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        border-radius: 8px;
+        background: #eff6ff;
+        color: #0b55d9;
+      }
+
+      .school-kpi-card small,
+      .school-kpi-card em {
+        display: block;
+        color: #64748b;
+        font-size: 0.75rem;
+        font-style: normal;
+        font-weight: 800;
+      }
+
+      .school-kpi-card strong {
+        display: block;
+        margin: 2px 0;
+        color: #0f172a;
+        font-size: 1.45rem;
+        font-weight: 950;
+        line-height: 1;
+      }
+
+      .school-by-layout {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr) 340px;
+        gap: 14px;
+        align-items: start;
+      }
+
+      .school-list-panel,
+      .school-side-card,
+      .school-distribution-card,
+      .school-chapter-card {
+        border: 1px solid #dbe6f5;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .school-list-panel {
+        position: sticky;
+        top: 76px;
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+      }
+
+      .school-list-head,
+      .school-side-head,
+      .school-section-head,
+      .school-modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .school-list-head h3,
+      .school-side-head h3,
+      .school-section-head h3,
+      .school-modal-head h3 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 1rem;
+        font-weight: 950;
+      }
+
+      .school-list-head span,
+      .school-side-head span {
+        padding: 5px 9px;
+        border: 1px solid #cfe0f7;
+        border-radius: 999px;
+        background: #f8fbff;
+        color: #174ea6;
+        font-size: 0.75rem;
+        font-weight: 900;
+      }
+
+      .school-side-head span.warn {
+        border-color: #fed7aa;
+        background: #fff7ed;
+        color: #c2410c;
+      }
+
+      .school-list-search {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr);
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border: 1px solid #d5e1f2;
+        border-radius: 8px;
+        color: #64748b;
+        background: #fff;
+      }
+
+      .school-list-search input {
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        color: #0f172a;
+        font: inherit;
+        font-weight: 800;
+      }
+
+      .school-list-scroll {
+        display: grid;
+        gap: 7px;
+        max-height: 520px;
+        overflow: auto;
+        padding-right: 2px;
+      }
+
+      .school-list-row {
+        display: grid;
+        grid-template-columns: 10px minmax(0, 1fr) auto 16px;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 10px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: #fff;
+        color: #0f172a;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .school-list-row.all {
+        grid-template-columns: 10px minmax(0, 1fr) auto;
+        border-color: #dbe6f5;
+        background: #f8fbff;
+      }
+
+      .school-list-row:hover,
+      .school-list-row:focus-visible,
+      .school-list-row.selected {
+        border-color: #8fb8ff;
+        background: #eef5ff;
+        outline: none;
+      }
+
+      .school-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.04);
+      }
+
+      .school-list-name strong,
+      .school-top-row strong {
+        display: block;
+        overflow: hidden;
+        color: #0f172a;
+        font-size: 0.84rem;
+        font-weight: 950;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .school-list-name small,
+      .school-list-row em {
+        color: #64748b;
+        font-size: 0.72rem;
+        font-style: normal;
+        font-weight: 850;
+      }
+
+      .school-list-empty,
+      .school-empty-mini {
+        padding: 14px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .school-by-main,
+      .school-status-panel {
+        display: grid;
+        gap: 14px;
+      }
+
+      .school-distribution-card {
+        padding: 18px;
+      }
+
+      .school-section-head p,
+      .school-modal-head p {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .school-distribution-body {
+        display: grid;
+        grid-template-columns: minmax(360px, 0.75fr) minmax(220px, 0.35fr);
+        gap: 20px;
+        align-items: center;
+        margin-top: 18px;
+      }
+
+      .school-donut-wrap {
+        position: relative;
+        display: grid;
+        min-height: 340px;
+        place-items: center;
+      }
+
+      .school-donut-svg {
+        width: min(100%, 360px);
+        height: auto;
+        overflow: visible;
+      }
+
+      .school-donut-segment {
+        cursor: pointer;
+        transition: opacity 0.16s ease, stroke-width 0.16s ease;
+      }
+
+      .school-donut-segment:hover,
+      .school-donut-segment:focus-visible {
+        opacity: 0.86;
+        outline: none;
+        stroke-width: 42;
+      }
+
+      .school-donut-center-overlay {
+        position: absolute;
+        display: grid;
+        width: 150px;
+        height: 150px;
+        place-content: center;
+        border: 1px solid #dbe6f5;
+        border-radius: 50%;
+        background: #fff;
+        text-align: center;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+      }
+
+      .school-donut-center-overlay span,
+      .school-donut-center-overlay em {
+        color: #64748b;
+        font-size: 0.78rem;
+        font-style: normal;
+        font-weight: 850;
+      }
+
+      .school-donut-center-overlay strong {
+        color: #0f172a;
+        font-size: 2rem;
+        font-weight: 950;
+        line-height: 1.1;
+      }
+
+      .school-top-list {
+        display: grid;
+        gap: 7px;
+      }
+
+      .school-top-row {
+        display: grid;
+        grid-template-columns: 10px minmax(0, 1fr) auto 38px;
+        gap: 8px;
+        align-items: center;
+        padding: 9px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: #fff;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .school-top-row:hover,
+      .school-top-row.selected {
+        border-color: #cfe0f7;
+        background: #f8fbff;
+      }
+
+      .school-top-row em,
+      .school-top-row small {
+        color: #475569;
+        font-size: 0.74rem;
+        font-style: normal;
+        font-weight: 900;
+        text-align: right;
+      }
+
+      .school-side-card {
+        display: grid;
+        gap: 13px;
+        padding: 16px;
+      }
+
+      .school-completion-row {
+        display: grid;
+        gap: 7px;
+      }
+
+      .school-completion-row div:first-child {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #334155;
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      .school-completion-track {
+        height: 9px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e2e8f0;
+      }
+
+      .school-completion-track b {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+      }
+
+      .school-need-row,
+      .school-action-button {
+        display: grid;
+        align-items: center;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 900;
+      }
+
+      .school-need-row {
+        grid-template-columns: 22px minmax(0, 1fr) auto;
+        gap: 9px;
+        padding: 11px;
+        border: 1px solid #dbe6f5;
+        background: #f8fafc;
+        color: #0f172a;
+      }
+
+      .school-need-row:hover,
+      .school-action-button:hover {
+        border-color: #8fb8ff;
+        background: #eef5ff;
+      }
+
+      .school-need-row strong {
+        color: #0b55d9;
+        font-size: 1.05rem;
+      }
+
+      .school-quick-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .school-action-button {
+        grid-template-columns: 18px minmax(0, 1fr);
+        gap: 8px;
+        padding: 10px;
+        border: 1px solid #dbe6f5;
+        background: #fff;
+        color: #173461;
+        font-size: 0.75rem;
+        text-align: left;
+      }
+
+      .school-chapter-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .school-chapter-card {
+        overflow: hidden;
+      }
+
+      .school-chapter-card.expanded {
+        border-color: #8fb8ff;
+        box-shadow: 0 10px 24px rgba(11, 85, 217, 0.08);
+      }
+
+      .school-chapter-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+        padding: 13px 14px;
+      }
+
+      .school-chapter-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        color: #0f172a;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .school-chapter-title strong {
+        font-size: 0.98rem;
+        font-weight: 950;
+      }
+
+      .school-chapter-title em,
+      .school-chapter-title small,
+      .school-type-badge {
+        padding: 5px 9px;
+        border: 1px solid #dbe6f5;
+        border-radius: 999px;
+        background: #f8fbff;
+        color: #475569;
+        font-size: 0.72rem;
+        font-style: normal;
+        font-weight: 900;
+      }
+
+      .school-chapter-actions {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .school-chapter-actions .school-action-button {
+        display: inline-flex;
+        min-height: 32px;
+        padding: 7px 10px;
+      }
+
+      .school-chapter-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        padding: 14px;
+        border-top: 1px solid #e2e8f0;
+        background: #fbfdff;
+      }
+
+      .school-detail-box {
+        display: grid;
+        align-content: start;
+        gap: 9px;
+        min-height: 132px;
+        padding: 13px;
+        border: 1px solid #dbe6f5;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .school-detail-box h4 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 0.85rem;
+        font-weight: 950;
+      }
+
+      .school-grade-bar {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) 34px;
+        align-items: center;
+        gap: 8px;
+        color: #475569;
+        font-size: 0.73rem;
+        font-weight: 850;
+      }
+
+      .school-grade-bar div {
+        height: 7px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e2e8f0;
+      }
+
+      .school-grade-bar b {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: #0b55d9;
+      }
+
+      .school-permission-counts {
+        display: grid;
+        gap: 7px;
+        color: #475569;
+        font-size: 0.78rem;
+        font-weight: 850;
+      }
+
+      .school-permission-counts strong,
+      .school-permission-counts .warn {
+        color: #c2410c;
+      }
+
+      .school-primary-small,
+      .school-secondary-small {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-height: 34px;
+        margin-top: 4px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 900;
+      }
+
+      .school-primary-small {
+        border: 1px solid #0b55d9;
+        background: #0b55d9;
+        color: #fff;
+      }
+
+      .school-secondary-small {
+        border: 1px solid #cfe0f7;
+        background: #f8fbff;
+        color: #174ea6;
+      }
+
+      .school-mini-record,
+      .school-exam-item {
+        display: grid;
+        gap: 3px;
+        padding: 8px;
+        border-radius: 8px;
+        background: #f8fafc;
+      }
+
+      .school-mini-record strong,
+      .school-exam-item strong {
+        color: #0f172a;
+        font-size: 0.75rem;
+        font-weight: 950;
+      }
+
+      .school-mini-record span,
+      .school-exam-item span {
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .school-exam-item {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+      }
+
+      .school-exam-item em {
+        padding: 5px 8px;
+        border-radius: 999px;
+        background: #eef5ff;
+        color: #174ea6;
+        font-size: 0.72rem;
+        font-style: normal;
+        font-weight: 950;
+      }
+
+      .school-exam-item em.urgent {
+        background: #fff7ed;
+        color: #c2410c;
+      }
+
+      .school-chart-tooltip {
+        position: fixed;
+        z-index: 10000;
+        display: grid;
+        gap: 4px;
+        width: 240px;
+        padding: 12px;
+        border: 1px solid #cfe0f7;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-6px);
+        transition: opacity 0.12s ease, transform 0.12s ease;
+      }
+
+      .school-chart-tooltip.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .school-chart-tooltip strong {
+        color: #0f172a;
+        font-weight: 950;
+      }
+
+      .school-chart-tooltip span,
+      .school-chart-tooltip em {
+        color: #64748b;
+        font-size: 0.76rem;
+        font-style: normal;
+        font-weight: 800;
+      }
+
+      .school-quick-assign-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 9000;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: rgba(15, 23, 42, 0.34);
+        backdrop-filter: blur(5px);
+      }
+
+      .school-quick-assign-modal {
+        display: grid;
+        gap: 16px;
+        width: min(720px, 100%);
+        max-height: min(720px, 88vh);
+        overflow: auto;
+        padding: 18px;
+        border: 1px solid #dbe6f5;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 22px 70px rgba(15, 23, 42, 0.24);
+      }
+
+      .school-assign-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .school-assign-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 220px;
+        gap: 10px;
+        align-items: center;
+        padding: 11px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fafc;
+      }
+
+      .school-assign-row strong,
+      .school-assign-row span {
+        display: block;
+      }
+
+      .school-assign-row strong {
+        color: #0f172a;
+        font-weight: 950;
+      }
+
+      .school-assign-row span {
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 0.75rem;
+        font-weight: 800;
+      }
+
+      .school-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
       .student-console.list-mode .student-ops-layout {
         grid-template-columns: 1fr;
       }
@@ -9750,6 +10442,14 @@
         selectedStudentId: '',
         selectedStudentDetailId: '',
         studentViewMode: 'summary',
+        schoolModeSearch: '',
+        schoolModeSelectedSchool: '',
+        schoolModeExpandedSchool: '',
+        schoolChartHoverSchool: '',
+        schoolQuickAssignOpen: false,
+        schoolQuickAssignTargetSchool: '',
+        schoolQuickAssignSelections: {},
+        schoolQuickAssignSaving: false,
         selectedHomeroomInstructorId: '',
         homeroomTeacherSearchKeyword: '',
         isHomeroomTeacherComposing: false,
@@ -9971,13 +10671,18 @@
         document.getElementById('studentList').addEventListener('click', handleStudentListClick);
         document.getElementById('studentList').addEventListener('input', handleStudentListInput_);
         document.getElementById('studentList').addEventListener('change', handleStudentListChange_);
+        document.getElementById('studentList').addEventListener('mouseover', handleSchoolChartTooltipHover_);
+        document.getElementById('studentList').addEventListener('mousemove', handleSchoolChartTooltipMove_);
+        document.getElementById('studentList').addEventListener('mouseout', handleSchoolChartTooltipLeave_);
+        document.getElementById('studentList').addEventListener('focusin', handleSchoolChartTooltipHover_);
+        document.getElementById('studentList').addEventListener('focusout', handleSchoolChartTooltipLeave_);
         document.getElementById('studentList').addEventListener('compositionstart', function(event) {
-          if (event.target.closest('[data-student-filter-input]')) {
+          if (event.target.closest('[data-student-filter-input], [data-school-mode-search]')) {
             APP_STATE.isStudentSearchComposing = true;
           }
         });
         document.getElementById('studentList').addEventListener('compositionend', function(event) {
-          if (event.target.closest('[data-student-filter-input]')) {
+          if (event.target.closest('[data-student-filter-input], [data-school-mode-search]')) {
             APP_STATE.isStudentSearchComposing = false;
             handleStudentListInput_(event);
             scheduleStudentSearchRender_(30);
@@ -11043,10 +11748,15 @@
         var allScopedStudents = orderStudentsForDisplay_(APP_STATE.visibleStudents);
         var selected = getSelectedStudent_(students) || allScopedStudents[0] || null;
         var mode = APP_STATE.studentViewMode || 'summary';
+        if (mode === 'school') {
+          return [
+            renderScopeBanner_(allScopedStudents),
+            renderSchoolMode_(students)
+          ].join('');
+        }
         return [
           renderScopeBanner_(allScopedStudents),
           renderInsightBand_(allScopedStudents),
-          mode === 'school' ? renderSchoolMode_(students) : '',
           mode === 'permission' ? renderPermissionMode_(students) : '',
           (mode === 'summary' || mode === 'list') ? [
             '<div class="student-ops-layout">',
@@ -11058,7 +11768,7 @@
             '  </aside>',
             '</div>'
           ].join('') : '',
-          renderStudentWidgets_(allScopedStudents)
+          (mode === 'summary' || mode === 'list') ? renderStudentWidgets_(allScopedStudents) : ''
         ].join('');
       }
 
@@ -11674,24 +12384,376 @@
       }
 
       function renderSchoolMode_(students) {
-        var distribution = buildSchoolDistributionForChart_(students);
-        if (!distribution.items.length) {
-          return '<section class="ops-surface school-distribution-panel"><div class="empty-state">학교 분포 데이터가 없습니다.</div></section>';
+        var model = buildSchoolModeModel_(students);
+        if (!model.items.length) {
+          return '<section class="school-by-dashboard"><div class="ops-surface empty-state">학교 분포 데이터가 없습니다.</div></section>';
         }
+        ensureSchoolModeSelection_(model);
         return [
-          '<section class="ops-surface school-distribution-panel">',
-          '  <div class="school-distribution-head">',
-          '    <div><h3>학교별 학생 분포</h3><p>' + escapeHtml(APP_STATE.isAdmin ? '관리자 전체 보기 기준' : '현재 강사 권한 범위 기준') + ' · ' + escapeHtml(String(distribution.total)) + '명</p></div>',
-          '    <span class="ops-chip blue">' + escapeHtml(String(distribution.items.length)) + '개 학교</span>',
+          '<section class="school-by-dashboard">',
+          renderSchoolModeKpiStrip_(students, model),
+          '<div class="school-by-layout">',
+          renderSchoolListPanel_(model),
+          '<main class="school-by-main">',
+          renderSchoolDistributionPanel_(model),
+          renderSchoolChapterAccordion_(model),
+          '</main>',
+          renderSchoolStatusPanel_(students, model),
+          '</div>',
+          APP_STATE.schoolQuickAssignOpen ? renderSchoolQuickAssignModal_(model) : '',
+          '</section>'
+        ].join('');
+      }
+
+      function buildSchoolModeModel_(students) {
+        var source = orderStudentsForDisplay_(students || []);
+        var distribution = buildSchoolDistributionForChart_(source);
+        var bySchool = {};
+        source.forEach(function(student) {
+          var school = student.school || '학교 미지정';
+          if (!bySchool[school]) {
+            bySchool[school] = [];
+          }
+          bySchool[school].push(student);
+        });
+        distribution.items.forEach(function(item, index) {
+          item.students = bySchool[item.school] || [];
+          item.id = item.school;
+          item.color = getStudentSchoolChartColor_(item.school, index);
+          item.type = inferSchoolType_(item.school);
+        });
+        return {
+          total: distribution.total,
+          schoolCount: distribution.items.length,
+          items: distribution.items,
+          selectedSchool: APP_STATE.schoolModeSelectedSchool || '',
+          expandedSchool: APP_STATE.schoolModeExpandedSchool || '',
+          search: APP_STATE.schoolModeSearch || ''
+        };
+      }
+
+      function ensureSchoolModeSelection_(model) {
+        var selectedExists = model.items.some(function(item) { return item.school === model.selectedSchool; });
+        if (!selectedExists) {
+          model.selectedSchool = model.items[0] ? model.items[0].school : '';
+          APP_STATE.schoolModeSelectedSchool = model.selectedSchool;
+        }
+        var expandedExists = model.items.some(function(item) { return item.school === model.expandedSchool; });
+        if (!expandedExists) {
+          model.expandedSchool = model.selectedSchool;
+          APP_STATE.schoolModeExpandedSchool = model.expandedSchool;
+        }
+      }
+
+      function inferSchoolType_(school) {
+        var text = String(school || '');
+        if (text.indexOf('여') > -1) {
+          return '여고';
+        }
+        if (text.indexOf('중') > -1) {
+          return '중학교';
+        }
+        if (text.indexOf('고') > -1) {
+          return '고등학교';
+        }
+        return '학교';
+      }
+
+      function renderSchoolModeKpiStrip_(students, model) {
+        var permissionCount = getScopedPermissions_().length;
+        var consultationCount = getScopedConsultationCount_(students);
+        var materialSchoolCount = new Set(getScopedMaterials_().map(function(item) { return item.school || ''; }).filter(Boolean)).size;
+        var jikboSummaryMap = typeof buildStudentJikboSummaryMap_ === 'function' ? buildStudentJikboSummaryMap_() : {};
+        var jikboCount = Object.keys(jikboSummaryMap).filter(function(studentId) {
+          var summary = jikboSummaryMap[studentId];
+          return summary && summary.total > 0;
+        }).length;
+        var cards = [
+          { icon: 'users-round', label: '전체 학생', value: model.total + '명', meta: APP_STATE.isAdmin ? '활성 학생 기준' : '권한 범위 기준', tone: 'blue' },
+          { icon: 'git-branch', label: '권한 연결', value: permissionCount + '건', meta: '강사-학생 연결', tone: 'teal' },
+          { icon: 'messages-square', label: '상담 기록', value: consultationCount + '건', meta: '상담/관리 기록', tone: 'slate' },
+          { icon: 'folder-check', label: '자료 연결 학교', value: materialSchoolCount + '개교', meta: '학교 자료 연계', tone: 'green' },
+          { icon: 'target', label: '정보 대상', value: jikboCount + '명', meta: '시험 대비 필요', tone: 'violet' }
+        ];
+        return '<div class="school-kpi-strip">' + cards.map(function(card) {
+          return [
+            '<article class="school-kpi-card ' + escapeAttribute(card.tone) + '">',
+            '  <span class="school-kpi-icon"><i data-lucide="' + escapeAttribute(card.icon) + '"></i></span>',
+            '  <div><small>' + escapeHtml(card.label) + '</small><strong>' + escapeHtml(card.value) + '</strong><em>' + escapeHtml(card.meta) + '</em></div>',
+            '</article>'
+          ].join('');
+        }).join('') + '</div>';
+      }
+
+      function renderSchoolListPanel_(model) {
+        var search = String(model.search || '').trim().toLowerCase();
+        var visibleItems = search ? model.items.filter(function(item) {
+          return String(item.school || '').toLowerCase().indexOf(search) > -1;
+        }) : model.items;
+        return [
+          '<aside class="school-list-panel ops-surface">',
+          '  <div class="school-list-head"><h3>학교 목록</h3><span>' + escapeHtml(String(model.schoolCount)) + '개교</span></div>',
+          '  <label class="school-list-search"><i data-lucide="search"></i><input type="search" data-school-mode-search value="' + escapeAttribute(model.search || '') + '" placeholder="학교명 검색"></label>',
+          '  <button type="button" class="school-list-row all ' + (!model.selectedSchool ? 'selected' : '') + '" data-school-by-select=""><span class="school-dot" style="background:#0b55d9"></span><strong>전체 학교</strong><em>' + escapeHtml(String(model.total)) + '명</em></button>',
+          '  <div class="school-list-scroll">',
+          visibleItems.map(function(item) {
+            var selected = item.school === model.selectedSchool;
+            return [
+              '<button type="button" class="school-list-row ' + (selected ? 'selected' : '') + '" data-school-by-select="' + escapeAttribute(item.school) + '">',
+              '  <span class="school-dot" style="background:' + escapeAttribute(item.color) + '"></span>',
+              '  <span class="school-list-name"><strong>' + escapeHtml(item.school) + '</strong><small>' + escapeHtml(String(item.percent)) + '%</small></span>',
+              '  <em>' + escapeHtml(String(item.count)) + '명</em>',
+              '  <i data-lucide="chevron-right"></i>',
+              '</button>'
+            ].join('');
+          }).join('') || '<div class="school-list-empty">검색된 학교가 없습니다.</div>',
           '  </div>',
-          '  <div class="school-chart-layout">',
-          '    <article class="school-donut-card">',
-          '      <div class="school-donut" style="background:' + escapeAttribute(buildSchoolDonutGradient_(distribution.items)) + '"><div class="school-donut-center"><strong>' + escapeHtml(String(distribution.total)) + '</strong><span>학생 · ' + escapeHtml(String(distribution.items.length)) + '개 학교</span></div></div>',
-          '      <div class="school-donut-legend">' + distribution.items.slice(0, 10).map(renderSchoolLegendRow_).join('') + '</div>',
-          '    </article>',
-          '    <div class="school-ring-grid">' + distribution.items.slice(0, 12).map(function(item) { return renderSchoolRingCard_(item, distribution.total); }).join('') + '</div>',
+          '</aside>'
+        ].join('');
+      }
+
+      function renderSchoolDistributionPanel_(model) {
+        var topItems = model.items.slice(0, 10);
+        return [
+          '<section class="school-distribution-card ops-surface">',
+          '  <div class="school-section-head">',
+          '    <div><h3>전체 재원생 학교별 분포</h3><p>학교별 재원생 비율과 학생 목록을 한 화면에서 확인합니다.</p></div>',
+          '    <button type="button" class="compact-action-button" data-school-action="students"><i data-lucide="maximize-2"></i>전체 보기</button>',
+          '  </div>',
+          '  <div class="school-distribution-body">',
+          '    <div class="school-donut-wrap">',
+          renderSchoolDonutSvg_(model.items, model.total),
+          '      <div class="school-donut-center-overlay"><span>전체 재원생</span><strong>' + escapeHtml(String(model.total)) + '명</strong><em>' + escapeHtml(String(model.schoolCount)) + '개교</em></div>',
+          '    </div>',
+          '    <div class="school-top-list">',
+          topItems.map(function(item) {
+            return [
+              '<button type="button" class="school-top-row ' + (item.school === model.selectedSchool ? 'selected' : '') + '" data-school-by-select="' + escapeAttribute(item.school) + '">',
+              '  <span class="school-dot" style="background:' + escapeAttribute(item.color) + '"></span>',
+              '  <strong>' + escapeHtml(item.school) + '</strong>',
+              '  <em>' + escapeHtml(String(item.count)) + '명</em>',
+              '  <small>' + escapeHtml(String(item.percent)) + '%</small>',
+              '</button>'
+            ].join('');
+          }).join(''),
+          '    </div>',
           '  </div>',
           '</section>'
+        ].join('');
+      }
+
+      function renderSchoolDonutSvg_(items, total) {
+        if (!total) {
+          return '<svg class="school-donut-svg" viewBox="0 0 240 240" aria-label="학교별 분포"><circle cx="120" cy="120" r="82" fill="none" stroke="#e2e8f0" stroke-width="38"></circle></svg>';
+        }
+        var radius = 82;
+        var circumference = 2 * Math.PI * radius;
+        var offset = 0;
+        var circles = items.map(function(item) {
+          var length = Math.max(2, (item.count / total) * circumference);
+          var sample = (item.students || []).slice(0, 4).map(function(student) { return student.studentName || '-'; }).join(', ');
+          var extra = Math.max(0, (item.students || []).length - 4);
+          var tooltip = item.school + '|' + item.count + '|' + item.percent + '|' + sample + '|' + extra;
+          var html = '<circle class="school-donut-segment" cx="120" cy="120" r="' + radius + '" fill="none" stroke="' + escapeAttribute(item.color) + '" stroke-width="38" stroke-dasharray="' + length.toFixed(2) + ' ' + circumference.toFixed(2) + '" stroke-dashoffset="' + (-offset).toFixed(2) + '" data-school-chart-segment="' + escapeAttribute(item.school) + '" data-school-tooltip="' + escapeAttribute(tooltip) + '" tabindex="0"></circle>';
+          offset += length;
+          return html;
+        }).join('');
+        return '<svg class="school-donut-svg" viewBox="0 0 240 240" aria-label="학교별 분포"><g transform="rotate(-90 120 120)">' + circles + '</g></svg>';
+      }
+
+      function renderSchoolStatusPanel_(students, model) {
+        var completeness = buildCompleteness_(students);
+        var needs = buildWeeklyNeeds_(students);
+        return [
+          '<aside class="school-status-panel">',
+          '  <section class="school-side-card ops-surface">',
+          '    <div class="school-side-head"><h3>기록 완성도 현황</h3><span>' + escapeHtml(String(completeness.average || 0)) + '%</span></div>',
+          renderSchoolCompletionRow_('기본정보', completeness.base, '#0b55d9'),
+          renderSchoolCompletionRow_('권한', completeness.permission, '#0f9a6a'),
+          renderSchoolCompletionRow_('상담', completeness.consulting, '#f59e0b'),
+          renderSchoolCompletionRow_('학교자료', completeness.material, '#64748b'),
+          '  </section>',
+          '  <section class="school-side-card ops-surface">',
+          '    <div class="school-side-head"><h3>이번 주 확인 필요</h3><span class="warn">' + escapeHtml(String(needs.total || 0)) + '건</span></div>',
+          renderSchoolNeedRow_('alert-circle', '미배정', needs.unassigned, 'bulk-assign'),
+          renderSchoolNeedRow_('message-square-warning', '상담 필요', needs.consulting, 'consultations'),
+          renderSchoolNeedRow_('calendar-clock', '시험 임박', needs.examSoon, 'events'),
+          '  </section>',
+          '  <section class="school-side-card ops-surface">',
+          '    <div class="school-side-head"><h3>빠른 작업</h3></div>',
+          '    <div class="school-quick-actions">',
+          renderSchoolActionButton_('users-round', '담임 권한 일괄 배정', 'bulk-assign', model.selectedSchool),
+          renderSchoolActionButton_('messages-square', '상담 대상자 확인', 'consultations', model.selectedSchool),
+          renderSchoolActionButton_('calendar-days', '시험 일정 확인', 'events', model.selectedSchool),
+          renderSchoolActionButton_('folder-check', '자료 연결 현황', 'materials', model.selectedSchool),
+          '    </div>',
+          '  </section>',
+          '</aside>'
+        ].join('');
+      }
+
+      function renderSchoolCompletionRow_(label, value, color) {
+        return [
+          '<div class="school-completion-row">',
+          '  <div><strong>' + escapeHtml(label) + '</strong><span>' + escapeHtml(String(value || 0)) + '%</span></div>',
+          '  <div class="school-completion-track"><b style="width:' + escapeAttribute(String(Math.max(0, Math.min(100, value || 0)))) + '%;background:' + escapeAttribute(color) + '"></b></div>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderSchoolNeedRow_(icon, label, count, action) {
+        return [
+          '<button type="button" class="school-need-row" data-school-action="' + escapeAttribute(action) + '">',
+          '  <i data-lucide="' + escapeAttribute(icon) + '"></i><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(String(count || 0)) + '</strong>',
+          '</button>'
+        ].join('');
+      }
+
+      function renderSchoolActionButton_(icon, label, action, school) {
+        return '<button type="button" class="school-action-button" data-school-action="' + escapeAttribute(action) + '" data-school="' + escapeAttribute(school || '') + '"><i data-lucide="' + escapeAttribute(icon) + '"></i>' + escapeHtml(label) + '</button>';
+      }
+
+      function renderSchoolChapterAccordion_(model) {
+        return [
+          '<section class="school-chapter-list">',
+          model.items.map(function(item) {
+            return renderSchoolChapterCard_(item, model);
+          }).join(''),
+          '</section>'
+        ].join('');
+      }
+
+      function renderSchoolChapterCard_(item, model) {
+        var expanded = item.school === model.expandedSchool;
+        var students = item.students || [];
+        var unassigned = getUnassignedStudents_(students);
+        var assigned = Math.max(0, students.length - unassigned.length);
+        return [
+          '<article class="school-chapter-card ops-surface ' + (expanded ? 'expanded' : '') + '" data-school-chapter="' + escapeAttribute(item.school) + '">',
+          '  <div class="school-chapter-header">',
+          '    <button type="button" class="school-chapter-title" data-school-by-toggle="' + escapeAttribute(item.school) + '">',
+          '      <span class="school-dot" style="background:' + escapeAttribute(item.color) + '"></span>',
+          '      <strong>' + escapeHtml(item.school) + '</strong>',
+          '      <em>' + escapeHtml(String(item.count)) + '명</em>',
+          '      <small>' + escapeHtml(String(item.percent)) + '%</small>',
+          '      <span class="school-type-badge">' + escapeHtml(item.type) + '</span>',
+          '    </button>',
+          '    <div class="school-chapter-actions">',
+          renderSchoolActionButton_('list', '학생 목록', 'students', item.school),
+          renderSchoolActionButton_('messages-square', '상담 기록', 'consultations', item.school),
+          renderSchoolActionButton_('folder-check', '자료 현황', 'materials', item.school),
+          '      <button type="button" class="icon-only-button" data-school-by-toggle="' + escapeAttribute(item.school) + '"><i data-lucide="' + (expanded ? 'chevron-up' : 'chevron-down') + '"></i></button>',
+          '    </div>',
+          '  </div>',
+          expanded ? [
+            '  <div class="school-chapter-detail-grid">',
+            renderSchoolGradeDistribution_(item),
+            renderSchoolPermissionStatus_(item, assigned, unassigned.length),
+            renderSchoolRecentConsultations_(item),
+            renderSchoolUpcomingExams_(item),
+            '  </div>'
+          ].join('') : '',
+          '</article>'
+        ].join('');
+      }
+
+      function renderSchoolGradeDistribution_(item) {
+        var max = Math.max(1, item.grades['1'] || 0, item.grades['2'] || 0, item.grades['3'] || 0);
+        return [
+          '<section class="school-detail-box"><h4>학년별 분포</h4>',
+          ['1', '2', '3'].map(function(grade) {
+            var count = item.grades[grade] || 0;
+            return '<div class="school-grade-bar"><span>' + grade + '학년</span><div><b style="width:' + escapeAttribute(String(Math.round((count / max) * 100))) + '%"></b></div><strong>' + escapeHtml(String(count)) + '명</strong></div>';
+          }).join(''),
+          '</section>'
+        ].join('');
+      }
+
+      function renderSchoolPermissionStatus_(item, assigned, unassigned) {
+        return [
+          '<section class="school-detail-box"><h4>권한 현황</h4>',
+          '<div class="school-permission-counts"><span>담임 배정 <strong>' + escapeHtml(String(assigned)) + '명</strong></span><span class="' + (unassigned > 0 ? 'warn' : '') + '">담임 미배정 <strong>' + escapeHtml(String(unassigned)) + '명</strong></span></div>',
+          '<button type="button" class="school-primary-small" data-school-action="quick-assign" data-school="' + escapeAttribute(item.school) + '"><i data-lucide="user-plus"></i>빠른 배정</button>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderSchoolRecentConsultations_(item) {
+        var logs = [];
+        (item.students || []).forEach(function(student) {
+          (student.logs || []).forEach(function(log) {
+            logs.push({ student: student.studentName || '-', date: log.createdAt || log.date || '', tag: log.tag || log.type || '상담', content: log.content || log.summary || '' });
+          });
+        });
+        logs.sort(function(a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
+        var rows = logs.slice(0, 3).map(function(log) {
+          return '<div class="school-mini-record"><strong>' + escapeHtml(formatDateShort_(log.date) || '-') + ' · ' + escapeHtml(log.student) + '</strong><span>' + escapeHtml(log.tag) + ' · ' + escapeHtml(String(log.content || '').slice(0, 34) || '기록 있음') + '</span></div>';
+        }).join('');
+        return '<section class="school-detail-box"><h4>최근 상담</h4>' + (rows || '<div class="school-empty-mini">최근 상담 기록이 없습니다.</div>') + '</section>';
+      }
+
+      function renderSchoolUpcomingExams_(item) {
+        var rows = [];
+        (item.students || []).forEach(function(student) {
+          getStudentUpcomingEvents_(student).forEach(function(event) {
+            rows.push(event);
+          });
+        });
+        rows.sort(function(a, b) { return String(a.date || '').localeCompare(String(b.date || '')); });
+        var html = rows.slice(0, 3).map(function(event) {
+          var dday = getDdayLabel_(event.date);
+          return '<div class="school-exam-item"><div><strong>' + escapeHtml(event.title || event.subject || '시험 일정') + '</strong><span>' + escapeHtml(formatDateShort_(event.date) || '-') + '</span></div><em class="' + (dday.indexOf('D-') === 0 ? 'urgent' : '') + '">' + escapeHtml(dday) + '</em></div>';
+        }).join('');
+        return [
+          '<section class="school-detail-box"><h4>시험 임박</h4>',
+          html || '<div class="school-empty-mini">임박한 시험 일정이 없습니다.</div>',
+          '<button type="button" class="school-secondary-small" data-school-action="events" data-school="' + escapeAttribute(item.school) + '"><i data-lucide="calendar-days"></i>시험 일정 확인</button>',
+          '</section>'
+        ].join('');
+      }
+
+      function getDdayLabel_(dateValue) {
+        var date = parseDateFlexible_(dateValue);
+        if (!date) {
+          return '-';
+        }
+        var diff = Math.ceil((startOfDay_(date).getTime() - startOfDay_(new Date()).getTime()) / 86400000);
+        if (diff === 0) {
+          return 'D-Day';
+        }
+        return diff > 0 ? 'D-' + diff : '종료';
+      }
+
+      function renderSchoolQuickAssignModal_(model) {
+        var targetSchool = APP_STATE.schoolQuickAssignTargetSchool || model.selectedSchool || (model.items[0] && model.items[0].school) || '';
+        var item = model.items.find(function(entry) { return entry.school === targetSchool; }) || model.items[0];
+        var unassigned = item ? getUnassignedStudents_(item.students || []) : [];
+        return [
+          '<div class="school-quick-assign-backdrop" data-school-quick-assign-close="true">',
+          '  <section class="school-quick-assign-modal" role="dialog" aria-modal="true" aria-label="담임 권한 빠른 배정">',
+          '    <div class="school-modal-head"><div><h3>' + escapeHtml(item ? item.school : '학교') + ' 빠른 배정</h3><p>담임 권한이 없는 학생에게 담당 강사를 지정합니다.</p></div><button type="button" class="icon-only-button" data-school-quick-assign-close="true"><i data-lucide="x"></i></button></div>',
+          '    <div class="school-assign-list">',
+          unassigned.length ? unassigned.map(renderSchoolQuickAssignRow_).join('') : '<div class="school-empty-mini">담임 미배정 학생이 없습니다.</div>',
+          '    </div>',
+          '    <div class="school-modal-actions"><button type="button" class="secondary-button" data-school-quick-assign-close="true">취소</button><button type="button" class="primary-button ' + (APP_STATE.schoolQuickAssignSaving ? 'is-loading' : '') + '" data-school-quick-assign-save="true" ' + (!unassigned.length || APP_STATE.schoolQuickAssignSaving ? 'disabled' : '') + '><i data-lucide="save"></i>' + (APP_STATE.schoolQuickAssignSaving ? '저장 중' : '저장') + '</button></div>',
+          '  </section>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderSchoolQuickAssignRow_(student) {
+        var selected = APP_STATE.schoolQuickAssignSelections[student.studentId] || '';
+        return [
+          '<div class="school-assign-row">',
+          '  <div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '-', student.grade ? student.grade + '학년' : '-'].join(' · ')) + '</span></div>',
+          '  <select class="field-select" data-school-quick-assign-teacher data-student-id="' + escapeAttribute(student.studentId || '') + '">',
+          '    <option value="">강사 선택</option>',
+          (APP_STATE.instructors || []).map(function(instructor) {
+            var id = instructor.userId || instructor.id || instructor.name || '';
+            return '<option value="' + escapeAttribute(id) + '" ' + (id === selected ? 'selected' : '') + '>' + escapeHtml(instructor.name || id) + '</option>';
+          }).join(''),
+          '  </select>',
+          '</div>'
         ].join('');
       }
 
@@ -11735,42 +12797,6 @@
           hash |= 0;
         });
         return palette[Math.abs(hash + index) % palette.length];
-      }
-
-      function buildSchoolDonutGradient_(items) {
-        var total = (items || []).reduce(function(sum, item) { return sum + item.count; }, 0);
-        if (!total) {
-          return '#e2e8f0';
-        }
-        var cursor = 0;
-        return 'conic-gradient(' + items.map(function(item) {
-          var start = cursor;
-          cursor += (item.count / total) * 360;
-          return item.color + ' ' + start.toFixed(2) + 'deg ' + cursor.toFixed(2) + 'deg';
-        }).join(', ') + ')';
-      }
-
-      function renderSchoolLegendRow_(item) {
-        return [
-          '<div class="school-legend-row">',
-          '  <b class="school-legend-dot" style="background:' + escapeAttribute(item.color) + '"></b>',
-          '  <span title="' + escapeAttribute(item.school) + '">' + escapeHtml(item.school) + '</span>',
-          '  <strong>' + escapeHtml(String(item.count)) + '명</strong>',
-          '  <em>' + escapeHtml(String(item.percent)) + '%</em>',
-          '</div>'
-        ].join('');
-      }
-
-      function renderSchoolRingCard_(item, total) {
-        var degree = total ? Math.max(4, Math.round((item.count / total) * 360)) : 0;
-        var ringStyle = 'background:conic-gradient(' + item.color + ' 0deg ' + degree + 'deg, #e2e8f0 ' + degree + 'deg 360deg)';
-        var gradeLine = '1학년 ' + (item.grades['1'] || 0) + ' · 2학년 ' + (item.grades['2'] || 0) + ' · 3학년 ' + (item.grades['3'] || 0);
-        return [
-          '<article class="school-ring-card">',
-          '  <div class="school-mini-ring" style="' + escapeAttribute(ringStyle) + '"><span>' + escapeHtml(String(item.percent)) + '%</span></div>',
-          '  <div><strong title="' + escapeAttribute(item.school) + '">' + escapeHtml(item.school) + '</strong><small>' + escapeHtml(String(item.count)) + '명 · 현재 범위</small><span class="mini-grade-line">' + escapeHtml(gradeLine) + '</span></div>',
-          '</article>'
-        ].join('');
       }
 
       function renderPermissionMode_(students) {
@@ -12227,7 +13253,126 @@
         return text ? text.charAt(0) : 'S';
       }
 
+      function handleSchoolChartTooltipHover_(event) {
+        var target = event.target.closest && event.target.closest('[data-school-chart-segment]');
+        if (!target) {
+          return;
+        }
+        showSchoolChartTooltip_(target, event);
+      }
+
+      function handleSchoolChartTooltipMove_(event) {
+        var target = event.target.closest && event.target.closest('[data-school-chart-segment]');
+        if (!target || event.type === 'focusin') {
+          return;
+        }
+        positionSchoolChartTooltip_(event, target);
+      }
+
+      function handleSchoolChartTooltipLeave_(event) {
+        var target = event.target.closest && event.target.closest('[data-school-chart-segment]');
+        if (!target) {
+          return;
+        }
+        hideSchoolChartTooltip_();
+      }
+
+      function showSchoolChartTooltip_(target, event) {
+        var parts = String(target.getAttribute('data-school-tooltip') || '').split('|');
+        var school = parts[0] || '-';
+        var count = parts[1] || '0';
+        var percent = parts[2] || '0';
+        var sample = parts[3] || '';
+        var extra = Number(parts[4] || 0);
+        var tooltip = document.getElementById('schoolChartTooltip');
+        if (!tooltip) {
+          tooltip = document.createElement('div');
+          tooltip.id = 'schoolChartTooltip';
+          tooltip.className = 'school-chart-tooltip';
+          document.body.appendChild(tooltip);
+        }
+        tooltip.innerHTML = [
+          '<strong>' + escapeHtml(school) + '</strong>',
+          '<span>재원생 ' + escapeHtml(count) + '명 · 전체 대비 ' + escapeHtml(percent) + '%</span>',
+          '<em>' + escapeHtml(sample || '학생 정보 없음') + (extra > 0 ? ' 외 ' + escapeHtml(String(extra)) + '명' : '') + '</em>'
+        ].join('');
+        tooltip.classList.add('visible');
+        positionSchoolChartTooltip_(event, target);
+      }
+
+      function positionSchoolChartTooltip_(event, target) {
+        var tooltip = document.getElementById('schoolChartTooltip');
+        if (!tooltip) {
+          return;
+        }
+        var x = event && event.clientX;
+        var y = event && event.clientY;
+        if (!x || !y) {
+          var rect = target.getBoundingClientRect();
+          x = rect.left + rect.width / 2;
+          y = rect.top + rect.height / 2;
+        }
+        tooltip.style.left = Math.min(window.innerWidth - 260, x + 16) + 'px';
+        tooltip.style.top = Math.max(12, y - 18) + 'px';
+      }
+
+      function hideSchoolChartTooltip_() {
+        var tooltip = document.getElementById('schoolChartTooltip');
+        if (tooltip) {
+          tooltip.classList.remove('visible');
+        }
+      }
+
       function handleStudentListClick(event) {
+        var schoolClose = event.target.closest('[data-school-quick-assign-close]');
+        if (schoolClose || event.target.classList.contains('school-quick-assign-backdrop')) {
+          APP_STATE.schoolQuickAssignOpen = false;
+          APP_STATE.schoolQuickAssignSaving = false;
+          APP_STATE.schoolQuickAssignSelections = {};
+          renderStudents();
+          return;
+        }
+
+        var schoolAssignSave = event.target.closest('[data-school-quick-assign-save]');
+        if (schoolAssignSave) {
+          handleSchoolQuickAssignSave_();
+          return;
+        }
+
+        var schoolAction = event.target.closest('[data-school-action]');
+        if (schoolAction) {
+          handleSchoolDashboardAction_(schoolAction);
+          return;
+        }
+
+        var schoolSegment = event.target.closest('[data-school-chart-segment]');
+        if (schoolSegment) {
+          var segmentSchool = schoolSegment.getAttribute('data-school-chart-segment') || '';
+          APP_STATE.schoolModeSelectedSchool = segmentSchool;
+          APP_STATE.schoolModeExpandedSchool = segmentSchool;
+          hideSchoolChartTooltip_();
+          renderStudents();
+          return;
+        }
+
+        var schoolSelect = event.target.closest('[data-school-by-select]');
+        if (schoolSelect) {
+          var selectedSchool = schoolSelect.getAttribute('data-school-by-select') || '';
+          APP_STATE.schoolModeSelectedSchool = selectedSchool;
+          APP_STATE.schoolModeExpandedSchool = selectedSchool || APP_STATE.schoolModeExpandedSchool;
+          renderStudents();
+          return;
+        }
+
+        var schoolToggle = event.target.closest('[data-school-by-toggle]');
+        if (schoolToggle) {
+          var toggleSchool = schoolToggle.getAttribute('data-school-by-toggle') || '';
+          APP_STATE.schoolModeSelectedSchool = toggleSchool;
+          APP_STATE.schoolModeExpandedSchool = APP_STATE.schoolModeExpandedSchool === toggleSchool ? '' : toggleSchool;
+          renderStudents();
+          return;
+        }
+
         var viewProfileButton = event.target.closest('[data-action="show-student-profile"]');
         if (viewProfileButton) {
           var profileRow = event.target.closest('[data-student-id]');
@@ -12396,6 +13541,17 @@
       }
 
       function handleStudentListInput_(event) {
+        var schoolSearch = event.target.closest('[data-school-mode-search]');
+        if (schoolSearch) {
+          APP_STATE.schoolModeSearch = schoolSearch.value || '';
+          if (APP_STATE.isStudentSearchComposing || event.isComposing) {
+            APP_STATE.pendingStudentRenderAfterComposition = true;
+            return;
+          }
+          scheduleStudentSearchRender_(80);
+          return;
+        }
+
         var input = event.target.closest('[data-student-filter-input]');
         if (!input) {
           return;
@@ -12410,6 +13566,15 @@
       }
 
       function handleStudentListChange_(event) {
+        var quickAssignTeacher = event.target.closest('[data-school-quick-assign-teacher]');
+        if (quickAssignTeacher) {
+          var studentId = quickAssignTeacher.getAttribute('data-student-id') || '';
+          if (studentId) {
+            APP_STATE.schoolQuickAssignSelections[studentId] = quickAssignTeacher.value || '';
+          }
+          return;
+        }
+
         var schoolSelect = event.target.closest('[data-student-school-select]');
         if (schoolSelect) {
           document.getElementById('studentSchoolFilter').value = schoolSelect.value || '';
@@ -12421,6 +13586,105 @@
           document.getElementById('studentTagFilter').value = tagSelect.value || '';
           renderStudentsPreservingSearchFocus_();
         }
+      }
+
+      function handleSchoolDashboardAction_(button) {
+        var action = button.getAttribute('data-school-action') || '';
+        var school = button.getAttribute('data-school') || APP_STATE.schoolModeSelectedSchool || '';
+        if (action === 'quick-assign' || action === 'bulk-assign') {
+          if (!APP_STATE.isAdmin) {
+            setNotice('담임 권한 배정은 관리자만 사용할 수 있습니다.', 'warning');
+            return;
+          }
+          APP_STATE.schoolQuickAssignTargetSchool = school || APP_STATE.schoolModeSelectedSchool || '';
+          APP_STATE.schoolQuickAssignOpen = true;
+          APP_STATE.schoolQuickAssignSelections = {};
+          renderStudents();
+          return;
+        }
+        if (action === 'students') {
+          APP_STATE.studentViewMode = 'list';
+          document.getElementById('studentSchoolFilter').value = school || '';
+          syncStudentViewModeButtons_();
+          renderStudentsPreservingSearchFocus_();
+          setNotice(school ? school + ' 학생 목록으로 필터링했습니다.' : '전체 학생 목록을 표시합니다.', 'info');
+          return;
+        }
+        if (action === 'consultations') {
+          APP_STATE.studentViewMode = 'list';
+          document.getElementById('studentSchoolFilter').value = school || '';
+          syncStudentViewModeButtons_();
+          renderStudentsPreservingSearchFocus_();
+          setNotice('상담 기록은 학생별 프로필 보드에서 확인할 수 있습니다.', 'info');
+          return;
+        }
+        if (action === 'materials') {
+          switchView('materials');
+          setNotice(school ? school + ' 자료 현황을 확인해 주세요.' : '자료 현황 화면으로 이동했습니다.', 'info');
+          return;
+        }
+        if (action === 'events') {
+          switchView('events');
+          setNotice(school ? school + ' 시험 일정을 확인해 주세요.' : '학교 일정 화면으로 이동했습니다.', 'info');
+          return;
+        }
+      }
+
+      function syncStudentViewModeButtons_() {
+        Array.prototype.slice.call(document.querySelectorAll('[data-student-view-mode]')).forEach(function(item) {
+          item.classList.toggle('active', (item.getAttribute('data-student-view-mode') || '') === APP_STATE.studentViewMode);
+        });
+      }
+
+      function handleSchoolQuickAssignSave_() {
+        if (APP_STATE.schoolQuickAssignSaving) {
+          return;
+        }
+        var assignments = Array.prototype.slice.call(document.querySelectorAll('[data-school-quick-assign-teacher]')).map(function(select) {
+          return {
+            studentId: select.getAttribute('data-student-id') || '',
+            instructorId: select.value || ''
+          };
+        }).filter(function(item) {
+          return item.studentId && item.instructorId;
+        });
+
+        if (!assignments.length) {
+          setNotice('배정할 학생과 강사를 선택해주세요.', 'warning');
+          return;
+        }
+
+        APP_STATE.schoolQuickAssignSaving = true;
+        setLoading('담임 권한을 배정하는 중입니다.', true);
+        var latestResult = null;
+        assignments.reduce(function(chain, item) {
+          return chain.then(function() {
+            return apiRequest('saveHomeroomAssignments', {
+              token: APP_STATE.token,
+              studentId: item.studentId,
+              homeroomInstructorIds: JSON.stringify([item.instructorId])
+            }).then(function(result) {
+              latestResult = result;
+            });
+          });
+        }, Promise.resolve())
+          .then(function() {
+            if (latestResult) {
+              hydrateStudentDataOnly(latestResult);
+            }
+            APP_STATE.schoolQuickAssignOpen = false;
+            APP_STATE.schoolQuickAssignSaving = false;
+            APP_STATE.schoolQuickAssignSelections = {};
+            renderAll();
+            switchView('students');
+            setNotice('담임 권한을 배정했습니다.', 'success');
+          })
+          .catch(function(error) {
+            APP_STATE.schoolQuickAssignSaving = false;
+            handleApiError_(error);
+            renderStudents();
+          })
+          .finally(clearLoading);
       }
 
       function handleStudentViewModeClick_(event) {
