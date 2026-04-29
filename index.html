@@ -8530,6 +8530,77 @@
         box-shadow: none;
       }
 
+      .material-upload-progress {
+        grid-column: 1 / -1;
+        display: grid;
+        gap: 8px;
+        padding: 12px 14px;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        background: #eff6ff;
+        color: #174ea6;
+      }
+
+      .material-upload-progress.hidden {
+        display: none;
+      }
+
+      .material-upload-progress-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      .material-upload-progress-head span:last-child {
+        color: #64748b;
+        font-size: 0.7rem;
+      }
+
+      .material-upload-progress-track {
+        position: relative;
+        height: 10px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #dbeafe;
+      }
+
+      .material-upload-progress-bar {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 42%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #1d4ed8 0%, #60a5fa 100%);
+        animation: materialUploadProgress 1.05s ease-in-out infinite;
+      }
+
+      .material-upload-progress-text {
+        color: #475569;
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .material-form-grid.is-uploading .field-input,
+      .material-form-grid.is-uploading .field-select {
+        background: #f8fafc;
+      }
+
+      @keyframes materialUploadProgress {
+        0% {
+          left: -42%;
+          width: 36%;
+        }
+        55% {
+          width: 48%;
+        }
+        100% {
+          left: 100%;
+          width: 36%;
+        }
+      }
+
       .material-console {
         padding: 14px;
         border-radius: 8px;
@@ -11049,6 +11120,16 @@
                 <input id="materialNoteInput" class="field-input" type="text" placeholder="자료 설명을 입력하세요">
               </div>
               <button id="saveMaterialButton" type="submit" class="button-primary material-save-button">자료 저장</button>
+              <div id="materialUploadProgress" class="material-upload-progress hidden" role="status" aria-live="polite">
+                <div class="material-upload-progress-head">
+                  <span id="materialUploadProgressTitle">자료를 업로드하는 중입니다.</span>
+                  <span>저장 완료까지 창을 닫지 마세요.</span>
+                </div>
+                <div class="material-upload-progress-track" aria-hidden="true">
+                  <div class="material-upload-progress-bar"></div>
+                </div>
+                <div id="materialUploadProgressText" class="material-upload-progress-text">학교, 과목, 링크 정보를 저장하고 자료 목록을 갱신하고 있습니다.</div>
+              </div>
             </form>
           </section>
 
@@ -11383,6 +11464,7 @@
         materialQuickFilter: '',
         activeMaterialSummaryAction: '',
         materialCreateOpen: false,
+        isSavingMaterial: false,
         isMaterialSearchComposing: false,
         isStudentSearchComposing: false,
         studentSearchRenderTimer: null,
@@ -16055,9 +16137,15 @@
       function handleMaterialSave(event) {
         event.preventDefault();
 
+        if (APP_STATE.isSavingMaterial) {
+          return;
+        }
+
         var isEditing = Boolean(APP_STATE.editingMaterialRowNumber);
         var action = isEditing ? 'updateMaterial' : 'addMaterial';
 
+        APP_STATE.isSavingMaterial = true;
+        setMaterialUploadProgress_(true, isEditing);
         setLoading(isEditing ? '자료를 수정하는 중입니다.' : '자료를 저장하는 중입니다.');
         apiRequest(action, {
           token: APP_STATE.token,
@@ -16091,7 +16179,41 @@
             setNotice(result.message || (isEditing ? '자료가 수정되었습니다.' : '자료가 저장되었습니다.'), 'success');
           })
           .catch(handleApiError_)
-          .finally(clearLoading);
+          .finally(function() {
+            APP_STATE.isSavingMaterial = false;
+            setMaterialUploadProgress_(false, isEditing);
+            clearLoading();
+          });
+      }
+
+      function setMaterialUploadProgress_(isUploading, isEditing) {
+        var form = document.getElementById('materialForm');
+        var progress = document.getElementById('materialUploadProgress');
+        var title = document.getElementById('materialUploadProgressTitle');
+        var text = document.getElementById('materialUploadProgressText');
+        var saveButton = document.getElementById('saveMaterialButton');
+        if (!form || !progress || !saveButton) {
+          return;
+        }
+
+        form.classList.toggle('is-uploading', Boolean(isUploading));
+        progress.classList.toggle('hidden', !isUploading);
+        form.setAttribute('aria-busy', isUploading ? 'true' : 'false');
+        Array.prototype.slice.call(form.querySelectorAll('input, select, button')).forEach(function(control) {
+          if (control.id !== 'closeMaterialCreatePanelButton') {
+            control.disabled = Boolean(isUploading);
+          }
+        });
+
+        if (title) {
+          title.textContent = isEditing ? '자료 수정 내용을 저장하는 중입니다.' : '자료를 업로드하는 중입니다.';
+        }
+        if (text) {
+          text.textContent = isEditing
+            ? '수정된 자료 정보를 반영하고 자료 목록을 다시 불러오고 있습니다.'
+            : '학교, 과목, 링크 정보를 저장하고 자료 목록을 갱신하고 있습니다.';
+        }
+        saveButton.textContent = isUploading ? (isEditing ? '수정 저장 중...' : '자료 저장 중...') : (isEditing ? '자료 수정 저장' : '자료 저장');
       }
 
       function syncMaterialFormMode_() {
@@ -16099,7 +16221,9 @@
         var banner = document.getElementById('materialEditBanner');
         var saveButton = document.getElementById('saveMaterialButton');
         banner.classList.toggle('hidden', !isEditing);
-        saveButton.textContent = isEditing ? '자료 수정 저장' : '자료 저장';
+        if (!APP_STATE.isSavingMaterial) {
+          saveButton.textContent = isEditing ? '자료 수정 저장' : '자료 저장';
+        }
       }
 
       function clearMaterialEditMode_(skipReset) {
