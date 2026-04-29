@@ -6568,6 +6568,61 @@
         color: #ffffff;
       }
 
+      .student-log-tab.tag-status.active,
+      .student-log-compose.tag-status {
+        border-color: #93c5fd;
+        background: #eff6ff;
+      }
+
+      .student-log-tab.tag-status.active {
+        background: #2563eb;
+        color: #ffffff;
+      }
+
+      .student-log-tab.tag-parent.active,
+      .student-log-compose.tag-parent {
+        border-color: #fed7aa;
+        background: #fff7ed;
+      }
+
+      .student-log-tab.tag-parent.active {
+        background: #f97316;
+        color: #ffffff;
+      }
+
+      .student-log-tab.tag-student.active,
+      .student-log-compose.tag-student {
+        border-color: #99f6e4;
+        background: #f0fdfa;
+      }
+
+      .student-log-tab.tag-student.active {
+        background: #14b8a6;
+        color: #ffffff;
+      }
+
+      .student-log-tab.tag-first.active,
+      .student-log-compose.tag-first {
+        border-color: #c7d2fe;
+        background: #eef2ff;
+      }
+
+      .student-log-tab.tag-first.active {
+        background: #6366f1;
+        color: #ffffff;
+      }
+
+      .student-log-tab.tag-test.active,
+      .student-log-compose.tag-test {
+        border-color: #bbf7d0;
+        background: #f0fdf4;
+      }
+
+      .student-log-tab.tag-test.active {
+        background: #10b981;
+        color: #ffffff;
+      }
+
       .student-log-compose {
         position: relative;
         display: grid;
@@ -6717,6 +6772,10 @@
         align-items: start;
       }
 
+      .student-log-compose-grid.with-author {
+        grid-template-columns: minmax(130px, 0.32fr) minmax(150px, 0.34fr) minmax(0, 1fr);
+      }
+
       .student-log-compose textarea {
         min-height: 72px;
         resize: vertical;
@@ -6765,6 +6824,31 @@
       .student-log-bubble.admin {
         background: #eef5ff;
         border-color: #bfdbfe;
+      }
+
+      .student-log-bubble.tag-status {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+      }
+
+      .student-log-bubble.tag-parent {
+        border-color: #fed7aa;
+        background: #fff7ed;
+      }
+
+      .student-log-bubble.tag-student {
+        border-color: #99f6e4;
+        background: #f0fdfa;
+      }
+
+      .student-log-bubble.tag-first {
+        border-color: #c7d2fe;
+        background: #eef2ff;
+      }
+
+      .student-log-bubble.tag-test {
+        border-color: #bbf7d0;
+        background: #f0fdf4;
       }
 
       .student-log-bubble-head {
@@ -11054,6 +11138,7 @@
         totalActiveStudentCount: 0,
         homeroomAssignments: [],
         studentLogTabs: {},
+        studentLogAuthors: {},
         selectedStudentId: '',
         selectedStudentDetailId: '',
         studentViewMode: 'summary',
@@ -12731,25 +12816,30 @@
       function renderStudentLogTabs_(student, activeTab) {
         return '<div class="student-log-tabs">' + getStudentLogTabOptions_().map(function(option) {
           var isActive = (activeTab || '전체') === option.value;
-          return '<button type="button" class="student-log-tab' + (isActive ? ' active' : '') + '" data-action="set-log-tab" data-student-id="' + escapeAttribute(student.studentId || '') + '" data-log-tab="' + escapeAttribute(option.value) + '">' + escapeHtml(option.label) + '</button>';
+          var toneClass = option.value === '전체' ? '' : ' ' + getLogTagToneClass(option.value);
+          return '<button type="button" class="student-log-tab' + toneClass + (isActive ? ' active' : '') + '" data-action="set-log-tab" data-student-id="' + escapeAttribute(student.studentId || '') + '" data-log-tab="' + escapeAttribute(option.value) + '">' + escapeHtml(option.label) + '</button>';
         }).join('') + '</div>';
       }
 
-      function renderStudentLogComposer_(student) {
+      function renderStudentLogComposer_(student, activeTab) {
         if (!student || !student.studentId) {
           return '';
         }
+        var defaultTag = activeTab && activeTab !== '전체' ? activeTab : '학부모상담';
+        var toneClass = getLogTagToneClass(defaultTag);
         var options = getStudentLogComposeOptions_().map(function(tag) {
-          return '<option value="' + escapeAttribute(tag) + '">' + escapeHtml(tag.replace('학부모상담', '학부모 상담').replace('학생상담', '학생 상담')) + '</option>';
+          return '<option value="' + escapeAttribute(tag) + '"' + (tag === defaultTag ? ' selected' : '') + '>' + escapeHtml(tag.replace('학부모상담', '학부모 상담').replace('학생상담', '학생 상담')) + '</option>';
         }).join('');
+        var authorSelect = renderStudentLogAuthorSelect_(student);
         return [
-          '<form class="student-log-compose" data-student-log-form data-student-id="' + escapeAttribute(student.studentId || '') + '" onsubmit="return false;">',
+          '<form class="student-log-compose ' + escapeAttribute(toneClass) + '" data-student-log-form data-student-id="' + escapeAttribute(student.studentId || '') + '" onsubmit="return false;">',
           '  <div class="student-log-compose-head">',
           '    <div><strong>특이사항 기록</strong><span>작성자와 작성 일자는 저장 시 자동으로 남고, 저장 중에는 입력이 잠시 잠깁니다.</span></div>',
           '    <span class="ops-chip slate">' + escapeHtml(student.studentName || '-') + '</span>',
           '  </div>',
-          '  <div class="student-log-compose-grid">',
+          '  <div class="student-log-compose-grid' + (authorSelect ? ' with-author' : '') + '">',
           '    <select class="field-select" data-role="student-log-type" aria-label="기록 유형">' + options + '</select>',
+               authorSelect,
           '    <textarea class="field-textarea" data-role="student-log-content" rows="3" placeholder="학부모 상담, 학생 상담, 첫수업 정보 등 필요한 내용을 입력하세요."></textarea>',
           '  </div>',
           '  <div class="student-log-compose-actions">',
@@ -12758,6 +12848,21 @@
           '  </div>',
           '</form>'
         ].join('');
+      }
+
+      function renderStudentLogAuthorSelect_(student) {
+        if (!APP_STATE.isAdmin) {
+          return '';
+        }
+        var selected = APP_STATE.studentLogAuthors[student.studentId] || '';
+        var instructors = (APP_STATE.instructors || []).filter(function(item) {
+          return item && item.userId;
+        });
+        var options = ['<option value="">관리자 계정</option>'].concat(instructors.map(function(item) {
+          var label = [item.name || item.userId, item.subject || ''].filter(Boolean).join(' · ');
+          return '<option value="' + escapeAttribute(item.userId) + '"' + (selected === item.userId ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+        }));
+        return '<select class="field-select" data-role="student-log-author" aria-label="입력 계정">' + options.join('') + '</select>';
       }
 
       function renderStudentLogPreviewPanel_(student, options) {
@@ -12771,7 +12876,7 @@
         return [
           '<div class="student-log-preview-block">',
           renderStudentLogTabs_(student, activeTab),
-          config.showComposer ? renderStudentLogComposer_(student) : '',
+          config.showComposer ? renderStudentLogComposer_(student, activeTab) : '',
           renderStudentLogBubbleList_(logs.slice(0, limit)),
           config.showMore && logs.length > limit
             ? '<button type="button" class="profile-link-button" data-action="show-student-profile">전체 상담 기록 ' + escapeHtml(String(logs.length)) + '건 보기</button>'
@@ -12791,6 +12896,8 @@
         var isAdmin = (log.createdByRole || '').toUpperCase() === 'ADMIN';
         var author = isAdmin ? (log.createdByName || '관리자') : ((log.createdByName || '강사') + ' 강사');
         var canDelete = APP_STATE.isAdmin || (APP_STATE.user && APP_STATE.user.userId === log.createdById);
+        var primaryTag = (log.tags || [])[0] || '관리 기록';
+        var toneClass = getLogTagToneClass(primaryTag);
         var detailButton = log.rowNumber
           ? '<button type="button" class="profile-link-button" data-action="show-log-detail" data-log-row="' + escapeAttribute(log.rowNumber) + '">원문</button>'
           : '';
@@ -12798,9 +12905,9 @@
           ? '<button type="button" class="log-delete-button" data-action="delete-log" data-log-row="' + escapeAttribute(log.rowNumber) + '">삭제</button>'
           : '';
         return [
-          '<article class="student-log-bubble ' + (isAdmin ? 'admin' : '') + '">',
+          '<article class="student-log-bubble ' + escapeAttribute(toneClass) + (isAdmin ? ' admin' : '') + '">',
           '  <div class="student-log-bubble-head">',
-          '    <div class="student-log-bubble-meta"><strong>' + escapeHtml((log.tags || [])[0] || '관리 기록') + '</strong><span>' + escapeHtml(formatTeachingLogDateTime(log.createdAt)) + '</span><span>' + escapeHtml(author) + '</span></div>',
+          '    <div class="student-log-bubble-meta"><strong>' + escapeHtml(primaryTag) + '</strong><span>' + escapeHtml(formatTeachingLogDateTime(log.createdAt)) + '</span><span>' + escapeHtml(author) + '</span></div>',
           '    <div class="student-log-bubble-actions">' + detailButton + deleteButton + '</div>',
           '  </div>',
           '  <div class="student-log-bubble-text">' + escapeHtml(log.content || '-') + '</div>',
@@ -14190,6 +14297,29 @@
       }
 
       function handleStudentListChange_(event) {
+        var logTypeSelect = event.target.closest('[data-role="student-log-type"]');
+        if (logTypeSelect) {
+          var composeForm = logTypeSelect.closest('[data-student-log-form]');
+          if (composeForm) {
+            var toneClass = getLogTagToneClass(logTypeSelect.value || '');
+            ['tag-status', 'tag-first', 'tag-makeup', 'tag-homework', 'tag-focus', 'tag-test', 'tag-parent', 'tag-student'].forEach(function(item) {
+              composeForm.classList.remove(item);
+            });
+            composeForm.classList.add(toneClass);
+          }
+          return;
+        }
+
+        var logAuthorSelect = event.target.closest('[data-role="student-log-author"]');
+        if (logAuthorSelect) {
+          var authorForm = logAuthorSelect.closest('[data-student-log-form]');
+          var authorStudentId = authorForm ? (authorForm.getAttribute('data-student-id') || '') : '';
+          if (authorStudentId) {
+            APP_STATE.studentLogAuthors[authorStudentId] = logAuthorSelect.value || '';
+          }
+          return;
+        }
+
         var quickAssignTeacher = event.target.closest('[data-school-quick-assign-teacher]');
         if (quickAssignTeacher) {
           var studentId = quickAssignTeacher.getAttribute('data-student-id') || '';
@@ -14333,8 +14463,10 @@
 
         var studentId = form.getAttribute('data-student-id') || '';
         var typeInput = form.querySelector('[data-role="student-log-type"]');
+        var authorInput = form.querySelector('[data-role="student-log-author"]');
         var contentInput = form.querySelector('[data-role="student-log-content"]');
         var tag = typeInput ? String(typeInput.value || '').trim() : '';
+        var authorInstructorId = authorInput ? String(authorInput.value || '').trim() : '';
         var content = contentInput ? contentInput.value.trim() : '';
 
         if (!studentId) {
@@ -14359,7 +14491,8 @@
           token: APP_STATE.token,
           studentId: studentId,
           content: content,
-          tags: JSON.stringify([tag])
+          tags: JSON.stringify([tag]),
+          authorInstructorId: authorInstructorId
         })
           .then(function(result) {
             return applyStudentLogSaveResult_(result);
