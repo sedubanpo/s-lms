@@ -11466,6 +11466,7 @@
         materialCreateOpen: false,
         isSavingMaterial: false,
         isMaterialSearchComposing: false,
+        materialSearchRenderTimer: null,
         isStudentSearchComposing: false,
         studentSearchRenderTimer: null,
         materialYearTabsBySchool: {},
@@ -11540,6 +11541,8 @@
         },
         gradeSearchKeyword: '',
         isGradeSearchComposing: false,
+        pendingGradeSearchRenderAfterComposition: false,
+        gradeSearchRenderTimer: null,
         selectedGradeStudentId: '',
         gradeSelectedStudentIds: {},
         gradeModal: '',
@@ -11702,7 +11705,7 @@
           if (event.target && event.target.matches('[data-grade-search]')) {
             APP_STATE.isGradeSearchComposing = false;
             APP_STATE.gradeSearchKeyword = event.target.value || '';
-            renderGrades();
+            scheduleGradeSearchRender_(260);
           }
         });
         document.getElementById('view-jikbo').addEventListener('click', handleJikboViewClick_);
@@ -11713,7 +11716,7 @@
         document.getElementById('homeroomTeacherSearchInput').addEventListener('compositionstart', handleHomeroomTeacherSearchCompositionStart_);
         document.getElementById('homeroomTeacherSearchInput').addEventListener('compositionend', handleHomeroomTeacherSearchCompositionEnd_);
         document.getElementById('homeroomTeacherSearchInput').addEventListener('keydown', handleHomeroomTeacherSearchKeydown_);
-        document.getElementById('homeroomSearchInput').addEventListener('input', renderHomeroomView);
+        bindDeferredTextRender_('homeroomSearchInput', renderHomeroomView, 180);
         document.getElementById('homeroomSchoolFilter').addEventListener('change', renderHomeroomView);
         document.getElementById('homeroomGradeFilter').addEventListener('change', renderHomeroomView);
         document.getElementById('homeroomSubjectInput').addEventListener('input', handleHomeroomSubjectInput_);
@@ -11724,7 +11727,7 @@
         document.getElementById('homeroomClearFilteredButton').addEventListener('click', handleHomeroomClearFiltered_);
         document.getElementById('saveHomeroomButton').addEventListener('click', handleHomeroomSave);
 
-        document.getElementById('permissionSearchInput').addEventListener('input', renderPermissionView);
+        bindDeferredTextRender_('permissionSearchInput', renderPermissionView, 180);
         document.getElementById('permissionSchoolFilter').addEventListener('change', renderPermissionView);
         document.getElementById('permissionGradeFilter').addEventListener('change', renderPermissionView);
         document.getElementById('permissionStudentTableWrap').addEventListener('click', handlePermissionListClick);
@@ -11734,7 +11737,7 @@
         document.getElementById('savePermissionButton').addEventListener('click', handlePermissionSave);
         document.getElementById('permissionPanelTabs').addEventListener('click', handlePermissionTabClick);
         document.getElementById('addStudentButton').addEventListener('click', handleStudentAdd);
-        document.getElementById('studentManageSearchInput').addEventListener('input', renderPermissionView);
+        bindDeferredTextRender_('studentManageSearchInput', renderPermissionView, 180);
         document.getElementById('studentManageSchoolFilter').addEventListener('change', renderPermissionView);
         document.getElementById('studentManageStatusFilter').addEventListener('change', renderPermissionView);
         document.getElementById('studentManageTableWrap').addEventListener('click', handleStudentManageTableClick);
@@ -11775,11 +11778,11 @@
         });
         document.getElementById('materialKeywordInput').addEventListener('compositionend', function() {
           APP_STATE.isMaterialSearchComposing = false;
-          renderMaterials();
+          scheduleMaterialSearchRender_(220);
         });
         document.getElementById('materialKeywordInput').addEventListener('input', function() {
           if (!APP_STATE.isMaterialSearchComposing) {
-            renderMaterials();
+            scheduleMaterialSearchRender_(220);
           }
         });
         document.getElementById('materialSchoolFilter').addEventListener('change', function(event) {
@@ -12038,6 +12041,60 @@
 
       function getRandomLoadingMessage_() {
         return LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
+      }
+
+      function bindDeferredTextRender_(elementId, renderFn, delay) {
+        var input = document.getElementById(elementId);
+        if (!input) {
+          return;
+        }
+        input.__slmsTextRenderTimer = null;
+        input.__slmsTextComposing = false;
+        input.addEventListener('compositionstart', function() {
+          input.__slmsTextComposing = true;
+        });
+        input.addEventListener('compositionend', function() {
+          input.__slmsTextComposing = false;
+          scheduleDeferredTextRender_(elementId, renderFn, delay);
+        });
+        input.addEventListener('input', function(event) {
+          if (input.__slmsTextComposing || event.isComposing) {
+            return;
+          }
+          scheduleDeferredTextRender_(elementId, renderFn, delay);
+        });
+      }
+
+      function scheduleDeferredTextRender_(elementId, renderFn, delay) {
+        var input = document.getElementById(elementId);
+        if (!input) {
+          return;
+        }
+        if (input.__slmsTextRenderTimer) {
+          window.clearTimeout(input.__slmsTextRenderTimer);
+        }
+        input.__slmsTextRenderTimer = window.setTimeout(function() {
+          var activeInput = document.getElementById(elementId);
+          if (!activeInput || activeInput.__slmsTextComposing) {
+            return;
+          }
+          activeInput.__slmsTextRenderTimer = null;
+          var value = activeInput.value || '';
+          renderFn();
+          requestAnimationFrame(function() {
+            var nextInput = document.getElementById(elementId);
+            if (!nextInput) {
+              return;
+            }
+            nextInput.focus();
+            nextInput.value = value;
+            try {
+              nextInput.setSelectionRange(value.length, value.length);
+            } catch (error) {
+              // Some search input types do not expose text selection APIs.
+            }
+          });
+        }, delay || 180);
       }
 
       function setNotice(message, tone) {
@@ -20219,6 +20276,34 @@
         APP_STATE.materialQuickFilter = '';
       }
 
+      function scheduleMaterialSearchRender_(delay) {
+        if (APP_STATE.materialSearchRenderTimer) {
+          window.clearTimeout(APP_STATE.materialSearchRenderTimer);
+        }
+        APP_STATE.materialSearchRenderTimer = window.setTimeout(function() {
+          APP_STATE.materialSearchRenderTimer = null;
+          if (APP_STATE.isMaterialSearchComposing) {
+            return;
+          }
+          var input = document.getElementById('materialKeywordInput');
+          var keyword = input ? input.value : '';
+          renderMaterials();
+          requestAnimationFrame(function() {
+            var nextInput = document.getElementById('materialKeywordInput');
+            if (!nextInput || APP_STATE.currentView !== 'materials') {
+              return;
+            }
+            nextInput.focus();
+            nextInput.value = keyword;
+            try {
+              nextInput.setSelectionRange(keyword.length, keyword.length);
+            } catch (error) {
+              // Search input may not expose selection in every browser.
+            }
+          });
+        }, delay || 220);
+      }
+
       function getMaterialQuickFilterLabel_(value) {
         if (value === 'recent') {
           return '최근 등록';
@@ -22037,6 +22122,10 @@
         APP_STATE.eventsLoaded = false;
         APP_STATE.materialsLoading = false;
         APP_STATE.eventsLoading = false;
+        if (APP_STATE.materialSearchRenderTimer) {
+          window.clearTimeout(APP_STATE.materialSearchRenderTimer);
+        }
+        APP_STATE.materialSearchRenderTimer = null;
         APP_STATE.grades = [];
         APP_STATE.gradeStudents = [];
         APP_STATE.gradeSubjects = [];
@@ -22060,6 +22149,11 @@
         };
         APP_STATE.gradeSearchKeyword = '';
         APP_STATE.isGradeSearchComposing = false;
+        APP_STATE.pendingGradeSearchRenderAfterComposition = false;
+        if (APP_STATE.gradeSearchRenderTimer) {
+          window.clearTimeout(APP_STATE.gradeSearchRenderTimer);
+        }
+        APP_STATE.gradeSearchRenderTimer = null;
         APP_STATE.selectedGradeStudentId = '';
         APP_STATE.gradeSelectedStudentIds = {};
         APP_STATE.gradeModal = '';
@@ -23883,6 +23977,63 @@
         if (target.matches('[data-grade-field]')) {
           updateGradeDraftFromInput_(target);
         }
+      }
+
+      function handleGradesViewInput_(event) {
+        var target = event.target;
+        if (!target) {
+          return;
+        }
+        if (target.matches('[data-grade-search]')) {
+          APP_STATE.gradeSearchKeyword = target.value || '';
+          APP_STATE.gradePage = 1;
+          if (APP_STATE.isGradeSearchComposing || event.isComposing) {
+            APP_STATE.pendingGradeSearchRenderAfterComposition = true;
+            return;
+          }
+          scheduleGradeSearchRender_(280);
+          return;
+        }
+        if (target.matches('[data-grade-bulk-text]')) {
+          APP_STATE.gradeBulkText = target.value || '';
+          return;
+        }
+        if (target.matches('[data-grade-editor-field]')) {
+          updateGradeEditorDraftV2_(target);
+          return;
+        }
+        if (target.matches('[data-grade-field]')) {
+          updateGradeDraftFromInput_(target);
+        }
+      }
+
+      function scheduleGradeSearchRender_(delay) {
+        if (APP_STATE.gradeSearchRenderTimer) {
+          window.clearTimeout(APP_STATE.gradeSearchRenderTimer);
+        }
+        APP_STATE.gradeSearchRenderTimer = window.setTimeout(function() {
+          APP_STATE.gradeSearchRenderTimer = null;
+          if (APP_STATE.isGradeSearchComposing) {
+            APP_STATE.pendingGradeSearchRenderAfterComposition = true;
+            return;
+          }
+          APP_STATE.pendingGradeSearchRenderAfterComposition = false;
+          var keyword = APP_STATE.gradeSearchKeyword || '';
+          renderGrades();
+          requestAnimationFrame(function() {
+            var input = document.getElementById('gradeSearchInput');
+            if (!input || APP_STATE.currentView !== 'grades') {
+              return;
+            }
+            input.focus();
+            input.value = keyword;
+            try {
+              input.setSelectionRange(keyword.length, keyword.length);
+            } catch (error) {
+              // Some input modes do not support selection ranges.
+            }
+          });
+        }, delay || 280);
       }
 
       function truncateText_(value, length) {
