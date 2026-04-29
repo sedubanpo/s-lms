@@ -10402,6 +10402,30 @@
         font-weight: 900;
       }
 
+      .grades-v3-score-list {
+        display: grid;
+        gap: 6px;
+        min-width: 126px;
+      }
+
+      .grades-v3-score-list .grades-v3-score-button {
+        min-height: 32px;
+      }
+
+      .grades-v3-score-add {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 26px;
+        border: 1px dashed #bfdbfe;
+        border-radius: 7px;
+        background: #f8fbff;
+        color: #1d4ed8;
+        cursor: pointer;
+        font-size: 0.68rem;
+        font-weight: 900;
+      }
+
       .grades-v3-score-button.empty {
         justify-content: center;
         color: #94a3b8;
@@ -22651,7 +22675,7 @@
           APP_STATE.gradeSelectedStudentIds = {};
           renderGrades();
         } else if (action === 'open-score-editor') {
-          openGradeScoreEditorV2_(button.getAttribute('data-student-id') || '', button.getAttribute('data-subject-id') || '');
+          openGradeScoreEditorV2_(button.getAttribute('data-student-id') || '', button.getAttribute('data-subject-id') || '', button.getAttribute('data-grade-id') || '');
         } else if (action === 'save-editor') {
           saveGradeEditorV2_();
         } else if (action === 'promote-final') {
@@ -22797,9 +22821,15 @@
           }
           return null;
         }
-        var key = getGradeDraftKey_(studentId, subject.subjectId);
-        var record = getGradeRecordForStudent_(studentId, subject.subjectId);
+        var editor = APP_STATE.gradeEditor || {};
+        var record = editor && editor.studentId === studentId && editor.gradeId
+          ? findGradeRecordById_(editor.gradeId)
+          : getGradeRecordForStudent_(studentId, subject.subjectId);
+        var key = editor && editor.studentId === studentId && editor.key ? editor.key : getGradeDraftKey_(studentId, subject.subjectId);
         var draft = APP_STATE.gradeDrafts[key] || {};
+        var subjectCategory = getDraftOrRecordValue_(draft, record, 'subjectCategory') || subject.subjectCategory;
+        var subjectName = getDraftOrRecordValue_(draft, record, 'subjectName') || subject.subjectName;
+        var payloadSubjectId = buildGradeSubjectIdClient_(subjectCategory, subjectName);
         var finalScore = getDraftOrRecordValue_(draft, record, 'finalScore');
         var provisionalScore = getDraftOrRecordValue_(draft, record, 'provisionalScore');
         var memo = getDraftOrRecordValue_(draft, record, 'memo') || getDraftOrRecordValue_(draft, record, 'note');
@@ -22819,11 +22849,11 @@
           examRound: APP_STATE.gradeFilters.examRound || '',
           examMonth: getGradeExamMonth_(APP_STATE.gradeFilters.examName || ''),
           examDate: '',
-          subjectId: subject.subjectId,
-          subjectCategory: subject.subjectCategory,
-          subjectName: subject.subjectName,
-          subjectArea: subject.subjectCategory,
-          detailSubject: subject.subjectName,
+          subjectId: payloadSubjectId,
+          subjectCategory: subjectCategory,
+          subjectName: subjectName,
+          subjectArea: subjectCategory,
+          detailSubject: subjectName,
           provisionalScore: provisionalScore,
           finalScore: finalScore,
           rawScore: finalScore || provisionalScore,
@@ -22868,6 +22898,16 @@
         }) || null;
       }
 
+      function findGradeRecordById_(gradeId) {
+        var id = String(gradeId || '');
+        if (!id) {
+          return null;
+        }
+        return (APP_STATE.grades || []).find(function(record) {
+          return String(record.gradeId || '') === id || String(record.rowNumber || '') === id;
+        }) || null;
+      }
+
       function getGradeRecordForKey_(key) {
         var parts = String(key || '').split('|');
         return getGradeRecordForStudent_(parts[0] || '', parts[6] || '');
@@ -22878,7 +22918,12 @@
         var filters = APP_STATE.gradeFilters;
         return (APP_STATE.gradeStudents || []).filter(function(student) {
           var searchText = normalizeSearchText([student.studentName, student.school, student.grade, student.subject].join(' '));
-          return (!keyword || searchText.indexOf(keyword) !== -1) &&
+          var recordText = keyword ? normalizeSearchText((APP_STATE.grades || []).filter(function(record) {
+            return record.studentId === student.studentId;
+          }).map(function(record) {
+            return [record.subjectCategory, record.subjectName, record.detailSubject, record.examName].join(' ');
+          }).join(' ')) : '';
+          return (!keyword || searchText.indexOf(keyword) !== -1 || recordText.indexOf(keyword) !== -1) &&
             (!filters.school || student.school === filters.school) &&
             (!filters.grade || student.grade === filters.grade);
         });
@@ -23029,13 +23074,25 @@
       }
 
       function findGradeSubjectById_(subjectId) {
-        return getGradeSubjectDefinitionsV2_().find(function(subject) {
+        var matched = getGradeSubjectDefinitionsV2_().find(function(subject) {
           return subject.subjectId === subjectId || subject.subjectName === subjectId;
-        }) || null;
+        });
+        if (matched) {
+          return matched;
+        }
+        var record = (APP_STATE.grades || []).find(function(item) {
+          return String(item.subjectId || '') === String(subjectId || '') || String(item.subjectName || '') === String(subjectId || '');
+        });
+        return record ? {
+          subjectId: record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName),
+          subjectCategory: record.subjectCategory || record.subjectArea || classifyGradeSubjectCategoryClient_(record.subjectName || ''),
+          subjectName: record.subjectName || record.detailSubject || record.subjectArea || ''
+        } : null;
       }
 
       function filterGradeRecordsByCurrentFilters_(records) {
         var filters = APP_STATE.gradeFilters;
+        var selectedSubject = filters.subject ? findGradeSubjectById_(filters.subject) : null;
         return (records || []).filter(function(record) {
           return (!filters.examYear || String(record.examYear || record.schoolYear || '') === String(filters.examYear)) &&
             (!filters.examCategory || record.examCategory === filters.examCategory) &&
@@ -23045,7 +23102,7 @@
             (!filters.school || record.school === filters.school) &&
             (!filters.grade || record.grade === filters.grade) &&
             (!filters.subjectCategory || record.subjectCategory === filters.subjectCategory) &&
-            (!filters.subject || record.subjectName === filters.subject);
+            (!filters.subject || record.subjectName === filters.subject || (selectedSubject && isGradeBroadSubjectV3_(selectedSubject) && normalizeSearchText(record.subjectCategory || record.subjectArea) === normalizeSearchText(selectedSubject.subjectCategory)));
         });
       }
 
@@ -23192,15 +23249,20 @@
         return html.join('');
       }
 
-      function openGradeScoreEditorV2_(studentId, subjectId) {
+      function openGradeScoreEditorV2_(studentId, subjectId, gradeId) {
         var student = findGradeStudentById_(studentId);
-        var subject = findGradeSubjectById_(subjectId);
+        var record = findGradeRecordById_(gradeId || '');
+        var subject = record ? {
+          subjectId: record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName),
+          subjectCategory: record.subjectCategory || record.subjectArea || classifyGradeSubjectCategoryClient_(record.subjectName || ''),
+          subjectName: record.subjectName || record.detailSubject || record.subjectArea || subjectId || ''
+        } : findGradeSubjectById_(subjectId);
         if (!student || !subject) {
           setNotice('학생 또는 과목 정보를 찾을 수 없습니다.', 'warning');
           return;
         }
-        var key = getGradeDraftKey_(studentId, subjectId);
-        APP_STATE.gradeEditor = { studentId: studentId, subjectId: subjectId, key: key };
+        var key = getGradeDraftKey_(studentId, subject.subjectId);
+        APP_STATE.gradeEditor = { studentId: studentId, subjectId: subject.subjectId, gradeId: record ? (record.gradeId || '') : '', key: key };
         APP_STATE.gradeModal = 'editor';
         renderGrades();
       }
@@ -23208,8 +23270,12 @@
       function renderGradeEditorModalV2_() {
         var editor = APP_STATE.gradeEditor || {};
         var student = findGradeStudentById_(editor.studentId || '');
-        var subject = findGradeSubjectById_(editor.subjectId || '');
-        var record = getGradeRecordForStudent_(editor.studentId || '', editor.subjectId || '');
+        var record = editor.gradeId ? findGradeRecordById_(editor.gradeId) : getGradeRecordForStudent_(editor.studentId || '', editor.subjectId || '');
+        var subject = record ? {
+          subjectId: record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName),
+          subjectCategory: record.subjectCategory || record.subjectArea || classifyGradeSubjectCategoryClient_(record.subjectName || ''),
+          subjectName: record.subjectName || record.detailSubject || record.subjectArea || ''
+        } : findGradeSubjectById_(editor.subjectId || '');
         var draft = APP_STATE.gradeDrafts[editor.key] || {};
         if (!student || !subject) {
           return '';
@@ -23219,8 +23285,9 @@
         }
         return [
           '<div class="modal-backdrop"><div class="modal-card grade-modal-panel">',
-          '<div class="modal-top"><div><h3>' + escapeHtml(student.studentName || '-') + ' · ' + escapeHtml(subject.subjectName || '-') + '</h3><p>' + escapeHtml(getGradeCurrentExamLabel_()) + '</p></div><button type="button" class="icon-button" data-grade-action="close-grade-modal" aria-label="닫기">×</button></div>',
+          '<div class="modal-top"><div><h3>' + escapeHtml(student.studentName || '-') + ' · ' + escapeHtml(subject.subjectCategory || subject.subjectName || '-') + '</h3><p>' + escapeHtml(getGradeCurrentExamLabel_()) + '</p></div><button type="button" class="icon-button" data-grade-action="close-grade-modal" aria-label="닫기">×</button></div>',
           '<div class="modal-body"><div class="grade-modal-grid">',
+          renderGradeEditorFieldV2_('subjectName', '세부 과목', escapeAttribute(getDraftOrRecordValue_(draft, record, 'subjectName') || subject.subjectName || '')),
           renderGradeEditorFieldV2_('provisionalScore', '가채점', value('provisionalScore')),
           renderGradeEditorFieldV2_('finalScore', '최종점수', value('finalScore')),
           renderGradeEditorFieldV2_('standardScore', '표준점수', value('standardScore')),
@@ -23339,7 +23406,7 @@
         var studentLabel = String(row['학생ID'] || row['학생명'] || '').trim();
         var subjectName = String(row['과목명'] || row['세부과목'] || row['과목'] || '').trim();
         var student = findGradeStudentById_(studentLabel) || (APP_STATE.gradeStudents || []).find(function(item) { return item.studentName === studentLabel; });
-        var subject = getGradeSubjectDefinitionsV2_().find(function(item) { return item.subjectName === subjectName; });
+        var subject = findGradeSubjectForImportV2_(subjectName, String(row['과목분류'] || '').trim());
         if (!student || !subject) {
           return {
             __error: (lineNumber ? lineNumber + '행: ' : '') + (!student ? '학생 매칭 실패' : '과목 매칭 실패'),
@@ -23377,6 +23444,30 @@
           memo: row['메모'] || '',
           note: row['메모'] || '',
           status: row['최종점수'] ? 'final' : 'provisional'
+        };
+      }
+
+      function findGradeSubjectForImportV2_(subjectName, subjectCategory) {
+        var name = String(subjectName || '').trim();
+        var category = String(subjectCategory || '').trim();
+        if (!name) {
+          return null;
+        }
+        var definitions = getGradeSubjectDefinitionsV2_();
+        var exact = definitions.find(function(item) {
+          return item.subjectName === name || item.subjectId === name;
+        });
+        if (exact) {
+          return exact;
+        }
+        var inferredCategory = category || classifyGradeSubjectCategoryClient_(name);
+        var broad = definitions.find(function(item) {
+          return isGradeBroadSubjectV3_(item) && normalizeSearchText(item.subjectCategory) === normalizeSearchText(inferredCategory);
+        });
+        return {
+          subjectId: buildGradeSubjectIdClient_(inferredCategory || (broad && broad.subjectCategory) || category, name),
+          subjectCategory: inferredCategory || (broad && broad.subjectCategory) || category || '기타',
+          subjectName: name
         };
       }
 
@@ -23664,7 +23755,7 @@
           html.push('<td>' + escapeHtml([student.school, student.grade].filter(Boolean).join(' · ') || '-') + '</td>');
           groups.forEach(function(group) {
             group.subjects.forEach(function(subject) {
-              html.push(renderGradeSubjectCellV3_(student, subject, recordMap[student.studentId + '|' + subject.subjectId] || null));
+              html.push(renderGradeSubjectCellV3_(student, subject, recordMap[student.studentId + '|' + subject.subjectId] || []));
             });
           });
           html.push('<td><div class="grades-v3-meta">' + escapeHtml(latest ? [(latest.updatedByName || latest.createdByName || '-'), (latest.updatedAt || '-')].join(' · ') : '-') + '</div></td>');
@@ -23675,8 +23766,11 @@
         return html.join('');
       }
 
-      function renderGradeSubjectCellV3_(student, subject, record) {
+      function renderGradeSubjectCellV3_(student, subject, records) {
         var key = getGradeDraftKey_(student.studentId, subject.subjectId);
+        var recordList = Array.isArray(records) ? records : (records ? [records] : []);
+        recordList.sort(sortGradesByUpdatedDesc_);
+        var record = recordList[0] || null;
         var draft = APP_STATE.gradeDrafts[key] || {};
         var finalScore = getDraftOrRecordValue_(draft, record, 'finalScore');
         var provisionalScore = getDraftOrRecordValue_(draft, record, 'provisionalScore');
@@ -23684,14 +23778,33 @@
         var status = finalScore ? '실점' : (provisionalScore ? '가채점' : '미입력');
         var statusClass = finalScore ? 'actual' : (provisionalScore ? 'provisional' : '');
         var saving = APP_STATE.gradeSavingMap[key];
-        if (!score && !saving) {
+        if (!recordList.length && !score && !saving) {
           return '<td><button type="button" class="grades-v3-score-button empty" data-grade-action="open-score-editor" data-student-id="' + escapeAttribute(student.studentId) + '" data-subject-id="' + escapeAttribute(subject.subjectId) + '">-</button></td>';
+        }
+        if (recordList.length > 1 || (recordList.length === 1 && recordList[0].subjectName !== subject.subjectName)) {
+          return '<td><div class="grades-v3-score-list">' + recordList.map(function(item) {
+            return renderGradeRecordChipV3_(student, subject, item);
+          }).join('') + '<button type="button" class="grades-v3-score-add" data-grade-action="open-score-editor" data-student-id="' + escapeAttribute(student.studentId) + '" data-subject-id="' + escapeAttribute(subject.subjectId) + '">+ 세부 과목 추가</button></div></td>';
         }
         return [
           '<td><button type="button" class="grades-v3-score-button" data-grade-action="open-score-editor" data-student-id="' + escapeAttribute(student.studentId) + '" data-subject-id="' + escapeAttribute(subject.subjectId) + '">',
           '  <span class="grades-v3-score-main"><span>' + escapeHtml(score || '-') + '</span><span class="grade-status-badge ' + statusClass + '">' + escapeHtml(status) + '</span></span>',
           saving ? '  <span class="grades-v3-save-state"><i data-lucide="loader-2"></i></span>' : (finalScore && provisionalScore ? '  <span class="grades-v3-score-sub">가 ' + escapeHtml(provisionalScore) + '</span>' : ''),
           '</button></td>'
+        ].join('');
+      }
+
+      function renderGradeRecordChipV3_(student, subject, record) {
+        var finalScore = record.finalScore || '';
+        var provisionalScore = record.provisionalScore || record.rawScore || '';
+        var score = finalScore || provisionalScore || '-';
+        var status = finalScore ? '실점' : (provisionalScore ? '가채점' : '미입력');
+        var statusClass = finalScore ? 'actual' : (provisionalScore ? 'provisional' : '');
+        return [
+          '<button type="button" class="grades-v3-score-button" data-grade-action="open-score-editor" data-student-id="' + escapeAttribute(student.studentId) + '" data-subject-id="' + escapeAttribute(record.subjectId || subject.subjectId) + '" data-grade-id="' + escapeAttribute(record.gradeId || '') + '">',
+          '  <span class="grades-v3-score-main"><span>' + escapeHtml(record.subjectName || subject.subjectName || '-') + ' ' + escapeHtml(score) + '</span><span class="grade-status-badge ' + statusClass + '">' + escapeHtml(status) + '</span></span>',
+          finalScore && provisionalScore ? '  <span class="grades-v3-score-sub">가 ' + escapeHtml(provisionalScore) + '</span>' : '',
+          '</button>'
         ].join('');
       }
 
@@ -23717,14 +23830,15 @@
         subjects.forEach(function(subject) { subjectIds[subject.subjectId] = true; });
         var map = {};
         getGradeCurrentRecordsV3_(students, subjects).forEach(function(record) {
-          var subjectId = record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName);
-          var key = record.studentId + '|' + subjectId;
-          if (!studentIds[record.studentId] || !subjectIds[subjectId]) {
+          var subject = findVisibleSubjectForGradeRecordV3_(record, subjects);
+          if (!studentIds[record.studentId] || !subject) {
             return;
           }
-          if (!map[key] || String(record.updatedAt || '') > String(map[key].updatedAt || '')) {
-            map[key] = record;
+          var key = record.studentId + '|' + subject.subjectId;
+          if (!map[key]) {
+            map[key] = [];
           }
+          map[key].push(record);
         });
         return map;
       }
@@ -23736,16 +23850,37 @@
         (subjects || []).forEach(function(subject) { subjectIds[subject.subjectId] = true; });
         return filterGradeRecordsByCurrentFilters_(APP_STATE.grades || []).filter(function(record) {
           var subjectId = record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName);
-          return studentIds[record.studentId] && subjectIds[subjectId];
+          return studentIds[record.studentId] && (subjectIds[subjectId] || Boolean(findVisibleSubjectForGradeRecordV3_(record, subjects)));
         });
+      }
+
+      function findVisibleSubjectForGradeRecordV3_(record, subjects) {
+        var subjectId = record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName);
+        var exact = (subjects || []).find(function(subject) {
+          return subject.subjectId === subjectId || subject.subjectName === record.subjectName;
+        });
+        if (exact) {
+          return exact;
+        }
+        return (subjects || []).find(function(subject) {
+          return isGradeBroadSubjectV3_(subject) && normalizeSearchText(subject.subjectCategory) === normalizeSearchText(record.subjectCategory || record.subjectArea);
+        }) || null;
+      }
+
+      function isGradeBroadSubjectV3_(subject) {
+        var name = normalizeSearchText(subject && subject.subjectName);
+        var category = normalizeSearchText(subject && subject.subjectCategory);
+        return Boolean(name && category && (name === category || category.indexOf(name) !== -1 || name.indexOf(category) !== -1));
       }
 
       function getLatestGradeRecordForStudentV3_(studentId, recordMap) {
         return Object.keys(recordMap || {}).filter(function(key) {
           return key.indexOf(studentId + '|') === 0;
         }).map(function(key) {
-          return recordMap[key];
-        }).sort(sortGradesByUpdatedDesc_)[0] || null;
+          return Array.isArray(recordMap[key]) ? recordMap[key] : [recordMap[key]];
+        }).reduce(function(all, rows) {
+          return all.concat(rows);
+        }, []).sort(sortGradesByUpdatedDesc_)[0] || null;
       }
 
       function renderGradeV3LeftRail_() {
@@ -23922,7 +24057,7 @@
           APP_STATE.gradeSelectedStudentIds = {};
           renderGrades();
         } else if (action === 'open-score-editor') {
-          openGradeScoreEditorV2_(button.getAttribute('data-student-id') || '', button.getAttribute('data-subject-id') || '');
+          openGradeScoreEditorV2_(button.getAttribute('data-student-id') || '', button.getAttribute('data-subject-id') || '', button.getAttribute('data-grade-id') || '');
         } else if (action === 'save-editor') {
           saveGradeEditorV2_();
         } else if (action === 'promote-final') {
