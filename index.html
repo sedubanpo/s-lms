@@ -13324,7 +13324,7 @@
       }
 
       function handleStudentListClick(event) {
-        var schoolClose = event.target.closest('[data-school-quick-assign-close]');
+        var schoolClose = event.target.closest('button[data-school-quick-assign-close]');
         if (schoolClose || event.target.classList.contains('school-quick-assign-backdrop')) {
           APP_STATE.schoolQuickAssignOpen = false;
           APP_STATE.schoolQuickAssignSaving = false;
@@ -13590,7 +13590,8 @@
 
       function handleSchoolDashboardAction_(button) {
         var action = button.getAttribute('data-school-action') || '';
-        var school = button.getAttribute('data-school') || APP_STATE.schoolModeSelectedSchool || '';
+        var hasExplicitSchool = button.hasAttribute('data-school');
+        var school = hasExplicitSchool ? (button.getAttribute('data-school') || '') : '';
         if (action === 'quick-assign' || action === 'bulk-assign') {
           if (!APP_STATE.isAdmin) {
             setNotice('담임 권한 배정은 관리자만 사용할 수 있습니다.', 'warning');
