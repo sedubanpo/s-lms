@@ -6275,6 +6275,109 @@
         overflow: auto;
       }
 
+      .student-log-list-panel {
+        min-height: 520px;
+      }
+
+      .student-log-list-table-wrap {
+        overflow: auto;
+      }
+
+      .student-log-list-table {
+        width: 100%;
+        min-width: 1280px;
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: 0.8rem;
+      }
+
+      .student-log-list-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: 10px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+        color: #475569;
+        text-align: left;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .student-log-list-table td {
+        padding: 12px;
+        border-bottom: 1px solid #edf2f7;
+        color: #334155;
+        vertical-align: top;
+      }
+
+      .student-log-list-table th:nth-child(1),
+      .student-log-list-table td:nth-child(1) { width: 130px; }
+
+      .student-log-list-table th:nth-child(2),
+      .student-log-list-table td:nth-child(2) { width: 130px; }
+
+      .student-log-list-table th:nth-child(3),
+      .student-log-list-table td:nth-child(3) { width: 78px; }
+
+      .student-log-list-table th:nth-child(4),
+      .student-log-list-table td:nth-child(4) { width: 170px; }
+
+      .student-log-list-table th:nth-child(5),
+      .student-log-list-table td:nth-child(5) { width: 128px; }
+
+      .student-log-list-table th:nth-child(7),
+      .student-log-list-table td:nth-child(7) { width: 124px; }
+
+      .student-log-list-table th:nth-child(8),
+      .student-log-list-table td:nth-child(8) { width: 270px; }
+
+      .student-log-list-content {
+        max-height: 92px;
+        overflow: auto;
+        color: #1e293b;
+        font-weight: 750;
+        line-height: 1.55;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .student-log-list-meta {
+        display: grid;
+        gap: 4px;
+      }
+
+      .student-log-list-meta strong {
+        color: #0f172a;
+        font-size: 0.86rem;
+        font-weight: 950;
+      }
+
+      .student-log-list-meta span {
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .student-log-list-table .student-log-reactions {
+        align-items: flex-start;
+        gap: 4px;
+      }
+
+      .student-log-list-table .student-log-reaction-button {
+        min-height: 24px;
+        padding: 0 7px;
+        font-size: 0.66rem;
+      }
+
+      .student-log-list-empty {
+        padding: 32px 16px;
+        color: #64748b;
+        text-align: center;
+        font-size: 0.86rem;
+        font-weight: 850;
+      }
+
       .student-index-table {
         width: 100%;
         border-collapse: collapse;
@@ -8133,6 +8236,56 @@
         padding: 14px;
         border-top: 1px solid #e2e8f0;
         background: #fbfdff;
+      }
+
+      .school-student-roster {
+        grid-column: 1 / -1;
+        overflow: hidden;
+        border: 1px solid #d8e3f4;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .school-student-roster-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 14px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fbff;
+      }
+
+      .school-student-roster-head h4 {
+        margin: 0;
+        font-size: 0.86rem;
+        font-weight: 950;
+      }
+
+      .school-student-roster-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: 0.78rem;
+      }
+
+      .school-student-roster-table th,
+      .school-student-roster-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #edf2f7;
+        text-align: left;
+        vertical-align: middle;
+      }
+
+      .school-student-roster-table th {
+        background: #ffffff;
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 900;
+      }
+
+      .school-student-roster-table tr:last-child td {
+        border-bottom: 0;
       }
 
       .school-detail-box {
@@ -12910,8 +13063,9 @@
         var students = getFilteredStudents();
 
         if (!students.length) {
-          wrap.className = 'student-console';
+          wrap.className = 'student-console ' + getStudentViewModeClass_();
           wrap.innerHTML = renderStudentConsoleShell_(students, getStudentEmptyStateHtml());
+          renderLucideIcons_();
           return;
         }
 
@@ -12961,11 +13115,18 @@
             renderSchoolMode_(students)
           ].join('');
         }
+        if (mode === 'list') {
+          return [
+            renderScopeBanner_(allScopedStudents),
+            renderInsightBand_(allScopedStudents),
+            renderStudentLogListMode_(students, emptyHtml)
+          ].join('');
+        }
         return [
           renderScopeBanner_(allScopedStudents),
           renderInsightBand_(allScopedStudents),
           mode === 'permission' ? renderPermissionMode_(students) : '',
-          (mode === 'summary' || mode === 'list') ? [
+          mode === 'summary' ? [
             '<div class="student-ops-layout">',
             '  <section class="student-index-panel ops-surface">',
                  renderStudentIndex_(students, emptyHtml),
@@ -12975,7 +13136,7 @@
             '  </aside>',
             '</div>'
           ].join('') : '',
-          (mode === 'summary' || mode === 'list') ? renderStudentWidgets_(allScopedStudents) : ''
+          mode === 'summary' ? renderStudentWidgets_(allScopedStudents) : ''
         ].join('');
       }
 
@@ -13105,6 +13266,111 @@
           '</div>',
           emptyHtml ? '<div style="padding:16px;">' + emptyHtml + '</div>' : '<div class="student-index-table-wrap">' + renderStudentIndexTable_(students) + '</div>'
         ].join('');
+      }
+
+      function renderStudentLogListMode_(students, emptyHtml) {
+        var rows = buildStudentLogListRows_(students);
+        return [
+          '<section class="student-log-list-panel ops-surface">',
+          '  <div class="student-index-head">',
+          '    <div><h3>특이사항 전체 목록</h3><div class="helper-text">검색 조건에 맞는 학생별 상담/관리 기록 ' + escapeHtml(String(rows.length)) + '건</div></div>',
+          '    <span class="ops-chip blue">특이사항 검색</span>',
+          '  </div>',
+          '  <div class="filter-bar">',
+          '    <input class="field-input" data-student-filter-input type="search" value="' + escapeAttribute(document.getElementById('studentSearchInput').value || '') + '" placeholder="특이사항 검색: 학생명, 학교, 분류, 입력자, 내용">',
+          '    <select class="field-select" data-student-school-select>' + buildStudentSchoolOptions_() + '</select>',
+          '    <select class="field-select" data-student-tag-select>' + buildStudentTagOptions_() + '</select>',
+          '  </div>',
+             emptyHtml && !rows.length ? '<div style="padding:16px;">' + emptyHtml + '</div>' : renderStudentLogListTable_(rows),
+          '</section>'
+        ].join('');
+      }
+
+      function buildStudentLogListRows_(students) {
+        var keyword = normalizeSearchText(document.getElementById('studentSearchInput').value);
+        var school = document.getElementById('studentSchoolFilter').value || '';
+        var tag = document.getElementById('studentTagFilter').value || '';
+        var source = (APP_STATE.visibleStudents || []).filter(function(student) {
+          return !school || student.school === school;
+        });
+        var allowedStudentIds = {};
+        (students || []).forEach(function(student) {
+          allowedStudentIds[student.studentId] = true;
+        });
+        var rows = [];
+        source.forEach(function(student) {
+          if (keyword && !allowedStudentIds[student.studentId]) {
+            return;
+          }
+          (student.logs || []).forEach(function(log) {
+            var tags = Array.isArray(log.tags) ? log.tags : [];
+            if (tag && tags.indexOf(tag) === -1) {
+              return;
+            }
+            var searchable = normalizeSearchText([
+              student.studentName,
+              student.school,
+              student.grade,
+              tags.join(' '),
+              log.createdByName,
+              log.content,
+              log.createdAt,
+              summarizeStudentLogReactions_(log)
+            ].join(' '));
+            if (keyword && searchable.indexOf(keyword) === -1) {
+              return;
+            }
+            rows.push({ student: student, log: log });
+          });
+        });
+        rows.sort(function(a, b) {
+          return String(b.log.createdAt || '').localeCompare(String(a.log.createdAt || '')) ||
+            String(a.student.studentName || '').localeCompare(String(b.student.studentName || ''));
+        });
+        return rows;
+      }
+
+      function renderStudentLogListTable_(rows) {
+        if (!rows.length) {
+          return '<div class="student-log-list-empty">검색 조건에 맞는 특이사항 기록이 없습니다.</div>';
+        }
+        return [
+          '<div class="student-log-list-table-wrap">',
+          '  <table class="student-log-list-table">',
+          '    <thead><tr><th>학생명</th><th>학교</th><th>학년</th><th>특이사항 분류</th><th>입력자</th><th>입력된 내용</th><th>입력 일시</th><th>반응</th></tr></thead>',
+          '    <tbody>',
+               rows.map(renderStudentLogListRow_).join(''),
+          '    </tbody>',
+          '  </table>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderStudentLogListRow_(row) {
+        var student = row.student || {};
+        var log = row.log || {};
+        var primaryTag = (log.tags || [])[0] || '관리 기록';
+        var toneClass = getLogTagToneClass(primaryTag);
+        var isAdmin = (log.createdByRole || '').toUpperCase() === 'ADMIN';
+        var author = isAdmin ? (log.createdByName || '관리자') : ((log.createdByName || '강사') + ' 강사');
+        return [
+          '<tr data-student-id="' + escapeAttribute(student.studentId || '') + '">',
+          '  <td><div class="student-log-list-meta"><strong>' + escapeHtml(student.studentName || '-') + '</strong><button type="button" class="profile-link-button" data-action="show-student-profile">프로필</button></div></td>',
+          '  <td>' + escapeHtml(student.school || '학교 미지정') + '</td>',
+          '  <td>' + escapeHtml(student.grade ? student.grade + '학년' : '미지정') + '</td>',
+          '  <td><span class="student-log-type-chip ' + escapeAttribute(toneClass) + '">' + escapeHtml(formatStudentLogTagLabel_(primaryTag)) + '</span>' + (isFirstLessonLog_(log) ? '<span class="student-log-priority-chip" style="margin-left:5px;">우선 확인</span>' : '') + '</td>',
+          '  <td><strong class="student-log-author-chip">' + escapeHtml(author) + '</strong></td>',
+          '  <td><div class="student-log-list-content">' + escapeHtml(log.content || '-') + '</div></td>',
+          '  <td>' + escapeHtml(formatTeachingLogDateTime(log.createdAt) || '-') + '</td>',
+          '  <td>' + renderStudentLogReactions_(log) + '</td>',
+          '</tr>'
+        ].join('');
+      }
+
+      function summarizeStudentLogReactions_(log) {
+        return (Array.isArray(log && log.reactions) ? log.reactions : []).map(function(item) {
+          return [item.userName, item.reaction].filter(Boolean).join(' ');
+        }).join(' ');
       }
 
       function buildStudentSchoolOptions_() {
@@ -13954,6 +14220,7 @@
             renderSchoolPermissionStatus_(item, assigned, unassigned.length),
             renderSchoolRecentConsultations_(item),
             renderSchoolUpcomingExams_(item),
+            renderSchoolStudentRoster_(item),
             '  </div>'
           ].join('') : '',
           '</article>'
@@ -13985,7 +14252,7 @@
         var logs = [];
         (item.students || []).forEach(function(student) {
           (student.logs || []).forEach(function(log) {
-            logs.push({ student: student.studentName || '-', date: log.createdAt || log.date || '', tag: log.tag || log.type || '상담', content: log.content || log.summary || '' });
+            logs.push({ student: student.studentName || '-', date: log.createdAt || log.date || '', tag: (log.tags || [])[0] || log.tag || log.type || '상담', content: log.content || log.summary || '' });
           });
         });
         logs.sort(function(a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
@@ -13993,6 +14260,36 @@
           return '<div class="school-mini-record"><strong>' + escapeHtml(formatDateShort_(log.date) || '-') + ' · ' + escapeHtml(log.student) + '</strong><span>' + escapeHtml(log.tag) + ' · ' + escapeHtml(String(log.content || '').slice(0, 34) || '기록 있음') + '</span></div>';
         }).join('');
         return '<section class="school-detail-box"><h4>최근 상담</h4>' + (rows || '<div class="school-empty-mini">최근 상담 기록이 없습니다.</div>') + '</section>';
+      }
+
+      function renderSchoolStudentRoster_(item) {
+        var students = orderStudentsForDisplay_(item.students || []);
+        var rows = students.map(function(student) {
+          var permissions = getStudentPermissionInstructors_(student.studentId);
+          var logs = student.logs || [];
+          var recent = getStudentRecentDate_(student);
+          var materialInfo = getSchoolMaterialInfo_(student.school);
+          var eventInfo = getSchoolEventInfo_(student.school, student.grade);
+          return [
+            '<tr data-student-id="' + escapeAttribute(student.studentId || '') + '">',
+            '  <td><div class="student-name-main"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml(student.studentId || '') + '</span></div></td>',
+            '  <td>' + escapeHtml(student.grade ? student.grade + '학년' : '학년 미지정') + '</td>',
+            '  <td><div class="chip-row">' + renderPermissionChips_(permissions, 3) + '</div></td>',
+            '  <td><div class="status-grid">' + renderStatusChip_('상담 ' + logs.length, logs.length ? 'slate' : 'muted') + renderStatusChip_('자료 ' + materialInfo.available, materialInfo.available ? 'green' : 'muted') + renderStatusChip_('일정 ' + eventInfo.count, eventInfo.count ? 'blue' : 'muted') + '</div></td>',
+            '  <td>' + escapeHtml(recent) + '</td>',
+            '  <td><button type="button" class="mini-button" data-action="show-student-profile"><i data-lucide="panel-right-open"></i> 프로필</button></td>',
+            '</tr>'
+          ].join('');
+        }).join('');
+        return [
+          '<section class="school-student-roster">',
+          '  <div class="school-student-roster-head"><h4>' + escapeHtml(item.school || '학교') + ' 학생 목록</h4><span class="ops-chip blue">' + escapeHtml(String(students.length)) + '명</span></div>',
+          '  <table class="school-student-roster-table">',
+          '    <thead><tr><th>학생</th><th>학년</th><th>연결 권한</th><th>상태</th><th>최근 업데이트</th><th>액션</th></tr></thead>',
+          '    <tbody>' + (rows || '<tr><td colspan="6"><div class="school-empty-mini">해당 학교 학생이 없습니다.</div></td></tr>') + '</tbody>',
+          '  </table>',
+          '</section>'
+        ].join('');
       }
 
       function renderSchoolUpcomingExams_(item) {
