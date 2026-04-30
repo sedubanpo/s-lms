@@ -11168,6 +11168,604 @@
           grid-template-columns: repeat(3, minmax(130px, 1fr));
         }
       }
+
+      @media (max-width: 767px) {
+        html,
+        body {
+          width: 100%;
+          overflow-x: hidden;
+        }
+
+        body {
+          padding-bottom: 82px;
+          background: #e8eef6;
+          -webkit-text-size-adjust: 100%;
+        }
+
+        .console-topbar {
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          gap: 8px;
+          min-height: 56px;
+          padding: 0 12px;
+          position: sticky;
+          top: 0;
+        }
+
+        .console-brand {
+          min-width: 0;
+          gap: 8px;
+          font-size: 1rem;
+        }
+
+        .console-brand img {
+          width: 32px;
+          height: 32px;
+        }
+
+        .console-nav,
+        .console-search,
+        .console-time,
+        #settingsButton,
+        #topLogoutButton {
+          display: none !important;
+        }
+
+        .console-actions {
+          justify-content: flex-end;
+          gap: 6px;
+        }
+
+        .console-icon-button {
+          min-width: 40px;
+          min-height: 40px;
+          padding: 0;
+          justify-content: center;
+          border: 1px solid rgba(191, 219, 254, 0.22);
+          background: rgba(15, 47, 96, 0.78);
+        }
+
+        .console-icon-button span {
+          display: none;
+        }
+
+        .dashboard-canvas {
+          padding: 14px 10px 104px;
+        }
+
+        .canvas-top {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 10px;
+          margin-bottom: 12px;
+        }
+
+        .canvas-top h1 {
+          font-size: 1.38rem;
+        }
+
+        .canvas-top p {
+          font-size: 0.82rem;
+          line-height: 1.45;
+        }
+
+        .top-actions {
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          padding-bottom: 2px;
+          scrollbar-width: none;
+        }
+
+        .top-actions::-webkit-scrollbar,
+        .mobile-sticky-filter::-webkit-scrollbar,
+        .student-log-author-tabs::-webkit-scrollbar,
+        .material-quick-schools::-webkit-scrollbar {
+          display: none;
+        }
+
+        .student-view-toggle,
+        .material-view-toggle {
+          flex: 0 0 auto;
+          min-width: max-content;
+        }
+
+        .student-view-button {
+          min-width: 68px;
+          padding: 0 10px;
+          font-size: 0.75rem;
+        }
+
+        .mini-button,
+        .button-primary,
+        .button-secondary,
+        .button-ghost,
+        .field-input,
+        .field-select,
+        .field-textarea {
+          min-height: 42px;
+          border-radius: 10px;
+        }
+
+        .mobile-nav {
+          position: fixed;
+          left: 8px;
+          right: 8px;
+          bottom: 8px;
+          z-index: 80;
+          display: grid !important;
+          grid-template-columns: repeat(7, minmax(0, 1fr));
+          gap: 4px;
+          padding: 7px;
+          border: 1px solid rgba(191, 219, 254, 0.72);
+          border-radius: 18px;
+          background: rgba(255, 255, 255, 0.94);
+          box-shadow: 0 18px 44px rgba(15, 23, 42, 0.2);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+        }
+
+        .mobile-nav .side-nav-button {
+          min-height: 48px;
+          padding: 0 2px;
+          border-radius: 12px;
+          background: transparent;
+          color: #64748b;
+          font-size: 0.66rem;
+          font-weight: 900;
+          justify-content: center;
+          text-align: center;
+        }
+
+        .mobile-nav .side-nav-button.active {
+          background: #eaf2ff;
+          color: #0b55d9;
+        }
+
+        .mobile-nav .nav-indicator {
+          display: none;
+        }
+
+        .ops-surface,
+        .ops-card,
+        .grades-v3-side,
+        .grades-v3-main-card,
+        .grades-v3-right-card,
+        .material-navigator,
+        .material-list-panel,
+        .material-insight-panel {
+          border-radius: 12px;
+          box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05);
+        }
+
+        .mobile-scope-card {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 0;
+          overflow: hidden;
+        }
+
+        .mobile-scope-card > div {
+          padding: 12px;
+          border-right: 1px solid #e2e8f0;
+        }
+
+        .mobile-scope-card > div:last-child {
+          border-right: 0;
+        }
+
+        .mobile-scope-card span,
+        .grades-mobile-meta,
+        .mobile-card-actions span {
+          display: block;
+          color: #64748b;
+          font-size: 0.7rem;
+          font-weight: 850;
+        }
+
+        .mobile-scope-card strong {
+          display: block;
+          margin-top: 5px;
+          color: #0f172a;
+          font-size: 1.18rem;
+          font-weight: 950;
+        }
+
+        .mobile-card-surface {
+          display: grid;
+          gap: 10px;
+          padding: 12px;
+          background: #fff;
+          border: 1px solid #d8e3f4;
+          border-radius: 12px;
+        }
+
+        .mobile-filter-stack {
+          display: grid;
+          gap: 8px;
+        }
+
+        .mobile-filter-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+
+        .mobile-student-list,
+        .mobile-log-card-list,
+        .grades-mobile-student-list,
+        .material-mobile-card-list {
+          display: grid;
+          gap: 10px;
+        }
+
+        .mobile-student-card,
+        .mobile-log-card,
+        .grades-mobile-student-card,
+        .material-mobile-card {
+          padding: 12px;
+          border: 1px solid #d8e3f4;
+          border-radius: 12px;
+          background: #fff;
+        }
+
+        .mobile-student-card.selected {
+          border-color: #0b55d9;
+          background: #edf5ff;
+          box-shadow: inset 3px 0 0 #0b55d9;
+        }
+
+        .mobile-student-card-head,
+        .mobile-log-card-head,
+        .grades-mobile-student-head,
+        .mobile-material-head {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 10px;
+          margin-bottom: 10px;
+        }
+
+        .mobile-student-card-head strong,
+        .mobile-log-card-head strong,
+        .grades-mobile-student-head strong,
+        .mobile-material-head strong {
+          display: block;
+          color: #0f172a;
+          font-size: 0.95rem;
+          font-weight: 950;
+        }
+
+        .mobile-student-card-head span,
+        .mobile-log-card-head span,
+        .grades-mobile-student-head > span,
+        .mobile-material-head span {
+          display: block;
+          margin-top: 4px;
+          color: #64748b;
+          font-size: 0.74rem;
+          font-weight: 800;
+        }
+
+        .mobile-status-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 5px;
+          margin-top: 10px;
+        }
+
+        .mobile-card-actions,
+        .mobile-material-actions {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          margin-top: 10px;
+          flex-wrap: wrap;
+        }
+
+        .mobile-profile-sheet {
+          overflow: hidden;
+        }
+
+        .mobile-profile-sheet .profile-board-head,
+        .mobile-profile-sheet .profile-board-body,
+        .mobile-profile-sheet .profile-block {
+          padding: 12px;
+        }
+
+        .profile-summary {
+          grid-template-columns: auto minmax(0, 1fr);
+        }
+
+        .student-learning-card {
+          grid-column: 1 / -1;
+        }
+
+        .student-log-compose-grid,
+        .student-log-compose-grid.with-author,
+        .grade-modal-grid,
+        .material-form-grid,
+        .dense-form-grid,
+        .compact-control-bar,
+        .permission-dense-layout,
+        .events-shell,
+        .school-schedule-layout,
+        .jikbo-manager-stack {
+          grid-template-columns: 1fr !important;
+        }
+
+        .student-log-compose-actions,
+        .grades-v3-table-head,
+        .grades-v3-pager,
+        .grades-toolbar,
+        .grades-scope,
+        .material-search-main,
+        .material-group-head,
+        .panel-head,
+        .modal-top {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .student-log-author-tabs,
+        .material-quick-schools,
+        .material-active-filter-row,
+        .grades-v3-tabs {
+          display: flex;
+          overflow-x: auto;
+          flex-wrap: nowrap;
+        }
+
+        .student-log-author-tab,
+        .material-chip-button,
+        .grades-v3-tabs .grades-tab {
+          flex: 0 0 auto;
+        }
+
+        .mobile-sticky-filter {
+          position: sticky;
+          top: 56px;
+          z-index: 3;
+          display: grid;
+          gap: 8px;
+          padding: 10px 0 8px;
+          background: #fff;
+        }
+
+        .mobile-log-card {
+          border-color: #d8e3f4;
+          background: #f8fafc;
+        }
+
+        .mobile-log-card.tag-parent,
+        .mobile-log-card.tag-student,
+        .mobile-log-card.tag-first,
+        .mobile-log-card.tag-makeup,
+        .mobile-log-card.tag-homework,
+        .mobile-log-card.tag-focus,
+        .mobile-log-card.tag-test {
+          background: #fffaf2;
+        }
+
+        .mobile-log-content {
+          margin: 10px 0;
+          color: #0f172a;
+          font-size: 0.84rem;
+          font-weight: 800;
+          line-height: 1.6;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+        }
+
+        .student-log-reactions {
+          gap: 5px;
+        }
+
+        .student-log-reaction-button {
+          min-height: 30px;
+          padding: 0 9px;
+        }
+
+        .grades-mobile-shell {
+          display: grid;
+          gap: 10px;
+        }
+
+        .grades-mobile-hero {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+          padding: 14px;
+        }
+
+        .grades-v3-actions,
+        .grades-toolbar-actions {
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          flex-wrap: nowrap;
+          justify-content: flex-start;
+        }
+
+        .grades-v3-actions > *,
+        .grades-toolbar-actions > * {
+          flex: 0 0 auto;
+        }
+
+        .grades-v3-main-card .grades-filter-grid,
+        .grades-filter-grid {
+          grid-template-columns: 1fr 1fr !important;
+          gap: 8px;
+        }
+
+        .grades-v3-metrics {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          border-radius: 12px;
+        }
+
+        .grades-v3-metric {
+          min-height: 92px;
+          padding: 12px;
+          border-right: 1px solid #e5edf7;
+          border-bottom: 1px solid #e5edf7;
+        }
+
+        .grades-v3-metric strong {
+          font-size: 1.18rem;
+        }
+
+        .grades-mobile-head {
+          display: grid;
+          gap: 10px;
+          border-radius: 12px;
+          border-bottom: 1px solid #dbe5f3;
+        }
+
+        .grades-mobile-student-card {
+          display: grid;
+          gap: 10px;
+        }
+
+        .grades-mobile-subject-list {
+          display: grid;
+          gap: 7px;
+        }
+
+        .grades-mobile-subject-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          width: 100%;
+          min-height: 46px;
+          padding: 8px 10px;
+          border: 1px solid #dbe5f3;
+          border-radius: 10px;
+          background: #f8fbff;
+          text-align: left;
+        }
+
+        .grades-mobile-subject-row strong,
+        .grades-mobile-subject-row small {
+          display: block;
+        }
+
+        .grades-mobile-subject-row small {
+          margin-top: 3px;
+          color: #64748b;
+          font-size: 0.68rem;
+          font-weight: 800;
+        }
+
+        .material-summary-strip,
+        .material-filter-grid {
+          grid-template-columns: 1fr 1fr !important;
+        }
+
+        .material-search-console {
+          position: sticky;
+          top: 56px;
+          z-index: 4;
+          padding: 10px;
+        }
+
+        .material-search-main {
+          display: grid;
+          grid-template-columns: 1fr;
+        }
+
+        .material-sort-select {
+          width: 100%;
+        }
+
+        .material-mobile-layout {
+          display: grid;
+          gap: 10px;
+          margin-top: 10px;
+        }
+
+        .material-mobile-card {
+          display: grid;
+          gap: 10px;
+        }
+
+        .material-action-group {
+          display: flex;
+          grid-template-columns: none;
+          flex-wrap: wrap;
+        }
+
+        .material-action-icon {
+          width: 38px;
+          height: 38px;
+        }
+
+        .material-open-log-modal-card,
+        .modal-card,
+        .grade-modal-panel {
+          width: 100% !important;
+          max-width: none !important;
+          max-height: 88vh;
+          border-radius: 22px 22px 0 0;
+          overflow: auto;
+        }
+
+        .modal-backdrop {
+          align-items: flex-end;
+          padding: 12px 8px 0;
+        }
+
+        .material-open-log-dashboard {
+          grid-template-columns: 1fr !important;
+        }
+
+        .material-open-log-table,
+        .student-index-table,
+        .student-log-list-table,
+        .material-dense-table,
+        .grades-v3-table {
+          min-width: 760px;
+        }
+
+        .scroll-shell,
+        .student-index-table-wrap,
+        .grades-v3-table-wrap {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .school-filter-panel,
+        .school-insight-panel,
+        .grades-v3-side,
+        .grades-v3-right {
+          position: static !important;
+        }
+
+        .school-chart-layout,
+        .school-ring-grid,
+        .insight-band,
+        .student-ops-layout,
+        .material-library-layout,
+        .grade-student-history-layout,
+        .grades-v3-shell {
+          grid-template-columns: 1fr !important;
+        }
+
+        .metric-strip {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .metric-tile {
+          min-height: 96px;
+        }
+
+        .dashboard-notice {
+          left: 10px;
+          right: 10px;
+          top: 64px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -12221,6 +12819,7 @@
         hydrateSavedLoginId_();
         renderLucideIcons_();
         window.addEventListener('load', renderLucideIcons_);
+        bindMobileViewportWatcher_();
         updateHeaderClock();
         setInterval(updateHeaderClock, 1000);
         setInterval(rotateLoadingMessage, 1800);
@@ -12495,6 +13094,50 @@
       function renderLucideIcons_() {
         if (window.lucide && typeof window.lucide.createIcons === 'function') {
           window.lucide.createIcons();
+        }
+      }
+
+      function isMobileViewport_() {
+        return !!(window.matchMedia && window.matchMedia('(max-width: 767px)').matches);
+      }
+
+      function renderCurrentResponsiveView_() {
+        if (!APP_STATE.token) {
+          return;
+        }
+        if (APP_STATE.currentView === 'students') {
+          renderStudentsPreservingSearchFocus_();
+          return;
+        }
+        if (APP_STATE.currentView === 'grades') {
+          renderGrades();
+          return;
+        }
+        if (APP_STATE.currentView === 'materials') {
+          renderMaterials();
+          return;
+        }
+        switchView(APP_STATE.currentView);
+      }
+
+      function bindMobileViewportWatcher_() {
+        var media = window.matchMedia ? window.matchMedia('(max-width: 767px)') : null;
+        if (!media) {
+          return;
+        }
+        var previous = media.matches;
+        var onChange = function(event) {
+          var next = !!event.matches;
+          if (next === previous) {
+            return;
+          }
+          previous = next;
+          renderCurrentResponsiveView_();
+        };
+        if (media.addEventListener) {
+          media.addEventListener('change', onChange);
+        } else if (media.addListener) {
+          media.addListener(onChange);
         }
       }
 
@@ -13459,6 +14102,9 @@
         var allScopedStudents = orderStudentsForDisplay_(APP_STATE.visibleStudents);
         var selected = getSelectedStudent_(students) || allScopedStudents[0] || null;
         var mode = APP_STATE.studentViewMode || 'summary';
+        if (isMobileViewport_()) {
+          return renderStudentMobileConsoleShell_(students, allScopedStudents, selected, mode, emptyHtml);
+        }
         if (mode === 'school') {
           return [
             renderScopeBanner_(allScopedStudents),
@@ -13487,6 +14133,137 @@
             '</div>'
           ].join('') : '',
           mode === 'summary' ? renderStudentWidgets_(allScopedStudents) : ''
+        ].join('');
+      }
+
+      function renderStudentMobileConsoleShell_(students, allScopedStudents, selected, mode, emptyHtml) {
+        if (mode === 'list') {
+          return [
+            renderStudentMobileScope_(allScopedStudents),
+            renderStudentMobileLogListMode_(students, emptyHtml)
+          ].join('');
+        }
+        if (mode === 'school') {
+          return [
+            renderStudentMobileScope_(allScopedStudents),
+            '<section class="mobile-card-surface mobile-school-mode">',
+            renderSchoolMode_(students),
+            '</section>'
+          ].join('');
+        }
+        if (mode === 'permission') {
+          return [
+            renderStudentMobileScope_(allScopedStudents),
+            '<section class="mobile-card-surface mobile-permission-mode">',
+            renderPermissionMode_(students),
+            '</section>'
+          ].join('');
+        }
+        return [
+          renderStudentMobileScope_(allScopedStudents),
+          '<section class="mobile-student-search mobile-card-surface">',
+          renderStudentMobileFilterBar_('학생명, 학교, 강사, 태그 검색'),
+          renderStudentActivePermissionFilter_(),
+          '</section>',
+          emptyHtml ? '<div class="mobile-empty-card">' + emptyHtml + '</div>' : renderStudentMobileCardList_(students),
+          selected ? '<aside class="mobile-profile-sheet ops-surface" data-student-id="' + escapeAttribute(selected.studentId || '') + '">' + renderStudentProfileBoard_(selected) + '</aside>' : ''
+        ].join('');
+      }
+
+      function renderStudentMobileScope_(students) {
+        var schoolCount = uniqueList_((students || []).map(function(student) { return student.school; }).filter(Boolean)).length;
+        var logCount = getScopedConsultationCount_(students || []);
+        return [
+          '<section class="mobile-scope-card ops-surface">',
+          '  <div><span>' + escapeHtml(APP_STATE.isAdmin ? '관리자 전체 보기' : '내 권한 학생') + '</span><strong>' + escapeHtml(String((students || []).length)) + '명</strong></div>',
+          '  <div><span>학교</span><strong>' + escapeHtml(String(schoolCount)) + '개</strong></div>',
+          '  <div><span>상담</span><strong>' + escapeHtml(String(logCount)) + '건</strong></div>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderStudentMobileFilterBar_(placeholder) {
+        return [
+          '<div class="mobile-filter-stack">',
+          '  <input class="field-input" data-student-filter-input type="search" value="' + escapeAttribute(document.getElementById('studentSearchInput').value || '') + '" placeholder="' + escapeAttribute(placeholder || '검색') + '">',
+          '  <div class="mobile-filter-row">',
+          '    <select class="field-select" data-student-school-select>' + buildStudentSchoolOptions_() + '</select>',
+          '    <select class="field-select" data-student-tag-select>' + buildStudentTagOptions_() + '</select>',
+          '  </div>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderStudentMobileCardList_(students) {
+        return '<section class="mobile-student-list">' + (students || []).map(renderStudentMobileCard_).join('') + '</section>';
+      }
+
+      function renderStudentMobileCard_(student) {
+        var permissions = getStudentPermissionInstructors_(student.studentId);
+        var logs = student.logs || [];
+        var jikbo = buildStudentJikboSummaryMap_()[student.studentId] || { total: 0, unconfirmed: 0 };
+        var materialInfo = getSchoolMaterialInfo_(student.school);
+        var eventInfo = getSchoolEventInfo_(student.school, student.grade);
+        var selected = student.studentId === APP_STATE.selectedStudentId ? ' selected' : '';
+        return [
+          '<article class="mobile-student-card' + selected + '" data-mobile-student-card data-student-id="' + escapeAttribute(student.studentId || '') + '">',
+          '  <div class="mobile-student-card-head">',
+          '    <div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</span></div>',
+               renderStudentRecordCountBadge_(logs.length),
+          '  </div>',
+          '  <div class="chip-row">' + renderPermissionChips_(permissions, 3) + '</div>',
+          '  <div class="mobile-status-grid">' + [
+                 renderStatusChip_('상담 ' + logs.length, logs.length ? 'slate' : 'muted'),
+                 renderStatusChip_('직보 ' + jikbo.total, jikbo.unconfirmed ? 'warn' : (jikbo.total ? 'teal' : 'muted')),
+                 renderStatusChip_('자료 ' + materialInfo.available, materialInfo.available ? 'green' : 'muted'),
+                 renderStatusChip_('일정 ' + eventInfo.count, eventInfo.count ? 'blue' : 'muted')
+               ].join('') + '</div>',
+          '  <div class="mobile-card-actions">',
+          '    <span>' + escapeHtml(getStudentRecentDate_(student)) + '</span>',
+          '    <button type="button" class="mini-button" data-action="show-student-profile"><i data-lucide="panel-right-open"></i> 프로필</button>',
+          APP_STATE.isAdmin ? '    <button type="button" class="mini-button" data-action="manage-student-permission"><i data-lucide="shield"></i> 권한</button>' : '',
+          '  </div>',
+          '</article>'
+        ].join('');
+      }
+
+      function renderStudentMobileLogListMode_(students, emptyHtml) {
+        var rows = buildStudentLogListRows_(students);
+        return [
+          '<section class="student-log-list-panel mobile-card-surface ops-surface">',
+          '  <div class="student-index-head">',
+          '    <div><h3>특이사항 전체 목록</h3><div class="helper-text">검색 조건에 맞는 기록 ' + escapeHtml(String(rows.length)) + '건</div></div>',
+          '  </div>',
+          '  <div class="mobile-sticky-filter">',
+               renderStudentMobileFilterBar_('특이사항 검색: 학생명, 학교, 분류, 입력자, 내용'),
+          '    <select class="field-select" data-student-author-select>' + buildStudentAuthorOptions_() + '</select>',
+          '  </div>',
+          renderStudentActivePermissionFilter_(),
+          renderStudentLogAuthorTabs_(),
+          rows.length ? '<div class="mobile-log-card-list">' + rows.map(renderStudentMobileLogCard_).join('') + '</div>' : (emptyHtml || '<div class="student-log-list-empty">검색 조건에 맞는 특이사항 기록이 없습니다.</div>'),
+          '</section>'
+        ].join('');
+      }
+
+      function renderStudentMobileLogCard_(row) {
+        var student = row.student || {};
+        var log = row.log || {};
+        var primaryTag = (log.tags || [])[0] || '관리 기록';
+        var toneClass = getLogTagToneClass(primaryTag);
+        return [
+          '<article class="mobile-log-card ' + escapeAttribute(toneClass) + '" data-student-id="' + escapeAttribute(student.studentId || '') + '">',
+          '  <div class="mobile-log-card-head">',
+          '    <div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</span></div>',
+          '    <button type="button" class="profile-link-button" data-action="show-student-profile">프로필</button>',
+          '  </div>',
+          '  <div class="student-log-bubble-meta">',
+               renderStudentLogAuthorChip_(log, student, getStudentLogAuthorFilterLabel_(log)),
+          '    <span class="student-log-type-chip ' + escapeAttribute(toneClass) + '">' + escapeHtml(formatStudentLogTagLabel_(primaryTag)) + '</span>',
+          '    <span class="student-log-time-chip">' + escapeHtml(formatTeachingLogDateTime(log.createdAt) || '-') + '</span>',
+          '  </div>',
+          '  <div class="mobile-log-content">' + escapeHtml(log.content || '-') + '</div>',
+             renderStudentLogReactions_(log),
+          '</article>'
         ].join('');
       }
 
@@ -15821,6 +16598,13 @@
 
         var filterInput = event.target.closest('[data-student-filter-input]');
         if (filterInput) {
+          return;
+        }
+
+        var mobileCard = event.target.closest('[data-mobile-student-card][data-student-id]');
+        if (mobileCard) {
+          APP_STATE.selectedStudentId = mobileCard.getAttribute('data-student-id') || '';
+          renderStudents();
           return;
         }
 
@@ -20799,6 +21583,9 @@
       function renderMaterialLibraryLayout_(materials, mainHtml) {
         var mode = APP_STATE.materialPanelMode || 'group';
         var navigatorMaterials = APP_STATE.materials || [];
+        if (isMobileViewport_()) {
+          return renderMaterialMobileLibraryLayout_(materials);
+        }
         return [
           '<div class="material-library-layout mode-' + escapeAttribute(mode) + '">',
           '  <aside class="material-navigator">',
@@ -20811,6 +21598,45 @@
           '    <div class="material-insight-body">' + renderMaterialInsightPanel_(materials) + '</div>',
           '  </aside>',
           '</div>'
+        ].join('');
+      }
+
+      function renderMaterialMobileLibraryLayout_(materials) {
+        var source = (materials || []).slice().sort(compareMaterialRows_);
+        return [
+          '<div class="material-mobile-layout">',
+          '  <section class="material-list-panel">',
+          source.length ? renderMaterialMobileCardList_(source) : '<div class="empty-state">검색 조건에 맞는 자료가 없습니다.</div>',
+          '  </section>',
+          '  <aside class="material-insight-panel mobile-material-insight">',
+          '    <div class="material-panel-title"><h3>자료실 인사이트</h3><button type="button" class="material-action-icon" data-material-refresh-insight title="새로고침"><i data-lucide="refresh-cw"></i></button></div>',
+          '    <div class="material-insight-body">' + renderMaterialInsightPanel_(source) + '</div>',
+          '  </aside>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderMaterialMobileCardList_(items) {
+        return '<div class="material-mobile-card-list">' + items.map(renderMaterialMobileCard_).join('') + '</div>';
+      }
+
+      function renderMaterialMobileCard_(item) {
+        var isGold = isExamScopeMaterial_(item);
+        return [
+          '<article class="material-card-item material-mobile-card ' + (isGold ? 'gold-premium' : '') + '" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '">',
+          '  <div class="mobile-material-head">',
+          '    <div><strong>' + escapeHtml(buildMaterialDisplayTitle_(item)) + '</strong><span>' + escapeHtml(item.note || item.fileType || '자료 확인') + '</span></div>',
+               renderMaterialTypeBadge_(getMaterialPrimaryTypeLabel_(item)),
+          '  </div>',
+          '  <div class="chip-row">' + [
+                 renderMaterialMetaBadge_(item.school || '-', 'subject'),
+                 renderMaterialMetaBadge_(item.year || '-', 'year'),
+                 renderMaterialMetaBadge_(item.grade || '-', 'grade'),
+                 renderMaterialMetaBadge_(item.examType || '-', 'exam'),
+                 renderMaterialMetaBadge_(item.subject || '-', 'type')
+               ].join('') + '</div>',
+          '  <div class="mobile-material-actions">' + renderMaterialActionButtons_(item) + '</div>',
+          '</article>'
         ].join('');
       }
 
@@ -25004,6 +25830,9 @@
       }
 
       function renderGradeV3Shell_() {
+        if (isMobileViewport_()) {
+          return renderGradeMobileShell_();
+        }
         return [
           '<div class="grades-v3-shell">',
           renderGradeV3LeftRail_(),
@@ -25014,6 +25843,123 @@
           '</div>',
           renderGradeV3RightRail_(),
           '</div>'
+        ].join('');
+      }
+
+      function renderGradeMobileShell_() {
+        return [
+          '<div class="grades-mobile-shell">',
+          renderGradeMobileHero_(),
+          renderGradeV3Tabs_(),
+          renderGradeMobileMainCard_(),
+          '</div>'
+        ].join('');
+      }
+
+      function renderGradeMobileHero_() {
+        return [
+          '<section class="grades-v3-hero grades-mobile-hero">',
+          '  <div><h3>성적 관리</h3><p>' + escapeHtml(getGradeCurrentExamLabel_()) + '</p><div class="grades-chip-row"><span class="grade-year-pill">' + escapeHtml(getGradeYear_()) + '년</span><span class="grade-chip teal">직보 과목 연동</span>' + (APP_STATE.gradesLoading ? '<span class="grade-status-badge saving"><i data-lucide="loader-2"></i> 동기화</span>' : '') + '</div></div>',
+          '  <div class="grades-v3-actions">',
+          '    <button type="button" class="mini-button" data-grade-action="sync"><i data-lucide="refresh-cw"></i> 동기화</button>',
+          '    <button type="button" class="mini-button" data-grade-action="upload"><i data-lucide="upload"></i> 업로드</button>',
+          '    <button type="button" class="mini-button" data-grade-action="bulk-input"><i data-lucide="clipboard-list"></i> 일괄</button>',
+          '    <button type="button" class="button-primary" data-grade-action="save-selected"><i data-lucide="save"></i> 저장</button>',
+          '  </div>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderGradeMobileMainCard_() {
+        var tab = APP_STATE.gradeTab || 'input';
+        if (tab === 'input') {
+          return '<section class="grades-v3-main-card grades-mobile-card">' + renderGradeMobileInputTab_() + '</section>';
+        }
+        if (tab === 'history') {
+          return '<section class="grades-v3-main-card grades-mobile-card">' + renderGradeHistoryTabV2_() + '</section>';
+        }
+        if (tab === 'ranking') {
+          return '<section class="grades-v3-main-card grades-mobile-card">' + renderGradeRankingTabV2_() + '</section>';
+        }
+        if (tab === 'studentHistory') {
+          return '<section class="grades-v3-main-card grades-mobile-card">' + renderGradeStudentHistoryTabV2_() + '</section>';
+        }
+        return '<section class="grades-v3-main-card grades-mobile-card">' + renderGradeStatsTabV2_() + '</section>';
+      }
+
+      function renderGradeMobileInputTab_() {
+        var students = getGradeFilteredStudents_();
+        var subjects = getGradeVisibleSubjects_();
+        return [
+          renderGradeFilters_(),
+          renderGradeV3Metrics_(students, subjects),
+          '<div class="grades-v3-table-head grades-mobile-head">',
+          '  <div><h3>학생별 성적 입력</h3><p>' + escapeHtml(getGradeCurrentExamLabel_()) + ' · ' + students.length + '명 · ' + subjects.length + '과목</p></div>',
+          '  <div class="grades-toolbar-actions"><button type="button" class="mini-button" data-grade-action="select-visible"><i data-lucide="check-square"></i> 전체 선택</button><button type="button" class="mini-button" data-grade-action="clear-selection"><i data-lucide="square"></i> 해제</button></div>',
+          '</div>',
+          renderGradeMobileStudentCards_(students, subjects)
+        ].join('');
+      }
+
+      function renderGradeMobileStudentCards_(students, subjects) {
+        if (!students.length) {
+          return '<div class="grade-empty">조건에 맞는 학생이 없습니다.</div>';
+        }
+        if (!subjects.length) {
+          return '<div class="grade-empty">활성 과목이 없습니다. 직보 구성의 과목 매니저를 확인해주세요.</div>';
+        }
+        var pageSize = APP_STATE.gradePageSize || 20;
+        var totalPages = Math.max(1, Math.ceil(students.length / pageSize));
+        APP_STATE.gradePage = Math.min(Math.max(1, APP_STATE.gradePage || 1), totalPages);
+        var page = APP_STATE.gradePage;
+        var pageStudents = students.slice((page - 1) * pageSize, page * pageSize);
+        var recordMap = buildGradeRecordMapV3_(students, subjects);
+        return [
+          '<div class="grades-mobile-student-list">',
+          pageStudents.map(function(student) {
+            return renderGradeMobileStudentCard_(student, subjects, recordMap);
+          }).join(''),
+          '</div>',
+          renderGradeV3Pager_(students.length, page, totalPages, pageSize)
+        ].join('');
+      }
+
+      function renderGradeMobileStudentCard_(student, subjects, recordMap) {
+        var checked = APP_STATE.gradeSelectedStudentIds[student.studentId] ? ' checked' : '';
+        var latest = getLatestGradeRecordForStudentV3_(student.studentId, recordMap);
+        return [
+          '<article class="grades-mobile-student-card">',
+          '  <div class="grades-mobile-student-head">',
+          '    <label><input type="checkbox" data-grade-select-student="' + escapeAttribute(student.studentId) + '"' + checked + '> <strong>' + escapeHtml(student.studentName || '-') + '</strong></label>',
+          '    <span>' + escapeHtml([student.school, student.grade].filter(Boolean).join(' · ') || '-') + '</span>',
+          '  </div>',
+          '  <div class="grades-mobile-subject-list">',
+               subjects.map(function(subject) {
+                 var records = recordMap[student.studentId + '|' + subject.subjectId] || [];
+                 return renderGradeMobileSubjectRow_(student, subject, records);
+               }).join(''),
+          '  </div>',
+          '  <div class="grades-mobile-meta">' + escapeHtml(latest ? [(latest.updatedByName || latest.createdByName || '-'), (latest.updatedAt || '-')].join(' · ') : '입력 기록 없음') + '</div>',
+          '</article>'
+        ].join('');
+      }
+
+      function renderGradeMobileSubjectRow_(student, subject, records) {
+        var recordList = Array.isArray(records) ? records.slice().sort(sortGradesByUpdatedDesc_) : [];
+        var record = recordList[0] || null;
+        var key = getGradeDraftKey_(student.studentId, subject.subjectId);
+        var draft = APP_STATE.gradeDrafts[key] || {};
+        var finalScore = getDraftOrRecordValue_(draft, record, 'finalScore');
+        var provisionalScore = getDraftOrRecordValue_(draft, record, 'provisionalScore');
+        var score = finalScore || provisionalScore || '';
+        var status = finalScore ? '실점' : (provisionalScore ? '가채점' : '미입력');
+        var statusClass = finalScore ? 'actual' : (provisionalScore ? 'provisional' : '');
+        var countLabel = recordList.length > 1 ? '<span class="grade-chip blue">+' + escapeHtml(String(recordList.length - 1)) + '</span>' : '';
+        return [
+          '<button type="button" class="grades-mobile-subject-row" data-grade-action="open-score-editor" data-student-id="' + escapeAttribute(student.studentId) + '" data-subject-id="' + escapeAttribute((record && record.subjectId) || subject.subjectId) + '" data-grade-id="' + escapeAttribute(record && record.gradeId || '') + '">',
+          '  <span><strong>' + escapeHtml(subject.subjectName || '-') + '</strong><small>' + escapeHtml(subject.subjectCategory || '-') + '</small></span>',
+          '  <span class="grades-v3-score-main"><span>' + escapeHtml(score || '-') + '</span><span class="grade-status-badge ' + statusClass + '">' + escapeHtml(status) + '</span>' + countLabel + '</span>',
+          '</button>'
         ].join('');
       }
 
