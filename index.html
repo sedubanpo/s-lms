@@ -7057,6 +7057,11 @@
         transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
       }
 
+      .student-log-compose.neutral {
+        border-color: #d8e3f4;
+        background: #f8fafc;
+      }
+
       .student-log-compose.is-saving {
         border-color: #0b55d9;
         background: #f8fbff;
@@ -13797,6 +13802,16 @@
             }
           });
         }
+        if (student && student.studentId) {
+          getStudentPermissionInstructors_(student.studentId).forEach(function(instructor) {
+            String(instructor && instructor.subject || '').split(/[,/|·、]+/).forEach(function(item) {
+              var subject = item.trim();
+              if (subject) {
+                values.push(subject);
+              }
+            });
+          });
+        }
         return uniqueList_(values.filter(Boolean));
       }
 
@@ -14045,12 +14060,13 @@
         }
         var defaultTag = activeTab && activeTab !== '전체' ? activeTab : '학부모상담';
         var toneClass = getLogTagToneClass(defaultTag);
+        var composeToneClass = activeTab && activeTab !== '전체' ? toneClass : 'neutral';
         var options = getStudentLogComposeOptions_().map(function(tag) {
           return '<option value="' + escapeAttribute(tag) + '"' + (tag === defaultTag ? ' selected' : '') + '>' + escapeHtml(tag.replace('학부모상담', '학부모 상담').replace('학생상담', '학생 상담')) + '</option>';
         }).join('');
         var authorSelect = renderStudentLogAuthorSelect_(student);
         return [
-          '<form class="student-log-compose ' + escapeAttribute(toneClass) + '" data-student-log-form data-student-id="' + escapeAttribute(student.studentId || '') + '" onsubmit="return false;">',
+          '<form class="student-log-compose ' + escapeAttribute(composeToneClass) + '" data-student-log-form data-student-id="' + escapeAttribute(student.studentId || '') + '" onsubmit="return false;">',
           '  <div class="student-log-compose-head">',
           '    <div><strong>특이사항 기록</strong><span>작성자와 작성 일자는 저장 시 자동으로 남고, 저장 중에는 입력이 잠시 잠깁니다.</span></div>',
           '    <span class="ops-chip slate">' + escapeHtml(student.studentName || '-') + '</span>',
@@ -15836,7 +15852,7 @@
           var composeForm = logTypeSelect.closest('[data-student-log-form]');
           if (composeForm) {
             var toneClass = getLogTagToneClass(logTypeSelect.value || '');
-            ['tag-status', 'tag-first', 'tag-makeup', 'tag-homework', 'tag-focus', 'tag-test', 'tag-parent', 'tag-student'].forEach(function(item) {
+            ['neutral', 'tag-status', 'tag-first', 'tag-makeup', 'tag-homework', 'tag-focus', 'tag-test', 'tag-parent', 'tag-student'].forEach(function(item) {
               composeForm.classList.remove(item);
             });
             composeForm.classList.add(toneClass);
