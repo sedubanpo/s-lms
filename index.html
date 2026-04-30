@@ -7059,9 +7059,15 @@
         background: #f0fdf4;
       }
 
+      .student-log-bubble.is-priority {
+        border-color: #818cf8;
+        background: linear-gradient(180deg, #eef2ff 0%, #ffffff 100%);
+        box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.12);
+      }
+
       .student-log-bubble-head {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
         gap: 8px;
       }
@@ -7075,12 +7081,91 @@
 
       .student-log-bubble-meta {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         flex-wrap: wrap;
         gap: 6px;
         color: #64748b;
         font-size: 0.72rem;
         font-weight: 850;
+      }
+
+      .student-log-author-chip,
+      .student-log-type-chip,
+      .student-log-time-chip,
+      .student-log-priority-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 7px;
+        border: 1px solid #d8e3f4;
+        background: #ffffff;
+        line-height: 1;
+      }
+
+      .student-log-author-chip {
+        border-color: #bfdbfe;
+        background: #eff6ff;
+        color: #0b55d9;
+        font-size: 0.76rem;
+        font-weight: 950;
+      }
+
+      .student-log-type-chip {
+        color: #334155;
+        font-weight: 950;
+      }
+
+      .student-log-type-chip.tag-parent {
+        border-color: #fed7aa;
+        background: #ffedd5;
+        color: #c2410c;
+      }
+
+      .student-log-type-chip.tag-student {
+        border-color: #99f6e4;
+        background: #ccfbf1;
+        color: #0f766e;
+      }
+
+      .student-log-type-chip.tag-first {
+        border-color: #c7d2fe;
+        background: #e0e7ff;
+        color: #3730a3;
+      }
+
+      .student-log-type-chip.tag-status {
+        border-color: #bfdbfe;
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
+      .student-log-type-chip.tag-test {
+        border-color: #bbf7d0;
+        background: #dcfce7;
+        color: #047857;
+      }
+
+      .student-log-type-chip.tag-makeup,
+      .student-log-type-chip.tag-homework,
+      .student-log-type-chip.tag-focus {
+        border-color: #fbcfe8;
+        background: #fdf2f8;
+        color: #be185d;
+      }
+
+      .student-log-time-chip {
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 850;
+      }
+
+      .student-log-priority-chip {
+        border-color: #c7d2fe;
+        background: #e0e7ff;
+        color: #3730a3;
+        font-size: 0.68rem;
+        font-weight: 950;
       }
 
       .student-log-bubble-text {
@@ -7102,6 +7187,47 @@
         padding: 0 7px;
         border-radius: 7px;
         font-size: 0.68rem;
+      }
+
+      .student-log-reactions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding-top: 2px;
+      }
+
+      .student-log-reaction-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-height: 26px;
+        padding: 0 8px;
+        border: 1px solid #d8e3f4;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.78);
+        color: #475569;
+        font-size: 0.68rem;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .student-log-reaction-button.active {
+        border-color: #0b55d9;
+        background: #eaf2ff;
+        color: #0b55d9;
+        box-shadow: inset 0 0 0 1px rgba(11, 85, 217, 0.08);
+      }
+
+      .student-log-reaction-button:hover {
+        border-color: #93b8ee;
+        color: #0b55d9;
+      }
+
+      .student-log-reaction-empty {
+        color: #94a3b8;
+        font-size: 0.68rem;
+        font-weight: 800;
       }
 
       .student-detail-modal-card {
@@ -12297,7 +12423,8 @@
           createdById: savedLog.createdById || '',
           createdByName: savedLog.createdByName || '',
           createdByRole: savedLog.createdByRole || '',
-          createdAt: savedLog.createdAt || ''
+          createdAt: savedLog.createdAt || '',
+          reactions: Array.isArray(savedLog.reactions) ? savedLog.reactions : []
         };
         var targetId = String(normalizedLog.studentId || '');
         var rowKey = String(normalizedLog.rowNumber || '');
@@ -13242,7 +13369,7 @@
         if (!getStudentLogTabOptions_().some(function(option) { return option.value === activeTab; })) {
           activeTab = '전체';
         }
-        var logs = getFilteredTeachingLogsByTab_(student, activeTab);
+        var logs = prioritizeStudentLogs_(getFilteredTeachingLogsByTab_(student, activeTab), activeTab);
         var limit = config.limit || 3;
         return [
           '<div class="student-log-preview-block">',
@@ -13263,12 +13390,34 @@
         return '<div class="student-log-bubble-list">' + logs.map(renderStudentLogBubble_).join('') + '</div>';
       }
 
+      function prioritizeStudentLogs_(logs, activeTab) {
+        var source = Array.isArray(logs) ? logs.slice() : [];
+        if (activeTab && activeTab !== '전체') {
+          return source;
+        }
+        return source.sort(function(a, b) {
+          var aPriority = isFirstLessonLog_(a) ? 1 : 0;
+          var bPriority = isFirstLessonLog_(b) ? 1 : 0;
+          if (aPriority !== bPriority) {
+            return bPriority - aPriority;
+          }
+          return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+        });
+      }
+
+      function isFirstLessonLog_(log) {
+        return (log && Array.isArray(log.tags) ? log.tags : []).some(function(tag) {
+          return String(tag || '').replace(/\s+/g, '') === '첫수업정보';
+        });
+      }
+
       function renderStudentLogBubble_(log) {
         var isAdmin = (log.createdByRole || '').toUpperCase() === 'ADMIN';
         var author = isAdmin ? (log.createdByName || '관리자') : ((log.createdByName || '강사') + ' 강사');
         var canDelete = APP_STATE.isAdmin || (APP_STATE.user && APP_STATE.user.userId === log.createdById);
         var primaryTag = (log.tags || [])[0] || '관리 기록';
         var toneClass = getLogTagToneClass(primaryTag);
+        var isPriority = isFirstLessonLog_(log);
         var detailButton = log.rowNumber
           ? '<button type="button" class="profile-link-button" data-action="show-log-detail" data-log-row="' + escapeAttribute(log.rowNumber) + '">원문</button>'
           : '';
@@ -13276,15 +13425,61 @@
           ? '<button type="button" class="log-delete-button" data-action="delete-log" data-log-row="' + escapeAttribute(log.rowNumber) + '">삭제</button>'
           : '';
         return [
-          '<article class="student-log-bubble ' + escapeAttribute(toneClass) + (isAdmin ? ' admin' : '') + '">',
+          '<article class="student-log-bubble ' + escapeAttribute(toneClass) + (isAdmin ? ' admin' : '') + (isPriority ? ' is-priority' : '') + '">',
           '  <div class="student-log-bubble-head">',
-          '    <div class="student-log-bubble-meta"><strong>' + escapeHtml(primaryTag) + '</strong><span>' + escapeHtml(formatTeachingLogDateTime(log.createdAt)) + '</span><span>' + escapeHtml(author) + '</span></div>',
+          '    <div class="student-log-bubble-meta">',
+          '      <strong class="student-log-author-chip">' + escapeHtml(author) + '</strong>',
+          '      <span class="student-log-type-chip ' + escapeAttribute(toneClass) + '">' + escapeHtml(formatStudentLogTagLabel_(primaryTag)) + '</span>',
+                 isPriority ? '<span class="student-log-priority-chip">우선 확인</span>' : '',
+          '      <span class="student-log-time-chip">' + escapeHtml(formatTeachingLogDateTime(log.createdAt)) + '</span>',
+          '    </div>',
           '    <div class="student-log-bubble-actions">' + detailButton + deleteButton + '</div>',
           '  </div>',
           '  <div class="student-log-bubble-text">' + escapeHtml(log.content || '-') + '</div>',
              renderLogTags(log.tags || []),
+             renderStudentLogReactions_(log),
           '</article>'
         ].join('');
+      }
+
+      function formatStudentLogTagLabel_(tag) {
+        return String(tag || '관리 기록').replace('학부모상담', '학부모 상담').replace('학생상담', '학생 상담').replace('테스트결과', '테스트 결과');
+      }
+
+      function getStudentLogReactionOptions_() {
+        return [
+          { value: 'read', label: '읽음', icon: '👀' },
+          { value: 'check', label: '확인', icon: '✅' },
+          { value: 'heart', label: '공감', icon: '💙' },
+          { value: 'idea', label: '참고', icon: '💡' },
+          { value: 'important', label: '중요', icon: '⭐' }
+        ];
+      }
+
+      function renderStudentLogReactions_(log) {
+        if (!log || !log.rowNumber) {
+          return '';
+        }
+        var reactions = Array.isArray(log.reactions) ? log.reactions : [];
+        var currentUserId = APP_STATE.user ? String(APP_STATE.user.userId || '') : '';
+        var counts = {};
+        var activeValue = '';
+        reactions.forEach(function(item) {
+          var value = String(item && item.reaction || '');
+          if (!value) {
+            return;
+          }
+          counts[value] = (counts[value] || 0) + 1;
+          if (currentUserId && String(item.userId || '') === currentUserId) {
+            activeValue = value;
+          }
+        });
+        var buttons = getStudentLogReactionOptions_().map(function(option) {
+          var count = counts[option.value] || 0;
+          return '<button type="button" class="student-log-reaction-button' + (activeValue === option.value ? ' active' : '') + '" data-action="react-log" data-log-row="' + escapeAttribute(log.rowNumber) + '" data-reaction="' + escapeAttribute(option.value) + '" title="' + escapeAttribute(option.label) + '">' +
+            '<span aria-hidden="true">' + option.icon + '</span><span>' + escapeHtml(option.label) + (count ? ' ' + count : '') + '</span></button>';
+        }).join('');
+        return '<div class="student-log-reactions">' + buttons + (reactions.length ? '' : '<span class="student-log-reaction-empty">아직 반응 없음</span>') + '</div>';
       }
 
       function getStudentConnectedMaterials_(student) {
@@ -13357,6 +13552,12 @@
         var saveLogButton = event.target.closest('[data-action="save-student-log-entry"]');
         if (saveLogButton) {
           handleStudentLogSave_(saveLogButton);
+          return;
+        }
+
+        var reactionButton = event.target.closest('[data-action="react-log"]');
+        if (reactionButton) {
+          handleStudentLogReaction_(reactionButton);
           return;
         }
 
@@ -14576,6 +14777,12 @@
           return;
         }
 
+        var reactionButton = event.target.closest('[data-action="react-log"]');
+        if (reactionButton) {
+          handleStudentLogReaction_(reactionButton);
+          return;
+        }
+
         var deleteButton = event.target.closest('[data-action="delete-log"]');
         if (deleteButton) {
           handleTeachingLogDelete(deleteButton);
@@ -14888,6 +15095,34 @@
           })
           .finally(function() {
             setStudentLogFormSaving_(form, false);
+          });
+      }
+
+      function handleStudentLogReaction_(button) {
+        var logRowNumber = button.getAttribute('data-log-row') || '';
+        var reaction = button.getAttribute('data-reaction') || '';
+        if (!logRowNumber || !reaction) {
+          setNotice('반응을 남길 기록을 찾을 수 없습니다.', 'warning');
+          return;
+        }
+
+        button.disabled = true;
+        apiRequest('reactStudentLog', {
+          token: APP_STATE.token,
+          logRowNumber: logRowNumber,
+          reaction: reaction
+        })
+          .then(function(result) {
+            hydrateStudentDataOnly(result);
+            renderStudents();
+            if (APP_STATE.selectedStudentDetailId) {
+              renderStudentDetailModal_();
+            }
+            setNotice('기록 반응이 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(function() {
+            button.disabled = false;
           });
       }
 
