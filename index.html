@@ -6504,16 +6504,24 @@
       .teacher-chip {
         display: inline-flex;
         align-items: center;
+        gap: 5px;
         min-height: 24px;
         padding: 0 8px;
         border-radius: 7px;
-        border: 1px solid #d8e3f4;
-        background: #f8fafc;
-        color: #334155;
+        border: 1px solid var(--teacher-border, #d8e3f4);
+        background: var(--teacher-bg, #f8fafc);
+        color: var(--teacher-color, #334155);
         font-size: 0.72rem;
         font-weight: 900;
         line-height: 1;
         white-space: nowrap;
+      }
+
+      .teacher-chip svg {
+        width: 13px;
+        height: 13px;
+        stroke-width: 2.2;
+        flex-shrink: 0;
       }
 
       button.teacher-chip {
@@ -6521,9 +6529,9 @@
       }
 
       .teacher-chip.primary {
-        border-color: #bfdbfe;
-        background: #eaf2ff;
-        color: #174ea6;
+        border-color: var(--teacher-border, #bfdbfe);
+        background: var(--teacher-bg, #eaf2ff);
+        color: var(--teacher-color, #174ea6);
       }
 
       .teacher-chip.extra {
@@ -6624,13 +6632,18 @@
 
       .profile-summary {
         display: grid;
-        grid-template-columns: auto minmax(0, 0.95fr) minmax(170px, 0.85fr) minmax(190px, 0.95fr);
+        grid-template-columns: auto minmax(0, 0.78fr) minmax(260px, 1.45fr) minmax(150px, 0.72fr);
         gap: 12px;
-        align-items: center;
+        align-items: stretch;
         padding: 13px;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         background: #f8fbff;
+      }
+
+      .profile-summary > .profile-avatar,
+      .profile-summary > div:not(.student-learning-card) {
+        align-self: center;
       }
 
       .profile-avatar {
@@ -6668,7 +6681,8 @@
         display: grid;
         align-content: start;
         gap: 7px;
-        min-height: 72px;
+        min-height: 86px;
+        height: 100%;
         padding: 10px;
         border: 1px solid #d8e3f4;
         border-radius: 8px;
@@ -6809,17 +6823,23 @@
 
       .permission-relation {
         display: inline-grid;
-        grid-template-columns: auto auto;
+        grid-template-columns: auto auto auto;
         align-items: center;
         gap: 6px;
         min-height: 28px;
         padding: 0 8px;
         border-radius: 7px;
-        border: 1px solid #d8e3f4;
-        background: #f8fafc;
-        color: #334155;
+        border: 1px solid var(--teacher-border, #d8e3f4);
+        background: var(--teacher-bg, #f8fafc);
+        color: var(--teacher-color, #334155);
         font-size: 0.72rem;
         font-weight: 900;
+      }
+
+      .permission-relation svg {
+        width: 13px;
+        height: 13px;
+        stroke-width: 2.2;
       }
 
       .permission-relation b {
@@ -6828,13 +6848,13 @@
       }
 
       .permission-relation.primary {
-        border-color: #bfdbfe;
-        background: #eaf2ff;
-        color: #174ea6;
+        border-color: var(--teacher-border, #bfdbfe);
+        background: var(--teacher-bg, #eaf2ff);
+        color: var(--teacher-color, #174ea6);
       }
 
       .permission-relation.primary b {
-        color: #174ea6;
+        color: var(--teacher-color, #174ea6);
       }
 
       .preview-list {
@@ -7525,6 +7545,22 @@
         color: #94a3b8;
         font-size: 0.68rem;
         font-weight: 800;
+      }
+
+      .student-log-reaction-users {
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: rgba(241, 245, 249, 0.9);
+        color: #64748b;
+        font-size: 0.66rem;
+        font-weight: 850;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .student-detail-modal-card {
@@ -13865,12 +13901,27 @@
         var visible = permissions.slice(0, limit || permissions.length);
         var html = visible.map(function(item, index) {
           var tone = index === 0 ? 'primary' : 'secondary';
-          return '<button type="button" class="teacher-chip ' + tone + '" data-action="filter-instructor" data-instructor-id="' + escapeAttribute(item.userId || item.instructorId || '') + '">' + escapeHtml(item.name || item.instructorName || item.userId || '-') + '</button>';
+          return renderInstructorPermissionChip_(item, tone, 'button');
         }).join('');
         if (permissions.length > visible.length) {
           html += '<span class="teacher-chip extra">+' + escapeHtml(String(permissions.length - visible.length)) + '</span>';
         }
         return html || '<span class="teacher-chip unassigned">미배정</span>';
+      }
+
+      function renderInstructorPermissionChip_(item, tone, tagName) {
+        var visual = getSubjectVisual_(item && item.subject || '');
+        var label = item && (item.name || item.instructorName || item.userId || item.instructorId) || '-';
+        var id = item && (item.userId || item.instructorId) || '';
+        var style = buildTeacherVisualStyle_(visual);
+        if (tagName === 'span') {
+          return '<span class="teacher-chip ' + escapeAttribute(tone || '') + '" style="' + escapeAttribute(style) + '"><i data-lucide="' + escapeAttribute(visual.icon) + '"></i>' + escapeHtml(label) + '</span>';
+        }
+        return '<button type="button" class="teacher-chip ' + escapeAttribute(tone || '') + '" style="' + escapeAttribute(style) + '" data-action="filter-instructor" data-instructor-id="' + escapeAttribute(id) + '"><i data-lucide="' + escapeAttribute(visual.icon) + '"></i>' + escapeHtml(label) + '</button>';
+      }
+
+      function buildTeacherVisualStyle_(visual) {
+        return '--teacher-color:' + visual.color + ';--teacher-bg:' + visual.bg + ';--teacher-border:' + visual.border + ';';
       }
 
       function renderStatusChip_(label, tone) {
@@ -13916,7 +13967,8 @@
           '  <div class="permission-node">' + escapeHtml(student.studentName || '-') + '</div>',
           '  <div class="permission-chip-grid">',
                permissions.slice(0, 8).map(function(item, index) {
-                 return '<span class="permission-relation ' + (index === 0 ? 'primary' : '') + '"><b>' + (index === 0 ? '담당' : '열람') + '</b><span>' + escapeHtml(item.name || item.instructorName || item.userId || '-') + '</span></span>';
+                 var visual = getSubjectVisual_(item && item.subject || '');
+                 return '<span class="permission-relation ' + (index === 0 ? 'primary' : '') + '" style="' + escapeAttribute(buildTeacherVisualStyle_(visual)) + '"><b>' + (index === 0 ? '담당' : '열람') + '</b><i data-lucide="' + escapeAttribute(visual.icon) + '"></i><span>' + escapeHtml(item.name || item.instructorName || item.userId || '-') + '</span></span>';
                }).join(''),
           '  </div>',
           '</div>'
@@ -14027,6 +14079,9 @@
           return item && item.userId;
         });
         var selectedLabel = selected ? (getStudentLogAuthorOptionLabelById_(selected) || selected) : '';
+        instructors.sort(function(a, b) {
+          return String(a.name || a.userId || '').localeCompare(String(b.name || b.userId || ''), 'ko');
+        });
         var options = ['<option value="관리자 계정"></option>'].concat(instructors.map(function(item) {
           var label = [item.name || item.userId, item.subject || ''].filter(Boolean).join(' · ');
           return '<option value="' + escapeAttribute(label) + '"></option>';
@@ -14250,7 +14305,35 @@
           return '<button type="button" class="student-log-reaction-button' + (activeValue === option.value ? ' active' : '') + (isSaving ? ' is-saving' : '') + '" data-action="react-log" data-log-row="' + escapeAttribute(log.rowNumber) + '" data-reaction="' + escapeAttribute(option.value) + '" title="' + escapeAttribute(option.label) + '"' + (isSaving ? ' disabled' : '') + '>' +
             '<span aria-hidden="true">' + option.icon + '</span><span>' + escapeHtml(option.label) + (count ? ' ' + count : '') + '</span></button>';
         }).join('');
-        return '<div class="student-log-reactions">' + buttons + (reactions.length ? '' : '<span class="student-log-reaction-empty">아직 반응 없음</span>') + '</div>';
+        return '<div class="student-log-reactions">' + buttons + renderStudentLogReactionUserSummary_(reactions) + (reactions.length ? '' : '<span class="student-log-reaction-empty">아직 반응 없음</span>') + '</div>';
+      }
+
+      function renderStudentLogReactionUserSummary_(reactions) {
+        if (!Array.isArray(reactions) || !reactions.length) {
+          return '';
+        }
+        var labelMap = {};
+        getStudentLogReactionOptions_().forEach(function(option) {
+          labelMap[option.value] = option.label;
+        });
+        var grouped = {};
+        reactions.forEach(function(item) {
+          var reaction = String(item && item.reaction || '');
+          var name = String(item && item.userName || item.userId || '').trim();
+          if (!reaction || !name) {
+            return;
+          }
+          if (!grouped[reaction]) {
+            grouped[reaction] = [];
+          }
+          if (grouped[reaction].indexOf(name) === -1) {
+            grouped[reaction].push(name);
+          }
+        });
+        var text = Object.keys(grouped).map(function(reaction) {
+          return (labelMap[reaction] || reaction) + ': ' + grouped[reaction].join(', ');
+        }).join(' · ');
+        return text ? '<span class="student-log-reaction-users" title="' + escapeAttribute(text) + '">' + escapeHtml(text) + '</span>' : '';
       }
 
       function getStudentConnectedMaterials_(student) {
