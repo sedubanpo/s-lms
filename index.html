@@ -7463,6 +7463,64 @@
         color: #0b55d9;
       }
 
+      .student-log-reaction-button.is-saving {
+        border-color: #0b55d9;
+        background: #eaf2ff;
+        color: #0b55d9;
+        cursor: wait;
+      }
+
+      .student-log-reaction-button.is-saving::before {
+        content: '';
+        width: 10px;
+        height: 10px;
+        border: 2px solid rgba(11, 85, 217, 0.22);
+        border-top-color: #0b55d9;
+        border-radius: 50%;
+        animation: studentLogSaveSpin 0.72s linear infinite;
+      }
+
+      .student-log-bubble.is-reacting {
+        border-color: #93b8ee;
+        box-shadow: inset 0 0 0 1px rgba(11, 85, 217, 0.08);
+      }
+
+      .student-log-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding-top: 4px;
+      }
+
+      .student-log-page-button {
+        min-width: 30px;
+        min-height: 30px;
+        padding: 0 9px;
+        border: 1px solid #d8e3f4;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #475569;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .student-log-page-button.active {
+        border-color: #0b55d9;
+        background: #0b55d9;
+        color: #ffffff;
+      }
+
+      .student-log-author-combobox {
+        position: relative;
+        min-width: 0;
+      }
+
+      .student-log-author-combobox .field-input {
+        width: 100%;
+        min-height: 44px;
+      }
+
       .student-log-reaction-empty {
         color: #94a3b8;
         font-size: 0.68rem;
@@ -11887,6 +11945,8 @@
         studentLogTabs: {},
         studentLogAuthors: {},
         studentLogAuthorFilter: '',
+        studentLogPages: {},
+        studentLogReactionSaving: {},
         selectedStudentId: '',
         selectedStudentDetailId: '',
         studentViewMode: 'summary',
@@ -12105,6 +12165,8 @@
         document.getElementById('teachingLogDetailModal').addEventListener('click', handleTeachingLogDetailBackdropClick);
         document.getElementById('closeStudentDetailModalButton').addEventListener('click', closeStudentDetailModal_);
         document.getElementById('studentDetailModal').addEventListener('click', handleStudentDetailModalClick_);
+        document.getElementById('studentDetailModal').addEventListener('input', handleStudentLogAuthorInput_);
+        document.getElementById('studentDetailModal').addEventListener('change', handleStudentLogAuthorInput_);
         document.getElementById('closeJikboStatusModalButton').addEventListener('click', closeJikboStatusModal_);
         document.getElementById('jikboStatusModal').addEventListener('click', handleJikboStatusModalBackdropClick_);
         document.getElementById('jikboStatusProgressInput').addEventListener('change', syncJikboStatusFormMode_);
@@ -12769,12 +12831,34 @@
         return Promise.resolve();
       }
 
+      function mergeUpdatedStudentLog_(updatedLog) {
+        if (!updatedLog || !updatedLog.rowNumber) {
+          return false;
+        }
+        var rowKey = String(updatedLog.rowNumber || '');
+        var merged = false;
+        ['visibleStudents', 'activeStudents'].forEach(function(stateKey) {
+          (APP_STATE[stateKey] || []).forEach(function(student) {
+            (student.logs || []).forEach(function(log) {
+              if (String(log.rowNumber || '') !== rowKey) {
+                return;
+              }
+              Object.keys(updatedLog).forEach(function(key) {
+                log[key] = updatedLog[key];
+              });
+              merged = true;
+            });
+          });
+        });
+        return merged;
+      }
+
       function setStudentLogFormSaving_(form, isSaving) {
         if (!form) {
           return;
         }
 
-        var controls = Array.prototype.slice.call(form.querySelectorAll('select, textarea, button'));
+        var controls = Array.prototype.slice.call(form.querySelectorAll('input, select, textarea, button'));
         var saveButton = form.querySelector('[data-action="save-student-log-entry"]');
 
         form.classList.toggle('is-saving', Boolean(isSaving));
@@ -13816,7 +13900,7 @@
                renderStudentLearningSummary_(student),
           '  </section>',
           '  <section class="profile-block"><h4>강사 권한 맵</h4>' + renderPermissionRelationMap_(student, permissions) + '</section>',
-          '  <section class="profile-block"><div class="profile-block-title-row"><h4>상담 기록 preview</h4><span class="ops-chip slate">' + escapeHtml(String((student.logs || []).length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { limit: 3, showMore: true, showComposer: true }) + '</section>',
+          '  <section class="profile-block"><div class="profile-block-title-row"><h4>상담 기록 preview</h4><span class="ops-chip slate">' + escapeHtml(String((student.logs || []).length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { context: 'board', pageSize: 5, showMore: true, showComposer: true }) + '</section>',
           '  <section class="profile-block"><h4>시험 대비/직보 상태</h4>' + renderStudentExamJikboPanel_(examItems, jikbo) + '</section>',
           '  <section class="profile-block"><h4>내신 자료 연결</h4>' + renderStudentMaterialConnectionPanel_(student, materialInfo) + '</section>',
           '</div>'
@@ -13937,14 +14021,47 @@
           return '';
         }
         var selected = APP_STATE.studentLogAuthors[student.studentId] || '';
+        var inputId = 'student-log-author-' + String(student.studentId || '').replace(/[^a-zA-Z0-9_-]/g, '-');
+        var listId = inputId + '-list';
         var instructors = (APP_STATE.instructors || []).filter(function(item) {
           return item && item.userId;
         });
-        var options = ['<option value="">관리자 계정</option>'].concat(instructors.map(function(item) {
+        var selectedLabel = selected ? (getStudentLogAuthorOptionLabelById_(selected) || selected) : '';
+        var options = ['<option value="관리자 계정"></option>'].concat(instructors.map(function(item) {
           var label = [item.name || item.userId, item.subject || ''].filter(Boolean).join(' · ');
-          return '<option value="' + escapeAttribute(item.userId) + '"' + (selected === item.userId ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+          return '<option value="' + escapeAttribute(label) + '"></option>';
         }));
-        return '<select class="field-select" data-role="student-log-author" aria-label="입력 계정">' + options.join('') + '</select>';
+        return [
+          '<div class="student-log-author-combobox">',
+          '  <input id="' + escapeAttribute(inputId) + '" class="field-input" data-role="student-log-author" list="' + escapeAttribute(listId) + '" value="' + escapeAttribute(selectedLabel) + '" placeholder="강사명 입력">',
+          '  <datalist id="' + escapeAttribute(listId) + '">' + options.join('') + '</datalist>',
+          '</div>'
+        ].join('');
+      }
+
+      function getStudentLogAuthorOptionLabelById_(userId) {
+        var instructor = (APP_STATE.instructors || []).find(function(item) {
+          return String(item && item.userId || '') === String(userId || '');
+        });
+        if (!instructor) {
+          return '';
+        }
+        return [instructor.name || instructor.userId, instructor.subject || ''].filter(Boolean).join(' · ');
+      }
+
+      function resolveStudentLogAuthorInputValue_(value) {
+        var text = String(value || '').trim();
+        if (!text || normalizeSearchText(text) === normalizeSearchText('관리자 계정')) {
+          return '';
+        }
+        var key = normalizeSearchText(text);
+        var instructor = (APP_STATE.instructors || []).find(function(item) {
+          var label = [item.name || item.userId, item.subject || ''].filter(Boolean).join(' · ');
+          return normalizeSearchText(label) === key ||
+            normalizeSearchText(item.name || '') === key ||
+            normalizeSearchText(item.userId || '') === key;
+        });
+        return instructor ? instructor.userId : '__INVALID__';
       }
 
       function renderStudentLogPreviewPanel_(student, options) {
@@ -13954,17 +14071,43 @@
           activeTab = '전체';
         }
         var logs = prioritizeStudentLogs_(getFilteredTeachingLogsByTab_(student, activeTab), activeTab);
-        var limit = config.limit || 3;
+        var pageSize = config.pageSize || 5;
+        var pageKey = getStudentLogPageKey_(student.studentId, activeTab, config);
+        var totalPages = Math.max(1, Math.ceil(logs.length / pageSize));
+        var currentPage = Math.max(1, Math.min(totalPages, Number(APP_STATE.studentLogPages[pageKey] || 1)));
+        APP_STATE.studentLogPages[pageKey] = currentPage;
+        var pageLogs = logs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
         return [
           '<div class="student-log-preview-block">',
           renderStudentLogTabs_(student, activeTab),
           config.showComposer ? renderStudentLogComposer_(student, activeTab) : '',
-          renderStudentLogBubbleList_(logs.slice(0, limit)),
-          config.showMore && logs.length > limit
+          renderStudentLogBubbleList_(pageLogs),
+          logs.length > pageSize ? renderStudentLogPagination_(pageKey, currentPage, totalPages) : '',
+          config.showMore && logs.length > pageSize
             ? '<button type="button" class="profile-link-button" data-action="show-student-profile">전체 상담 기록 ' + escapeHtml(String(logs.length)) + '건 보기</button>'
             : '',
           '</div>'
         ].join('');
+      }
+
+      function getStudentLogPageKey_(studentId, activeTab, config) {
+        return [config && config.context ? config.context : 'board', studentId || '', activeTab || '전체'].join('::');
+      }
+
+      function renderStudentLogPagination_(pageKey, currentPage, totalPages) {
+        var buttons = [];
+        for (var page = 1; page <= totalPages; page += 1) {
+          buttons.push('<button type="button" class="student-log-page-button ' + (page === currentPage ? 'active' : '') + '" data-action="student-log-page" data-page-key="' + escapeAttribute(pageKey) + '" data-page="' + escapeAttribute(String(page)) + '">' + escapeHtml(String(page)) + '</button>');
+        }
+        return '<div class="student-log-pagination" aria-label="상담 기록 페이지">' + buttons.join('') + '</div>';
+      }
+
+      function resetStudentLogPagesForStudent_(studentId) {
+        Object.keys(APP_STATE.studentLogPages || {}).forEach(function(key) {
+          if (key.indexOf('::' + studentId + '::') !== -1) {
+            delete APP_STATE.studentLogPages[key];
+          }
+        });
       }
 
       function renderStudentLogBubbleList_(logs) {
@@ -14009,7 +14152,7 @@
           ? '<button type="button" class="log-delete-button" data-action="delete-log" data-log-row="' + escapeAttribute(log.rowNumber) + '">삭제</button>'
           : '';
         return [
-          '<article class="student-log-bubble ' + escapeAttribute(toneClass) + (isAdmin ? ' admin' : '') + (isPriority ? ' is-priority' : '') + '">',
+          '<article class="student-log-bubble ' + escapeAttribute(toneClass) + (isAdmin ? ' admin' : '') + (isPriority ? ' is-priority' : '') + (APP_STATE.studentLogReactionSaving[String(log.rowNumber || '')] ? ' is-reacting' : '') + '">',
           '  <div class="student-log-bubble-head">',
           '    <div class="student-log-bubble-meta">',
           '      ' + renderStudentLogAuthorChip_(log, null, author),
@@ -14103,7 +14246,8 @@
         });
         var buttons = getStudentLogReactionOptions_().map(function(option) {
           var count = counts[option.value] || 0;
-          return '<button type="button" class="student-log-reaction-button' + (activeValue === option.value ? ' active' : '') + '" data-action="react-log" data-log-row="' + escapeAttribute(log.rowNumber) + '" data-reaction="' + escapeAttribute(option.value) + '" title="' + escapeAttribute(option.label) + '">' +
+          var isSaving = APP_STATE.studentLogReactionSaving[String(log.rowNumber || '')] === option.value;
+          return '<button type="button" class="student-log-reaction-button' + (activeValue === option.value ? ' active' : '') + (isSaving ? ' is-saving' : '') + '" data-action="react-log" data-log-row="' + escapeAttribute(log.rowNumber) + '" data-reaction="' + escapeAttribute(option.value) + '" title="' + escapeAttribute(option.label) + '"' + (isSaving ? ' disabled' : '') + '>' +
             '<span aria-hidden="true">' + option.icon + '</span><span>' + escapeHtml(option.label) + (count ? ' ' + count : '') + '</span></button>';
         }).join('');
         return '<div class="student-log-reactions">' + buttons + (reactions.length ? '' : '<span class="student-log-reaction-empty">아직 반응 없음</span>') + '</div>';
@@ -14170,7 +14314,17 @@
 
         var tabButton = event.target.closest('[data-action="set-log-tab"]');
         if (tabButton) {
-          APP_STATE.studentLogTabs[tabButton.getAttribute('data-student-id')] = tabButton.getAttribute('data-log-tab') || '전체';
+          var tabStudentId = tabButton.getAttribute('data-student-id') || '';
+          APP_STATE.studentLogTabs[tabStudentId] = tabButton.getAttribute('data-log-tab') || '전체';
+          resetStudentLogPagesForStudent_(tabStudentId);
+          renderStudentDetailModal_();
+          renderStudents();
+          return;
+        }
+
+        var pageButton = event.target.closest('[data-action="student-log-page"]');
+        if (pageButton) {
+          APP_STATE.studentLogPages[pageButton.getAttribute('data-page-key') || ''] = Number(pageButton.getAttribute('data-page') || 1);
           renderStudentDetailModal_();
           renderStudents();
           return;
@@ -14252,7 +14406,7 @@
           '    <section class="student-detail-card"><div class="student-detail-section-head"><h4>강사 권한 맵</h4><span class="ops-chip blue">' + escapeHtml(String(permissions.length)) + '건</span></div>' + renderPermissionRelationMap_(student, permissions) + '</section>',
           '  </div>',
           '  <div class="student-detail-column">',
-          '    <section class="student-detail-card"><div class="student-detail-section-head"><h4>상담 기록</h4><span class="ops-chip slate">' + escapeHtml(String(logs.length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { limit: 10, showComposer: true }) + '</section>',
+          '    <section class="student-detail-card"><div class="student-detail-section-head"><h4>상담 기록</h4><span class="ops-chip slate">' + escapeHtml(String(logs.length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { context: 'detail', pageSize: 5, showComposer: true }) + '</section>',
           '    <div class="student-detail-grid-two">',
           '      <section class="student-detail-card"><div class="student-detail-section-head"><h4>시험 대비/직보</h4><span class="ops-chip teal">' + escapeHtml(String(examItems.length || jikbo.total)) + '건</span></div>' + renderStudentDetailExamList_(examItems, jikbo) + '</section>',
           '      <section class="student-detail-card"><div class="student-detail-section-head"><h4>입력된 자료</h4><span class="ops-chip green">' + escapeHtml(String(materials.length)) + '건</span></div>' + renderStudentDetailMaterialList_(materials) + '</section>',
@@ -15468,7 +15622,16 @@
 
         var tabButton = event.target.closest('[data-action="set-log-tab"]');
         if (tabButton) {
-          APP_STATE.studentLogTabs[tabButton.getAttribute('data-student-id')] = tabButton.getAttribute('data-log-tab') || '전체';
+          var logTabStudentId = tabButton.getAttribute('data-student-id') || '';
+          APP_STATE.studentLogTabs[logTabStudentId] = tabButton.getAttribute('data-log-tab') || '전체';
+          resetStudentLogPagesForStudent_(logTabStudentId);
+          renderStudents();
+          return;
+        }
+
+        var pageButton = event.target.closest('[data-action="student-log-page"]');
+        if (pageButton) {
+          APP_STATE.studentLogPages[pageButton.getAttribute('data-page-key') || ''] = Number(pageButton.getAttribute('data-page') || 1);
           renderStudents();
           return;
         }
@@ -15552,6 +15715,10 @@
       }
 
       function handleStudentListInput_(event) {
+        if (handleStudentLogAuthorInput_(event)) {
+          return;
+        }
+
         var schoolSearch = event.target.closest('[data-school-mode-search]');
         if (schoolSearch) {
           APP_STATE.schoolModeSearch = schoolSearch.value || '';
@@ -15577,6 +15744,10 @@
       }
 
       function handleStudentListChange_(event) {
+        if (handleStudentLogAuthorInput_(event)) {
+          return;
+        }
+
         var logTypeSelect = event.target.closest('[data-role="student-log-type"]');
         if (logTypeSelect) {
           var composeForm = logTypeSelect.closest('[data-student-log-form]');
@@ -15586,16 +15757,6 @@
               composeForm.classList.remove(item);
             });
             composeForm.classList.add(toneClass);
-          }
-          return;
-        }
-
-        var logAuthorSelect = event.target.closest('[data-role="student-log-author"]');
-        if (logAuthorSelect) {
-          var authorForm = logAuthorSelect.closest('[data-student-log-form]');
-          var authorStudentId = authorForm ? (authorForm.getAttribute('data-student-id') || '') : '';
-          if (authorStudentId) {
-            APP_STATE.studentLogAuthors[authorStudentId] = logAuthorSelect.value || '';
           }
           return;
         }
@@ -15626,6 +15787,19 @@
           APP_STATE.studentLogAuthorFilter = authorSelect.value || '';
           renderStudentsPreservingSearchFocus_();
         }
+      }
+
+      function handleStudentLogAuthorInput_(event) {
+        var authorInput = event.target.closest && event.target.closest('[data-role="student-log-author"]');
+        if (!authorInput) {
+          return false;
+        }
+        var authorForm = authorInput.closest('[data-student-log-form]');
+        var authorStudentId = authorForm ? (authorForm.getAttribute('data-student-id') || '') : '';
+        if (authorStudentId) {
+          APP_STATE.studentLogAuthors[authorStudentId] = authorInput.value || '';
+        }
+        return true;
       }
 
       function handleSchoolDashboardAction_(button) {
@@ -15752,7 +15926,7 @@
         var authorInput = form.querySelector('[data-role="student-log-author"]');
         var contentInput = form.querySelector('[data-role="student-log-content"]');
         var tag = typeInput ? String(typeInput.value || '').trim() : '';
-        var authorInstructorId = authorInput ? String(authorInput.value || '').trim() : '';
+        var authorInstructorId = authorInput ? resolveStudentLogAuthorInputValue_(authorInput.value || '') : '';
         var content = contentInput ? contentInput.value.trim() : '';
 
         if (!studentId) {
@@ -15769,6 +15943,16 @@
             contentInput.focus();
           }
           return;
+        }
+        if (authorInstructorId === '__INVALID__') {
+          setNotice('작성자는 자동완성 목록에서 선택하거나 관리자 계정으로 비워주세요.', 'warning');
+          if (authorInput) {
+            authorInput.focus();
+          }
+          return;
+        }
+        if (authorInput && studentId) {
+          APP_STATE.studentLogAuthors[studentId] = authorInstructorId;
         }
 
         setStudentLogFormSaving_(form, true);
@@ -15814,23 +15998,39 @@
           return;
         }
 
-        button.disabled = true;
+        APP_STATE.studentLogReactionSaving[String(logRowNumber)] = reaction;
+        renderStudents();
+        if (APP_STATE.selectedStudentDetailId) {
+          renderStudentDetailModal_();
+        }
+        setNotice('반응을 저장하는 중입니다.', 'info');
         apiRequest('reactStudentLog', {
           token: APP_STATE.token,
           logRowNumber: logRowNumber,
           reaction: reaction
         })
           .then(function(result) {
-            hydrateStudentDataOnly(result);
-            renderStudents();
-            if (APP_STATE.selectedStudentDetailId) {
-              renderStudentDetailModal_();
+            if (result && result.updatedLog && mergeUpdatedStudentLog_(result.updatedLog)) {
+              renderStudents();
+              if (APP_STATE.selectedStudentDetailId) {
+                renderStudentDetailModal_();
+              }
+            } else {
+              hydrateStudentDataOnly(result);
+              renderStudents();
+              if (APP_STATE.selectedStudentDetailId) {
+                renderStudentDetailModal_();
+              }
             }
             setNotice('기록 반응이 저장되었습니다.', 'success');
           })
           .catch(handleApiError_)
           .finally(function() {
-            button.disabled = false;
+            delete APP_STATE.studentLogReactionSaving[String(logRowNumber)];
+            renderStudents();
+            if (APP_STATE.selectedStudentDetailId) {
+              renderStudentDetailModal_();
+            }
           });
       }
 
