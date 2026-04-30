@@ -6279,6 +6279,10 @@
         min-height: 520px;
       }
 
+      .student-log-list-panel .filter-bar {
+        grid-template-columns: minmax(260px, 1fr) 150px 150px 170px;
+      }
+
       .student-log-list-table-wrap {
         overflow: auto;
       }
@@ -6704,14 +6708,22 @@
       .student-subject-chip {
         display: inline-flex;
         align-items: center;
+        gap: 5px;
         min-height: 24px;
         padding: 0 8px;
         border-radius: 7px;
-        border: 1px solid #bfdbfe;
-        background: #eaf2ff;
-        color: #174ea6;
+        border: 1px solid var(--subject-border, #bfdbfe);
+        background: var(--subject-bg, #eaf2ff);
+        color: var(--subject-color, #174ea6);
         font-size: 0.72rem;
         font-weight: 900;
+      }
+
+      .student-subject-chip svg {
+        width: 13px;
+        height: 13px;
+        stroke-width: 2.2;
+        flex-shrink: 0;
       }
 
       .student-subject-chip.slate {
@@ -7286,11 +7298,56 @@
       }
 
       .student-log-author-chip {
+        gap: 5px;
+        border-color: var(--author-border, #bfdbfe);
+        background: var(--author-bg, #eff6ff);
+        color: var(--author-color, #0b55d9);
+        font-size: 0.76rem;
+        font-weight: 950;
+      }
+
+      .student-log-author-chip svg {
+        width: 13px;
+        height: 13px;
+        stroke-width: 2.2;
+        flex-shrink: 0;
+      }
+
+      .student-log-author-chip .academy-logo-mini {
+        width: 15px;
+        height: 15px;
+        border-radius: 4px;
+        background: #fff;
+        object-fit: contain;
+        flex-shrink: 0;
+      }
+
+      .student-log-author-chip.director {
+        position: relative;
+        overflow: hidden;
+        border-color: #d6a531;
+        background:
+          radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.58) 0 1px, transparent 1px 4px),
+          linear-gradient(135deg, #fff7d6 0%, #ffefb8 58%, #fff8e6 100%);
+        color: #6f4500;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+      }
+
+      .student-log-author-chip.director::after {
+        content: '';
+        position: absolute;
+        inset: -60% auto -60% -40%;
+        width: 42%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.64), transparent);
+        transform: skewX(-18deg);
+        animation: materialGoldShimmer 3.4s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      .student-log-author-chip.admin-account {
         border-color: #bfdbfe;
         background: #eff6ff;
         color: #0b55d9;
-        font-size: 0.76rem;
-        font-weight: 950;
       }
 
       .student-log-type-chip {
@@ -11829,6 +11886,7 @@
         homeroomAssignments: [],
         studentLogTabs: {},
         studentLogAuthors: {},
+        studentLogAuthorFilter: '',
         selectedStudentId: '',
         selectedStudentDetailId: '',
         studentViewMode: 'summary',
@@ -13378,6 +13436,7 @@
           '    <input class="field-input" data-student-filter-input type="search" value="' + escapeAttribute(document.getElementById('studentSearchInput').value || '') + '" placeholder="특이사항 검색: 학생명, 학교, 분류, 입력자, 내용">',
           '    <select class="field-select" data-student-school-select>' + buildStudentSchoolOptions_() + '</select>',
           '    <select class="field-select" data-student-tag-select>' + buildStudentTagOptions_() + '</select>',
+          '    <select class="field-select" data-student-author-select>' + buildStudentAuthorOptions_() + '</select>',
           '  </div>',
              emptyHtml && !rows.length ? '<div style="padding:16px;">' + emptyHtml + '</div>' : renderStudentLogListTable_(rows),
           '</section>'
@@ -13388,6 +13447,7 @@
         var keyword = normalizeSearchText(document.getElementById('studentSearchInput').value);
         var school = document.getElementById('studentSchoolFilter').value || '';
         var tag = document.getElementById('studentTagFilter').value || '';
+        var authorFilter = APP_STATE.studentLogAuthorFilter || '';
         var source = (APP_STATE.visibleStudents || []).filter(function(student) {
           return !school || student.school === school;
         });
@@ -13403,6 +13463,9 @@
           (student.logs || []).forEach(function(log) {
             var tags = Array.isArray(log.tags) ? log.tags : [];
             if (tag && tags.indexOf(tag) === -1) {
+              return;
+            }
+            if (authorFilter && getStudentLogAuthorFilterKey_(log) !== authorFilter) {
               return;
             }
             var searchable = normalizeSearchText([
@@ -13457,7 +13520,7 @@
           '  <td>' + escapeHtml(student.school || '학교 미지정') + '</td>',
           '  <td>' + escapeHtml(student.grade ? student.grade + '학년' : '미지정') + '</td>',
           '  <td><span class="student-log-type-chip ' + escapeAttribute(toneClass) + '">' + escapeHtml(formatStudentLogTagLabel_(primaryTag)) + '</span>' + (isFirstLessonLog_(log) ? '<span class="student-log-priority-chip" style="margin-left:5px;">우선 확인</span>' : '') + '</td>',
-          '  <td><strong class="student-log-author-chip">' + escapeHtml(author) + '</strong></td>',
+          '  <td>' + renderStudentLogAuthorChip_(log, student, author) + '</td>',
           '  <td><div class="student-log-list-content">' + escapeHtml(log.content || '-') + '</div></td>',
           '  <td>' + escapeHtml(formatTeachingLogDateTime(log.createdAt) || '-') + '</td>',
           '  <td>' + renderStudentLogReactions_(log) + '</td>',
@@ -13492,6 +13555,47 @@
         return ['<option value="">전체 태그</option>'].concat(tags.sort().map(function(tag) {
           return '<option value="' + escapeAttribute(tag) + '"' + (tag === current ? ' selected' : '') + '>' + escapeHtml(tag) + '</option>';
         })).join('');
+      }
+
+      function buildStudentAuthorOptions_() {
+        var current = APP_STATE.studentLogAuthorFilter || '';
+        var authors = [];
+        (APP_STATE.visibleStudents || []).forEach(function(student) {
+          (student.logs || []).forEach(function(log) {
+            var key = getStudentLogAuthorFilterKey_(log);
+            var label = getStudentLogAuthorFilterLabel_(log);
+            if (key && !authors.some(function(item) { return item.key === key; })) {
+              authors.push({ key: key, label: label });
+            }
+          });
+        });
+        authors.sort(function(a, b) {
+          return String(a.label || '').localeCompare(String(b.label || ''), 'ko');
+        });
+        if (current && !authors.some(function(item) { return item.key === current; })) {
+          current = '';
+          APP_STATE.studentLogAuthorFilter = '';
+        }
+        return ['<option value="">전체 작성자</option>'].concat(authors.map(function(item) {
+          return '<option value="' + escapeAttribute(item.key) + '"' + (item.key === current ? ' selected' : '') + '>' + escapeHtml(item.label) + '</option>';
+        })).join('');
+      }
+
+      function getStudentLogAuthorFilterKey_(log) {
+        var id = String(log && log.createdById || '').trim();
+        if (id) {
+          return 'id:' + id;
+        }
+        return 'name:' + normalizeSearchText(log && log.createdByName || '관리자');
+      }
+
+      function getStudentLogAuthorFilterLabel_(log) {
+        var isAdmin = (log && log.createdByRole || '').toUpperCase() === 'ADMIN';
+        var name = String(log && log.createdByName || '').trim();
+        if (isAdmin) {
+          return name || '관리자 계정';
+        }
+        return (name || '강사') + ' 강사';
       }
 
       function renderStudentIndexTable_(students) {
@@ -13551,7 +13655,8 @@
           return '<span class="student-subject-chip slate">과목 미지정</span>';
         }
         return subjects.slice(0, 4).map(function(subject) {
-          return '<span class="student-subject-chip">' + escapeHtml(subject) + '</span>';
+          var visual = getSubjectVisual_(subject);
+          return '<span class="student-subject-chip" style="' + escapeAttribute(buildSubjectVisualStyle_(visual, 'subject')) + '"><i data-lucide="' + escapeAttribute(visual.icon) + '"></i>' + escapeHtml(subject) + '</span>';
         }).join('');
       }
 
@@ -13573,6 +13678,32 @@
           });
         }
         return uniqueList_(values.filter(Boolean));
+      }
+
+      function getSubjectVisual_(subject) {
+        var text = normalizeSearchText(subject);
+        var visuals = [
+          { match: ['국어', '문학', '독서', '언어와매체', '화법과작문'], icon: 'book-open', color: '#be123c', bg: '#fff1f2', border: '#fecdd3' },
+          { match: ['수학', '미적분', '확률과통계', '확통', '기하'], icon: 'calculator', color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
+          { match: ['영어', '영문'], icon: 'languages', color: '#0369a1', bg: '#e0f2fe', border: '#bae6fd' },
+          { match: ['물리'], icon: 'atom', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+          { match: ['화학'], icon: 'flask-conical', color: '#c2410c', bg: '#fff7ed', border: '#fed7aa' },
+          { match: ['생명', '생물'], icon: 'leaf', color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
+          { match: ['지구'], icon: 'globe-2', color: '#0f766e', bg: '#f0fdfa', border: '#99f6e4' },
+          { match: ['과학'], icon: 'flask-conical', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0' },
+          { match: ['사회', '한국지리', '세계지리', '사회문화', '생활과윤리', '윤리', '세계사', '동아시아사', '정치', '경제'], icon: 'landmark', color: '#b45309', bg: '#fffbeb', border: '#fde68a' }
+        ];
+        var matched = visuals.find(function(item) {
+          return item.match.some(function(keyword) {
+            return text.indexOf(normalizeSearchText(keyword)) !== -1;
+          });
+        });
+        return matched || { icon: 'circle', color: '#475569', bg: '#f8fafc', border: '#d9e2ec' };
+      }
+
+      function buildSubjectVisualStyle_(visual, prefix) {
+        var name = prefix === 'author' ? 'author' : 'subject';
+        return '--' + name + '-color:' + visual.color + ';--' + name + '-bg:' + visual.bg + ';--' + name + '-border:' + visual.border + ';';
       }
 
       function renderStudentLearningSummary_(student) {
@@ -13881,7 +14012,7 @@
           '<article class="student-log-bubble ' + escapeAttribute(toneClass) + (isAdmin ? ' admin' : '') + (isPriority ? ' is-priority' : '') + '">',
           '  <div class="student-log-bubble-head">',
           '    <div class="student-log-bubble-meta">',
-          '      <strong class="student-log-author-chip">' + escapeHtml(author) + '</strong>',
+          '      ' + renderStudentLogAuthorChip_(log, null, author),
           '      <span class="student-log-type-chip ' + escapeAttribute(toneClass) + '">' + escapeHtml(formatStudentLogTagLabel_(primaryTag)) + '</span>',
                  isPriority ? '<span class="student-log-priority-chip">우선 확인</span>' : '',
           '      <span class="student-log-time-chip">' + escapeHtml(formatTeachingLogDateTime(log.createdAt)) + '</span>',
@@ -13893,6 +14024,49 @@
              renderStudentLogReactions_(log),
           '</article>'
         ].join('');
+      }
+
+      function renderStudentLogAuthorChip_(log, student, displayName) {
+        var name = String(displayName || getStudentLogAuthorFilterLabel_(log) || '').trim();
+        var rawName = String(log && log.createdByName || name).trim();
+        var isDirector = isDirectorAuthor_(rawName);
+        var isAcademyAdmin = isAcademyAdminAuthor_(log, rawName);
+        if (isDirector) {
+          return '<strong class="student-log-author-chip director"><img class="academy-logo-mini" src="' + escapeAttribute(LOGO_URL) + '" alt="">' + escapeHtml(name) + '</strong>';
+        }
+        if (isAcademyAdmin) {
+          return '<strong class="student-log-author-chip admin-account"><img class="academy-logo-mini" src="' + escapeAttribute(LOGO_URL) + '" alt="">' + escapeHtml(name) + '</strong>';
+        }
+        var subject = resolveLogAuthorSubject_(log, student);
+        var visual = getSubjectVisual_(subject || '');
+        return '<strong class="student-log-author-chip" style="' + escapeAttribute(buildSubjectVisualStyle_(visual, 'author')) + '"><i data-lucide="' + escapeAttribute(visual.icon) + '"></i>' + escapeHtml(name) + '</strong>';
+      }
+
+      function resolveLogAuthorSubject_(log, student) {
+        var id = String(log && log.createdById || '').trim();
+        var nameKey = normalizeSearchText(log && log.createdByName);
+        var instructor = (APP_STATE.instructors || []).find(function(item) {
+          if (!item) {
+            return false;
+          }
+          return (id && String(item.userId || '') === id) ||
+            (nameKey && normalizeSearchText(item.name || item.userId) === nameKey);
+        });
+        if (instructor && instructor.subject) {
+          return instructor.subject;
+        }
+        return getStudentSubjectList_(student || {}).join(', ');
+      }
+
+      function isDirectorAuthor_(name) {
+        return normalizeSearchText(name).indexOf(normalizeSearchText('안준성')) !== -1;
+      }
+
+      function isAcademyAdminAuthor_(log, name) {
+        var text = normalizeSearchText(name);
+        return (log && String(log.createdByRole || '').toUpperCase() === 'ADMIN') ||
+          text.indexOf(normalizeSearchText('에스에듀')) !== -1 ||
+          text.indexOf(normalizeSearchText('관리자')) !== -1;
       }
 
       function formatStudentLogTagLabel_(tag) {
@@ -15444,6 +15618,12 @@
         var tagSelect = event.target.closest('[data-student-tag-select]');
         if (tagSelect) {
           document.getElementById('studentTagFilter').value = tagSelect.value || '';
+          renderStudentsPreservingSearchFocus_();
+          return;
+        }
+        var authorSelect = event.target.closest('[data-student-author-select]');
+        if (authorSelect) {
+          APP_STATE.studentLogAuthorFilter = authorSelect.value || '';
           renderStudentsPreservingSearchFocus_();
         }
       }
