@@ -8308,12 +8308,24 @@
 
       .school-grade-bar {
         display: grid;
-        grid-template-columns: 44px minmax(0, 1fr) 34px;
+        grid-template-columns: 54px minmax(0, 1fr) 42px;
         align-items: center;
         gap: 8px;
         color: #475569;
         font-size: 0.73rem;
         font-weight: 850;
+      }
+
+      .school-grade-bar .school-grade-label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 24px;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        background: #eaf2ff;
+        color: #0b55d9;
+        font-weight: 950;
       }
 
       .school-grade-bar div {
@@ -8328,6 +8340,13 @@
         height: 100%;
         border-radius: inherit;
         background: #0b55d9;
+      }
+
+      .school-grade-bar strong {
+        color: #0f172a;
+        font-size: 0.78rem;
+        font-weight: 950;
+        text-align: right;
       }
 
       .school-permission-counts {
@@ -13958,6 +13977,7 @@
           return '<section class="school-by-dashboard"><div class="ops-surface empty-state">학교 분포 데이터가 없습니다.</div></section>';
         }
         ensureSchoolModeSelection_(model);
+        model.items = prioritizeSelectedSchoolItems_(model.items, model.selectedSchool);
         return [
           '<section class="school-by-dashboard">',
           renderSchoolModeKpiStrip_(students, model),
@@ -13999,6 +14019,24 @@
           expandedSchool: APP_STATE.schoolModeExpandedSchool || '',
           search: APP_STATE.schoolModeSearch || ''
         };
+      }
+
+      function prioritizeSelectedSchoolItems_(items, selectedSchool) {
+        var selectedKey = String(selectedSchool || '');
+        if (!selectedKey) {
+          return items || [];
+        }
+        return (items || []).slice().sort(function(a, b) {
+          var aSelected = String(a.school || '') === selectedKey;
+          var bSelected = String(b.school || '') === selectedKey;
+          if (aSelected !== bSelected) {
+            return aSelected ? -1 : 1;
+          }
+          if (b.count !== a.count) {
+            return b.count - a.count;
+          }
+          return String(a.school || '').localeCompare(String(b.school || ''));
+        });
       }
 
       function ensureSchoolModeSelection_(model) {
@@ -14228,15 +14266,39 @@
       }
 
       function renderSchoolGradeDistribution_(item) {
-        var max = Math.max(1, item.grades['1'] || 0, item.grades['2'] || 0, item.grades['3'] || 0);
+        var gradeKeys = getOrderedSchoolGradeKeys_(item);
+        var max = Math.max.apply(null, [1].concat(gradeKeys.map(function(grade) {
+          return item.grades[grade] || 0;
+        })));
         return [
           '<section class="school-detail-box"><h4>학년별 분포</h4>',
-          ['1', '2', '3'].map(function(grade) {
+          gradeKeys.map(function(grade) {
             var count = item.grades[grade] || 0;
-            return '<div class="school-grade-bar"><span>' + grade + '학년</span><div><b style="width:' + escapeAttribute(String(Math.round((count / max) * 100))) + '%"></b></div><strong>' + escapeHtml(String(count)) + '명</strong></div>';
+            return '<div class="school-grade-bar"><span class="school-grade-label">' + escapeHtml(formatSchoolGradeLabel_(grade)) + '</span><div><b style="width:' + escapeAttribute(String(Math.round((count / max) * 100))) + '%"></b></div><strong>' + escapeHtml(String(count)) + '명</strong></div>';
           }).join(''),
           '</section>'
         ].join('');
+      }
+
+      function getOrderedSchoolGradeKeys_(item) {
+        var keys = Object.keys((item && item.grades) || {}).filter(function(key) {
+          return key !== '미정' && (item.grades[key] || 0) > 0;
+        }).sort(function(a, b) {
+          return Number(a) - Number(b);
+        });
+        if (!keys.length) {
+          keys = ['1', '2', '3'].filter(function(key) {
+            return item && item.grades && item.grades[key] !== undefined;
+          });
+        }
+        if ((item && item.grades && item.grades['미정']) || 0) {
+          keys.push('미정');
+        }
+        return keys.length ? keys : ['미정'];
+      }
+
+      function formatSchoolGradeLabel_(grade) {
+        return /^\d+$/.test(String(grade || '')) ? String(grade) + '학년' : (grade || '미정');
       }
 
       function renderSchoolPermissionStatus_(item, assigned, unassigned) {
@@ -14361,16 +14423,12 @@
         var map = {};
         (students || []).forEach(function(student) {
           var school = student.school || '학교 미지정';
-          var grade = String(student.grade || '미정');
+          var grade = normalizeSchoolGradeKey_(student.grade);
           if (!map[school]) {
-            map[school] = { school: school, count: 0, grades: { '1': 0, '2': 0, '3': 0, '미정': 0 } };
+            map[school] = { school: school, count: 0, grades: {} };
           }
           map[school].count += 1;
-          if (grade === '1' || grade === '2' || grade === '3') {
-            map[school].grades[grade] += 1;
-          } else {
-            map[school].grades['미정'] += 1;
-          }
+          map[school].grades[grade] = (map[school].grades[grade] || 0) + 1;
         });
         var items = Object.keys(map).map(function(school, index) {
           map[school].color = getStudentSchoolChartColor_(school, index);
@@ -14387,6 +14445,11 @@
           item.percent = total ? Math.round((item.count / total) * 100) : 0;
         });
         return { total: total, items: items };
+      }
+
+      function normalizeSchoolGradeKey_(grade) {
+        var match = String(grade || '').match(/\d+/);
+        return match ? String(Number(match[0])) : '미정';
       }
 
       function getStudentSchoolChartColor_(school, index) {
@@ -21062,9 +21125,7 @@
       }
 
       function buildMaterialOpenLogDashboardModel_(logs) {
-        var sorted = (logs || []).slice().sort(function(a, b) {
-          return String(b.openedAt || '').localeCompare(String(a.openedAt || ''));
-        });
+        var sorted = (logs || []).slice().sort(compareMaterialOpenLogsByRecent_);
         var sevenDaysAgo = new Date(new Date().getTime() - (7 * 24 * 60 * 60 * 1000));
         var viewers = aggregateMaterialOpenLogs_(sorted, function(log) {
           return log.openedById || log.openedByName || '알 수 없음';
@@ -21115,7 +21176,7 @@
             map[key] = { key: key, label: meta.label || key, sub: meta.sub || '', count: 0, latestAt: '', latestLog: null };
           }
           map[key].count += 1;
-          if (!map[key].latestAt || String(log.openedAt || '') > String(map[key].latestAt || '')) {
+          if (!map[key].latestAt || compareMaterialOpenLogDateValues_(log.openedAt, map[key].latestAt) > 0) {
             map[key].latestAt = log.openedAt || '';
             map[key].latestLog = log;
           }
@@ -21124,7 +21185,7 @@
           if (b.count !== a.count) {
             return b.count - a.count;
           }
-          return String(b.latestAt || '').localeCompare(String(a.latestAt || ''));
+          return compareMaterialOpenLogDateValues_(b.latestAt, a.latestAt);
         });
       }
 
@@ -21203,6 +21264,25 @@
         ].join('');
       }
 
+      function compareMaterialOpenLogsByRecent_(a, b) {
+        return compareMaterialOpenLogDateValues_(b && b.openedAt, a && a.openedAt);
+      }
+
+      function compareMaterialOpenLogDateValues_(left, right) {
+        var leftDate = parseMaterialOpenLogDate_(left);
+        var rightDate = parseMaterialOpenLogDate_(right);
+        if (leftDate && rightDate) {
+          return leftDate.getTime() - rightDate.getTime();
+        }
+        if (leftDate) {
+          return 1;
+        }
+        if (rightDate) {
+          return -1;
+        }
+        return String(left || '').localeCompare(String(right || ''));
+      }
+
       function parseMaterialOpenLogDate_(value) {
         var text = String(value || '').trim();
         if (!text) {
@@ -21212,6 +21292,11 @@
         var match = normalized.match(/(\d{4})-(\d{1,2})-(\d{1,2})(?:\s+(\d{1,2}):(\d{1,2}))?/);
         if (match) {
           return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4] || 0), Number(match[5] || 0));
+        }
+        match = normalized.match(/^(\d{1,2})-(\d{1,2})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+        if (match) {
+          var currentYear = new Date().getFullYear();
+          return new Date(currentYear, Number(match[1]) - 1, Number(match[2]), Number(match[3] || 0), Number(match[4] || 0), Number(match[5] || 0));
         }
         var parsed = new Date(text);
         return isNaN(parsed.getTime()) ? null : parsed;
