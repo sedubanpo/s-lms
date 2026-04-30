@@ -7779,6 +7779,192 @@
         font-weight: 800;
       }
 
+      .student-detail-main-panel {
+        display: grid;
+        gap: 12px;
+      }
+
+      .student-detail-tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: hidden;
+        border: 1px solid #dbe5f3;
+        border-radius: 8px;
+        background: #f8fafc;
+      }
+
+      .student-detail-tab {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 0;
+        border-right: 1px solid #e2e8f0;
+        background: transparent;
+        color: #475569;
+        cursor: pointer;
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      .student-detail-tab:last-child {
+        border-right: 0;
+      }
+
+      .student-detail-tab.active {
+        background: #1d5bd7;
+        color: #ffffff;
+      }
+
+      .student-detail-tab strong {
+        min-width: 32px;
+        padding: 3px 7px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #1d4ed8;
+        font-size: 0.68rem;
+      }
+
+      .student-detail-tab.active strong {
+        background: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+      }
+
+      .student-detail-tab-panel {
+        display: grid;
+        gap: 12px;
+      }
+
+      .student-grade-loading {
+        display: grid;
+        justify-items: center;
+        gap: 8px;
+        padding: 28px 14px;
+        border: 1px dashed #bfdbfe;
+        border-radius: 8px;
+        background: #f8fbff;
+        color: #64748b;
+        font-weight: 850;
+      }
+
+      .student-grade-chart-card,
+      .student-grade-exam-card {
+        overflow: hidden;
+        border: 1px solid #dbe5f3;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .student-grade-chart-head,
+      .student-grade-exam-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border-bottom: 1px solid #e5edf7;
+        background: #f8fafc;
+      }
+
+      .student-grade-chart-head strong,
+      .student-grade-exam-head h4 {
+        display: block;
+        margin: 0;
+        color: #0f172a;
+        font-size: 0.86rem;
+        font-weight: 900;
+      }
+
+      .student-grade-chart-head span,
+      .student-grade-exam-head p {
+        display: block;
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .student-grade-chart {
+        display: block;
+        width: 100%;
+        height: 190px;
+        padding: 8px 10px 4px;
+        overflow: visible;
+      }
+
+      .student-grade-axis {
+        stroke: #dbe5f3;
+        stroke-width: 2;
+      }
+
+      .student-grade-line {
+        fill: none;
+        stroke: #2563eb;
+        stroke-width: 4;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .student-grade-dot {
+        fill: #ffffff;
+        stroke: #2563eb;
+        stroke-width: 4;
+      }
+
+      .student-grade-value {
+        fill: #1d4ed8;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .student-grade-label {
+        fill: #64748b;
+        font-size: 11px;
+        font-weight: 850;
+      }
+
+      .student-grade-table-wrap {
+        overflow-x: auto;
+      }
+
+      .student-grade-table {
+        width: 100%;
+        min-width: 720px;
+        border-collapse: collapse;
+      }
+
+      .student-grade-table th,
+      .student-grade-table td {
+        padding: 9px 10px;
+        border-bottom: 1px solid #e5edf7;
+        color: #0f172a;
+        font-size: 0.72rem;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .student-grade-table th {
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 900;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: 220% 0;
+        }
+        100% {
+          background-position: -220% 0;
+        }
+      }
+
       @media (max-width: 980px) {
         .student-detail-dashboard,
         .student-detail-grid-two {
@@ -10695,6 +10881,81 @@
         align-items: start;
       }
 
+      .grades-loading-shell {
+        min-height: 520px;
+        display: grid;
+        place-items: center;
+        padding: 42px 16px;
+      }
+
+      .grades-loading-card {
+        width: min(560px, 100%);
+        display: grid;
+        justify-items: center;
+        gap: 16px;
+        padding: 34px 28px;
+        border: 1px solid #dbe5f3;
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+        text-align: center;
+      }
+
+      .grades-loading-card h3 {
+        margin: 0;
+        color: #0f172a;
+        font-size: 1.1rem;
+        font-weight: 950;
+      }
+
+      .grades-loading-card p {
+        margin: 8px 0 0;
+        color: #64748b;
+        font-size: 0.8rem;
+        font-weight: 800;
+      }
+
+      .grades-loading-spinner {
+        width: 58px;
+        height: 58px;
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+      }
+
+      .grades-loading-spinner svg {
+        width: 28px;
+        height: 28px;
+        animation: spin 1s linear infinite;
+      }
+
+      .grades-loading-lines {
+        width: 100%;
+        display: grid;
+        gap: 8px;
+      }
+
+      .grades-loading-lines span {
+        display: block;
+        height: 10px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #e2e8f0, #bfdbfe, #e2e8f0);
+        background-size: 220% 100%;
+        animation: shimmer 1.2s ease-in-out infinite;
+      }
+
+      .grades-loading-lines span:nth-child(2) {
+        width: 78%;
+        justify-self: center;
+      }
+
+      .grades-loading-lines span:nth-child(3) {
+        width: 54%;
+        justify-self: center;
+      }
+
       .grades-v3-side,
       .grades-v3-main-card,
       .grades-v3-right-card {
@@ -10968,6 +11229,21 @@
       .grades-v3-student {
         display: grid;
         gap: 2px;
+      }
+
+      .grade-student-profile-button {
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .grade-student-profile-button:hover strong {
+        color: #1d4ed8;
+        text-decoration: underline;
+        text-underline-offset: 3px;
       }
 
       .grades-v3-student strong {
@@ -11625,6 +11901,17 @@
         .grades-mobile-student-card {
           display: grid;
           gap: 10px;
+        }
+
+        .grades-mobile-student-title {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: 8px;
+          align-items: start;
+        }
+
+        .grades-mobile-student-title label {
+          padding-top: 2px;
         }
 
         .grades-mobile-subject-list {
@@ -12651,6 +12938,7 @@
         studentLogReactionSaving: {},
         selectedStudentId: '',
         selectedStudentDetailId: '',
+        studentDetailTab: 'logs',
         studentViewMode: 'summary',
         schoolModeSearch: '',
         schoolModeSelectedSchool: '',
@@ -15274,7 +15562,8 @@
         }) || null;
       }
 
-      function openStudentDetailModal_(studentId) {
+      function openStudentDetailModal_(studentId, options) {
+        var config = options || {};
         var student = findStudentById_(studentId || APP_STATE.selectedStudentId);
         if (!student) {
           setNotice('상세 보기할 학생을 찾을 수 없습니다.', 'warning');
@@ -15282,19 +15571,48 @@
         }
         APP_STATE.selectedStudentId = student.studentId || APP_STATE.selectedStudentId;
         APP_STATE.selectedStudentDetailId = student.studentId || '';
+        APP_STATE.studentDetailTab = config.tab || 'logs';
         renderStudentDetailModal_();
         document.getElementById('studentDetailModal').classList.remove('hidden');
         renderLucideIcons_();
+        if (APP_STATE.studentDetailTab === 'grades' && !APP_STATE.gradesRemoteLoaded) {
+          var detailGradePromise = APP_STATE.gradesLoading ? APP_STATE.gradeLoadPromise : ensureViewDataLoaded_('grades', { silent: true });
+          if (detailGradePromise && typeof detailGradePromise.then === 'function') {
+            detailGradePromise.then(function() {
+            if (APP_STATE.selectedStudentDetailId === student.studentId && APP_STATE.studentDetailTab === 'grades') {
+              renderStudentDetailModal_();
+            }
+            }).catch(function() {});
+          }
+        }
       }
 
       function closeStudentDetailModal_() {
         APP_STATE.selectedStudentDetailId = '';
+        APP_STATE.studentDetailTab = 'logs';
         document.getElementById('studentDetailModal').classList.add('hidden');
       }
 
       function handleStudentDetailModalClick_(event) {
         if (event.target.id === 'studentDetailModal') {
           closeStudentDetailModal_();
+          return;
+        }
+
+        var detailTabButton = event.target.closest('[data-student-detail-tab]');
+        if (detailTabButton) {
+          APP_STATE.studentDetailTab = detailTabButton.getAttribute('data-student-detail-tab') || 'logs';
+          renderStudentDetailModal_();
+          if (APP_STATE.studentDetailTab === 'grades' && !APP_STATE.gradesRemoteLoaded) {
+            var tabGradePromise = APP_STATE.gradesLoading ? APP_STATE.gradeLoadPromise : ensureViewDataLoaded_('grades', { silent: true });
+            if (tabGradePromise && typeof tabGradePromise.then === 'function') {
+              tabGradePromise.then(function() {
+              if (APP_STATE.studentDetailTab === 'grades') {
+                renderStudentDetailModal_();
+              }
+              }).catch(function() {});
+            }
+          }
           return;
         }
 
@@ -15392,13 +15710,189 @@
           '    <section class="student-detail-card"><div class="student-detail-section-head"><h4>강사 권한 맵</h4><span class="ops-chip blue">' + escapeHtml(String(permissions.length)) + '건</span></div>' + renderPermissionRelationMap_(student, permissions) + '</section>',
           '  </div>',
           '  <div class="student-detail-column">',
-          '    <section class="student-detail-card"><div class="student-detail-section-head"><h4>상담 기록</h4><span class="ops-chip slate">' + escapeHtml(String(logs.length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { context: 'detail', pageSize: 5, showComposer: true }) + '</section>',
-          '    <div class="student-detail-grid-two">',
-          '      <section class="student-detail-card"><div class="student-detail-section-head"><h4>시험 대비/직보</h4><span class="ops-chip teal">' + escapeHtml(String(examItems.length || jikbo.total)) + '건</span></div>' + renderStudentDetailExamList_(examItems, jikbo) + '</section>',
-          '      <section class="student-detail-card"><div class="student-detail-section-head"><h4>입력된 자료</h4><span class="ops-chip green">' + escapeHtml(String(materials.length)) + '건</span></div>' + renderStudentDetailMaterialList_(materials) + '</section>',
-          '    </div>',
+          '    <section class="student-detail-card student-detail-main-panel">' + renderStudentDetailTabs_(student, logs) + renderStudentDetailTabContent_(student, logs) + '</section>',
+          APP_STATE.studentDetailTab === 'grades' ? '' : '    <div class="student-detail-grid-two">',
+          APP_STATE.studentDetailTab === 'grades' ? '' : '      <section class="student-detail-card"><div class="student-detail-section-head"><h4>시험 대비/직보</h4><span class="ops-chip teal">' + escapeHtml(String(examItems.length || jikbo.total)) + '건</span></div>' + renderStudentDetailExamList_(examItems, jikbo) + '</section>',
+          APP_STATE.studentDetailTab === 'grades' ? '' : '      <section class="student-detail-card"><div class="student-detail-section-head"><h4>입력된 자료</h4><span class="ops-chip green">' + escapeHtml(String(materials.length)) + '건</span></div>' + renderStudentDetailMaterialList_(materials) + '</section>',
+          APP_STATE.studentDetailTab === 'grades' ? '' : '    </div>',
           '  </div>',
           '</div>'
+        ].join('');
+      }
+
+      function renderStudentDetailTabs_(student, logs) {
+        var active = APP_STATE.studentDetailTab || 'logs';
+        var gradeCount = getStudentGradeRecordsForProfile_(student.studentId).length;
+        return [
+          '<div class="student-detail-tabs">',
+          '  <button type="button" class="student-detail-tab ' + (active === 'logs' ? 'active' : '') + '" data-student-detail-tab="logs"><i data-lucide="messages-square"></i><span>상담 기록</span><strong>' + escapeHtml(String((logs || []).length)) + '건</strong></button>',
+          '  <button type="button" class="student-detail-tab ' + (active === 'grades' ? 'active' : '') + '" data-student-detail-tab="grades"><i data-lucide="chart-line"></i><span>성적 데이터</span><strong>' + escapeHtml(String(gradeCount)) + '건</strong></button>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderStudentDetailTabContent_(student, logs) {
+        if ((APP_STATE.studentDetailTab || 'logs') === 'grades') {
+          return renderStudentGradeProfilePanel_(student);
+        }
+        return '<div class="student-detail-tab-panel"><div class="student-detail-section-head"><h4>상담 기록</h4><span class="ops-chip slate">' + escapeHtml(String((logs || []).length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { context: 'detail', pageSize: 5, showComposer: true }) + '</div>';
+      }
+
+      function renderStudentGradeProfilePanel_(student) {
+        var records = getStudentGradeRecordsForProfile_(student.studentId);
+        if (!records.length) {
+          if (APP_STATE.gradesLoading) {
+            return '<div class="student-detail-tab-panel"><div class="student-grade-loading"><span class="grade-status-badge saving"><i data-lucide="loader-2"></i> 성적 데이터 불러오는 중</span><p>학생별 성적 기록을 정리하고 있습니다.</p></div></div>';
+          }
+          return '<div class="student-detail-tab-panel"><div class="profile-empty">입력된 성적 데이터가 없습니다.</div></div>';
+        }
+        var groups = buildStudentGradeExamGroups_(records);
+        return [
+          '<div class="student-detail-tab-panel student-grade-profile">',
+          '  <div class="student-detail-section-head"><h4>성적 데이터</h4><span class="ops-chip blue">' + escapeHtml(String(records.length)) + '건 · ' + escapeHtml(String(groups.length)) + '시험</span></div>',
+          renderStudentGradeTrendChart_(groups),
+          groups.map(renderStudentGradeExamCard_).join(''),
+          '</div>'
+        ].join('');
+      }
+
+      function getStudentGradeRecordsForProfile_(studentId) {
+        var target = String(studentId || '');
+        return (APP_STATE.grades || []).filter(function(record) {
+          return String(record.studentId || '') === target;
+        }).map(normalizeGradeRecordV2_).sort(sortGradesByUpdatedDesc_);
+      }
+
+      function buildStudentGradeExamGroups_(records) {
+        var map = {};
+        (records || []).forEach(function(record) {
+          var key = getStudentGradeExamKey_(record);
+          if (!map[key]) {
+            map[key] = { key: key, records: [], sortKey: getStudentGradeExamSortKey_(record), label: getStudentGradeExamLabel_(record), shortLabel: getStudentGradeExamShortLabel_(record) };
+          }
+          map[key].records.push(record);
+        });
+        return Object.keys(map).map(function(key) {
+          var group = map[key];
+          var scores = group.records.map(getGradeRecordNumericScore_).filter(function(score) { return score !== null; });
+          var grades = group.records.map(function(record) { return Number(record.gradeLevel); }).filter(function(value) { return !isNaN(value); });
+          group.averageScore = scores.length ? averageClient_(scores) : '';
+          group.averageGrade = grades.length ? averageClient_(grades) : '';
+          group.records.sort(function(a, b) {
+            return String(a.subjectCategory + a.subjectName).localeCompare(String(b.subjectCategory + b.subjectName), 'ko');
+          });
+          return group;
+        }).sort(function(a, b) {
+          return String(b.sortKey || '').localeCompare(String(a.sortKey || ''));
+        });
+      }
+
+      function getStudentGradeExamKey_(record) {
+        return [
+          record.examYear || record.year || record.schoolYear || '',
+          record.examCategory || '',
+          record.term || record.semester || '',
+          record.examName || '',
+          record.examRound || ''
+        ].map(function(value) { return String(value || '').trim(); }).join('::');
+      }
+
+      function getStudentGradeExamSortKey_(record) {
+        return [
+          record.examYear || record.year || record.schoolYear || '',
+          record.examCategory || '',
+          record.term || record.semester || '',
+          record.examName || '',
+          record.examRound || ''
+        ].map(function(value) { return String(value || '').trim(); }).join(' ');
+      }
+
+      function getStudentGradeExamLabel_(record) {
+        return [
+          record.examYear || record.year || record.schoolYear ? (record.examYear || record.year || record.schoolYear) + '년' : '',
+          record.examCategory || '',
+          record.term || record.semester || '',
+          record.examName || '',
+          record.examRound || ''
+        ].filter(Boolean).join(' · ') || '시험 정보 미지정';
+      }
+
+      function getStudentGradeExamShortLabel_(record) {
+        return [
+          record.examYear || record.year || record.schoolYear || '',
+          record.examName || record.examCategory || '',
+          record.examRound || ''
+        ].filter(Boolean).join(' ');
+      }
+
+      function getGradeRecordNumericScore_(record) {
+        var value = record.finalScore || record.provisionalScore || record.rawScore || '';
+        if (value === '' || value === null || value === undefined || isNaN(Number(value))) {
+          return null;
+        }
+        return Number(value);
+      }
+
+      function renderStudentGradeTrendChart_(groups) {
+        var chronological = (groups || []).slice().reverse();
+        var useScore = chronological.some(function(group) { return group.averageScore !== ''; });
+        var series = chronological.map(function(group) {
+          var value = useScore ? Number(group.averageScore) : Number(group.averageGrade);
+          return isNaN(value) ? null : { group: group, value: value };
+        }).filter(Boolean);
+        if (!series.length) {
+          return '<section class="student-grade-chart-card"><div class="profile-empty">그래프로 표시할 점수 또는 등급 데이터가 없습니다.</div></section>';
+        }
+        var width = 640;
+        var height = 190;
+        var left = 42;
+        var right = 604;
+        var top = 24;
+        var bottom = 134;
+        var maxScore = useScore ? 100 : 1;
+        var minScore = useScore ? 0 : 9;
+        var points = series.map(function(item, index) {
+          var x = series.length === 1 ? (left + right) / 2 : left + ((right - left) * index / (series.length - 1));
+          var ratio = useScore ? ((item.value - minScore) / (maxScore - minScore)) : ((minScore - item.value) / (minScore - maxScore));
+          var y = bottom - Math.max(0, Math.min(1, ratio)) * (bottom - top);
+          return { x: x, y: y, item: item };
+        });
+        var polyline = points.map(function(point) { return point.x.toFixed(1) + ',' + point.y.toFixed(1); }).join(' ');
+        return [
+          '<section class="student-grade-chart-card">',
+          '  <div class="student-grade-chart-head"><div><strong>' + (useScore ? '시험별 평균 점수 추세' : '시험별 등급 추세') + '</strong><span>시험 단위로 묶어 표시합니다.</span></div><span class="ops-chip blue">' + escapeHtml(String(series.length)) + '개 시험</span></div>',
+          '  <svg class="student-grade-chart" viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="학생 성적 추세">',
+          '    <line x1="' + left + '" y1="' + bottom + '" x2="' + right + '" y2="' + bottom + '" class="student-grade-axis"></line>',
+          '    <line x1="' + left + '" y1="' + top + '" x2="' + left + '" y2="' + bottom + '" class="student-grade-axis"></line>',
+          '    <polyline points="' + escapeAttribute(polyline) + '" class="student-grade-line"></polyline>',
+               points.map(function(point) {
+                 return '<g><circle cx="' + point.x.toFixed(1) + '" cy="' + point.y.toFixed(1) + '" r="5" class="student-grade-dot"></circle><text x="' + point.x.toFixed(1) + '" y="' + (point.y - 10).toFixed(1) + '" class="student-grade-value" text-anchor="middle">' + escapeHtml(useScore ? point.item.value + '점' : point.item.value + '등급') + '</text><text x="' + point.x.toFixed(1) + '" y="162" class="student-grade-label" text-anchor="middle">' + escapeHtml(truncateText_(point.item.group.shortLabel, 11)) + '</text></g>';
+               }).join(''),
+          '  </svg>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderStudentGradeExamCard_(group) {
+        return [
+          '<section class="student-grade-exam-card">',
+          '  <div class="student-grade-exam-head"><div><h4>' + escapeHtml(group.label) + '</h4><p>평균 점수 ' + escapeHtml(group.averageScore || '-') + ' · 평균 등급 ' + escapeHtml(group.averageGrade || '-') + '</p></div><span class="ops-chip slate">' + escapeHtml(String(group.records.length)) + '과목</span></div>',
+          '  <div class="student-grade-table-wrap"><table class="student-grade-table"><thead><tr><th>대분류</th><th>세부 과목</th><th>가채점</th><th>실제 점수</th><th>등급</th><th>입력자/일시</th><th>비고</th></tr></thead><tbody>',
+               group.records.map(function(record) {
+                 return [
+                   '<tr>',
+                   '<td>' + escapeHtml(record.subjectCategory || '-') + '</td>',
+                   '<td><strong>' + escapeHtml(record.subjectName || '-') + '</strong></td>',
+                   '<td>' + escapeHtml(record.provisionalScore || '-') + '</td>',
+                   '<td>' + escapeHtml(record.finalScore || record.rawScore || '-') + '</td>',
+                   '<td>' + escapeHtml(record.gradeLevel || '-') + '</td>',
+                   '<td>' + escapeHtml([record.updatedByName || record.createdByName || '-', formatTeachingLogDateTime(record.updatedAt || record.createdAt || '')].filter(Boolean).join(' · ')) + '</td>',
+                   '<td>' + escapeHtml(record.memo || record.note || '-') + '</td>',
+                   '</tr>'
+                 ].join('');
+               }).join(''),
+          '  </tbody></table></div>',
+          '</section>'
         ].join('');
       }
 
@@ -25824,9 +26318,26 @@
         }
         container.classList.remove('grades-v2');
         container.classList.add('grades-v3');
+        if (APP_STATE.gradesLoading && !APP_STATE.gradesRemoteLoaded) {
+          container.innerHTML = renderGradesLoadingState_();
+          renderLucideIcons_();
+          return;
+        }
         container.innerHTML = renderGradeV3Shell_() + renderGradeModalV2_();
         setInputValueIfNotActive_('gradeSearchInput', APP_STATE.gradeSearchKeyword || '');
         renderLucideIcons_();
+      }
+
+      function renderGradesLoadingState_() {
+        return [
+          '<div class="grades-loading-shell">',
+          '  <section class="grades-loading-card">',
+          '    <div class="grades-loading-spinner" aria-hidden="true"><i data-lucide="loader-2"></i></div>',
+          '    <div><h3>성적 관리 데이터를 불러오는 중입니다</h3><p>학생 목록, 과목 매니저, Firestore 성적 기록을 맞춰 보고 있습니다.</p></div>',
+          '    <div class="grades-loading-lines" aria-hidden="true"><span></span><span></span><span></span></div>',
+          '  </section>',
+          '</div>'
+        ].join('');
       }
 
       function renderGradeV3Shell_() {
@@ -25930,7 +26441,7 @@
         return [
           '<article class="grades-mobile-student-card">',
           '  <div class="grades-mobile-student-head">',
-          '    <label><input type="checkbox" data-grade-select-student="' + escapeAttribute(student.studentId) + '"' + checked + '> <strong>' + escapeHtml(student.studentName || '-') + '</strong></label>',
+          '    <div class="grades-mobile-student-title"><label><input type="checkbox" data-grade-select-student="' + escapeAttribute(student.studentId) + '"' + checked + '></label><button type="button" class="grade-student-profile-button" data-grade-action="show-student-profile" data-student-id="' + escapeAttribute(student.studentId) + '"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml(student.studentId || '') + '</span></button></div>',
           '    <span>' + escapeHtml([student.school, student.grade].filter(Boolean).join(' · ') || '-') + '</span>',
           '  </div>',
           '  <div class="grades-mobile-subject-list">',
@@ -26090,7 +26601,7 @@
           var checked = APP_STATE.gradeSelectedStudentIds[student.studentId] ? ' checked' : '';
           var latest = getLatestGradeRecordForStudentV3_(student.studentId, recordMap);
           html.push('<tr><td><input type="checkbox" data-grade-select-student="' + escapeAttribute(student.studentId) + '"' + checked + '></td>');
-          html.push('<td><div class="grades-v3-student"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml(student.studentId || '') + '</span></div></td>');
+          html.push('<td><button type="button" class="grades-v3-student grade-student-profile-button" data-grade-action="show-student-profile" data-student-id="' + escapeAttribute(student.studentId) + '"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml(student.studentId || '') + '</span></button></td>');
           html.push('<td>' + escapeHtml([student.school, student.grade].filter(Boolean).join(' · ') || '-') + '</td>');
           groups.forEach(function(group) {
             group.subjects.forEach(function(subject) {
@@ -26352,6 +26863,8 @@
           APP_STATE.gradeFilters.school = button.getAttribute('data-value') || '';
           APP_STATE.gradePage = 1;
           renderGrades();
+        } else if (action === 'show-student-profile') {
+          openStudentDetailModal_(button.getAttribute('data-student-id') || '', { tab: 'grades' });
         } else if (action === 'set-grade-filter') {
           APP_STATE.gradeFilters.grade = button.getAttribute('data-value') || '';
           APP_STATE.gradePage = 1;
