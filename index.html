@@ -6283,6 +6283,68 @@
         grid-template-columns: minmax(260px, 1fr) 150px 150px 170px;
       }
 
+      .student-log-author-tabs {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 16px 12px;
+        overflow-x: auto;
+      }
+
+      .student-log-author-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 32px;
+        padding: 0 10px;
+        border: 1px solid #d8e3f4;
+        border-radius: 8px 8px 0 0;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.72rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .student-log-author-tab.active {
+        border-color: #0b55d9;
+        background: #eaf2ff;
+        color: #0b55d9;
+      }
+
+      .student-log-author-tab span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        min-height: 20px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.08);
+        font-size: 0.66rem;
+      }
+
+      .student-active-filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 0 16px 12px;
+      }
+
+      .student-active-filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 28px;
+        padding: 0 8px;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #0b55d9;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
       .student-log-list-table-wrap {
         overflow: auto;
       }
@@ -11986,6 +12048,7 @@
         studentLogTabs: {},
         studentLogAuthors: {},
         studentLogAuthorFilter: '',
+        studentPermissionInstructorFilter: '',
         studentLogPages: {},
         studentLogReactionSaving: {},
         selectedStudentId: '',
@@ -13202,6 +13265,10 @@
           student.school,
           student.grade
         ];
+        getStudentPermissionInstructors_(student.studentId).forEach(function(instructor) {
+          pieces.push(instructor.name || instructor.userId || '');
+          pieces.push(instructor.subject || '');
+        });
 
         (student.logs || []).forEach(function(log) {
           pieces.push(log.content || '');
@@ -13217,13 +13284,15 @@
         var keyword = normalizeSearchText(document.getElementById('studentSearchInput').value);
         var school = document.getElementById('studentSchoolFilter').value;
         var tag = document.getElementById('studentTagFilter').value;
+        var instructorFilter = APP_STATE.studentPermissionInstructorFilter || '';
 
         return orderStudentsForDisplay_(APP_STATE.visibleStudents.filter(function(student) {
           var matchesKeyword = !keyword || buildStudentSearchText(student).indexOf(keyword) !== -1;
           var matchesSchool = !school || student.school === school;
           var tags = collectStudentTagSet(student);
           var matchesTag = !tag || tags.indexOf(tag) !== -1;
-          return matchesKeyword && matchesSchool && matchesTag;
+          var matchesInstructor = !instructorFilter || (getPermissionMap()[student.studentId] || []).indexOf(instructorFilter) !== -1;
+          return matchesKeyword && matchesSchool && matchesTag && matchesInstructor;
         }));
       }
 
@@ -13545,6 +13614,7 @@
           '  <select class="field-select" data-student-school-select>' + buildStudentSchoolOptions_() + '</select>',
           '  <select class="field-select" data-student-tag-select>' + buildStudentTagOptions_() + '</select>',
           '</div>',
+          renderStudentActivePermissionFilter_(),
           emptyHtml ? '<div style="padding:16px;">' + emptyHtml + '</div>' : '<div class="student-index-table-wrap">' + renderStudentIndexTable_(students) + '</div>'
         ].join('');
       }
@@ -13563,9 +13633,22 @@
           '    <select class="field-select" data-student-tag-select>' + buildStudentTagOptions_() + '</select>',
           '    <select class="field-select" data-student-author-select>' + buildStudentAuthorOptions_() + '</select>',
           '  </div>',
+          renderStudentActivePermissionFilter_(),
+          renderStudentLogAuthorTabs_(),
              emptyHtml && !rows.length ? '<div style="padding:16px;">' + emptyHtml + '</div>' : renderStudentLogListTable_(rows),
           '</section>'
         ].join('');
+      }
+
+      function renderStudentActivePermissionFilter_() {
+        var instructorId = APP_STATE.studentPermissionInstructorFilter || '';
+        if (!instructorId) {
+          return '';
+        }
+        var instructor = (APP_STATE.instructors || []).find(function(item) {
+          return item.userId === instructorId;
+        }) || { userId: instructorId, name: instructorId };
+        return '<div class="student-active-filter-row"><span class="student-active-filter-chip">권한 강사: ' + escapeHtml(instructor.name || instructor.userId || '-') + '<button type="button" data-action="clear-instructor-filter" aria-label="권한 강사 필터 해제">×</button></span></div>';
       }
 
       function buildStudentLogListRows_(students) {
@@ -13684,19 +13767,7 @@
 
       function buildStudentAuthorOptions_() {
         var current = APP_STATE.studentLogAuthorFilter || '';
-        var authors = [];
-        (APP_STATE.visibleStudents || []).forEach(function(student) {
-          (student.logs || []).forEach(function(log) {
-            var key = getStudentLogAuthorFilterKey_(log);
-            var label = getStudentLogAuthorFilterLabel_(log);
-            if (key && !authors.some(function(item) { return item.key === key; })) {
-              authors.push({ key: key, label: label });
-            }
-          });
-        });
-        authors.sort(function(a, b) {
-          return String(a.label || '').localeCompare(String(b.label || ''), 'ko');
-        });
+        var authors = getStudentLogAuthorGroups_();
         if (current && !authors.some(function(item) { return item.key === current; })) {
           current = '';
           APP_STATE.studentLogAuthorFilter = '';
@@ -13704,6 +13775,45 @@
         return ['<option value="">전체 작성자</option>'].concat(authors.map(function(item) {
           return '<option value="' + escapeAttribute(item.key) + '"' + (item.key === current ? ' selected' : '') + '>' + escapeHtml(item.label) + '</option>';
         })).join('');
+      }
+
+      function renderStudentLogAuthorTabs_() {
+        var current = APP_STATE.studentLogAuthorFilter || '';
+        var authors = getStudentLogAuthorGroups_();
+        var totalCount = authors.reduce(function(total, item) {
+          return total + item.count;
+        }, 0);
+        var tabs = [
+          '<button type="button" class="student-log-author-tab ' + (!current ? 'active' : '') + '" data-student-author-tab=""><i data-lucide="folder"></i>전체 작성자<span>' + escapeHtml(String(totalCount)) + '</span></button>'
+        ].concat(authors.map(function(item) {
+          return '<button type="button" class="student-log-author-tab ' + (item.key === current ? 'active' : '') + '" data-student-author-tab="' + escapeAttribute(item.key) + '"><i data-lucide="folder"></i>' + escapeHtml(item.label) + '<span>' + escapeHtml(String(item.count)) + '</span></button>';
+        }));
+        return '<div class="student-log-author-tabs" aria-label="상담 기록 작성자별 폴더">' + tabs.join('') + '</div>';
+      }
+
+      function getStudentLogAuthorGroups_() {
+        var map = {};
+        (APP_STATE.visibleStudents || []).forEach(function(student) {
+          (student.logs || []).forEach(function(log) {
+            var key = getStudentLogAuthorFilterKey_(log);
+            if (!key) {
+              return;
+            }
+            if (!map[key]) {
+              map[key] = {
+                key: key,
+                label: getStudentLogAuthorFilterLabel_(log),
+                count: 0
+              };
+            }
+            map[key].count += 1;
+          });
+        });
+        return Object.keys(map).map(function(key) {
+          return map[key];
+        }).sort(function(a, b) {
+          return String(a.label || '').localeCompare(String(b.label || ''), 'ko');
+        });
       }
 
       function getStudentLogAuthorFilterKey_(log) {
@@ -15685,9 +15795,27 @@
         if (instructorChip) {
           var instructorId = instructorChip.getAttribute('data-instructor-id') || '';
           var instructor = (APP_STATE.instructors || []).find(function(item) { return item.userId === instructorId; });
-          document.getElementById('studentSearchInput').value = instructor ? (instructor.name || instructor.userId || '') : instructorId;
-          document.getElementById('globalSearchInput').value = document.getElementById('studentSearchInput').value;
+          APP_STATE.studentPermissionInstructorFilter = instructorId;
+          document.getElementById('studentSearchInput').value = '';
+          document.getElementById('globalSearchInput').value = '';
+          document.getElementById('studentSchoolFilter').value = '';
+          document.getElementById('studentTagFilter').value = '';
+          setNotice((instructor ? (instructor.name || instructor.userId) : instructorId) + ' 강사의 연결 권한 학생을 표시합니다.', 'info');
           renderStudents();
+          return;
+        }
+
+        var clearInstructorFilter = event.target.closest('[data-action="clear-instructor-filter"]');
+        if (clearInstructorFilter) {
+          APP_STATE.studentPermissionInstructorFilter = '';
+          renderStudents();
+          return;
+        }
+
+        var authorTab = event.target.closest('[data-student-author-tab]');
+        if (authorTab) {
+          APP_STATE.studentLogAuthorFilter = authorTab.getAttribute('data-student-author-tab') || '';
+          renderStudentsPreservingSearchFocus_();
           return;
         }
 
@@ -15885,6 +16013,7 @@
         if (authorSelect) {
           APP_STATE.studentLogAuthorFilter = authorSelect.value || '';
           renderStudentsPreservingSearchFocus_();
+          return;
         }
       }
 
