@@ -6620,7 +6620,7 @@
 
       .profile-summary {
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-columns: auto minmax(0, 0.95fr) minmax(170px, 0.85fr) minmax(190px, 0.95fr);
         gap: 12px;
         align-items: center;
         padding: 13px;
@@ -6660,6 +6660,47 @@
         margin-top: 8px;
       }
 
+      .student-learning-card {
+        display: grid;
+        align-content: start;
+        gap: 7px;
+        min-height: 72px;
+        padding: 10px;
+        border: 1px solid #d8e3f4;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .student-learning-card.subjects {
+        border-color: #bfdbfe;
+        background: #f8fbff;
+      }
+
+      .student-learning-card.days {
+        border-color: #ddd6fe;
+        background: #fbfaff;
+      }
+
+      .student-learning-card-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #475569;
+        font-size: 0.7rem;
+        font-weight: 950;
+      }
+
+      .student-learning-card-title svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .student-learning-card-empty {
+        color: #64748b;
+        font-size: 0.76rem;
+        font-weight: 850;
+      }
+
       .student-subject-chip {
         display: inline-flex;
         align-items: center;
@@ -6677,6 +6718,44 @@
         border-color: #d9e2ec;
         background: #f1f5f9;
         color: #64748b;
+      }
+
+      .student-day-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 28px;
+        min-height: 28px;
+        padding: 0 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: #94a3b8;
+        font-size: 0.72rem;
+        font-weight: 950;
+      }
+
+      .student-day-chip.active {
+        border-color: #c4b5fd;
+        background: #ede9fe;
+        color: #6d28d9;
+      }
+
+      .student-day-chip.pending {
+        min-width: auto;
+        border-color: #d9e2ec;
+        background: #f1f5f9;
+        color: #64748b;
+      }
+
+      @media (max-width: 1180px) {
+        .profile-summary {
+          grid-template-columns: auto minmax(0, 1fr);
+        }
+
+        .student-learning-card {
+          grid-column: 1 / -1;
+        }
       }
 
       .profile-block {
@@ -13467,16 +13546,104 @@
       }
 
       function renderStudentSubjectChips_(student) {
-        var subjects = String(student && student.subject ? student.subject : '')
-          .split(/[,/|·]+/)
-          .map(function(item) { return item.trim(); })
-          .filter(Boolean);
+        var subjects = getStudentSubjectList_(student);
         if (!subjects.length) {
           return '<span class="student-subject-chip slate">과목 미지정</span>';
         }
         return subjects.slice(0, 4).map(function(subject) {
           return '<span class="student-subject-chip">' + escapeHtml(subject) + '</span>';
         }).join('');
+      }
+
+      function getStudentSubjectList_(student) {
+        var values = [];
+        [student && student.subject, student && student.baseSubject].forEach(function(value) {
+          String(value || '').split(/[,/|·、]+/).forEach(function(item) {
+            var subject = item.trim();
+            if (subject) {
+              values.push(subject);
+            }
+          });
+        });
+        if (student && student.subjectOverride) {
+          [student.subjectOverride.subject, student.subjectOverride.subjectName].forEach(function(value) {
+            if (value) {
+              values.push(String(value).trim());
+            }
+          });
+        }
+        return uniqueList_(values.filter(Boolean));
+      }
+
+      function renderStudentLearningSummary_(student) {
+        return [
+          '<div class="student-learning-card subjects">',
+          '  <div class="student-learning-card-title"><i data-lucide="book-open-check"></i><span>수강 과목</span></div>',
+          '  <div class="student-subject-row">' + renderStudentSubjectChips_(student) + '</div>',
+          '</div>',
+          '<div class="student-learning-card days">',
+          '  <div class="student-learning-card-title"><i data-lucide="calendar-days"></i><span>수업 요일</span></div>',
+          '  <div class="student-subject-row">' + renderStudentLessonDayChips_(student) + '</div>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderStudentLessonDayChips_(student) {
+        var activeDays = getStudentLessonDays_(student);
+        var dayOrder = ['월', '화', '수', '목', '금', '토', '일'];
+        if (!activeDays.length) {
+          return '<span class="student-day-chip pending">요일 미연동</span>';
+        }
+        return dayOrder.map(function(day) {
+          return '<span class="student-day-chip ' + (activeDays.indexOf(day) !== -1 ? 'active' : '') + '">' + escapeHtml(day) + '</span>';
+        }).join('');
+      }
+
+      function getStudentLessonDays_(student) {
+        var candidates = [];
+        ['classDays', 'lessonDays', 'weekdays', 'scheduleDays', 'classWeekdays', 'attendanceDays', '수업요일', '요일'].forEach(function(key) {
+          if (student && student[key]) {
+            candidates.push(student[key]);
+          }
+        });
+        (student && student.details || []).forEach(function(detail) {
+          var label = normalizeSearchText(detail && detail.label);
+          if (label.indexOf('요일') !== -1 || label.indexOf('수업') !== -1 || label.indexOf('등원') !== -1 || label.indexOf('시간표') !== -1) {
+            candidates.push(detail && detail.value);
+          }
+        });
+        return parseKoreanWeekdays_(candidates.join(' '));
+      }
+
+      function parseKoreanWeekdays_(value) {
+        var text = String(value || '');
+        var compactDays = [];
+        text.split(/[^가-힣A-Za-z]+/).forEach(function(token) {
+          if (/^[월화수목금토일]{1,7}$/.test(token)) {
+            token.split('').forEach(function(day) {
+              if (compactDays.indexOf(day) === -1) {
+                compactDays.push(day);
+              }
+            });
+          }
+        });
+        var dayMap = [
+          { day: '월', patterns: [/월요일/g, /(^|[^가-힣])월([^가-힣]|$)/g, /mon(day)?/ig] },
+          { day: '화', patterns: [/화요일/g, /(^|[^가-힣])화([^가-힣]|$)/g, /tue(sday)?/ig] },
+          { day: '수', patterns: [/수요일/g, /(^|[^가-힣])수([^가-힣]|$)/g, /wed(nesday)?/ig] },
+          { day: '목', patterns: [/목요일/g, /(^|[^가-힣])목([^가-힣]|$)/g, /thu(rsday)?/ig] },
+          { day: '금', patterns: [/금요일/g, /(^|[^가-힣])금([^가-힣]|$)/g, /fri(day)?/ig] },
+          { day: '토', patterns: [/토요일/g, /(^|[^가-힣])토([^가-힣]|$)/g, /sat(urday)?/ig] },
+          { day: '일', patterns: [/일요일/g, /(^|[^가-힣])일([^가-힣]|$)/g, /sun(day)?/ig] }
+        ];
+        return uniqueList_(compactDays.concat(dayMap.filter(function(item) {
+          return item.patterns.some(function(pattern) {
+            pattern.lastIndex = 0;
+            return pattern.test(text);
+          });
+        }).map(function(item) {
+          return item.day;
+        })));
       }
 
       function renderPermissionChips_(permissions, limit) {
@@ -13514,7 +13681,8 @@
           '<div class="profile-board-body">',
           '  <section class="profile-summary">',
           '    <div class="profile-avatar">' + escapeHtml(getInitial(student.studentName)) + '</div>',
-          '    <div><h4>' + escapeHtml(student.studentName || '-') + '</h4><p>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</p><div class="student-subject-row">' + renderStudentSubjectChips_(student) + '</div></div>',
+          '    <div><h4>' + escapeHtml(student.studentName || '-') + '</h4><p>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</p></div>',
+               renderStudentLearningSummary_(student),
           '  </section>',
           '  <section class="profile-block"><h4>강사 권한 맵</h4>' + renderPermissionRelationMap_(student, permissions) + '</section>',
           '  <section class="profile-block"><div class="profile-block-title-row"><h4>상담 기록 preview</h4><span class="ops-chip slate">' + escapeHtml(String((student.logs || []).length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { limit: 3, showMore: true, showComposer: true }) + '</section>',
