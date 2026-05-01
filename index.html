@@ -1142,6 +1142,14 @@
         line-height: 1.65;
       }
 
+      .panel-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
       .search-layout {
         display: grid;
         grid-template-columns: minmax(0, 1.8fr) minmax(190px, 0.8fr) minmax(220px, 0.9fr);
@@ -12398,6 +12406,10 @@
                 <h3 id="permissionPanelTitle">권한 관리</h3>
                 <p id="permissionPanelDescription">학생명을 검색하고, 원/학년으로 좁힌 뒤 학생을 선택하면 우측에서 수업 열람 권한을 빠르게 관리할 수 있습니다.</p>
               </div>
+              <div class="panel-actions">
+                <button id="migratePermissionsFirestoreButton" type="button" class="mini-button">열람 권한 Firestore 이전</button>
+                <button id="migrateHomeroomsFirestoreButton" type="button" class="mini-button">담임 권한 Firestore 이전</button>
+              </div>
             </div>
             <div id="permissionPanelTabs" class="permission-panel-tabs"></div>
             <div id="permissionInstructorPanel">
@@ -13379,6 +13391,8 @@
         document.getElementById('permissionDetailPanel').addEventListener('compositionstart', handlePermissionInstructorCompositionStart);
         document.getElementById('permissionDetailPanel').addEventListener('compositionend', handlePermissionInstructorCompositionEnd);
         document.getElementById('savePermissionButton').addEventListener('click', handlePermissionSave);
+        document.getElementById('migratePermissionsFirestoreButton').addEventListener('click', handleFirestoreMigrationClick_);
+        document.getElementById('migrateHomeroomsFirestoreButton').addEventListener('click', handleFirestoreMigrationClick_);
         document.getElementById('permissionPanelTabs').addEventListener('click', handlePermissionTabClick);
         document.getElementById('addStudentButton').addEventListener('click', handleStudentAdd);
         bindDeferredTextRender_('studentManageSearchInput', renderPermissionView, 180);
@@ -18861,6 +18875,29 @@
             renderAll();
             switchView('permissions');
             setNotice(result.message || '학생 열람 권한이 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function handleFirestoreMigrationClick_(event) {
+        if (!APP_STATE.isAdmin) {
+          setNotice('관리자만 Firestore 이전을 실행할 수 있습니다.', 'warning');
+          return;
+        }
+
+        var action = event.currentTarget && event.currentTarget.id === 'migrateHomeroomsFirestoreButton'
+          ? 'migrateHomeroomsToFirestore'
+          : 'migratePermissionsToFirestore';
+        var label = action === 'migrateHomeroomsToFirestore' ? '담임/담당 권한' : '강사 열람 권한';
+
+        setLoading(label + ' 데이터를 Firestore로 이전하는 중입니다.');
+        apiRequest(action, { token: APP_STATE.token })
+          .then(function(result) {
+            hydrateStudentDataOnly(result);
+            renderAll();
+            switchView('permissions');
+            setNotice(result.message || (label + ' 데이터가 Firestore로 이전되었습니다.'), 'success');
           })
           .catch(handleApiError_)
           .finally(clearLoading);
