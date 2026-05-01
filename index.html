@@ -6399,8 +6399,6 @@
       .student-log-list-table td:nth-child(8) { width: 270px; }
 
       .student-log-list-content {
-        max-height: 92px;
-        overflow: auto;
         color: #1e293b;
         font-weight: 750;
         line-height: 1.55;
@@ -6409,14 +6407,40 @@
       }
 
       .student-log-list-meta {
-        display: grid;
-        gap: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
       }
 
       .student-log-list-meta strong {
         color: #0f172a;
         font-size: 0.86rem;
         font-weight: 950;
+      }
+
+      .student-log-profile-icon-button {
+        width: 26px;
+        height: 26px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        background: #eff6ff;
+        color: #0b55d9;
+        cursor: pointer;
+      }
+
+      .student-log-profile-icon-button:hover {
+        border-color: #60a5fa;
+        background: #dbeafe;
+      }
+
+      .student-log-profile-icon-button svg {
+        width: 15px;
+        height: 15px;
       }
 
       .student-log-list-meta span {
@@ -14542,7 +14566,7 @@
           '<article class="mobile-log-card ' + escapeAttribute(toneClass) + '" data-student-id="' + escapeAttribute(student.studentId || '') + '">',
           '  <div class="mobile-log-card-head">',
           '    <div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</span></div>',
-          '    <button type="button" class="profile-link-button" data-action="show-student-profile">프로필</button>',
+          '    <button type="button" class="student-log-profile-icon-button" data-action="show-student-profile" title="프로필 보기" aria-label="' + escapeAttribute((student.studentName || '학생') + ' 프로필 보기') + '"><i data-lucide="user-round"></i></button>',
           '  </div>',
           '  <div class="student-log-bubble-meta">',
                renderStudentLogAuthorChip_(log, student, getStudentLogAuthorFilterLabel_(log)),
@@ -14758,10 +14782,32 @@
           });
         });
         rows.sort(function(a, b) {
-          return String(b.log.createdAt || '').localeCompare(String(a.log.createdAt || '')) ||
-            String(a.student.studentName || '').localeCompare(String(b.student.studentName || ''));
+          return getStudentLogSortTimestamp_(b.log) - getStudentLogSortTimestamp_(a.log) ||
+            String(a.student.studentName || '').localeCompare(String(b.student.studentName || ''), 'ko');
         });
         return rows;
+      }
+
+      function getStudentLogSortTimestamp_(log) {
+        var raw = String(log && (log.createdAt || log.updatedAt || log.date) || '').trim();
+        if (!raw) {
+          return 0;
+        }
+        var parsed = new Date(raw);
+        if (!isNaN(parsed.getTime())) {
+          return parsed.getTime();
+        }
+        var currentYear = new Date().getFullYear();
+        var compact = raw.replace(/\s+/g, ' ').trim();
+        var full = compact.match(/(\d{4})[-./년\s]+(\d{1,2})[-./월\s]+(\d{1,2})[일\s,]*(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?/);
+        if (full) {
+          return new Date(Number(full[1]), Number(full[2]) - 1, Number(full[3]), Number(full[4] || 0), Number(full[5] || 0), Number(full[6] || 0)).getTime();
+        }
+        var short = compact.match(/(\d{1,2})[-./월\s]+(\d{1,2})[일\s,]*(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?/);
+        if (short) {
+          return new Date(currentYear, Number(short[1]) - 1, Number(short[2]), Number(short[3] || 0), Number(short[4] || 0), Number(short[5] || 0)).getTime();
+        }
+        return 0;
       }
 
       function renderStudentLogListTable_(rows) {
@@ -14789,7 +14835,7 @@
         var author = isAdmin ? (log.createdByName || '관리자') : ((log.createdByName || '강사') + ' 강사');
         return [
           '<tr data-student-id="' + escapeAttribute(student.studentId || '') + '">',
-          '  <td><div class="student-log-list-meta"><strong>' + escapeHtml(student.studentName || '-') + '</strong><button type="button" class="profile-link-button" data-action="show-student-profile">프로필</button></div></td>',
+          '  <td><div class="student-log-list-meta"><strong>' + escapeHtml(student.studentName || '-') + '</strong><button type="button" class="student-log-profile-icon-button" data-action="show-student-profile" title="프로필 보기" aria-label="' + escapeAttribute((student.studentName || '학생') + ' 프로필 보기') + '"><i data-lucide="user-round"></i></button></div></td>',
           '  <td>' + escapeHtml(student.school || '학교 미지정') + '</td>',
           '  <td>' + escapeHtml(student.grade ? student.grade + '학년' : '미지정') + '</td>',
           '  <td><span class="student-log-type-chip ' + escapeAttribute(toneClass) + '">' + escapeHtml(formatStudentLogTagLabel_(primaryTag)) + '</span>' + (isFirstLessonLog_(log) ? '<span class="student-log-priority-chip" style="margin-left:5px;">우선 확인</span>' : '') + '</td>',
