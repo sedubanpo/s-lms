@@ -2208,6 +2208,67 @@
         min-height: 420px;
       }
 
+      .permission-fast-panel {
+        display: grid;
+        gap: 10px;
+        margin: 12px 0;
+        padding: 12px;
+        border: 1px solid #dbeafe;
+        border-radius: 12px;
+        background: linear-gradient(180deg, #f8fbff 0%, #f4f8ff 100%);
+      }
+
+      .permission-fast-head,
+      .permission-suggest-row,
+      .permission-fast-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .permission-fast-head {
+        justify-content: space-between;
+        color: #0f172a;
+      }
+
+      .permission-fast-head span,
+      .permission-suggest-row > span,
+      .permission-empty-selection {
+        color: #64748b;
+        font-size: 0.76rem;
+        font-weight: 900;
+      }
+
+      .permission-selected-chip-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+        min-height: 28px;
+      }
+
+      .permission-selected-chip {
+        padding-right: 6px;
+      }
+
+      .permission-selected-chip span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.42);
+        font-size: 0.78rem;
+      }
+
+      .permission-check-card.selected {
+        border-color: #2563eb;
+        background: #eff6ff;
+        box-shadow: inset 3px 0 0 #2563eb;
+      }
+
       .permission-panel-tabs {
         display: flex;
         flex-wrap: wrap;
@@ -13025,6 +13086,7 @@
         permissionTab: 'instructors',
         permissionInstructorKeyword: '',
         isPermissionInstructorComposing: false,
+        permissionDrafts: {},
         allStudents: [],
         instructors: [],
         permissions: [],
@@ -13312,6 +13374,8 @@
         document.getElementById('permissionGradeFilter').addEventListener('change', renderPermissionView);
         document.getElementById('permissionStudentTableWrap').addEventListener('click', handlePermissionListClick);
         document.getElementById('permissionDetailPanel').addEventListener('input', handlePermissionInstructorSearch);
+        document.getElementById('permissionDetailPanel').addEventListener('change', handlePermissionDetailChange_);
+        document.getElementById('permissionDetailPanel').addEventListener('click', handlePermissionDetailClick_);
         document.getElementById('permissionDetailPanel').addEventListener('compositionstart', handlePermissionInstructorCompositionStart);
         document.getElementById('permissionDetailPanel').addEventListener('compositionend', handlePermissionInstructorCompositionEnd);
         document.getElementById('savePermissionButton').addEventListener('click', handlePermissionSave);
@@ -18454,7 +18518,6 @@
       function renderPermissionDetailPanel() {
         var wrap = document.getElementById('permissionDetailPanel');
         var student = getSelectedPermissionStudent_();
-        var permissionMap = getPermissionMap();
 
         if (!student) {
           wrap.innerHTML = '<div class="empty-state">좌측 목록에서 학생을 선택하면 강사 권한을 설정할 수 있습니다.</div>';
@@ -18466,15 +18529,8 @@
           return;
         }
 
-        var selected = permissionMap[student.studentId] || [];
-        var instructorKeyword = normalizeSearchText(APP_STATE.permissionInstructorKeyword);
-        var visibleInstructors = APP_STATE.instructors.filter(function(instructor) {
-          if (!instructorKeyword) {
-            return true;
-          }
-          var searchText = normalizeSearchText([instructor.name, instructor.userId].join(' '));
-          return searchText.indexOf(instructorKeyword) !== -1;
-        });
+        var selected = getPermissionDraftSelection_(student.studentId);
+        var visibleInstructors = getVisiblePermissionInstructors_();
         var summary = selected.length
           ? selected.map(function(id) {
               var matched = APP_STATE.instructors.find(function(item) { return item.userId === id; });
@@ -18485,20 +18541,29 @@
         var subjectSourceLabel = student.subjectOverride && student.subjectOverride.subject
           ? '직보 보완값'
           : (student.baseSubject ? '원본 과목' : '미설정');
+        var suggestedInstructors = getPermissionSuggestedInstructors_(student, selected).slice(0, 8);
 
         wrap.innerHTML = [
           '<h4>' + escapeHtml(student.studentName) + '</h4>',
           '<div class="dense-meta">원: ' + escapeHtml(student.school || '-') + ' · 학년: ' + escapeHtml(student.grade ? String(student.grade) : '-') + ' · 학생 ID: ' + escapeHtml(student.studentId) + '</div>',
+          '<div class="permission-fast-panel">',
+          '  <div class="permission-fast-head"><strong>열람 권한 빠른 추가</strong><span>' + escapeHtml(String(selected.length)) + '명 선택됨</span></div>',
+          '  <div class="permission-selected-chip-row">' + renderPermissionSelectedChips_(selected) + '</div>',
+          suggestedInstructors.length ? '  <div class="permission-suggest-row"><span>과목 맞춤</span>' + suggestedInstructors.map(function(instructor) {
+            return '<button type="button" class="teacher-chip secondary" data-action="permission-add-instructor" data-instructor-id="' + escapeAttribute(instructor.userId) + '">' + escapeHtml(instructor.name || instructor.userId) + (instructor.subject ? ' · ' + escapeHtml(instructor.subject) : '') + '</button>';
+          }).join('') + '</div>' : '',
+          '  <div class="permission-fast-actions"><button type="button" class="mini-button" data-action="permission-add-visible">검색 결과 모두 추가</button><button type="button" class="mini-button" data-action="permission-clear-all">선택 초기화</button></div>',
+          '</div>',
           '<input class="field-input permission-instructor-search" data-role="instructor-search" type="text" placeholder="강사 검색" value="' + escapeAttribute(APP_STATE.permissionInstructorKeyword) + '">',
           '<div class="compact-check-grid">',
           visibleInstructors.map(function(instructor) {
             var checked = selected.indexOf(instructor.userId) !== -1 ? ' checked' : '';
             return [
-              '<label class="compact-check">',
+              '<label class="compact-check permission-check-card' + (checked ? ' selected' : '') + '">',
               '  <input type="checkbox" data-instructor-id="' + escapeAttribute(instructor.userId) + '"' + checked + '>',
               '  <div>',
               '    <strong>' + escapeHtml(instructor.name) + '</strong>',
-              '    <span>' + escapeHtml(instructor.userId) + '</span>',
+              '    <span>' + escapeHtml([instructor.userId, instructor.subject].filter(Boolean).join(' · ')) + '</span>',
               '  </div>',
               '</label>'
             ].join('');
@@ -18510,6 +18575,61 @@
           '  <div class="dense-summary-item"><span>허용 강사 목록</span><strong>' + escapeHtml(summary.length ? summary.join(', ') : '없음') + '</strong></div>',
           '</div>'
         ].join('');
+      }
+
+      function compareInstructorsByName_(a, b) {
+        return String(a && a.name || a && a.userId || '').localeCompare(String(b && b.name || b && b.userId || ''), 'ko');
+      }
+
+      function getPermissionDraftSelection_(studentId) {
+        var key = String(studentId || '');
+        if (Object.prototype.hasOwnProperty.call(APP_STATE.permissionDrafts, key)) {
+          return (APP_STATE.permissionDrafts[key] || []).slice();
+        }
+        return (getPermissionMap()[key] || []).slice();
+      }
+
+      function setPermissionDraftSelection_(studentId, instructorIds) {
+        var key = String(studentId || '');
+        if (!key) {
+          return;
+        }
+        APP_STATE.permissionDrafts[key] = uniqueList_((instructorIds || []).filter(Boolean));
+      }
+
+      function renderPermissionSelectedChips_(selected) {
+        if (!selected || !selected.length) {
+          return '<span class="permission-empty-selection">아직 선택된 열람 강사가 없습니다.</span>';
+        }
+        return selected.map(function(id) {
+          var instructor = (APP_STATE.instructors || []).find(function(item) { return item.userId === id; }) || { userId: id, name: id };
+          return '<button type="button" class="teacher-chip primary permission-selected-chip" data-action="permission-remove-instructor" data-instructor-id="' + escapeAttribute(id) + '">' + escapeHtml(instructor.name || id) + '<span aria-hidden="true">×</span></button>';
+        }).join('');
+      }
+
+      function getPermissionSuggestedInstructors_(student, selected) {
+        var subjectKey = normalizeSearchText(student && student.subject);
+        if (!subjectKey) {
+          return [];
+        }
+        return (APP_STATE.instructors || []).filter(function(instructor) {
+          if ((selected || []).indexOf(instructor.userId) !== -1) {
+            return false;
+          }
+          var instructorSubject = normalizeSearchText(instructor.subject);
+          return instructorSubject && (subjectKey.indexOf(instructorSubject) !== -1 || instructorSubject.indexOf(subjectKey) !== -1);
+        }).sort(compareInstructorsByName_);
+      }
+
+      function getVisiblePermissionInstructors_() {
+        var instructorKeyword = normalizeSearchText(APP_STATE.permissionInstructorKeyword);
+        return (APP_STATE.instructors || []).slice().sort(compareInstructorsByName_).filter(function(instructor) {
+          if (!instructorKeyword) {
+            return true;
+          }
+          var searchText = normalizeSearchText([instructor.name, instructor.userId, instructor.subject].join(' '));
+          return searchText.indexOf(instructorKeyword) !== -1;
+        });
       }
 
       function getSelectedPermissionStudent_() {
@@ -18585,6 +18705,67 @@
             nextInput.setSelectionRange(safeSelectionStart, safeSelectionEnd);
           }
         }
+      }
+
+      function handlePermissionDetailChange_(event) {
+        var input = event.target.closest('input[type="checkbox"][data-instructor-id]');
+        if (!input) {
+          return;
+        }
+
+        var student = getSelectedPermissionStudent_();
+        if (!student) {
+          return;
+        }
+
+        var instructorId = input.getAttribute('data-instructor-id');
+        var selected = getPermissionDraftSelection_(student.studentId);
+        if (input.checked && selected.indexOf(instructorId) === -1) {
+          selected.push(instructorId);
+        }
+        if (!input.checked) {
+          selected = selected.filter(function(id) { return id !== instructorId; });
+        }
+        setPermissionDraftSelection_(student.studentId, selected);
+        renderPermissionDetailPanel();
+      }
+
+      function handlePermissionDetailClick_(event) {
+        var button = event.target.closest('[data-action]');
+        if (!button) {
+          return;
+        }
+
+        var action = button.getAttribute('data-action');
+        if (action.indexOf('permission-') !== 0) {
+          return;
+        }
+
+        var student = getSelectedPermissionStudent_();
+        if (!student) {
+          return;
+        }
+
+        event.preventDefault();
+        var selected = getPermissionDraftSelection_(student.studentId);
+        var instructorId = button.getAttribute('data-instructor-id');
+
+        if (action === 'permission-add-instructor' && instructorId) {
+          selected.push(instructorId);
+        } else if (action === 'permission-remove-instructor' && instructorId) {
+          selected = selected.filter(function(id) { return id !== instructorId; });
+        } else if (action === 'permission-add-visible') {
+          selected = selected.concat(getVisiblePermissionInstructors_().map(function(instructor) {
+            return instructor.userId;
+          }));
+        } else if (action === 'permission-clear-all') {
+          selected = [];
+        } else {
+          return;
+        }
+
+        setPermissionDraftSelection_(student.studentId, selected);
+        renderPermissionDetailPanel();
       }
 
       function renderPermissionModalOptions() {
@@ -18666,11 +18847,7 @@
           return;
         }
 
-        var instructorIds = Array.prototype.slice.call(
-          document.querySelectorAll('#permissionDetailPanel input[type="checkbox"]:checked')
-        ).map(function(input) {
-          return input.getAttribute('data-instructor-id');
-        });
+        var instructorIds = getPermissionDraftSelection_(studentId);
 
         setLoading('학생 열람 권한을 저장하는 중입니다.');
         apiRequest('savePermissions', {
@@ -18679,6 +18856,7 @@
           instructorIds: JSON.stringify(instructorIds)
         })
           .then(function(result) {
+            delete APP_STATE.permissionDrafts[String(studentId)];
             hydrateStudentDataOnly(result);
             renderAll();
             switchView('permissions');
