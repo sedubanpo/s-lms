@@ -14029,6 +14029,64 @@
         return merged;
       }
 
+      function getStudentLogReactionSnapshots_(rowKey) {
+        var snapshots = [];
+        var seenLogs = [];
+        ['visibleStudents', 'activeStudents'].forEach(function(stateKey) {
+          (APP_STATE[stateKey] || []).forEach(function(student) {
+            (student.logs || []).forEach(function(log) {
+              if (String(log.rowNumber || '') !== String(rowKey || '') || seenLogs.indexOf(log) !== -1) {
+                return;
+              }
+              seenLogs.push(log);
+              snapshots.push({
+                log: log,
+                reactions: JSON.parse(JSON.stringify(Array.isArray(log.reactions) ? log.reactions : [])),
+                reactionsUpdatedAt: log.reactionsUpdatedAt || ''
+              });
+            });
+          });
+        });
+        return snapshots;
+      }
+
+      function restoreStudentLogReactionSnapshots_(snapshots) {
+        (snapshots || []).forEach(function(snapshot) {
+          if (!snapshot || !snapshot.log) {
+            return;
+          }
+          snapshot.log.reactions = JSON.parse(JSON.stringify(snapshot.reactions || []));
+          snapshot.log.reactionsUpdatedAt = snapshot.reactionsUpdatedAt || '';
+        });
+      }
+
+      function applyStudentLogReactionOptimistically_(rowKey, reaction) {
+        var user = APP_STATE.user || {};
+        var userId = String(user.userId || '').trim();
+        if (!userId) {
+          return false;
+        }
+        var userName = String(user.name || user.userName || userId || '').trim();
+        var timestamp = new Date().toISOString();
+        var applied = false;
+        getStudentLogReactionSnapshots_(rowKey).forEach(function(snapshot) {
+          var log = snapshot.log;
+          var nextReactions = (Array.isArray(log.reactions) ? log.reactions : []).filter(function(item) {
+            return String(item && item.userId || '') !== userId;
+          });
+          nextReactions.push({
+            userId: userId,
+            userName: userName,
+            reaction: reaction,
+            reactedAt: timestamp
+          });
+          log.reactions = nextReactions;
+          log.reactionsUpdatedAt = timestamp;
+          applied = true;
+        });
+        return applied;
+      }
+
       function setStudentLogFormSaving_(form, isSaving) {
         if (!form) {
           return;
@@ -17682,7 +17740,9 @@
           return;
         }
 
+        var snapshots = getStudentLogReactionSnapshots_(logRowNumber);
         APP_STATE.studentLogReactionSaving[String(logRowNumber)] = reaction;
+        applyStudentLogReactionOptimistically_(logRowNumber, reaction);
         renderStudents();
         if (APP_STATE.selectedStudentDetailId) {
           renderStudentDetailModal_();
@@ -17708,7 +17768,10 @@
             }
             setNotice('기록 반응이 저장되었습니다.', 'success');
           })
-          .catch(handleApiError_)
+          .catch(function(error) {
+            restoreStudentLogReactionSnapshots_(snapshots);
+            handleApiError_(error);
+          })
           .finally(function() {
             delete APP_STATE.studentLogReactionSaving[String(logRowNumber)];
             renderStudents();
@@ -25352,6 +25415,7 @@
           'saveHomeroomAssignmentsByInstructor',
           'addStudentLog',
           'deleteStudentLog',
+          'reactStudentLog',
           'addStudent',
           'updateStudentStatus',
           'addMaterial',
