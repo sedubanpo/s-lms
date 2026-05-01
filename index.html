@@ -12406,10 +12406,6 @@
                 <h3 id="permissionPanelTitle">권한 관리</h3>
                 <p id="permissionPanelDescription">학생명을 검색하고, 원/학년으로 좁힌 뒤 학생을 선택하면 우측에서 수업 열람 권한을 빠르게 관리할 수 있습니다.</p>
               </div>
-              <div class="panel-actions">
-                <button id="migratePermissionsFirestoreButton" type="button" class="mini-button">열람 권한 Firestore 이전</button>
-                <button id="migrateHomeroomsFirestoreButton" type="button" class="mini-button">담임 권한 Firestore 이전</button>
-              </div>
             </div>
             <div id="permissionPanelTabs" class="permission-panel-tabs"></div>
             <div id="permissionInstructorPanel">
@@ -13391,8 +13387,6 @@
         document.getElementById('permissionDetailPanel').addEventListener('compositionstart', handlePermissionInstructorCompositionStart);
         document.getElementById('permissionDetailPanel').addEventListener('compositionend', handlePermissionInstructorCompositionEnd);
         document.getElementById('savePermissionButton').addEventListener('click', handlePermissionSave);
-        document.getElementById('migratePermissionsFirestoreButton').addEventListener('click', handleFirestoreMigrationClick_);
-        document.getElementById('migrateHomeroomsFirestoreButton').addEventListener('click', handleFirestoreMigrationClick_);
         document.getElementById('permissionPanelTabs').addEventListener('click', handlePermissionTabClick);
         document.getElementById('addStudentButton').addEventListener('click', handleStudentAdd);
         bindDeferredTextRender_('studentManageSearchInput', renderPermissionView, 180);
