@@ -9327,6 +9327,40 @@
 
       .material-form-grid .material-span-2 { grid-column: span 2; }
       .material-form-grid .material-span-4 { grid-column: span 4; }
+      .material-form-grid .material-span-12 { grid-column: 1 / -1; }
+
+      .material-form-scope-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px;
+        border: 1px solid #d7e3f5;
+        border-radius: 10px;
+        background: #f8fbff;
+        justify-self: start;
+      }
+
+      .material-scope-option {
+        min-height: 34px;
+        padding: 0 14px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: #475569;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .material-scope-option.active {
+        background: #155bdc;
+        color: #ffffff;
+        box-shadow: 0 8px 18px rgba(21, 91, 220, 0.18);
+      }
+
+      .material-scope-option:not(.active):hover {
+        background: #eaf2ff;
+        color: #174ea6;
+      }
 
       .material-save-button {
         grid-column: span 2;
@@ -12123,7 +12157,7 @@
             </div>
             <div class="story-line">
               <i data-lucide="calendar-days"></i>
-              <span>학교 일정과 내신 자료 관리</span>
+              <span>학교 일정과 문제 자료 관리</span>
             </div>
           </div>
         </section>
@@ -12197,7 +12231,7 @@
           </button>
           <button type="button" class="side-nav-button" data-view="materials">
             <span class="nav-indicator"></span>
-            <span>내신 자료실</span>
+            <span>문제 자료실</span>
           </button>
           <button type="button" id="permissionNavButton" class="side-nav-button" data-view="permissions">
             <span class="nav-indicator"></span>
@@ -12592,7 +12626,7 @@
             <div class="panel-head">
               <div>
                 <h3>자료 등록</h3>
-                <p>학교, 학년, 학기, 대상 년도, 과목, 자료유형, 파일유형, 링크와 설명을 입력합니다.</p>
+                <p>공용 문제 자료와 학생별 개인 자료를 구분해 링크와 설명을 입력합니다.</p>
               </div>
               <div class="material-action-group">
                 <button id="openMaterialSettingsButton" type="button" class="mini-button">설정</button>
@@ -12607,35 +12641,44 @@
               <button id="cancelMaterialEditButton" type="button" class="button-ghost">수정 취소</button>
             </div>
             <form id="materialForm" class="material-form-grid">
-              <div class="field-shell material-span-2">
+              <div class="material-form-scope-toggle material-span-12" role="tablist" aria-label="자료 등록 범위">
+                <button type="button" class="material-scope-option active" data-material-scope="shared" aria-selected="true">공용 자료</button>
+                <button type="button" class="material-scope-option" data-material-scope="student" aria-selected="false">학생 자료</button>
+              </div>
+              <div class="field-shell material-span-2" data-material-shared-field>
                 <label class="field-label" for="materialSchoolInput">학교</label>
                 <input id="materialSchoolInput" class="field-input" type="text" placeholder="반포고">
               </div>
-              <div class="field-shell material-span-2">
-                <label class="field-label" for="materialGradeInput">학년</label>
-                <input id="materialGradeInput" class="field-input" type="text" placeholder="3학년">
+              <div class="field-shell material-span-2" data-material-student-field>
+                <label class="field-label" for="materialStudentNameInput">학생명</label>
+                <input id="materialStudentNameInput" class="field-input" type="text" list="materialStudentNameList" placeholder="학생명 검색">
+                <datalist id="materialStudentNameList"></datalist>
               </div>
-              <div class="field-shell material-span-2">
+              <div class="field-shell material-span-2" data-material-shared-field>
+                <label class="field-label" for="materialGradeInput">학년</label>
+                <input id="materialGradeInput" class="field-input" type="text" placeholder="3 또는 3학년">
+              </div>
+              <div class="field-shell material-span-2" data-material-shared-field>
                 <label class="field-label" for="materialTermInput">학기</label>
                 <select id="materialTermInput" class="field-select"></select>
               </div>
-              <div class="field-shell material-span-2">
+              <div class="field-shell material-span-2" data-material-shared-field>
                 <label class="field-label" for="materialYearInput">대상 년도</label>
                 <input id="materialYearInput" class="field-input" type="text" placeholder="2026">
               </div>
-              <div class="field-shell material-span-2">
+              <div class="field-shell material-span-2" data-material-shared-field>
                 <label class="field-label" for="materialSubjectInput">과목</label>
                 <input id="materialSubjectInput" class="field-input" type="text" placeholder="수학">
               </div>
-              <div class="field-shell material-span-2">
+              <div class="field-shell material-span-2" data-material-shared-field>
                 <label class="field-label" for="materialExamTypeInput">시험구분</label>
                 <select id="materialExamTypeInput" class="field-select"></select>
               </div>
-              <div class="field-shell material-span-2">
+              <div class="field-shell material-span-2" data-material-shared-field>
                 <label class="field-label" for="materialTypeInput">자료유형</label>
                 <select id="materialTypeInput" class="field-select"></select>
               </div>
-              <div class="field-shell material-span-2">
+              <div class="field-shell material-span-2" data-material-shared-field>
                 <label class="field-label" for="materialFileTypeInput">파일유형</label>
                 <select id="materialFileTypeInput" class="field-select"></select>
               </div>
@@ -12768,7 +12811,7 @@
         <div class="modal-top">
           <div>
             <h3 id="studentDetailModalTitle">학생 상세 보기</h3>
-            <p id="studentDetailModalDescription">상담, 권한, 시험, 내신 자료 연결 상태를 한 화면에서 확인합니다.</p>
+            <p id="studentDetailModalDescription">상담, 권한, 시험, 문제 자료 연결 상태를 한 화면에서 확인합니다.</p>
           </div>
           <button id="closeStudentDetailModalButton" type="button" class="icon-button" aria-label="학생 상세창 닫기">×</button>
         </div>
@@ -12997,6 +13040,7 @@
         materialQuickFilter: '',
         activeMaterialSummaryAction: '',
         materialCreateOpen: false,
+        materialCreateScope: 'shared',
         isSavingMaterial: false,
         isMaterialSearchComposing: false,
         materialSearchRenderTimer: null,
@@ -13113,8 +13157,8 @@
           description: '내신, 모의고사, 수능 성적을 학생별로 입력하고 분석합니다.'
         },
         materials: {
-          title: '내신 자료실',
-          description: '학교별 내신 자료와 시험 범위를 빠르게 검색하고 관리'
+          title: '문제 자료실',
+          description: '학교별 문제 자료, 시험 범위, 학생별 개인 자료를 빠르게 검색하고 관리'
         }
       };
       var GRADE_INTERNAL_EXAMS = ['1학기 중간고사', '1학기 기말고사', '2학기 중간고사', '2학기 기말고사'];
@@ -13281,6 +13325,7 @@
         document.getElementById('modalSavePermissionButton').addEventListener('click', handlePermissionModalSave);
 
         document.getElementById('materialForm').addEventListener('submit', handleMaterialSave);
+        document.getElementById('materialForm').addEventListener('click', handleMaterialScopeClick_);
         document.getElementById('cancelMaterialEditButton').addEventListener('click', clearMaterialEditMode_);
         document.getElementById('openMaterialSettingsButton').addEventListener('click', openMaterialSettingsModal);
         document.getElementById('closeMaterialCreatePanelButton').addEventListener('click', function() {
@@ -14973,7 +15018,7 @@
                renderStatusChip_('자료 ' + materialInfo.available, materialInfo.available ? 'green' : 'muted'),
                renderStatusChip_('일정 ' + eventInfo.count, eventInfo.count ? 'blue' : 'muted')
              ].join('') + '</div></td>',
-          '  <td><div class="status-grid">' + renderSchoolConnectionChip_('학교 일정', eventInfo.count ? 'blue' : 'muted') + renderSchoolConnectionChip_('내신 자료', materialInfo.available ? 'green' : 'muted') + '</div></td>',
+          '  <td><div class="status-grid">' + renderSchoolConnectionChip_('학교 일정', eventInfo.count ? 'blue' : 'muted') + renderSchoolConnectionChip_('문제 자료', materialInfo.available ? 'green' : 'muted') + '</div></td>',
           '  <td>' + escapeHtml(recent) + '</td>',
           '  <td><div class="action-cluster"><button class="icon-mini" type="button" data-action="show-student-profile" title="상세 보기"><i data-lucide="panel-right-open"></i></button><button class="icon-mini" type="button" data-action="manage-student-permission" title="권한 관리"><i data-lucide="shield"></i></button><button class="icon-mini" type="button" data-action="show-log-detail-latest" title="메모"><i data-lucide="sticky-note"></i></button></div></td>',
           '</tr>'
@@ -15189,7 +15234,7 @@
           '  <section class="profile-block"><h4>강사 권한 맵</h4>' + renderPermissionRelationMap_(student, permissions) + '</section>',
           '  <section class="profile-block"><div class="profile-block-title-row"><h4>상담 기록 preview</h4><span class="ops-chip slate">' + escapeHtml(String((student.logs || []).length)) + '건</span></div>' + renderStudentLogPreviewPanel_(student, { context: 'board', pageSize: 5, showMore: true, showComposer: true }) + '</section>',
           '  <section class="profile-block"><h4>시험 대비/직보 상태</h4>' + renderStudentExamJikboPanel_(examItems, jikbo) + '</section>',
-          '  <section class="profile-block"><h4>내신 자료 연결</h4>' + renderStudentMaterialConnectionPanel_(student, materialInfo) + '</section>',
+          '  <section class="profile-block"><h4>문제 자료 연결</h4>' + renderStudentMaterialConnectionPanel_(student, materialInfo) + '</section>',
           '</div>'
         ].join('');
       }
@@ -15575,11 +15620,18 @@
 
       function getStudentConnectedMaterials_(student) {
         var schoolKey = normalizeSearchText(student && student.school);
-        if (!schoolKey) {
+        var studentNameKey = normalizeSearchText(student && student.studentName);
+        if (!schoolKey && !studentNameKey) {
           return [];
         }
         var gradeNumber = getGradeNumber_(student && student.grade);
         return getScopedMaterials_().filter(function(item) {
+          if (isStudentMaterial_(item)) {
+            return Boolean(studentNameKey) && normalizeSearchText(item.studentName || item.subject || '') === studentNameKey;
+          }
+          if (!schoolKey) {
+            return false;
+          }
           var materialGrade = normalizeSearchText(item.grade);
           if (normalizeSearchText(item.school) !== schoolKey) {
             return false;
@@ -15594,6 +15646,13 @@
         }).sort(function(a, b) {
           return String(b.createdAt || b.updatedAt || b.year || '').localeCompare(String(a.createdAt || a.updatedAt || a.year || ''));
         });
+      }
+
+      function isStudentMaterial_(item) {
+        var scope = normalizeSearchText(item && item.materialScope);
+        var school = normalizeSearchText(item && item.school);
+        var type = normalizeSearchText(item && item.materialType);
+        return scope === 'student' || school === normalizeSearchText('학생 자료') || type === normalizeSearchText('학생 자료');
       }
 
       function getGradeNumber_(grade) {
@@ -15729,7 +15788,7 @@
           return;
         }
         document.getElementById('studentDetailModalTitle').textContent = (student.studentName || '-') + ' 상세 보기';
-        document.getElementById('studentDetailModalDescription').textContent = '상담, 권한, 시험, 내신 자료 연결 상태를 한 화면에서 확인합니다.';
+        document.getElementById('studentDetailModalDescription').textContent = '상담, 권한, 시험, 문제 자료 연결 상태를 한 화면에서 확인합니다.';
         document.getElementById('studentDetailContent').innerHTML = renderStudentDetailDashboard_(student);
         renderLucideIcons_();
       }
@@ -15750,7 +15809,7 @@
           '    <section class="student-detail-card"><div class="student-detail-kpi-grid">' + [
                  renderStudentDetailKpi_('상담 기록', logs.length + '건'),
                  renderStudentDetailKpi_('연결 권한', permissions.length + '건'),
-                 renderStudentDetailKpi_('내신 자료', materials.length + '건'),
+                 renderStudentDetailKpi_('문제 자료', materials.length + '건'),
                  renderStudentDetailKpi_('직보 대상', jikbo.total + '건')
                ].join('') + '</div></section>',
           '    <section class="student-detail-card"><div class="student-detail-section-head"><h4>강사 권한 맵</h4><span class="ops-chip blue">' + escapeHtml(String(permissions.length)) + '건</span></div>' + renderPermissionRelationMap_(student, permissions) + '</section>',
@@ -15963,14 +16022,15 @@
 
       function renderStudentDetailMaterialList_(materials) {
         var rows = (materials || []).slice(0, 8).map(function(item) {
+          var studentMaterial = isStudentMaterial_(item);
           return [
-            '<div class="student-detail-material-item ' + (isExamScopeMaterial_(item) ? 'gold' : '') + '">',
-            '  <div><strong>' + escapeHtml(buildMaterialDisplayTitle_(item)) + '</strong><span>' + escapeHtml([item.year || '-', item.examType || '-', getMaterialPrimaryTypeLabel_(item) || item.materialType || '-', item.fileType || '-'].filter(Boolean).join(' · ')) + '</span></div>',
+            '<div class="student-detail-material-item ' + (isExamScopeMaterial_(item) ? 'gold' : '') + (studentMaterial ? ' student-material' : '') + '">',
+            '  <div><strong>' + escapeHtml(buildMaterialDisplayTitle_(item)) + '</strong><span>' + escapeHtml(studentMaterial ? [getMaterialPrimaryTypeLabel_(item), item.createdBy || '-', formatMaterialDate_(item.createdAt || '')].filter(Boolean).join(' · ') : [item.year || '-', item.examType || '-', getMaterialPrimaryTypeLabel_(item) || item.materialType || '-', item.fileType || '-'].filter(Boolean).join(' · ')) + '</span></div>',
             item.link ? '<button type="button" class="profile-link-button" data-student-material-open="true" data-material-row="' + escapeAttribute(String(item.rowNumber || '')) + '" data-material-link="' + escapeAttribute(item.link || '') + '">열기</button>' : '<span class="student-status-badge slate">링크 없음</span>',
             '</div>'
           ].join('');
         });
-        return rows.length ? '<div class="student-detail-material-list">' + rows.join('') + '</div>' : '<div class="profile-empty">연결된 내신 자료가 없습니다.</div>';
+        return rows.length ? '<div class="student-detail-material-list">' + rows.join('') + '</div>' : '<div class="profile-empty">연결된 문제 자료가 없습니다.</div>';
       }
 
       function renderPreviewList_(items) {
@@ -15988,7 +16048,7 @@
           '  <article class="widget-card ops-card"><div class="ops-card-title"><h4>학교별 학생 분포</h4><span class="ops-chip blue">' + escapeHtml(String(students.length)) + '명</span></div>' + renderSchoolHeatmap_(students) + '</article>',
           '  <article class="widget-card ops-card"><div class="ops-card-title"><h4>담임 권한 미배정</h4><span class="ops-chip orange">' + escapeHtml(String(getUnassignedStudents_(students).length)) + '명</span></div>' + renderUnassignedList_(students) + '</article>',
           '  <article class="widget-card ops-card"><div class="ops-card-title"><h4>시험 일정 임박</h4><span class="ops-chip blue">' + escapeHtml(String(getUpcomingEventsForScope_().length)) + '건</span></div>' + renderUpcomingTimeline_() + '</article>',
-          '  <article class="widget-card ops-card"><div class="ops-card-title"><h4>내신 자료 연결 현황</h4><span class="ops-chip teal">' + escapeHtml(String(getScopedMaterials_().length)) + '건</span></div>' + renderMaterialBars_() + '</article>',
+          '  <article class="widget-card ops-card"><div class="ops-card-title"><h4>문제 자료 연결 현황</h4><span class="ops-chip teal">' + escapeHtml(String(getScopedMaterials_().length)) + '건</span></div>' + renderMaterialBars_() + '</article>',
           '</section>'
         ].join('');
       }
@@ -18803,7 +18863,8 @@
           APP_STATE.materialCreateOpen = true;
           renderMaterials();
           requestAnimationFrame(function() {
-            var input = document.getElementById('materialSchoolInput');
+            syncMaterialScopeForm_();
+            var input = APP_STATE.materialCreateScope === 'student' ? document.getElementById('materialStudentNameInput') : document.getElementById('materialSchoolInput');
             if (input) {
               input.focus();
             }
@@ -18919,6 +18980,9 @@
 
         var isEditing = Boolean(APP_STATE.editingMaterialRowNumber);
         var action = isEditing ? 'updateMaterial' : 'addMaterial';
+        var materialScope = APP_STATE.materialCreateScope === 'student' ? 'student' : 'shared';
+        var studentNameInput = document.getElementById('materialStudentNameInput');
+        var studentName = studentNameInput ? studentNameInput.value.trim() : '';
 
         APP_STATE.isSavingMaterial = true;
         setMaterialUploadProgress_(true, isEditing);
@@ -18926,8 +18990,10 @@
         apiRequest(action, {
           token: APP_STATE.token,
           materialRowNumber: APP_STATE.editingMaterialRowNumber,
+          materialScope: materialScope,
+          studentName: studentName,
           school: document.getElementById('materialSchoolInput').value.trim(),
-          grade: document.getElementById('materialGradeInput').value.trim(),
+          grade: normalizeMaterialGradeInput_(document.getElementById('materialGradeInput').value),
           term: document.getElementById('materialTermInput').value.trim(),
           year: document.getElementById('materialYearInput').value.trim(),
           subject: document.getElementById('materialSubjectInput').value.trim(),
@@ -18990,6 +19056,9 @@
             : '학교, 과목, 링크 정보를 저장하고 자료 목록을 갱신하고 있습니다.';
         }
         saveButton.textContent = isUploading ? (isEditing ? '수정 저장 중...' : '자료 저장 중...') : (isEditing ? '자료 수정 저장' : '자료 저장');
+        if (!isUploading) {
+          syncMaterialScopeForm_();
+        }
       }
 
       function syncMaterialFormMode_() {
@@ -19026,6 +19095,8 @@
 
         APP_STATE.editingMaterialRowNumber = String(material.rowNumber);
         APP_STATE.materialCreateOpen = true;
+        APP_STATE.materialCreateScope = isStudentMaterial_(material) ? 'student' : 'shared';
+        document.getElementById('materialStudentNameInput').value = material.studentName || '';
         document.getElementById('materialSchoolInput').value = material.school || '';
         document.getElementById('materialGradeInput').value = material.grade || '';
         document.getElementById('materialTermInput').value = material.term || '';
@@ -19037,10 +19108,11 @@
         document.getElementById('materialLinkInput').value = material.link || '';
         document.getElementById('materialNoteInput').value = material.note || '';
         document.getElementById('materialEditBannerText').textContent = [
-          material.school || '-',
-          material.year || '-',
-          material.subject || '-'
+          isStudentMaterial_(material) ? '학생 자료' : (material.school || '-'),
+          isStudentMaterial_(material) ? (material.studentName || '-') : (material.year || '-'),
+          isStudentMaterial_(material) ? (material.note || '-') : (material.subject || '-')
         ].join(' / ') + ' 자료를 수정 중입니다.';
+        syncMaterialScopeForm_();
         syncMaterialFormMode_();
         syncMaterialCreatePanel_();
         document.getElementById('materialsCreatePanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -22218,6 +22290,18 @@
             var recentCount = flattenMaterialYearMap_(yearMap).filter(isRecentMaterial_).length;
             var scopeCount = flattenMaterialYearMap_(yearMap).filter(isExamScopeMaterial_).length;
             var visibleYearKeys = yearKeys;
+            if (schoolKey === '학생 자료') {
+              var studentItems = flattenMaterialYearMap_(yearMap);
+              return [
+                '<section class="material-school-group">',
+                '  <div class="material-group-head">',
+                '    <div><div class="material-group-title"><strong>학생 자료</strong>' + renderMaterialCountPill_('자료 ' + schoolItemCount + '건', '') + renderMaterialCountPill_('최근 ' + recentCount + '건', '') + '</div></div>',
+                '    <button type="button" class="material-chip-button" data-material-school="학생 자료">학생 자료 필터</button>',
+                '  </div>',
+                renderMaterialDenseTable_(studentItems, schoolKey),
+                '</section>'
+              ].join('');
+            }
 
             return [
               '<section class="material-school-group">',
@@ -22521,6 +22605,9 @@
       }
 
       function buildMaterialDisplayTitle_(item) {
+        if (isStudentMaterial_(item)) {
+          return ['학생 자료', item.studentName || item.subject || '학생 미지정', item.note || ''].filter(Boolean).join(' · ');
+        }
         var parts = [item.school, item.year, item.term, item.examType];
         if (!isExamScopeMaterial_(item)) {
           parts.push(item.subject);
@@ -22685,7 +22772,10 @@
             item.materialType,
             item.fileType,
             item.note,
-            item.createdBy
+            item.createdBy,
+            item.studentName,
+            item.materialScope,
+            item.link
           ].join(' '));
 
           var matchesKeyword = !filterState.keyword || searchText.indexOf(filterState.keyword) !== -1;
@@ -22741,6 +22831,71 @@
         fillStaticSelectWithOptions('materialExamTypeInput', getResolvedMaterialSettingOptions_('examType'), '시험구분 선택');
         fillStaticSelectWithOptions('materialTypeInput', getResolvedMaterialSettingOptions_('materialType'), '자료유형 선택');
         fillStaticSelectWithOptions('materialFileTypeInput', getResolvedMaterialSettingOptions_('fileType'), '파일유형 선택');
+        refreshMaterialStudentNameOptions_();
+        syncMaterialScopeForm_();
+      }
+
+      function handleMaterialScopeClick_(event) {
+        var button = event.target.closest('[data-material-scope]');
+        if (!button || APP_STATE.isSavingMaterial) {
+          return;
+        }
+        APP_STATE.materialCreateScope = button.getAttribute('data-material-scope') || 'shared';
+        syncMaterialScopeForm_();
+      }
+
+      function syncMaterialScopeForm_() {
+        var scope = APP_STATE.materialCreateScope === 'student' ? 'student' : 'shared';
+        var form = document.getElementById('materialForm');
+        if (!form) {
+          return;
+        }
+        Array.prototype.slice.call(form.querySelectorAll('[data-material-scope]')).forEach(function(button) {
+          var active = (button.getAttribute('data-material-scope') || '') === scope;
+          button.classList.toggle('active', active);
+          button.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        Array.prototype.slice.call(form.querySelectorAll('[data-material-shared-field]')).forEach(function(node) {
+          var hide = scope === 'student';
+          node.classList.toggle('hidden', hide);
+          Array.prototype.slice.call(node.querySelectorAll('input, select, textarea')).forEach(function(control) {
+            control.disabled = hide;
+          });
+        });
+        Array.prototype.slice.call(form.querySelectorAll('[data-material-student-field]')).forEach(function(node) {
+          var hide = scope !== 'student';
+          node.classList.toggle('hidden', hide);
+          Array.prototype.slice.call(node.querySelectorAll('input, select, textarea')).forEach(function(control) {
+            control.disabled = hide;
+          });
+        });
+        refreshMaterialStudentNameOptions_();
+      }
+
+      function refreshMaterialStudentNameOptions_() {
+        var list = document.getElementById('materialStudentNameList');
+        if (!list) {
+          return;
+        }
+        var students = (APP_STATE.visibleStudents && APP_STATE.visibleStudents.length ? APP_STATE.visibleStudents : APP_STATE.allStudents) || [];
+        var names = students.map(function(student) {
+          return student && student.studentName;
+        }).filter(Boolean).filter(function(value, index, array) {
+          return array.indexOf(value) === index;
+        }).sort(function(a, b) {
+          return String(a).localeCompare(String(b), 'ko');
+        });
+        list.innerHTML = names.map(function(name) {
+          return '<option value="' + escapeAttribute(name) + '"></option>';
+        }).join('');
+      }
+
+      function normalizeMaterialGradeInput_(value) {
+        var text = String(value || '').trim();
+        if (/^\d+$/.test(text)) {
+          return text + '학년';
+        }
+        return text;
       }
 
       function getResolvedMaterialSettingOptions_(settingType) {
@@ -22893,7 +23048,7 @@
 
         var selectedSchool = APP_STATE.selectedMaterialSchoolTab || document.getElementById('materialSchoolFilter').value || '';
         var wrap = document.getElementById('materialsSchoolTabs');
-        var preferred = ['경원중', '동작고', '반포고', '배문고', '상문고', '서문여고', '서초고', '세화고', '세화여중', '수도여고', '신동중', '신반포중', '에스학원', '중대부고'];
+        var preferred = ['학생 자료', '경원중', '동작고', '반포고', '배문고', '상문고', '서문여고', '서초고', '세화고', '세화여중', '수도여고', '신동중', '신반포중', '에스학원', '중대부고'];
         var ordered = ['전체'].concat(preferred).concat(schools).filter(function(value, index, array) {
           return array.indexOf(value) === index;
         });
@@ -23162,9 +23317,7 @@
           .filter(function(value, index, array) {
             return array.indexOf(value) === index;
           })
-          .sort(function(a, b) {
-            return a.localeCompare(b);
-          });
+          .sort(compareMaterialSchoolNames_);
       }
 
       function getVisibleMaterialSchools_(materials) {
@@ -23179,9 +23332,17 @@
           .filter(function(value, index, array) {
             return array.indexOf(value) === index;
           })
-          .sort(function(a, b) {
-            return a.localeCompare(b);
-          });
+          .sort(compareMaterialSchoolNames_);
+      }
+
+      function compareMaterialSchoolNames_(a, b) {
+        if (a === '학생 자료' && b !== '학생 자료') {
+          return -1;
+        }
+        if (b === '학생 자료' && a !== '학생 자료') {
+          return 1;
+        }
+        return String(a || '').localeCompare(String(b || ''), 'ko');
       }
 
       function syncMaterialOpenLogButton_() {
