@@ -13332,7 +13332,7 @@
         }
       };
       var GRADE_INTERNAL_EXAMS = ['1학기 중간고사', '1학기 기말고사', '2학기 중간고사', '2학기 기말고사'];
-      var GRADE_MOCK_EXAMS = ['3월 모의고사', '4월 모의고사', '6월 모의고사', '7월 모의고사', '9월 모의고사', '10월 모의고사', '수능'];
+      var GRADE_MOCK_EXAMS = ['3월 모의고사', '4월 모의고사', '5월 모의고사', '6월 모의고사', '7월 모의고사', '9월 모의고사', '10월 모의고사', '수능'];
       var GRADE_SUBJECT_OPTIONS = ['국어', '수학', '영어', '과학', '사회', '한국사', '통합과학', '통합사회', '물리학', '화학', '생명과학', '지구과학'];
       var NOTICE_TIMER = null;
 
@@ -24353,6 +24353,7 @@
         APP_STATE.grades = gradeData && gradeData.grades ? gradeData.grades : [];
         APP_STATE.gradeStudents = gradeData && gradeData.students ? gradeData.students : APP_STATE.visibleStudents.slice();
         APP_STATE.gradeSummary = gradeData && gradeData.summary ? gradeData.summary : buildGradeSummaryClient_(APP_STATE.grades, APP_STATE.gradeStudents);
+        APP_STATE.gradeExamOptions = normalizeGradeExamOptions_(gradeData && gradeData.examOptions ? gradeData.examOptions : APP_STATE.gradeExamOptions);
         if (gradeData && gradeData.user) {
           APP_STATE.user = gradeData.user;
         }
@@ -24527,13 +24528,17 @@
       }
 
       function renderGradeSelect_(name, label, options, value, emptyLabel) {
+        var normalizedOptions = (options || []).slice();
+        if (value && normalizedOptions.map(String).indexOf(String(value)) === -1) {
+          normalizedOptions.push(value);
+        }
         var html = [
           '<select class="field-select" aria-label="' + escapeAttribute(label) + '" data-grade-filter="' + escapeAttribute(name) + '">'
         ];
         if (emptyLabel) {
           html.push('<option value="">' + escapeHtml(emptyLabel) + '</option>');
         }
-        (options || []).forEach(function(option) {
+        normalizedOptions.forEach(function(option) {
           html.push('<option value="' + escapeAttribute(option) + '"' + (String(value || '') === String(option) ? ' selected' : '') + '>' + escapeHtml(option) + '</option>');
         });
         html.push('</select>');
@@ -24754,7 +24759,7 @@
         if (!student) {
           return '<div class="grade-empty">학생을 선택하세요.</div>';
         }
-        var required = GRADE_INTERNAL_EXAMS.slice(0, 2);
+        var required = getGradeExamOptionSet_().internalExams.slice(0, 2);
         var existing = getGradesForStudent_(student.studentId).map(function(record) { return record.examName; });
         var missing = required.filter(function(name) { return existing.indexOf(name) === -1; });
         if (!missing.length) {
@@ -24899,9 +24904,7 @@
           var key = target.getAttribute('data-grade-filter');
           APP_STATE.gradeFilters[key] = target.value || '';
           if (key === 'examCategory') {
-            APP_STATE.gradeFilters.examName = target.value === '내신'
-              ? GRADE_INTERNAL_EXAMS[0]
-              : (target.value === '수능' ? '수능' : GRADE_MOCK_EXAMS[0]);
+            APP_STATE.gradeFilters.examName = getDefaultGradeExamName_(target.value);
             APP_STATE.gradeFilters.term = target.value === '내신' ? '1학기' : '';
           }
           if (key === 'examName' && APP_STATE.gradeFilters.examCategory === '내신') {
@@ -25067,7 +25070,7 @@
           schoolYear: APP_STATE.gradeFilters.schoolYear || '2026',
           examCategory: APP_STATE.gradeFilters.examCategory || '내신',
           term: APP_STATE.gradeFilters.examCategory === '내신' ? (APP_STATE.gradeFilters.term || '1학기') : '',
-          examName: APP_STATE.gradeFilters.examName || (APP_STATE.gradeFilters.examCategory === '내신' ? GRADE_INTERNAL_EXAMS[0] : GRADE_MOCK_EXAMS[0]),
+          examName: APP_STATE.gradeFilters.examName || getDefaultGradeExamName_(APP_STATE.gradeFilters.examCategory || '내신'),
           examMonth: getGradeExamMonth_(APP_STATE.gradeFilters.examName || ''),
           examDate: '',
           subjectArea: subject || getGradeCurrentSubjectForStudent_(student),
@@ -25175,14 +25178,78 @@
         }) || null;
       }
 
+      function normalizeGradeExamOptions_(options) {
+        var source = options || {};
+        var internalExams = uniqueList_((source.internalExams || GRADE_INTERNAL_EXAMS).map(function(item) {
+          return String(item || '').trim();
+        }).filter(Boolean));
+        var mockExams = uniqueList_((source.mockExams || GRADE_MOCK_EXAMS).map(function(item) {
+          return String(item || '').trim();
+        }).filter(Boolean));
+        if (mockExams.indexOf('수능') === -1) {
+          mockExams.push('수능');
+        }
+        return {
+          categories: source.categories || ['내신', '모의고사', '수능'],
+          internalExams: sortGradeInternalExamsClient_(internalExams),
+          mockExams: sortGradeMockExamsClient_(mockExams)
+        };
+      }
+
+      function getGradeExamOptionSet_() {
+        APP_STATE.gradeExamOptions = normalizeGradeExamOptions_(APP_STATE.gradeExamOptions);
+        return APP_STATE.gradeExamOptions;
+      }
+
+      function sortGradeInternalExamsClient_(items) {
+        return (items || []).slice().sort(function(a, b) {
+          return getGradeInternalExamOrderClient_(a) - getGradeInternalExamOrderClient_(b) || String(a).localeCompare(String(b), 'ko');
+        });
+      }
+
+      function sortGradeMockExamsClient_(items) {
+        return (items || []).slice().sort(function(a, b) {
+          return getGradeMockExamOrderClient_(a) - getGradeMockExamOrderClient_(b) || String(a).localeCompare(String(b), 'ko');
+        });
+      }
+
+      function getGradeInternalExamOrderClient_(value) {
+        var text = String(value || '');
+        var semesterOrder = text.indexOf('2학기') !== -1 ? 20 : 10;
+        var examOrder = text.indexOf('기말') !== -1 ? 2 : (text.indexOf('중간') !== -1 ? 1 : 9);
+        return semesterOrder + examOrder;
+      }
+
+      function getGradeMockExamOrderClient_(value) {
+        var text = String(value || '').trim();
+        if (text === '수능') {
+          return 1300;
+        }
+        var matched = text.match(/(\d{1,2})\s*월/);
+        return matched ? Number(matched[1]) * 100 : 1200;
+      }
+
+      function getDefaultGradeExamName_(category) {
+        var options = getGradeExamOptionSet_();
+        if (category === '내신') {
+          return options.internalExams[0] || GRADE_INTERNAL_EXAMS[0] || '';
+        }
+        if (category === '수능') {
+          return '수능';
+        }
+        var mockExams = options.mockExams.filter(function(name) { return name !== '수능'; });
+        return mockExams[0] || GRADE_MOCK_EXAMS[0] || '';
+      }
+
       function getGradeExamOptions_() {
+        var options = getGradeExamOptionSet_();
         if (APP_STATE.gradeFilters.examCategory === '내신') {
-          return GRADE_INTERNAL_EXAMS;
+          return options.internalExams;
         }
         if (APP_STATE.gradeFilters.examCategory === '수능') {
           return ['수능'];
         }
-        return GRADE_MOCK_EXAMS.filter(function(name) {
+        return options.mockExams.filter(function(name) {
           return name !== '수능';
         });
       }
@@ -25531,7 +25598,8 @@
           'saveJikboStatus',
           'saveGrade',
           'bulkSaveGrades',
-          'deleteGrade'
+          'deleteGrade',
+          'saveGradeExamOptions'
         ].indexOf(action) !== -1;
 
         if (shouldUsePost) {
@@ -25654,6 +25722,7 @@
         APP_STATE.gradeStudents = gradeData && gradeData.students ? gradeData.students : APP_STATE.visibleStudents.slice();
         APP_STATE.grades = (gradeData && gradeData.grades ? gradeData.grades : []).map(normalizeGradeRecordV2_);
         APP_STATE.gradeSubjects = normalizeGradeSubjectDefinitions_(gradeData && gradeData.subjectDefinitions ? gradeData.subjectDefinitions : APP_STATE.gradeSubjects);
+        APP_STATE.gradeExamOptions = normalizeGradeExamOptions_(gradeData && gradeData.examOptions ? gradeData.examOptions : APP_STATE.gradeExamOptions);
         if (gradeData && gradeData.gradeHistory && gradeData.gradeHistory.length) {
           APP_STATE.gradeHistory = gradeData.gradeHistory.map(normalizeGradeRecordV2_);
           APP_STATE.gradeHistoryLoaded = true;
@@ -25703,6 +25772,7 @@
           '    <button type="button" class="mini-button" data-grade-action="upload"><i data-lucide="upload"></i> 업로드</button>',
           '    <button type="button" class="mini-button" data-grade-action="bulk-input"><i data-lucide="clipboard-list"></i> 일괄 입력</button>',
           '    <button type="button" class="mini-button" data-grade-action="promote-final"><i data-lucide="check-check"></i> 가채점 확정</button>',
+          APP_STATE.isAdmin ? '    <button type="button" class="mini-button" data-grade-action="exam-settings"><i data-lucide="list-plus"></i> 시험 설정</button>' : '',
           '    <button type="button" class="mini-button" data-grade-action="stats"><i data-lucide="bar-chart-3"></i> 통계</button>',
           '    <button type="button" class="mini-button" data-grade-action="permissions"><i data-lucide="shield"></i> 권한</button>',
           '  </div>',
@@ -25992,6 +26062,13 @@
         } else if (action === 'bulk-input') {
           APP_STATE.gradeModal = 'bulk';
           renderGrades();
+        } else if (action === 'exam-settings') {
+          if (!APP_STATE.isAdmin) {
+            setNotice('시험 종류 설정은 관리자만 사용할 수 있습니다.', 'warning');
+            return;
+          }
+          APP_STATE.gradeModal = 'exam-settings';
+          renderGrades();
         } else if (action === 'close-grade-modal') {
           closeGradeModalV2_();
         } else if (action === 'save-subject') {
@@ -26014,6 +26091,8 @@
           saveGradePreviewPayloads_(APP_STATE.gradeUploadPreview || []);
         } else if (action === 'apply-bulk-input') {
           applyGradeBulkTextV2_();
+        } else if (action === 'save-exam-options') {
+          saveGradeExamOptionsV2_();
         } else if (action === 'select-student') {
           APP_STATE.selectedGradeStudentId = button.getAttribute('data-student-id') || '';
           renderGrades();
@@ -26076,7 +26155,7 @@
             APP_STATE.gradeFilters.schoolYear = target.value || '';
           }
           if (key === 'examCategory') {
-            APP_STATE.gradeFilters.examName = target.value === '내신' ? GRADE_INTERNAL_EXAMS[0] : (target.value === '수능' ? '수능' : GRADE_MOCK_EXAMS[0]);
+            APP_STATE.gradeFilters.examName = getDefaultGradeExamName_(target.value);
             APP_STATE.gradeFilters.term = target.value === '내신' ? '1학기' : '';
           }
           if (key === 'examName' && APP_STATE.gradeFilters.examCategory === '내신') {
@@ -26182,7 +26261,7 @@
           year: getGradeYear_(),
           examCategory: APP_STATE.gradeFilters.examCategory || '내신',
           term: APP_STATE.gradeFilters.examCategory === '내신' ? (APP_STATE.gradeFilters.term || '1학기') : '',
-          examName: APP_STATE.gradeFilters.examName || (APP_STATE.gradeFilters.examCategory === '내신' ? GRADE_INTERNAL_EXAMS[0] : GRADE_MOCK_EXAMS[0]),
+          examName: APP_STATE.gradeFilters.examName || getDefaultGradeExamName_(APP_STATE.gradeFilters.examCategory || '내신'),
           examRound: APP_STATE.gradeFilters.examRound || '',
           examMonth: getGradeExamMonth_(APP_STATE.gradeFilters.examName || ''),
           examDate: '',
@@ -26571,7 +26650,26 @@
         if (APP_STATE.gradeModal === 'editor') {
           return renderGradeEditorModalV2_();
         }
+        if (APP_STATE.gradeModal === 'exam-settings') {
+          return renderGradeExamSettingsModalV2_();
+        }
         return '';
+      }
+
+      function renderGradeExamSettingsModalV2_() {
+        var options = getGradeExamOptionSet_();
+        return [
+          '<div class="modal-backdrop"><div class="modal-card grade-modal-panel">',
+          '<div class="modal-top"><div><h3>시험 종류 설정</h3><p>성적 관리에서 사용할 시험명을 줄마다 하나씩 입력합니다. 저장 후 모든 성적 화면의 시험 목록에 반영됩니다.</p></div><button type="button" class="icon-button" data-grade-action="close-grade-modal" aria-label="닫기">×</button></div>',
+          '<div class="modal-body">',
+          '<div class="grade-exam-settings-grid">',
+          '<label class="field-label">내신 시험<textarea class="field-input" data-grade-exams="internal" style="min-height:170px;resize:vertical;">' + escapeHtml((options.internalExams || []).join('\n')) + '</textarea></label>',
+          '<label class="field-label">모의고사/수능<textarea class="field-input" data-grade-exams="mock" style="min-height:170px;resize:vertical;">' + escapeHtml((options.mockExams || []).join('\n')) + '</textarea></label>',
+          '</div>',
+          '<div class="grade-empty" style="margin-top:12px;">예: 5월 모의고사처럼 새 시험을 추가하거나, 기존 명칭을 수정한 뒤 저장하세요. 수능은 자동으로 유지됩니다.</div>',
+          '<div class="grade-modal-actions"><button type="button" class="mini-button" data-grade-action="close-grade-modal">취소</button><button type="button" class="button-primary" data-grade-action="save-exam-options"><i data-lucide="save"></i> 시험 종류 저장</button></div>',
+          '</div></div></div>'
+        ].join('');
       }
 
       function renderGradeBulkModalV2_() {
@@ -26708,6 +26806,53 @@
         APP_STATE.gradeEditor = null;
         APP_STATE.gradeUploadPreview = [];
         renderGrades();
+      }
+
+      function saveGradeExamOptionsV2_() {
+        if (!APP_STATE.isAdmin) {
+          setNotice('시험 종류 설정은 관리자만 사용할 수 있습니다.', 'warning');
+          return;
+        }
+        var internalField = document.querySelector('[data-grade-exams="internal"]');
+        var mockField = document.querySelector('[data-grade-exams="mock"]');
+        var internalExams = parseGradeExamTextareaValue_(internalField ? internalField.value : '');
+        var mockExams = parseGradeExamTextareaValue_(mockField ? mockField.value : '');
+        if (!internalExams.length || !mockExams.length) {
+          setNotice('내신 시험과 모의고사 시험명을 각각 1개 이상 입력해주세요.', 'warning');
+          return;
+        }
+        if (mockExams.indexOf('수능') === -1) {
+          mockExams.push('수능');
+        }
+        var previousOptions = APP_STATE.gradeExamOptions;
+        APP_STATE.gradeExamOptions = normalizeGradeExamOptions_({
+          internalExams: internalExams,
+          mockExams: mockExams
+        });
+        apiRequest('saveGradeExamOptions', {
+          token: APP_STATE.token,
+          internalExamsJson: JSON.stringify(internalExams),
+          mockExamsJson: JSON.stringify(mockExams)
+        }).then(function(data) {
+          APP_STATE.gradeExamOptions = normalizeGradeExamOptions_(data.examOptions || APP_STATE.gradeExamOptions);
+          var currentOptions = getGradeExamOptions_();
+          if (currentOptions.indexOf(APP_STATE.gradeFilters.examName) === -1) {
+            APP_STATE.gradeFilters.examName = getDefaultGradeExamName_(APP_STATE.gradeFilters.examCategory || '내신');
+          }
+          APP_STATE.gradeModal = '';
+          setNotice(data.message || '시험 종류가 저장되었습니다.', 'success');
+          renderGrades();
+        }).catch(function(error) {
+          APP_STATE.gradeExamOptions = previousOptions;
+          handleApiError_(error);
+          renderGrades();
+        });
+      }
+
+      function parseGradeExamTextareaValue_(value) {
+        return uniqueList_(String(value || '').split(/\r?\n|,/).map(function(item) {
+          return item.trim();
+        }).filter(Boolean));
       }
 
       function downloadGradeTemplateV2_() {
@@ -27501,6 +27646,7 @@
           '<button type="button" class="mini-button" data-grade-action="bulk-input"><i data-lucide="clipboard-list"></i> 성적 일괄 입력</button>',
           '<button type="button" class="mini-button" data-grade-action="upload"><i data-lucide="upload"></i> Excel 업로드</button>',
           '<button type="button" class="mini-button" data-grade-action="download-template"><i data-lucide="file-down"></i> 성적 템플릿 다운로드</button>',
+          APP_STATE.isAdmin ? '<button type="button" class="mini-button" data-grade-action="exam-settings"><i data-lucide="list-plus"></i> 시험 종류 설정</button>' : '',
           '<button type="button" class="mini-button" data-grade-action="permissions"><i data-lucide="settings"></i> 권한 설정</button>',
           '</div></section>'
         ].join('');
@@ -27563,6 +27709,13 @@
         } else if (action === 'bulk-input') {
           APP_STATE.gradeModal = 'bulk';
           renderGrades();
+        } else if (action === 'exam-settings') {
+          if (!APP_STATE.isAdmin) {
+            setNotice('시험 종류 설정은 관리자만 사용할 수 있습니다.', 'warning');
+            return;
+          }
+          APP_STATE.gradeModal = 'exam-settings';
+          renderGrades();
         } else if (action === 'close-grade-modal') {
           closeGradeModalV2_();
         } else if (action === 'save-subject') {
@@ -27585,6 +27738,8 @@
           saveGradePreviewPayloads_(APP_STATE.gradeUploadPreview || []);
         } else if (action === 'apply-bulk-input') {
           applyGradeBulkTextV2_();
+        } else if (action === 'save-exam-options') {
+          saveGradeExamOptionsV2_();
         } else if (action === 'select-student') {
           APP_STATE.selectedGradeStudentId = button.getAttribute('data-student-id') || '';
           renderGrades();
@@ -27619,7 +27774,7 @@
             APP_STATE.gradeFilters.schoolYear = target.value || '';
           }
           if (key === 'examCategory') {
-            APP_STATE.gradeFilters.examName = target.value === '내신' ? GRADE_INTERNAL_EXAMS[0] : (target.value === '수능' ? '수능' : GRADE_MOCK_EXAMS[0]);
+            APP_STATE.gradeFilters.examName = getDefaultGradeExamName_(target.value);
             APP_STATE.gradeFilters.term = target.value === '내신' ? '1학기' : '';
           }
           if (key === 'examName' && APP_STATE.gradeFilters.examCategory === '내신') {
