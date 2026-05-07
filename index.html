@@ -10607,6 +10607,35 @@
         background: #f8fbff;
       }
 
+      .grade-history-table,
+      .grade-ranking-table {
+        table-layout: auto;
+        min-width: 980px;
+      }
+
+      .grade-history-table th:nth-child(3),
+      .grade-history-table td:nth-child(3) {
+        min-width: 190px;
+      }
+
+      .grade-history-table th:nth-child(4),
+      .grade-history-table td:nth-child(4),
+      .grade-history-table th:nth-child(5),
+      .grade-history-table td:nth-child(5),
+      .grade-ranking-table th:nth-child(4),
+      .grade-ranking-table td:nth-child(4) {
+        min-width: 120px;
+      }
+
+      .grade-history-table .grade-exam-badge,
+      .grade-history-table .grade-subject-badge,
+      .grade-ranking-table .grade-subject-badge {
+        max-width: 100%;
+        white-space: normal;
+        line-height: 1.25;
+        vertical-align: middle;
+      }
+
       .grade-student-cell strong {
         display: block;
         color: #0f172a;
@@ -25622,8 +25651,8 @@
 
       function hydrateGradeData_(gradeData) {
         initGradeV2State_();
-        APP_STATE.grades = (gradeData && gradeData.grades ? gradeData.grades : []).map(normalizeGradeRecordV2_);
         APP_STATE.gradeStudents = gradeData && gradeData.students ? gradeData.students : APP_STATE.visibleStudents.slice();
+        APP_STATE.grades = (gradeData && gradeData.grades ? gradeData.grades : []).map(normalizeGradeRecordV2_);
         APP_STATE.gradeSubjects = normalizeGradeSubjectDefinitions_(gradeData && gradeData.subjectDefinitions ? gradeData.subjectDefinitions : APP_STATE.gradeSubjects);
         if (gradeData && gradeData.gradeHistory && gradeData.gradeHistory.length) {
           APP_STATE.gradeHistory = gradeData.gradeHistory.map(normalizeGradeRecordV2_);
@@ -25839,7 +25868,7 @@
           html.push('<div class="grade-empty">표시할 성적 이력이 없습니다.</div></section>');
           return html.join('');
         }
-        html.push('<div class="grades-table-wrap"><table class="grades-table"><thead><tr><th>연도</th><th>학생</th><th>시험</th><th>과목분류</th><th>세부과목</th><th>가채점</th><th>최종</th><th>등급</th><th>입력/수정</th><th>변경</th></tr></thead><tbody>');
+        html.push('<div class="grades-table-wrap"><table class="grades-table grade-history-table"><thead><tr><th>연도</th><th>학생</th><th>시험</th><th>과목분류</th><th>세부과목</th><th>가채점</th><th>최종</th><th>등급</th><th>입력/수정</th><th>변경</th></tr></thead><tbody>');
         records.forEach(function(record) {
           html.push('<tr><td>' + escapeHtml(record.examYear || record.schoolYear || '-') + '</td><td>' + escapeHtml(record.studentName || '-') + '</td><td>' + renderGradeExamBadgeV2_(record) + '</td><td>' + renderGradeSubjectCategoryBadgeV2_(record.subjectCategory || '-') + '</td><td>' + renderGradeSubjectBadgeV2_(record.subjectCategory, record.subjectName));
           html.push('</td><td>' + escapeHtml(record.provisionalScore || '-') + '</td><td>' + escapeHtml(record.finalScore || '-') + '</td><td>' + escapeHtml(record.gradeLevel || '-') + '</td><td>' + escapeHtml([(record.updatedByName || record.createdByName || '-'), (record.updatedAt || '-')].join(' · ')) + '</td>');
@@ -25860,7 +25889,7 @@
       }
 
       function renderGradeRankingTableV2_(rows) {
-        var html = ['<div class="grades-table-wrap"><table class="grades-table"><thead><tr><th>순위</th><th>학생</th><th>학교/학년</th><th>과목</th><th>점수</th><th>상태</th><th>입력자</th><th>수정일시</th></tr></thead><tbody>'];
+        var html = ['<div class="grades-table-wrap"><table class="grades-table grade-ranking-table"><thead><tr><th>순위</th><th>학생</th><th>학교/학년</th><th>과목</th><th>점수</th><th>상태</th><th>입력자</th><th>수정일시</th></tr></thead><tbody>'];
         rows.forEach(function(row) {
           html.push('<tr><td><span class="grade-rank-number">' + row.rank + '</span></td><td>' + escapeHtml(row.studentName || '-') + '</td><td>' + escapeHtml([row.school, row.grade].filter(Boolean).join(' · ') || '-') + '</td><td>' + renderGradeSubjectBadgeV2_(row.subjectCategory, row.subjectName) + '</td><td><strong>' + escapeHtml(row.score) + '</strong></td><td>' + renderGradeScoreStatusBadgeV2_(row.status) + '</td><td>' + escapeHtml(row.updatedByName || row.createdByName || '-') + '</td><td>' + escapeHtml(row.updatedAt || '-') + '</td></tr>');
         });
@@ -26142,6 +26171,9 @@
           token: APP_STATE.token,
           gradeId: record ? (record.gradeId || '') : '',
           studentId: studentId,
+          studentName: student.studentName || student.name || '',
+          school: student.school || '',
+          grade: student.grade || '',
           createdAt: record ? (record.createdAt || '') : '',
           createdById: record ? (record.createdById || '') : '',
           createdByName: record ? (record.createdByName || '') : '',
@@ -26323,6 +26355,12 @@
       function normalizeGradeRecordV2_(record) {
         var cloned = {};
         Object.keys(record || {}).forEach(function(key) { cloned[key] = record[key]; });
+        var matchedStudent = cloned.studentId ? findGradeStudentById_(cloned.studentId) : null;
+        if (matchedStudent) {
+          cloned.studentName = cloned.studentName || matchedStudent.studentName || matchedStudent.name || '';
+          cloned.school = cloned.school || matchedStudent.school || '';
+          cloned.grade = cloned.grade || matchedStudent.grade || '';
+        }
         cloned.examYear = cloned.examYear || cloned.year || cloned.schoolYear || '';
         cloned.subjectName = cloned.subjectName || cloned.detailSubject || cloned.subjectArea || '';
         cloned.subjectCategory = normalizeGradeSubjectCategoryClient_(cloned.subjectCategory || cloned.subjectArea, cloned.subjectName);
