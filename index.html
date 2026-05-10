@@ -7439,6 +7439,11 @@
         box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.12);
       }
 
+      .student-log-bubble.is-pending {
+        opacity: 0.82;
+        box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.16);
+      }
+
       .student-log-bubble-head {
         display: flex;
         align-items: flex-start;
@@ -13930,7 +13935,7 @@
         var password = document.getElementById('passwordInput').value.trim();
 
         setLoading('로그인 정보를 확인하는 중입니다.', true);
-        apiRequest('login', { userId: userId, password: password })
+        apiRequest('login', { userId: userId, password: password, includeDashboard: 'true' })
           .then(function(result) {
             APP_STATE.token = result.token;
             APP_STATE.user = result.user || null;
@@ -13941,6 +13946,12 @@
             syncBranding();
             showAppOnly();
             setNotice(result.message || '로그인되었습니다.', 'success');
+            if (result.initialDashboard) {
+              hydrateDashboard(result.initialDashboard, null, null);
+              renderAll();
+              writeDashboardSnapshot_();
+              return null;
+            }
             return loadDashboard({ useStagedLoading: true, forceOverlay: true });
           })
           .catch(function(error) {
@@ -14063,6 +14074,8 @@
 
         var normalizedLog = {
           rowNumber: savedLog.rowNumber || '',
+          clientRequestId: savedLog.clientRequestId || '',
+          pending: Boolean(savedLog.pending),
           studentId: savedLog.studentId || '',
           studentName: savedLog.studentName || '',
           content: savedLog.content || '',
@@ -14084,13 +14097,98 @@
             }
             var currentLogs = Array.isArray(student.logs) ? student.logs : [];
             student.logs = [normalizedLog].concat(currentLogs.filter(function(log) {
-              return rowKey ? String(log.rowNumber || '') !== rowKey : true;
+              var sameRow = rowKey && String(log.rowNumber || '') === rowKey;
+              var sameClientRequest = normalizedLog.clientRequestId &&
+                String(log.clientRequestId || '') === String(normalizedLog.clientRequestId);
+              return !sameRow && !sameClientRequest;
             }));
             merged = true;
           });
         });
 
         return merged;
+      }
+
+      function removeStudentLogByClientRequestId_(clientRequestId) {
+        var key = String(clientRequestId || '');
+        if (!key) {
+          return false;
+        }
+        var removed = false;
+        ['visibleStudents', 'activeStudents'].forEach(function(stateKey) {
+          (APP_STATE[stateKey] || []).forEach(function(student) {
+            var logs = Array.isArray(student.logs) ? student.logs : [];
+            var nextLogs = logs.filter(function(log) {
+              return String(log.clientRequestId || '') !== key;
+            });
+            if (nextLogs.length !== logs.length) {
+              student.logs = nextLogs;
+              removed = true;
+            }
+          });
+        });
+        return removed;
+      }
+
+      function removeStudentLogOptimistically_(rowKey) {
+        var key = String(rowKey || '');
+        var snapshots = [];
+        var seen = [];
+        if (!key) {
+          return snapshots;
+        }
+        ['visibleStudents', 'activeStudents'].forEach(function(stateKey) {
+          (APP_STATE[stateKey] || []).forEach(function(student) {
+            if (seen.indexOf(student) !== -1) {
+              return;
+            }
+            var logs = Array.isArray(student.logs) ? student.logs : [];
+            if (!logs.some(function(log) { return String(log.rowNumber || '') === key; })) {
+              return;
+            }
+            seen.push(student);
+            snapshots.push({ student: student, logs: logs.slice() });
+            student.logs = logs.filter(function(log) {
+              return String(log.rowNumber || '') !== key;
+            });
+          });
+        });
+        return snapshots;
+      }
+
+      function restoreStudentLogListSnapshots_(snapshots) {
+        (snapshots || []).forEach(function(snapshot) {
+          if (snapshot && snapshot.student) {
+            snapshot.student.logs = (snapshot.logs || []).slice();
+          }
+        });
+      }
+
+      function buildOptimisticStudentLog_(studentId, tag, authorInstructorId, content, clientRequestId) {
+        var student = findStudentById_(studentId) || {};
+        var author = authorInstructorId ? findInstructorById_(authorInstructorId) : null;
+        var user = APP_STATE.user || {};
+        return {
+          rowNumber: '',
+          clientRequestId: clientRequestId,
+          pending: true,
+          studentId: studentId,
+          studentName: student.studentName || '',
+          content: content,
+          tags: [tag],
+          createdById: author ? author.userId : (user.userId || ''),
+          createdByName: author ? (author.name || author.userId || '') : (user.name || user.userId || ''),
+          createdByRole: author ? 'INSTRUCTOR' : (user.role || ''),
+          createdAt: '저장 중',
+          reactions: []
+        };
+      }
+
+      function findInstructorById_(instructorId) {
+        var target = String(instructorId || '');
+        return (APP_STATE.instructors || []).find(function(instructor) {
+          return String(instructor.userId || '') === target;
+        }) || null;
       }
 
       function applyStudentLogSaveResult_(result) {
@@ -15706,25 +15804,27 @@
       }
 
       function renderStudentLogBubble_(log) {
+        var isPending = Boolean(log && log.pending);
         var isAdmin = (log.createdByRole || '').toUpperCase() === 'ADMIN';
         var author = isAdmin ? (log.createdByName || '관리자') : ((log.createdByName || '강사') + ' 강사');
         var canDelete = APP_STATE.isAdmin || (APP_STATE.user && APP_STATE.user.userId === log.createdById);
         var primaryTag = (log.tags || [])[0] || '관리 기록';
         var toneClass = getLogTagToneClass(primaryTag);
         var isPriority = isFirstLessonLog_(log);
-        var detailButton = log.rowNumber
+        var detailButton = !isPending && log.rowNumber
           ? '<button type="button" class="profile-link-button" data-action="show-log-detail" data-log-row="' + escapeAttribute(log.rowNumber) + '">원문</button>'
           : '';
-        var deleteButton = canDelete && log.rowNumber
+        var deleteButton = !isPending && canDelete && log.rowNumber
           ? '<button type="button" class="log-delete-button" data-action="delete-log" data-log-row="' + escapeAttribute(log.rowNumber) + '">삭제</button>'
           : '';
         return [
-          '<article class="student-log-bubble ' + escapeAttribute(toneClass) + (isAdmin ? ' admin' : '') + (isPriority ? ' is-priority' : '') + (APP_STATE.studentLogReactionSaving[String(log.rowNumber || '')] ? ' is-reacting' : '') + '">',
+          '<article class="student-log-bubble ' + escapeAttribute(toneClass) + (isAdmin ? ' admin' : '') + (isPriority ? ' is-priority' : '') + (isPending ? ' is-pending' : '') + (APP_STATE.studentLogReactionSaving[String(log.rowNumber || '')] ? ' is-reacting' : '') + '">',
           '  <div class="student-log-bubble-head">',
           '    <div class="student-log-bubble-meta">',
           '      ' + renderStudentLogAuthorChip_(log, null, author),
           '      <span class="student-log-type-chip ' + escapeAttribute(toneClass) + '">' + escapeHtml(formatStudentLogTagLabel_(primaryTag)) + '</span>',
                  isPriority ? '<span class="student-log-priority-chip">우선 확인</span>' : '',
+                 isPending ? '<span class="student-log-priority-chip">저장 중</span>' : '',
           '      <span class="student-log-time-chip">' + escapeHtml(formatTeachingLogDateTime(log.createdAt)) + '</span>',
           '    </div>',
           '    <div class="student-log-bubble-actions">' + detailButton + deleteButton + '</div>',
@@ -17797,6 +17897,19 @@
           APP_STATE.studentLogAuthors[studentId] = authorInstructorId;
         }
 
+        var clientRequestId = 'LOG-CLIENT-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+        var optimisticLog = buildOptimisticStudentLog_(studentId, tag, authorInstructorId, content, clientRequestId);
+        mergeSavedStudentLog_(optimisticLog);
+        APP_STATE.selectedStudentId = studentId;
+        APP_STATE.studentLogTabs[studentId] = getStudentLogTabOptions_().some(function(option) {
+          return option.value === tag;
+        }) ? tag : '전체';
+        renderStudents();
+        if (APP_STATE.selectedStudentDetailId) {
+          APP_STATE.selectedStudentDetailId = studentId;
+          renderStudentDetailModal_();
+        }
+
         setStudentLogFormSaving_(form, true);
         setNotice('상담/관리 기록을 저장하는 중입니다.', 'info');
         apiRequest('addStudentLog', {
@@ -17804,7 +17917,8 @@
           studentId: studentId,
           content: content,
           tags: JSON.stringify([tag]),
-          authorInstructorId: authorInstructorId
+          authorInstructorId: authorInstructorId,
+          clientRequestId: clientRequestId
         })
           .then(function(result) {
             return applyStudentLogSaveResult_(result);
@@ -17821,9 +17935,15 @@
             if (APP_STATE.selectedStudentDetailId) {
               renderStudentDetailModal_();
             }
+            writeDashboardSnapshot_();
             setNotice('상담/관리 기록이 저장되었습니다.', 'success');
           })
           .catch(function(error) {
+            removeStudentLogByClientRequestId_(clientRequestId);
+            renderStudents();
+            if (APP_STATE.selectedStudentDetailId) {
+              renderStudentDetailModal_();
+            }
             setStudentLogFormSaving_(form, false);
             handleApiError_(error);
           })
@@ -17887,22 +18007,39 @@
           setNotice('삭제할 상담/관리 기록을 찾을 수 없습니다.', 'warning');
           return;
         }
+        if (!window.confirm('이 상담/관리 기록을 삭제할까요?')) {
+          return;
+        }
 
-        setLoading('상담/관리 기록을 삭제하는 중입니다.');
+        var snapshots = removeStudentLogOptimistically_(logRowNumber);
+        renderStudents();
+        if (APP_STATE.selectedStudentDetailId) {
+          renderStudentDetailModal_();
+        }
+        setNotice('상담/관리 기록을 삭제하는 중입니다.', 'info');
         apiRequest('deleteStudentLog', {
           token: APP_STATE.token,
           logRowNumber: logRowNumber
         })
           .then(function(result) {
-            hydrateStudentDataOnly(result);
+            if (!(result && result.deletedLogRowNumber)) {
+              hydrateStudentDataOnly(result);
+            }
             renderStudents();
             if (APP_STATE.selectedStudentDetailId) {
               renderStudentDetailModal_();
             }
+            writeDashboardSnapshot_();
             setNotice('상담/관리 기록이 삭제되었습니다.', 'success');
           })
-          .catch(handleApiError_)
-          .finally(clearLoading);
+          .catch(function(error) {
+            restoreStudentLogListSnapshots_(snapshots);
+            renderStudents();
+            if (APP_STATE.selectedStudentDetailId) {
+              renderStudentDetailModal_();
+            }
+            handleApiError_(error);
+          });
       }
 
       function openTeachingLogDetailModal(logRowNumber) {
@@ -18768,6 +18905,19 @@
         APP_STATE.permissionDrafts[key] = uniqueList_((instructorIds || []).filter(Boolean));
       }
 
+      function applyPermissionSaveResult_(result, studentId) {
+        var targetId = String((result && result.studentId) || studentId || '');
+        if (targetId && result && Array.isArray(result.permissions)) {
+          APP_STATE.permissions = (APP_STATE.permissions || []).filter(function(item) {
+            return String(item.studentId || '') !== targetId;
+          }).concat(result.permissions || []);
+          writeDashboardSnapshot_();
+          return;
+        }
+        hydrateStudentDataOnly(result || {});
+        writeDashboardSnapshot_();
+      }
+
       function renderPermissionSelectedChips_(selected) {
         if (!selected || !selected.length) {
           return '<span class="permission-empty-selection">아직 선택된 열람 강사가 없습니다.</span>';
@@ -19020,7 +19170,7 @@
 
         var instructorIds = getPermissionDraftSelection_(studentId);
 
-        setLoading('학생 열람 권한을 저장하는 중입니다.');
+        setLoading('학생 열람 권한을 저장하는 중입니다.', true);
         apiRequest('savePermissions', {
           token: APP_STATE.token,
           studentId: studentId,
@@ -19028,7 +19178,7 @@
         })
           .then(function(result) {
             delete APP_STATE.permissionDrafts[String(studentId)];
-            hydrateStudentDataOnly(result);
+            applyPermissionSaveResult_(result, studentId);
             renderAll();
             switchView('permissions');
             setNotice(result.message || '학생 열람 권한이 저장되었습니다.', 'success');
@@ -19097,14 +19247,14 @@
           return input.getAttribute('data-instructor-id');
         });
 
-        setLoading('학생 열람 권한을 저장하는 중입니다.');
+        setLoading('학생 열람 권한을 저장하는 중입니다.', true);
         apiRequest('savePermissions', {
           token: APP_STATE.token,
           studentId: studentId,
           instructorIds: JSON.stringify(instructorIds)
         })
           .then(function(result) {
-            hydrateStudentDataOnly(result);
+            applyPermissionSaveResult_(result, studentId);
             renderAll();
             APP_STATE.selectedPermissionStudentId = studentId;
             switchView('permissions');
