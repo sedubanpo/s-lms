@@ -11291,25 +11291,25 @@
 
       .school-logo,
       .school-logo-fallback {
-        width: 20px;
-        height: 20px;
-        border-radius: 999px;
+        width: 18px;
+        height: 18px;
+        border-radius: 0;
         flex: 0 0 auto;
       }
 
       .school-logo {
         object-fit: contain;
-        border: 1px solid #dbe5f3;
-        background: #ffffff;
+        border: 0;
+        background: transparent;
       }
 
       .school-logo-fallback {
         display: inline-grid;
         place-items: center;
-        border: 1px solid hsl(var(--school-hue, 216) 72% 82%);
-        background: hsl(var(--school-hue, 216) 92% 96%);
+        border: 0;
+        background: transparent;
         color: hsl(var(--school-hue, 216) 70% 34%);
-        font-size: 0.64rem;
+        font-size: 0.7rem;
         font-weight: 950;
       }
 
@@ -15199,7 +15199,7 @@
         return [
           '<article class="mobile-student-card' + selected + '" data-mobile-student-card data-student-id="' + escapeAttribute(student.studentId || '') + '">',
           '  <div class="mobile-student-card-head">',
-          '    <div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</span></div>',
+          '    <div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + renderStudentSchoolGradeHtml_(student, true) + '</span></div>',
                renderStudentRecordCountBadge_(logs.length),
           '  </div>',
           '  <div class="chip-row">' + renderPermissionChips_(permissions, 3) + '</div>',
@@ -15244,7 +15244,7 @@
         return [
           '<article class="mobile-log-card ' + escapeAttribute(toneClass) + '" data-student-id="' + escapeAttribute(student.studentId || '') + '">',
           '  <div class="mobile-log-card-head">',
-          '    <div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</span></div>',
+          '    <div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + renderStudentSchoolGradeHtml_(student, true) + '</span></div>',
           '    <button type="button" class="student-log-profile-icon-button" data-action="show-student-profile" title="프로필 보기" aria-label="' + escapeAttribute((student.studentName || '학생') + ' 프로필 보기') + '"><i data-lucide="user-round"></i></button>',
           '  </div>',
           '  <div class="student-log-bubble-meta">',
@@ -15515,7 +15515,7 @@
         return [
           '<tr data-student-id="' + escapeAttribute(student.studentId || '') + '">',
           '  <td><div class="student-log-list-meta"><strong>' + escapeHtml(student.studentName || '-') + '</strong><button type="button" class="student-log-profile-icon-button" data-action="show-student-profile" title="프로필 보기" aria-label="' + escapeAttribute((student.studentName || '학생') + ' 프로필 보기') + '"><i data-lucide="user-round"></i></button></div></td>',
-          '  <td>' + escapeHtml(student.school || '학교 미지정') + '</td>',
+          '  <td>' + renderSchoolNameWithLogo_(student.school || '학교 미지정') + '</td>',
           '  <td>' + escapeHtml(student.grade ? student.grade + '학년' : '미지정') + '</td>',
           '  <td><span class="student-log-type-chip ' + escapeAttribute(toneClass) + '">' + escapeHtml(formatStudentLogTagLabel_(primaryTag)) + '</span>' + (isFirstLessonLog_(log) ? '<span class="student-log-priority-chip" style="margin-left:5px;">우선 확인</span>' : '') + '</td>',
           '  <td>' + renderStudentLogAuthorChip_(log, student, author) + '</td>',
@@ -15644,7 +15644,7 @@
         var eventInfo = getSchoolEventInfo_(student.school, student.grade);
         return [
           '<tr class="student-index-row' + selected + '" data-student-id="' + escapeAttribute(student.studentId || '') + '">',
-          '  <td class="student-name-cell"><div class="student-name-cell-inner"><div class="student-name-main"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</span></div>' + renderStudentRecordCountBadge_(logs.length) + '</div></td>',
+          '  <td class="student-name-cell"><div class="student-name-cell-inner"><div class="student-name-main"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + renderStudentSchoolGradeHtml_(student, true) + '</span></div>' + renderStudentRecordCountBadge_(logs.length) + '</div></td>',
           '  <td><div class="permission-cell"><div class="chip-row">' + renderPermissionChips_(permissions, 2) + '</div></div></td>',
           '  <td><div class="status-grid">' + [
                renderStatusChip_('상담', logs.length ? 'slate' : 'muted'),
@@ -15862,7 +15862,7 @@
           '<div class="profile-board-body">',
           '  <section class="profile-summary">',
           '    <div class="profile-avatar">' + escapeHtml(getInitial(student.studentName)) + '</div>',
-          '    <div><h4>' + escapeHtml(student.studentName || '-') + '</h4><p>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</p></div>',
+          '    <div><h4>' + escapeHtml(student.studentName || '-') + '</h4><p>' + renderStudentSchoolGradeHtml_(student, true) + '</p></div>',
                renderStudentLearningSummary_(student),
           '  </section>',
           '  <section class="profile-block"><h4>강사 권한 맵</h4>' + renderPermissionRelationMap_(student, permissions) + '</section>',
@@ -16440,7 +16440,7 @@
           '  <div class="student-detail-column">',
           '    <section class="student-detail-card student-detail-hero">',
           '      <div class="profile-avatar">' + escapeHtml(getInitial(student.studentName)) + '</div>',
-          '      <div><h4>' + escapeHtml(student.studentName || '-') + '</h4><p>' + escapeHtml([student.school || '학교 미지정', student.grade ? student.grade + '학년' : '학년 미지정'].join(' · ')) + '</p><div class="student-subject-row">' + renderStudentSubjectChips_(student) + '</div></div>',
+          '      <div><h4>' + escapeHtml(student.studentName || '-') + '</h4><p>' + renderStudentSchoolGradeHtml_(student, true) + '</p><div class="student-subject-row">' + renderStudentSubjectChips_(student) + '</div></div>',
           '    </section>',
           '    <section class="student-detail-card"><div class="student-detail-kpi-grid">' + [
                  renderStudentDetailKpi_('상담 기록', logs.length + '건'),
@@ -16645,7 +16645,7 @@
         var rows = (examItems || []).map(function(item) {
           return [
             '<div class="student-detail-exam-item">',
-            '  <div><strong>' + escapeHtml(item.subjectName || item.eventName || '시험 일정') + '</strong><span>' + escapeHtml([formatDateShort_(item.isoDate || item.date), item.school || '', item.grade ? item.grade + '학년' : ''].filter(Boolean).join(' · ')) + '</span></div>',
+            '  <div><strong>' + escapeHtml(item.subjectName || item.eventName || '시험 일정') + '</strong><span>' + escapeHtml(formatDateShort_(item.isoDate || item.date)) + ' · ' + renderSchoolGradeMetaHtml_(item.school, item.grade, true) + '</span></div>',
             '  <button type="button" class="profile-link-button" data-action="open-jikbo-board">' + escapeHtml(jikbo && jikbo.unconfirmed ? '미확정 ' + jikbo.unconfirmed + '건' : '구성 확인') + '</button>',
             '</div>'
           ].join('');
@@ -16826,7 +16826,7 @@
             return [
               '<button type="button" class="school-list-row ' + (selected ? 'selected' : '') + '" data-school-by-select="' + escapeAttribute(item.school) + '">',
               '  <span class="school-dot" style="background:' + escapeAttribute(item.color) + '"></span>',
-              '  <span class="school-list-name"><strong>' + escapeHtml(item.school) + '</strong><small>' + escapeHtml(String(item.percent)) + '%</small></span>',
+              '  <span class="school-list-name"><strong>' + renderSchoolNameWithLogo_(item.school) + '</strong><small>' + escapeHtml(String(item.percent)) + '%</small></span>',
               '  <em>' + escapeHtml(String(item.count)) + '명</em>',
               '  <i data-lucide="chevron-right"></i>',
               '</button>'
@@ -16855,7 +16855,7 @@
             return [
               '<button type="button" class="school-top-row ' + (item.school === model.selectedSchool ? 'selected' : '') + '" data-school-by-select="' + escapeAttribute(item.school) + '">',
               '  <span class="school-dot" style="background:' + escapeAttribute(item.color) + '"></span>',
-              '  <strong>' + escapeHtml(item.school) + '</strong>',
+              '  <strong>' + renderSchoolNameWithLogo_(item.school) + '</strong>',
               '  <em>' + escapeHtml(String(item.count)) + '명</em>',
               '  <small>' + escapeHtml(String(item.percent)) + '%</small>',
               '</button>'
@@ -16958,7 +16958,7 @@
           '  <div class="school-chapter-header">',
           '    <button type="button" class="school-chapter-title" data-school-by-toggle="' + escapeAttribute(item.school) + '">',
           '      <span class="school-dot" style="background:' + escapeAttribute(item.color) + '"></span>',
-          '      <strong>' + escapeHtml(item.school) + '</strong>',
+          '      <strong>' + renderSchoolNameWithLogo_(item.school) + '</strong>',
           '      <em>' + escapeHtml(String(item.count)) + '명</em>',
           '      <small>' + escapeHtml(String(item.percent)) + '%</small>',
           '      <span class="school-type-badge">' + escapeHtml(item.type) + '</span>',
@@ -17063,7 +17063,7 @@
         }).join('');
         return [
           '<section class="school-student-roster">',
-          '  <div class="school-student-roster-head"><h4>' + escapeHtml(item.school || '학교') + ' 학생 목록</h4><span class="ops-chip blue">' + escapeHtml(String(students.length)) + '명</span></div>',
+          '  <div class="school-student-roster-head"><h4>' + renderSchoolNameWithLogo_(item.school || '학교') + ' 학생 목록</h4><span class="ops-chip blue">' + escapeHtml(String(students.length)) + '명</span></div>',
           '  <table class="school-student-roster-table">',
           '    <thead><tr><th>학생</th><th>학년</th><th>연결 권한</th><th>상태</th><th>최근 업데이트</th><th>액션</th></tr></thead>',
           '    <tbody>' + (rows || '<tr><td colspan="6"><div class="school-empty-mini">해당 학교 학생이 없습니다.</div></td></tr>') + '</tbody>',
@@ -17111,7 +17111,7 @@
         return [
           '<div class="school-quick-assign-backdrop" data-school-quick-assign-close="true">',
           '  <section class="school-quick-assign-modal" role="dialog" aria-modal="true" aria-label="담임 권한 빠른 배정">',
-          '    <div class="school-modal-head"><div><h3>' + escapeHtml(item ? item.school : '학교') + ' 빠른 배정</h3><p>담임 권한이 없는 학생에게 담당 강사를 지정합니다.</p></div><button type="button" class="icon-only-button" data-school-quick-assign-close="true"><i data-lucide="x"></i></button></div>',
+          '    <div class="school-modal-head"><div><h3>' + renderSchoolNameWithLogo_(item ? item.school : '학교') + ' 빠른 배정</h3><p>담임 권한이 없는 학생에게 담당 강사를 지정합니다.</p></div><button type="button" class="icon-only-button" data-school-quick-assign-close="true"><i data-lucide="x"></i></button></div>',
           '    <div class="school-assign-list">',
           unassigned.length ? unassigned.map(renderSchoolQuickAssignRow_).join('') : '<div class="school-empty-mini">담임 미배정 학생이 없습니다.</div>',
           '    </div>',
@@ -17125,7 +17125,7 @@
         var selected = APP_STATE.schoolQuickAssignSelections[student.studentId] || '';
         return [
           '<div class="school-assign-row">',
-          '  <div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '-', student.grade ? student.grade + '학년' : '-'].join(' · ')) + '</span></div>',
+          '  <div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + renderStudentSchoolGradeHtml_(student, true) + '</span></div>',
           '  <select class="field-select" data-school-quick-assign-teacher data-student-id="' + escapeAttribute(student.studentId || '') + '">',
           '    <option value="">강사 선택</option>',
           (APP_STATE.instructors || []).map(function(instructor) {
@@ -17186,7 +17186,7 @@
           var instructors = getStudentPermissionInstructors_(student.studentId);
           return [
             '<tr class="student-index-row" data-student-id="' + escapeAttribute(student.studentId || '') + '">',
-            '<td class="student-name-cell"><div class="student-name-cell-inner"><div class="student-name-main"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '-', student.grade ? student.grade + '학년' : '-'].join(' · ')) + '</span></div></div></td>',
+            '<td class="student-name-cell"><div class="student-name-cell-inner"><div class="student-name-main"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + renderStudentSchoolGradeHtml_(student, true) + '</span></div></div></td>',
             '<td>' + renderPermissionChips_(instructors, 8) + '</td>',
             '<td>' + escapeHtml(String((permissionMap[student.studentId] || []).length)) + '건</td>',
             '<td>' + (instructors.length ? renderStatusChip_('연결됨', 'ok') : renderStatusChip_('미배정', 'warn')) + '</td>',
@@ -17220,7 +17220,7 @@
           '<table class="heatmap-table"><thead><tr><th>학교</th><th>1학년</th><th>2학년</th><th>3학년</th><th>합계</th></tr></thead><tbody>',
           schools.map(function(school) {
             var item = schoolMap[school];
-            return '<tr><td>' + escapeHtml(school) + '</td><td><span class="heat-cell">' + escapeHtml(String(item.grades['1'] || 0)) + '</span></td><td><span class="heat-cell">' + escapeHtml(String(item.grades['2'] || 0)) + '</span></td><td><span class="heat-cell">' + escapeHtml(String(item.grades['3'] || 0)) + '</span></td><td><strong>' + escapeHtml(String(item.total)) + '</strong></td></tr>';
+            return '<tr><td>' + renderSchoolNameWithLogo_(school) + '</td><td><span class="heat-cell">' + escapeHtml(String(item.grades['1'] || 0)) + '</span></td><td><span class="heat-cell">' + escapeHtml(String(item.grades['2'] || 0)) + '</span></td><td><span class="heat-cell">' + escapeHtml(String(item.grades['3'] || 0)) + '</span></td><td><strong>' + escapeHtml(String(item.total)) + '</strong></td></tr>';
           }).join(''),
           '</tbody></table>'
         ].join('');
@@ -17232,7 +17232,7 @@
           return '<div class="empty-state">담임 권한 미배정 학생이 없습니다.</div>';
         }
         return '<div class="priority-list">' + items.map(function(student) {
-          return '<div class="priority-item"><div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school || '-', student.grade ? student.grade + '학년' : '-'].join(' · ')) + '</span></div><button type="button" class="mini-button" data-action="assign-homeroom">빠른 배정</button></div>';
+          return '<div class="priority-item"><div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + renderStudentSchoolGradeHtml_(student, true) + '</span></div><button type="button" class="mini-button" data-action="assign-homeroom">빠른 배정</button></div>';
         }).join('') + '</div>';
       }
 
@@ -17244,7 +17244,7 @@
         return '<div class="timeline-list">' + items.map(function(item) {
           var target = parseEventTargetForStudentConsole_(item);
           var related = getStudentsForSchoolGrade_(target.school, target.grade).length;
-          return '<div class="timeline-item"><div><strong>' + escapeHtml(target.school || '-') + ' · ' + escapeHtml(item.subjectName || item.eventName || '시험') + '</strong><span>' + escapeHtml(formatDateShort_(item.isoDate || item.date)) + ' · 관련 학생 ' + escapeHtml(String(related)) + '명</span></div><span class="ops-chip ' + (related ? 'blue' : 'slate') + '">직보 확인</span></div>';
+          return '<div class="timeline-item"><div><strong>' + renderSchoolNameWithLogo_(target.school || '-') + ' · ' + escapeHtml(item.subjectName || item.eventName || '시험') + '</strong><span>' + escapeHtml(formatDateShort_(item.isoDate || item.date)) + ' · 관련 학생 ' + escapeHtml(String(related)) + '명</span></div><span class="ops-chip ' + (related ? 'blue' : 'slate') + '">직보 확인</span></div>';
         }).join('') + '</div>';
       }
 
@@ -17256,7 +17256,7 @@
         return '<div class="bar-list">' + schools.map(function(school) {
           var info = getSchoolMaterialInfo_(school);
           var percent = info.available ? Math.min(100, Math.round((info.available / Math.max(1, info.available + info.missing)) * 100)) : 0;
-          return '<div class="bar-row"><span>' + escapeHtml(school) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + percent + '%"></div></div><strong>' + escapeHtml(String(percent)) + '%</strong></div>';
+          return '<div class="bar-row"><span>' + renderSchoolNameWithLogo_(school) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + percent + '%"></div></div><strong>' + escapeHtml(String(percent)) + '%</strong></div>';
         }).join('') + '</div>';
       }
 
@@ -17673,7 +17673,7 @@
           document.body.appendChild(tooltip);
         }
         tooltip.innerHTML = [
-          '<strong>' + escapeHtml(school) + '</strong>',
+          '<strong>' + renderSchoolNameWithLogo_(school) + '</strong>',
           '<span>재원생 ' + escapeHtml(count) + '명 · 전체 대비 ' + escapeHtml(percent) + '%</span>',
           '<em>' + escapeHtml(sample || '학생 정보 없음') + (extra > 0 ? ' 외 ' + escapeHtml(String(extra)) + '명' : '') + '</em>'
         ].join('');
@@ -18702,7 +18702,7 @@
               '<tr>',
               '  <td><input type="checkbox" class="homeroom-student-check" data-homeroom-student-id="' + escapeAttribute(student.studentId) + '"' + checked + '></td>',
               '  <td>' + escapeHtml(student.studentName) + '</td>',
-              '  <td>' + escapeHtml(student.school || '-') + '</td>',
+              '  <td>' + renderSchoolNameWithLogo_(student.school || '-') + '</td>',
               '  <td>' + escapeHtml(student.grade ? String(student.grade) : '-') + '</td>',
               '  <td>' + escapeHtml(student.subject || '-') + '</td>',
               '  <td>' + escapeHtml(String(count)) + '명</td>',
@@ -19117,7 +19117,7 @@
             return [
               '<tr' + selectedClass + '>',
               '  <td><button type="button" class="table-row-button" data-student-id="' + escapeAttribute(student.studentId) + '">' + escapeHtml(student.studentName) + '</button></td>',
-              '  <td>' + escapeHtml(student.school || '-') + '</td>',
+              '  <td>' + renderSchoolNameWithLogo_(student.school || '-') + '</td>',
               '  <td>' + escapeHtml(student.grade ? String(student.grade) : '-') + '</td>',
               '  <td>' + escapeHtml(String(count)) + '명</td>',
               '</tr>'
@@ -19159,7 +19159,7 @@
 
         wrap.innerHTML = [
           '<h4>' + escapeHtml(student.studentName) + '</h4>',
-          '<div class="dense-meta">원: ' + escapeHtml(student.school || '-') + ' · 학년: ' + escapeHtml(student.grade ? String(student.grade) : '-') + ' · 학생 ID: ' + escapeHtml(student.studentId) + '</div>',
+          '<div class="dense-meta">원: ' + renderSchoolNameWithLogo_(student.school || '-') + ' · 학년: ' + escapeHtml(student.grade ? String(student.grade) : '-') + ' · 학생 ID: ' + escapeHtml(student.studentId) + '</div>',
           '<div class="permission-fast-panel">',
           '  <div class="permission-fast-head"><strong>열람 권한 빠른 추가</strong><span>' + escapeHtml(String(selected.length)) + '명 선택됨</span></div>',
           '  <div class="permission-selected-chip-row">' + renderPermissionSelectedChips_(selected) + '</div>',
@@ -19613,7 +19613,7 @@
             return [
               '<tr>',
               '  <td>' + escapeHtml(student.studentName || '-') + '</td>',
-              '  <td>' + escapeHtml(student.school || '-') + '</td>',
+              '  <td>' + renderSchoolNameWithLogo_(student.school || '-') + '</td>',
               '  <td>' + escapeHtml(student.grade ? String(student.grade) : '-') + '</td>',
               '  <td>',
               '    <input type="text" class="student-subject-input" data-student-subject-input="' + escapeAttribute(student.studentId) + '" value="' + escapeAttribute(effectiveSubject) + '" placeholder="예: 수학, 국어, 과학">',
@@ -21027,7 +21027,7 @@
               var examFinishedClass = row.isExamFinished ? ' exam-finished' : '';
               return [
                 '<tr class="jikbo-student-exam-row' + examFinishedClass + '">',
-                (!isSchoolRendered && rowIndex === 0 ? '<td class="sticky-col sticky-school school-cell" rowspan="' + escapeAttribute(String(schoolRowSpanMap[group.school] || (group.rowCount * 2))) + '">' + escapeHtml(group.school || '-') + '</td>' : ''),
+                (!isSchoolRendered && rowIndex === 0 ? '<td class="sticky-col sticky-school school-cell" rowspan="' + escapeAttribute(String(schoolRowSpanMap[group.school] || (group.rowCount * 2))) + '">' + renderSchoolNameWithLogo_(group.school || '-') + '</td>' : ''),
                 (rowIndex === 0 ? '<td class="sticky-col sticky-start range-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.eventRange.startLabel) + '</td>' : ''),
                 (rowIndex === 0 ? '<td class="sticky-col sticky-end range-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.eventRange.endLabel) + '</td>' : ''),
                 (rowIndex === 0 ? '<td class="sticky-col sticky-grade grade-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.grade || '-') + '</td>' : ''),
@@ -21824,7 +21824,7 @@
             var rowKey = 'jikboAssignInstructorSelect_' + String(index);
             return [
               '<tr>',
-              '  <td><strong>' + escapeHtml(item.studentName || '-') + '</strong><div class="helper-text">' + escapeHtml([item.school || '-', item.grade ? String(item.grade) + '학년' : ''].filter(Boolean).join(' · ')) + '</div></td>',
+              '  <td><strong>' + escapeHtml(item.studentName || '-') + '</strong><div class="helper-text">' + renderSchoolGradeMetaHtml_(item.school || '-', item.grade, true) + '</div></td>',
               '  <td>' + escapeHtml(item.examDate || '-') + '<div class="helper-text">직보 ' + escapeHtml(item.dateKey || '-') + '</div></td>',
               '  <td><span class="jikbo-chip-subject-badge ' + escapeAttribute(getSubjectToneClass_(item.subjectName)) + '">' + escapeHtml(item.subjectName || '-') + '</span></td>',
               '  <td><select id="' + escapeAttribute(rowKey) + '" class="field-select">' + renderJikboInstructorOptions_('') + '</select></td>',
@@ -22262,7 +22262,7 @@
             return [
               '<button type="button" class="schedule-day-card ' + getScheduleGradeToneClass_(schedule.grade) + (APP_STATE.focusedEventId === schedule.id ? ' focused' : '') + '" data-action="focus-event" data-schedule-id="' + escapeAttribute(schedule.id) + '" data-date="' + escapeAttribute(schedule.date) + '">',
               '  <span class="schedule-day-time">' + escapeHtml(schedule.time || '-') + '</span>',
-              '  <span class="schedule-day-main"><strong>' + escapeHtml([schedule.school, schedule.grade, schedule.subject].filter(Boolean).join(' · ')) + '</strong><span>' + escapeHtml(schedule.title || '-') + '</span></span>',
+              '  <span class="schedule-day-main"><strong>' + renderSchoolNameWithLogo_(schedule.school || '-') + ' · ' + escapeHtml([schedule.grade, schedule.subject].filter(Boolean).join(' · ')) + '</strong><span>' + escapeHtml(schedule.title || '-') + '</span></span>',
               '  <span class="schedule-day-meta">' + renderEventTypeBadge_(schedule.scheduleType) + '<span class="legend-chip ' + getScheduleGradeToneClass_(schedule.grade) + '">' + escapeHtml(schedule.grade || '-') + '</span></span>',
               '</button>'
             ].join('');
@@ -22331,7 +22331,7 @@
         return [
           '<button type="button" class="school-schedule-chip ' + getScheduleGradeToneClass_(schedule.grade) + (APP_STATE.focusedEventId === schedule.id ? ' focused' : '') + '" data-action="focus-event" data-schedule-id="' + escapeAttribute(schedule.id) + '" data-date="' + escapeAttribute(schedule.date) + '" title="' + escapeAttribute(fullText) + '">',
           '  <i data-lucide="' + escapeAttribute(getScheduleIcon_(schedule)) + '"></i>',
-          '  <strong>' + escapeHtml(title || '학교 미지정') + '</strong>',
+          '  <strong>' + renderSchoolNameWithLogo_(schedule.school || '학교 미지정') + (schedule.grade ? ' ' + escapeHtml(schedule.grade) : '') + '</strong>',
           '  <span class="schedule-subject">' + escapeHtml(schedule.subject || schedule.scheduleType || '-') + '</span>',
           '</button>'
         ].join('');
@@ -22344,7 +22344,7 @@
           return [
             '<tr class="' + (APP_STATE.focusedEventId === schedule.id ? 'focused' : '') + '">',
             '  <td>' + escapeHtml(schedule.time || '-') + '</td>',
-            '  <td><strong>' + escapeHtml(schedule.school || '-') + '</strong></td>',
+            '  <td><strong>' + renderSchoolNameWithLogo_(schedule.school || '-') + '</strong></td>',
             '  <td><span class="legend-chip ' + getScheduleGradeToneClass_(schedule.grade) + '">' + escapeHtml(schedule.grade || '-') + '</span></td>',
             '  <td>' + escapeHtml(schedule.subject || '-') + '</td>',
             '  <td>' + renderEventTypeBadge_(schedule.scheduleType) + '</td>',
@@ -22433,7 +22433,7 @@
             return [
               '<button type="button" class="upcoming-schedule-item" data-action="focus-event" data-schedule-id="' + escapeAttribute(item.id) + '" data-date="' + escapeAttribute(item.date) + '">',
               '  <span class="upcoming-school-color" style="--school-color:' + escapeAttribute(getSchoolAccentColor_(item.school)) + ';"></span>',
-              '  <span class="upcoming-schedule-main"><strong>' + escapeHtml([item.school, item.grade, item.subject].filter(Boolean).join(' · ')) + '</strong><span>' + escapeHtml(item.title || item.scheduleType || '-') + '</span></span>',
+              '  <span class="upcoming-schedule-main"><strong>' + renderSchoolNameWithLogo_(item.school || '-') + ' · ' + escapeHtml([item.grade, item.subject].filter(Boolean).join(' · ')) + '</strong><span>' + escapeHtml(item.title || item.scheduleType || '-') + '</span></span>',
               '  <span class="upcoming-schedule-date"><span>' + escapeHtml(formatEventDateLabel_(item.date)) + '</span><span>' + escapeHtml(item.time || '-') + '</span></span>',
               '</button>'
             ].join('');
@@ -22445,7 +22445,7 @@
 
       function renderScheduleCompactList_(schedules) {
         var rows = schedules.map(function(schedule) {
-          return '<tr><td>' + escapeHtml(formatEventDateLabel_(schedule.date)) + '</td><td>' + escapeHtml(schedule.time) + '</td><td>' + escapeHtml(schedule.school) + '</td><td>' + escapeHtml(schedule.grade) + '</td><td>' + escapeHtml(schedule.subject) + '</td><td>' + renderEventTypeBadge_(schedule.scheduleType) + '</td><td>' + escapeHtml(schedule.title) + '</td></tr>';
+          return '<tr><td>' + escapeHtml(formatEventDateLabel_(schedule.date)) + '</td><td>' + escapeHtml(schedule.time) + '</td><td>' + renderSchoolNameWithLogo_(schedule.school) + '</td><td>' + escapeHtml(schedule.grade) + '</td><td>' + escapeHtml(schedule.subject) + '</td><td>' + renderEventTypeBadge_(schedule.scheduleType) + '</td><td>' + escapeHtml(schedule.title) + '</td></tr>';
         }).join('');
         if (!rows) {
           rows = '<tr><td colspan="7" class="helper-text">표시할 일정이 없습니다.</td></tr>';
@@ -23069,7 +23069,7 @@
                renderMaterialTypeBadge_(getMaterialPrimaryTypeLabel_(item)),
           '  </div>',
           '  <div class="chip-row">' + [
-                 renderMaterialMetaBadge_(item.school || '-', 'subject'),
+                 renderMaterialMetaBadge_(item.school || '-', 'school'),
                  renderMaterialMetaBadge_(item.year || '-', 'year'),
                  renderMaterialMetaBadge_(item.grade || '-', 'grade'),
                  renderMaterialMetaBadge_(item.examType || '-', 'exam'),
@@ -23134,7 +23134,7 @@
             return [
               '<section class="material-school-group">',
               '  <div class="material-group-head">',
-              '    <div><div class="material-group-title">' + (scopeCount ? '<span class="material-gold-marker" aria-label="시험일정 및 범위 포함"><i data-lucide="star"></i></span>' : '') + '<strong>' + escapeHtml(schoolKey) + '</strong>' + renderMaterialCountPill_('자료 ' + schoolItemCount + '건', '') + renderMaterialCountPill_('최근 ' + recentCount + '건', '') + renderMaterialCountPill_('범위 ' + scopeCount + '건', scopeCount ? 'gold-premium' : '') + '</div></div>',
+              '    <div><div class="material-group-title">' + (scopeCount ? '<span class="material-gold-marker" aria-label="시험일정 및 범위 포함"><i data-lucide="star"></i></span>' : '') + '<strong>' + renderSchoolNameWithLogo_(schoolKey) + '</strong>' + renderMaterialCountPill_('자료 ' + schoolItemCount + '건', '') + renderMaterialCountPill_('최근 ' + recentCount + '건', '') + renderMaterialCountPill_('범위 ' + scopeCount + '건', scopeCount ? 'gold-premium' : '') + '</div></div>',
               '    <button type="button" class="material-chip-button" data-material-school="' + escapeAttribute(schoolKey) + '">학교 필터</button>',
               '  </div>',
               visibleYearKeys.map(function(yearKey) {
@@ -23215,7 +23215,7 @@
             '<article class="material-card-item ' + (isExamScopeMaterial_(item) ? 'gold-premium' : '') + '">',
             '<div class="ops-card-title"><h4>' + escapeHtml(buildMaterialDisplayTitle_(item)) + '</h4>' + renderMaterialTypeBadge_(item.materialType || '-') + '</div>',
             '<div class="chip-row">' + [
-              renderMaterialMetaBadge_(item.school || '-', 'subject'),
+              renderMaterialMetaBadge_(item.school || '-', 'school'),
               renderMaterialMetaBadge_(item.year || '-', 'year'),
               renderMaterialMetaBadge_(item.grade || '-', 'grade'),
               renderMaterialMetaBadge_(item.examType || '-', 'exam')
@@ -23248,7 +23248,7 @@
           var isExpanded = school === expandedSchool;
           return [
             '<div class="material-nav-school ' + (selectedSchool === school ? 'active ' : '') + (isExpanded ? 'expanded' : '') + '">',
-            '<button type="button" class="material-nav-school-head" data-material-school="' + escapeAttribute(school) + '"><i data-lucide="' + (isExpanded ? 'chevron-down' : 'chevron-right') + '"></i><span class="material-nav-school-name">' + escapeHtml(school) + '</span><span class="material-nav-count">자료 ' + escapeHtml(String(schoolItems.length)) + '</span></button>',
+            '<button type="button" class="material-nav-school-head" data-material-school="' + escapeAttribute(school) + '"><i data-lucide="' + (isExpanded ? 'chevron-down' : 'chevron-right') + '"></i><span class="material-nav-school-name">' + renderSchoolNameWithLogo_(school) + '</span><span class="material-nav-count">자료 ' + escapeHtml(String(schoolItems.length)) + '</span></button>',
             isExpanded ? [
             '<div class="material-nav-details">',
             '<div class="material-nav-meta"><span>최근 ' + escapeHtml(String(recentCount)) + '</span><span class="scope">범위 ' + escapeHtml(String(scopeCount)) + '</span></div>',
@@ -23317,7 +23317,7 @@
         var max = Math.max(1, rows.reduce(function(value, school) { return Math.max(value, counts[school]); }, 0));
         return rows.map(function(school) {
           var percent = Math.round(counts[school] / max * 100);
-          return '<button type="button" class="insight-bar-row" data-material-school="' + escapeAttribute(school) + '"><span>' + escapeHtml(school) + '</span><span class="insight-track"><span class="insight-fill" style="width:' + percent + '%"></span></span><strong>' + escapeHtml(String(counts[school])) + '건</strong></button>';
+          return '<button type="button" class="insight-bar-row" data-material-school="' + escapeAttribute(school) + '"><span>' + renderSchoolNameWithLogo_(school) + '</span><span class="insight-track"><span class="insight-fill" style="width:' + percent + '%"></span></span><strong>' + escapeHtml(String(counts[school])) + '건</strong></button>';
         }).join('') || '<div class="empty-state">자료가 없습니다.</div>';
       }
 
@@ -23326,7 +23326,7 @@
           return String(b.createdAt || b.updatedAt || b.year || '').localeCompare(String(a.createdAt || a.updatedAt || a.year || ''));
         }).slice(0, 4);
         return '<div class="material-recent-list">' + rows.map(function(item) {
-          return '<div class="material-mini-item ' + (isExamScopeMaterial_(item) ? 'gold-mini' : '') + '"><div class="material-mini-head">' + (isExamScopeMaterial_(item) ? '<span class="material-gold-marker"><i data-lucide="star"></i></span>' : '') + '<strong>' + escapeHtml(buildMaterialDisplayTitle_(item)) + '</strong></div><span>' + escapeHtml([item.school || '-', formatMaterialDate_(item.createdAt || item.updatedAt || ''), item.createdBy || '-'].filter(Boolean).join(' · ')) + '</span></div>';
+          return '<div class="material-mini-item ' + (isExamScopeMaterial_(item) ? 'gold-mini' : '') + '"><div class="material-mini-head">' + (isExamScopeMaterial_(item) ? '<span class="material-gold-marker"><i data-lucide="star"></i></span>' : '') + '<strong>' + escapeHtml(buildMaterialDisplayTitle_(item)) + '</strong></div><span>' + renderSchoolNameWithLogo_(item.school || '-') + ' · ' + escapeHtml([formatMaterialDate_(item.createdAt || item.updatedAt || ''), item.createdBy || '-'].filter(Boolean).join(' · ')) + '</span></div>';
         }).join('') + '</div>';
       }
 
@@ -23339,7 +23339,7 @@
           if (hasScope && hasSolution) {
             return '';
           }
-          return '<button type="button" class="material-mini-item warning" data-material-school="' + escapeAttribute(school) + '"><div class="material-mini-head"><i data-lucide="triangle-alert"></i><strong>' + escapeHtml(school) + '</strong>' + renderMaterialCountPill_('미등록', 'warning') + '</div><span>' + escapeHtml(hasScope ? '해설/답안 확인 필요' : '시험일정 및 범위 미등록') + '</span></button>';
+          return '<button type="button" class="material-mini-item warning" data-material-school="' + escapeAttribute(school) + '"><div class="material-mini-head"><i data-lucide="triangle-alert"></i><strong>' + renderSchoolNameWithLogo_(school) + '</strong>' + renderMaterialCountPill_('미등록', 'warning') + '</div><span>' + escapeHtml(hasScope ? '해설/답안 확인 필요' : '시험일정 및 범위 미등록') + '</span></button>';
         }).filter(Boolean);
         return '<div class="material-warning-list">' + (rows.join('') || '<div class="empty-state">우선 확인할 누락 항목이 없습니다.</div>') + '</div>';
       }
@@ -23392,7 +23392,7 @@
         return [
           '<span class="material-school-cell">',
           isGold ? '<span class="material-gold-marker" aria-label="시험일정 및 범위"><i data-lucide="star"></i></span>' : '',
-          '<strong>' + escapeHtml(item.school || schoolContext || '-') + '</strong>',
+          '<strong>' + renderSchoolNameWithLogo_(item.school || schoolContext || '-') + '</strong>',
           '</span>'
         ].join('');
       }
@@ -23883,7 +23883,7 @@
         wrap.innerHTML = ordered.map(function(school) {
           var value = school === '전체' ? '' : school;
           var count = value ? APP_STATE.materials.filter(function(item) { return item.school === value; }).length : APP_STATE.materials.length;
-          return '<button type="button" class="material-chip-button ' + (selectedSchool === value ? 'active' : '') + '" data-material-school="' + escapeAttribute(value) + '">' + escapeHtml(school) + (count ? ' <span>' + escapeHtml(String(count)) + '</span>' : '') + '</button>';
+          return '<button type="button" class="material-chip-button ' + (selectedSchool === value ? 'active' : '') + '" data-material-school="' + escapeAttribute(value) + '">' + (value ? renderSchoolNameWithLogo_(school) : escapeHtml(school)) + (count ? ' <span>' + escapeHtml(String(count)) + '</span>' : '') + '</button>';
         }).join('');
       }
 
@@ -24355,9 +24355,10 @@
           '  <div class="material-open-log-panel-head"><h4>' + escapeHtml(title) + '</h4><span class="ops-chip slate">' + escapeHtml(caption) + '</span></div>',
           topRows.length ? '<div class="material-open-log-card-list">' + topRows.map(function(row) {
             var percent = max ? Math.max(4, Math.round(row.count / max * 100)) : 0;
+            var labelHtml = String(title || '').indexOf('학교') !== -1 ? renderSchoolNameWithLogo_(row.label || '-') : escapeHtml(row.label || '-');
             return [
               '<div class="material-open-log-card-row">',
-              '  <div><strong>' + escapeHtml(row.label || '-') + '</strong><span>' + escapeHtml(row.sub || ('최근 ' + (formatTeachingLogDateTime(row.latestAt) || '-'))) + '</span></div>',
+              '  <div><strong>' + labelHtml + '</strong><span>' + escapeHtml(row.sub || ('최근 ' + (formatTeachingLogDateTime(row.latestAt) || '-'))) + '</span></div>',
               '  <div class="material-open-log-meter"><strong>' + escapeHtml(String(row.count)) + '건</strong><div class="material-open-log-meter-bar"><span style="width:' + percent + '%;"></span></div></div>',
               '</div>'
             ].join('');
@@ -24379,7 +24380,7 @@
               '  </div>',
               '  <div class="material-open-log-resource">',
               '    <div class="material-open-log-title">' + [
-                    renderMaterialMetaBadge_(log.school, 'subject'),
+                    renderMaterialMetaBadge_(log.school, 'school'),
                     renderMaterialMetaBadge_(log.year, 'year'),
                     renderMaterialMetaBadge_(log.subject, 'subject'),
                     renderMaterialMetaBadge_(log.examType, 'exam')
@@ -24629,7 +24630,7 @@
                groups.map(function(item) {
                  return [
                    '<tr class="coverage-row school-tone-row" style="' + buildSchoolToneStyle_(item.school) + '">',
-                   '  <td class="coverage-school-cell" style="' + buildSchoolToneStyle_(item.school) + '">' + escapeHtml(item.school) + '</td>',
+                   '  <td class="coverage-school-cell" style="' + buildSchoolToneStyle_(item.school) + '">' + renderSchoolNameWithLogo_(item.school) + '</td>',
                    '  <td>' + escapeHtml(item.grade) + '</td>',
                    '  <td>' + escapeHtml(item.term) + '</td>',
                    '  <td>' + escapeHtml(item.year) + '</td>',
@@ -24675,6 +24676,9 @@
         if (tone === 'subject') {
           tone += ' ' + getSubjectToneClass_(value);
         }
+        if (toneClass === 'school') {
+          tone += ' school';
+        }
         if (toneClass === 'type') {
           tone += ' ' + getMaterialTypeToneClass_(value);
         }
@@ -24682,7 +24686,8 @@
           tone += ' ' + getFileTypeToneClass_(value);
         }
         tone += ' ' + getMaterialKeywordBadgeClass_(value);
-        return '<span class="material-meta-badge ' + escapeAttribute(tone) + '">' + escapeHtml(value || '-') + '</span>';
+        var label = toneClass === 'school' ? renderSchoolNameWithLogo_(value || '-') : escapeHtml(value || '-');
+        return '<span class="material-meta-badge ' + escapeAttribute(tone) + '">' + label + '</span>';
       }
 
       function renderMaterialSubjectLabel_(subject) {
@@ -24817,6 +24822,9 @@
 
       function renderSchoolNameWithLogo_(schoolName) {
         var name = String(schoolName || '').trim();
+        if (name === '-' || name === '전체' || name === '학생 자료') {
+          return '<span class="school-logo-name">' + escapeHtml(name || '-') + '</span>';
+        }
         if (!name) {
           return '<span class="school-with-logo"><span class="school-logo-fallback" style="' + escapeAttribute(buildSchoolToneStyle_('학교')) + '">학</span><span class="school-logo-name">학교 미지정</span></span>';
         }
@@ -24826,6 +24834,26 @@
           ? '<img class="school-logo" src="' + escapeAttribute(SCHOOL_LOGO_BASE_PATH + file) + '" alt="' + escapeAttribute(name + ' 로고') + '" loading="lazy" onerror="this.classList.add(\'hidden\');if(this.nextElementSibling){this.nextElementSibling.classList.remove(\'hidden\');}">'
           : '';
         return '<span class="school-with-logo" style="' + escapeAttribute(buildSchoolToneStyle_(name)) + '">' + image + '<span class="school-logo-fallback' + fallbackHidden + '">' + escapeHtml(getSchoolLogoInitial_(name)) + '</span><span class="school-logo-name">' + escapeHtml(name) + '</span></span>';
+      }
+
+      function renderSchoolGradeMetaHtml_(schoolName, grade, includeGradeSuffix) {
+        var parts = [];
+        var school = String(schoolName || '').trim();
+        if (school) {
+          parts.push(renderSchoolNameWithLogo_(school));
+        }
+        var gradeText = String(grade || '').trim();
+        if (gradeText) {
+          if (includeGradeSuffix && !/학년|수생/i.test(gradeText)) {
+            gradeText += '학년';
+          }
+          parts.push('<span>' + escapeHtml(gradeText) + '</span>');
+        }
+        return parts.length ? '<span class="school-meta-line">' + parts.join('<span class="school-meta-separator">·</span>') + '</span>' : '-';
+      }
+
+      function renderStudentSchoolGradeHtml_(student, includeGradeSuffix) {
+        return renderSchoolGradeMetaHtml_(student && student.school, student && student.grade, includeGradeSuffix);
       }
 
       function renderGradeStudentMetaHtml_(student) {
@@ -24851,14 +24879,7 @@
       }
 
       function renderGradeSchoolGradeHtml_(student) {
-        var parts = [];
-        if (student && student.school) {
-          parts.push(renderSchoolNameWithLogo_(student.school));
-        }
-        if (student && student.grade) {
-          parts.push('<span>' + escapeHtml(student.grade) + '</span>');
-        }
-        return parts.length ? '<span class="school-meta-line">' + parts.join('<span class="school-meta-separator">·</span>') + '</span>' : '-';
+        return renderSchoolGradeMetaHtml_(student && student.school, student && student.grade, false);
       }
 
       function hydrateGradeData_(gradeData) {
@@ -25319,7 +25340,7 @@
         }
         var max = Math.max.apply(null, rows.map(function(row) { return row.count; })) || 1;
         return '<div class="grade-mini-list">' + rows.map(function(row) {
-          return '<div class="grade-mini-item"><strong>' + escapeHtml(row.school) + ' · ' + row.count + '명</strong><div class="grade-school-bar"><span style="width:' + Math.round((row.count / max) * 100) + '%;"></span></div></div>';
+          return '<div class="grade-mini-item"><strong>' + renderSchoolNameWithLogo_(row.school) + ' · ' + row.count + '명</strong><div class="grade-school-bar"><span style="width:' + Math.round((row.count / max) * 100) + '%;"></span></div></div>';
         }).join('') + '</div>';
       }
 
