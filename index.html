@@ -11315,7 +11315,7 @@
 
       .grades-v3-tabs {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 0;
         padding: 0;
         overflow: hidden;
@@ -11628,6 +11628,129 @@
         color: #0f172a;
       }
 
+      .grade-overview-list {
+        display: grid;
+        gap: 12px;
+        border: 1px solid #dbe5f3;
+        border-top: 0;
+        border-radius: 0 0 8px 8px;
+        padding: 12px;
+        background: #f8fbff;
+      }
+
+      .grade-overview-card {
+        display: grid;
+        grid-template-columns: 170px minmax(0, 1fr);
+        gap: 14px;
+        padding: 12px;
+        border: 1px solid #dbe5f3;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .grade-overview-student strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.9rem;
+        font-weight: 950;
+      }
+
+      .grade-overview-student span,
+      .grade-overview-type-head span,
+      .grade-overview-score span {
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 800;
+      }
+
+      .grade-overview-types {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .grade-overview-type {
+        display: grid;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .grade-overview-type-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .grade-overview-type-head strong {
+        color: #0f172a;
+        font-size: 0.76rem;
+        font-weight: 950;
+      }
+
+      .grade-overview-bar {
+        height: 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e5edf7;
+      }
+
+      .grade-overview-bar span {
+        display: block;
+        height: 100%;
+        background: #2563eb;
+      }
+
+      .grade-overview-scores {
+        display: grid;
+        gap: 6px;
+      }
+
+      .grade-overview-score,
+      .grade-history-subject-chip {
+        border: 1px solid #dbe5f3;
+        border-radius: 7px;
+        background: #ffffff;
+        color: #0f172a;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .grade-overview-score {
+        display: grid;
+        gap: 2px;
+        padding: 8px;
+      }
+
+      .grade-overview-score strong {
+        font-size: 0.73rem;
+        font-weight: 950;
+      }
+
+      .grade-history-subjects {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+      }
+
+      .grade-history-subject-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 7px;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .grade-history-subject-chip strong {
+        color: #0f172a;
+      }
+
+      .grade-history-subject-chip span:not(.grade-subject-badge) {
+        color: #64748b;
+        font-size: 0.68rem;
+      }
+
       @media (max-width: 1500px) {
         .grades-v3-shell {
           grid-template-columns: 220px minmax(0, 1fr);
@@ -11652,7 +11775,12 @@
 
         .grades-v3-tabs,
         .grades-v3-metrics,
-        .grades-v3-right {
+        .grades-v3-right,
+        .grade-overview-types {
+          grid-template-columns: 1fr;
+        }
+
+        .grade-overview-card {
           grid-template-columns: 1fr;
         }
 
@@ -13274,6 +13402,7 @@
         gradeStudents: [],
         gradeSubjects: [],
         gradeHistory: [],
+        gradeScaleSettings: [],
         gradeHistoryLoaded: false,
         gradeHistoryLoading: false,
         gradeSummary: null,
@@ -13281,7 +13410,7 @@
         gradesRemoteLoaded: false,
         gradesLoading: false,
         gradeLoadPromise: null,
-        gradeTab: 'input',
+        gradeTab: 'overview',
         gradeFilters: {
           schoolYear: '2026',
           examCategory: '내신',
@@ -13329,13 +13458,14 @@
         },
         grades: {
           title: '성적 관리',
-          description: '내신, 모의고사, 수능 성적을 학생별로 입력하고 분석합니다.'
+          description: '테스트, 내신, 모의고사, 수능 성적을 학생별로 입력하고 분석합니다.'
         },
         materials: {
           title: '문제 자료실',
           description: '학교별 문제 자료, 시험 범위, 학생별 개인 자료를 빠르게 검색하고 관리'
         }
       };
+      var GRADE_TEST_EXAMS = ['테스트'];
       var GRADE_INTERNAL_EXAMS = ['1학기 중간고사', '1학기 기말고사', '2학기 중간고사', '2학기 기말고사'];
       var GRADE_MOCK_EXAMS = ['3월 모의고사', '4월 모의고사', '5월 모의고사', '6월 모의고사', '7월 모의고사', '9월 모의고사', '10월 모의고사', '수능'];
       var GRADE_SUBJECT_OPTIONS = ['국어', '수학', '영어', '과학', '사회', '한국사', '통합과학', '통합사회', '물리학', '화학', '생명과학', '지구과학'];
@@ -24504,6 +24634,7 @@
         APP_STATE.gradeStudents = gradeData && gradeData.students ? gradeData.students : APP_STATE.visibleStudents.slice();
         APP_STATE.gradeSummary = gradeData && gradeData.summary ? gradeData.summary : buildGradeSummaryClient_(APP_STATE.grades, APP_STATE.gradeStudents);
         APP_STATE.gradeExamOptions = normalizeGradeExamOptions_(gradeData && gradeData.examOptions ? gradeData.examOptions : APP_STATE.gradeExamOptions);
+        APP_STATE.gradeScaleSettings = normalizeGradeScaleSettings_(gradeData && gradeData.gradeScaleSettings ? gradeData.gradeScaleSettings : APP_STATE.gradeScaleSettings);
         if (gradeData && gradeData.user) {
           APP_STATE.user = gradeData.user;
         }
@@ -24667,7 +24798,7 @@
           '<div class="grades-filter-grid">',
           '  <input id="gradeSearchInput" class="field-input" type="text" placeholder="학생명, 학교, 과목 검색" data-grade-search value="' + escapeAttribute(APP_STATE.gradeSearchKeyword || '') + '">',
           renderGradeSelect_('schoolYear', '학년도', ['2026', '2025', '2024', '2023'], filters.schoolYear),
-          renderGradeSelect_('examCategory', '시험분류', ['내신', '모의고사', '수능'], filters.examCategory),
+          renderGradeSelect_('examCategory', '시험분류', getGradeExamOptionSet_().categories || ['테스트', '내신', '모의고사', '수능'], filters.examCategory),
           renderGradeSelect_('term', '학기', ['1학기', '2학기'], filters.term),
           renderGradeSelect_('examName', '시험명', examOptions, filters.examName),
           renderGradeSelect_('school', '학교', getGradeSchools_(), filters.school, '전체 학교'),
@@ -25330,6 +25461,9 @@
 
       function normalizeGradeExamOptions_(options) {
         var source = options || {};
+        var testExams = uniqueList_((source.testExams || GRADE_TEST_EXAMS).map(function(item) {
+          return String(item || '').trim();
+        }).filter(Boolean));
         var internalExams = uniqueList_((source.internalExams || GRADE_INTERNAL_EXAMS).map(function(item) {
           return String(item || '').trim();
         }).filter(Boolean));
@@ -25339,11 +25473,30 @@
         if (mockExams.indexOf('수능') === -1) {
           mockExams.push('수능');
         }
+        if (testExams.indexOf('테스트') === -1) {
+          testExams.unshift('테스트');
+        }
         return {
-          categories: source.categories || ['내신', '모의고사', '수능'],
+          categories: source.categories || ['테스트', '내신', '모의고사', '수능'],
+          testExams: sortGradeTestExamsClient_(testExams),
           internalExams: sortGradeInternalExamsClient_(internalExams),
           mockExams: sortGradeMockExamsClient_(mockExams)
         };
+      }
+
+      function normalizeGradeScaleSettings_(items) {
+        return (items || []).map(function(item) {
+          return {
+            examCategory: String(item && item.examCategory || '').trim(),
+            examName: String(item && item.examName || '').trim(),
+            subjectCategory: String(item && item.subjectCategory || '').trim(),
+            subjectName: String(item && (item.subjectName || item.subject) || '').trim(),
+            gradeLevel: String(item && (item.gradeLevel || item.grade || item.level) || '').trim(),
+            minScore: String(item && item.minScore || '').trim()
+          };
+        }).filter(function(item) {
+          return item.gradeLevel && item.minScore;
+        });
       }
 
       function getGradeExamOptionSet_() {
@@ -25354,6 +25507,18 @@
       function sortGradeInternalExamsClient_(items) {
         return (items || []).slice().sort(function(a, b) {
           return getGradeInternalExamOrderClient_(a) - getGradeInternalExamOrderClient_(b) || String(a).localeCompare(String(b), 'ko');
+        });
+      }
+
+      function sortGradeTestExamsClient_(items) {
+        return (items || []).slice().sort(function(a, b) {
+          if (a === '테스트') {
+            return -1;
+          }
+          if (b === '테스트') {
+            return 1;
+          }
+          return String(a).localeCompare(String(b), 'ko');
         });
       }
 
@@ -25381,6 +25546,9 @@
 
       function getDefaultGradeExamName_(category) {
         var options = getGradeExamOptionSet_();
+        if (category === '테스트') {
+          return options.testExams[0] || GRADE_TEST_EXAMS[0] || '테스트';
+        }
         if (category === '내신') {
           return options.internalExams[0] || GRADE_INTERNAL_EXAMS[0] || '';
         }
@@ -25393,6 +25561,9 @@
 
       function getGradeExamOptions_() {
         var options = getGradeExamOptionSet_();
+        if (APP_STATE.gradeFilters.examCategory === '테스트') {
+          return options.testExams;
+        }
         if (APP_STATE.gradeFilters.examCategory === '내신') {
           return options.internalExams;
         }
@@ -25873,6 +26044,7 @@
         APP_STATE.grades = (gradeData && gradeData.grades ? gradeData.grades : []).map(normalizeGradeRecordV2_);
         APP_STATE.gradeSubjects = normalizeGradeSubjectDefinitions_(gradeData && gradeData.subjectDefinitions ? gradeData.subjectDefinitions : APP_STATE.gradeSubjects);
         APP_STATE.gradeExamOptions = normalizeGradeExamOptions_(gradeData && gradeData.examOptions ? gradeData.examOptions : APP_STATE.gradeExamOptions);
+        APP_STATE.gradeScaleSettings = normalizeGradeScaleSettings_(gradeData && gradeData.gradeScaleSettings ? gradeData.gradeScaleSettings : APP_STATE.gradeScaleSettings);
         if (gradeData && gradeData.gradeHistory && gradeData.gradeHistory.length) {
           APP_STATE.gradeHistory = gradeData.gradeHistory.map(normalizeGradeRecordV2_);
           APP_STATE.gradeHistoryLoaded = true;
@@ -25958,7 +26130,7 @@
           '<div class="grades-filter-grid">',
           '  <input id="gradeSearchInput" class="field-input" type="text" placeholder="학생명, 학교, 과목 검색" data-grade-search value="' + escapeAttribute(APP_STATE.gradeSearchKeyword || '') + '">',
           renderGradeSelect_('examYear', '연도', getGradeYearOptions_(), getGradeYear_()),
-          renderGradeSelect_('examCategory', '시험분류', ['내신', '모의고사', '수능'], filters.examCategory),
+          renderGradeSelect_('examCategory', '시험분류', getGradeExamOptionSet_().categories || ['테스트', '내신', '모의고사', '수능'], filters.examCategory),
           renderGradeSelect_('term', '학기', ['1학기', '2학기'], filters.term),
           renderGradeSelect_('examName', '시험명', examOptions, filters.examName),
           renderGradeTextFilter_('examRound', '시험회차', filters.examRound),
@@ -26080,22 +26252,63 @@
       function renderGradeHistoryTabV2_() {
         var hasHistory = APP_STATE.gradeHistoryLoaded && APP_STATE.gradeHistory && APP_STATE.gradeHistory.length;
         var records = filterGradeRecordsByCurrentFilters_((hasHistory ? APP_STATE.gradeHistory : APP_STATE.grades) || []).sort(sortGradesByUpdatedDesc_);
+        var rows = groupGradeHistoryRows_(records);
         var html = [
           renderGradeFilters_(),
-          '<section class="grades-panel" style="margin-top:14px;"><div class="grades-panel-head"><div><h3>이력/수정 내역</h3><p>' + (hasHistory ? 'Firestore 저장 이력 기준' : (APP_STATE.gradeHistoryLoading ? 'Firestore 저장 이력을 불러오는 중' : '현재 성적 기준')) + ' · 입력자와 수정 시각 최신순</p></div><div class="grades-toolbar-actions">' + (APP_STATE.gradeHistoryLoading ? '<span class="grade-status-badge saving"><i data-lucide="loader-2"></i> 이력 동기화</span>' : '<button type="button" class="mini-button" data-grade-action="load-history"><i data-lucide="history"></i> 이력 새로고침</button>') + '<span class="grade-chip blue">' + records.length + '건</span></div></div>'
+          '<section class="grades-panel" style="margin-top:14px;"><div class="grades-panel-head"><div><h3>이력/수정 내역</h3><p>' + (hasHistory ? 'Firestore 저장 이력 기준' : (APP_STATE.gradeHistoryLoading ? 'Firestore 저장 이력을 불러오는 중' : '현재 성적 기준')) + ' · 같은 학생과 같은 시험은 과목을 한 줄에 묶어 표시합니다.</p></div><div class="grades-toolbar-actions">' + (APP_STATE.gradeHistoryLoading ? '<span class="grade-status-badge saving"><i data-lucide="loader-2"></i> 이력 동기화</span>' : '<button type="button" class="mini-button" data-grade-action="load-history"><i data-lucide="history"></i> 이력 새로고침</button>') + '<span class="grade-chip blue">' + rows.length + '줄 · ' + records.length + '건</span></div></div>'
         ];
-        if (!records.length) {
+        if (!rows.length) {
           html.push('<div class="grade-empty">표시할 성적 이력이 없습니다.</div></section>');
           return html.join('');
         }
-        html.push('<div class="grades-table-wrap"><table class="grades-table grade-history-table"><thead><tr><th>연도</th><th>학생</th><th>시험</th><th>과목분류</th><th>세부과목</th><th>가채점</th><th>최종</th><th>등급</th><th>입력/수정</th><th>변경</th></tr></thead><tbody>');
-        records.forEach(function(record) {
-          html.push('<tr><td>' + escapeHtml(record.examYear || record.schoolYear || '-') + '</td><td>' + escapeHtml(record.studentName || '-') + '</td><td>' + renderGradeExamBadgeV2_(record) + '</td><td>' + renderGradeSubjectCategoryBadgeV2_(record.subjectCategory || '-') + '</td><td>' + renderGradeSubjectBadgeV2_(record.subjectCategory, record.subjectName));
-          html.push('</td><td>' + escapeHtml(record.provisionalScore || '-') + '</td><td>' + escapeHtml(record.finalScore || '-') + '</td><td>' + escapeHtml(record.gradeLevel || '-') + '</td><td>' + escapeHtml([(record.updatedByName || record.createdByName || '-'), (record.updatedAt || '-')].join(' · ')) + '</td>');
-          html.push('<td>' + renderGradeChangeBadgeV2_(record.changeType) + '</td></tr>');
+        html.push('<div class="grades-table-wrap"><table class="grades-table grade-history-table"><thead><tr><th>연도</th><th>학생</th><th>시험</th><th>과목별 성적</th><th>입력/수정</th><th>변경</th></tr></thead><tbody>');
+        rows.forEach(function(row) {
+          html.push('<tr><td>' + escapeHtml(row.year || '-') + '</td><td><strong>' + escapeHtml(row.studentName || '-') + '</strong><div class="grades-v3-meta">' + escapeHtml(row.studentId || '') + '</div></td><td>' + renderGradeExamBadgeV2_(row.latest) + '</td><td><div class="grade-history-subjects">' + row.records.map(renderGradeHistorySubjectChip_).join('') + '</div></td><td>' + escapeHtml([(row.latest.updatedByName || row.latest.createdByName || '-'), (row.latest.updatedAt || '-')].join(' · ')) + '</td>');
+          html.push('<td>' + renderGradeChangeBadgeV2_(row.latest.changeType) + '</td></tr>');
         });
         html.push('</tbody></table></div></section>');
         return html.join('');
+      }
+
+      function groupGradeHistoryRows_(records) {
+        var map = {};
+        (records || []).forEach(function(record) {
+          var key = [
+            record.studentId || record.studentName || '',
+            record.examYear || record.schoolYear || '',
+            getGradeExamTypeGroup_(record),
+            record.term || '',
+            record.examName || '',
+            record.examRound || ''
+          ].join('|');
+          if (!map[key]) {
+            map[key] = {
+              studentId: record.studentId || '',
+              studentName: record.studentName || '',
+              year: record.examYear || record.schoolYear || '',
+              latest: record,
+              records: []
+            };
+          }
+          map[key].records.push(record);
+          if (sortGradesByUpdatedDesc_(record, map[key].latest) < 0) {
+            map[key].latest = record;
+          }
+        });
+        return Object.keys(map).map(function(key) {
+          map[key].records.sort(function(a, b) {
+            return String(a.subjectCategory + a.subjectName).localeCompare(String(b.subjectCategory + b.subjectName), 'ko');
+          });
+          return map[key];
+        }).sort(function(a, b) {
+          return sortGradesByUpdatedDesc_(a.latest, b.latest);
+        });
+      }
+
+      function renderGradeHistorySubjectChip_(record) {
+        var score = getGradeRecordScoreText_(record) || '-';
+        var expected = getExpectedGradeForRecord_(record, score);
+        return '<button type="button" class="grade-history-subject-chip" data-grade-action="open-score-editor" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-id="' + escapeAttribute(record.subjectId || '') + '" data-grade-id="' + escapeAttribute(record.gradeId || '') + '">' + renderGradeSubjectBadgeV2_(record.subjectCategory, record.subjectName) + '<strong>' + escapeHtml(score) + '</strong>' + (record.gradeLevel ? '<span>' + escapeHtml(record.gradeLevel) + '등급</span>' : '') + (expected ? '<span>' + escapeHtml(expected) + '</span>' : '') + '</button>';
       }
 
       function renderGradeRankingTabV2_() {
@@ -26808,15 +27021,18 @@
 
       function renderGradeExamSettingsModalV2_() {
         var options = getGradeExamOptionSet_();
+        var scaleText = formatGradeScaleSettingsForTextarea_(APP_STATE.gradeScaleSettings || []);
         return [
           '<div class="modal-backdrop"><div class="modal-card grade-modal-panel">',
-          '<div class="modal-top"><div><h3>시험 종류 설정</h3><p>성적 관리에서 사용할 시험명을 줄마다 하나씩 입력합니다. 저장 후 모든 성적 화면의 시험 목록에 반영됩니다.</p></div><button type="button" class="icon-button" data-grade-action="close-grade-modal" aria-label="닫기">×</button></div>',
+          '<div class="modal-top"><div><h3>시험 종류 설정</h3><p>시험 유형별 목록과 예상 등급 기준을 관리합니다. 저장 후 모든 성적 화면에 반영됩니다.</p></div><button type="button" class="icon-button" data-grade-action="close-grade-modal" aria-label="닫기">×</button></div>',
           '<div class="modal-body">',
           '<div class="grade-exam-settings-grid">',
+          '<label class="field-label">테스트<textarea class="field-input" data-grade-exams="test" style="min-height:120px;resize:vertical;">' + escapeHtml((options.testExams || []).join('\n')) + '</textarea></label>',
           '<label class="field-label">내신 시험<textarea class="field-input" data-grade-exams="internal" style="min-height:170px;resize:vertical;">' + escapeHtml((options.internalExams || []).join('\n')) + '</textarea></label>',
           '<label class="field-label">모의고사/수능<textarea class="field-input" data-grade-exams="mock" style="min-height:170px;resize:vertical;">' + escapeHtml((options.mockExams || []).join('\n')) + '</textarea></label>',
           '</div>',
-          '<div class="grade-empty" style="margin-top:12px;">예: 5월 모의고사처럼 새 시험을 추가하거나, 기존 명칭을 수정한 뒤 저장하세요. 수능은 자동으로 유지됩니다.</div>',
+          '<label class="field-label" style="margin-top:12px;">예상 등급 기준<textarea class="field-input" data-grade-scale-settings style="min-height:180px;resize:vertical;" placeholder="내신 | 1학기 중간고사 | 국어 | 1 | 90">' + escapeHtml(scaleText) + '</textarea></label>',
+          '<div class="grade-empty" style="margin-top:12px;">예상 등급 기준은 `시험유형 | 시험명 | 과목 | 등급 | 기준점수` 형식입니다. 시험명이나 과목을 비워 두면 해당 유형 전체에 적용됩니다.</div>',
           '<div class="grade-modal-actions"><button type="button" class="mini-button" data-grade-action="close-grade-modal">취소</button><button type="button" class="button-primary" data-grade-action="save-exam-options"><i data-lucide="save"></i> 시험 종류 저장</button></div>',
           '</div></div></div>'
         ].join('');
@@ -26963,28 +27179,44 @@
           setNotice('시험 종류 설정은 관리자만 사용할 수 있습니다.', 'warning');
           return;
         }
+        var testField = document.querySelector('[data-grade-exams="test"]');
         var internalField = document.querySelector('[data-grade-exams="internal"]');
         var mockField = document.querySelector('[data-grade-exams="mock"]');
+        var scaleField = document.querySelector('[data-grade-scale-settings]');
+        var testExams = parseGradeExamTextareaValue_(testField ? testField.value : '');
         var internalExams = parseGradeExamTextareaValue_(internalField ? internalField.value : '');
         var mockExams = parseGradeExamTextareaValue_(mockField ? mockField.value : '');
+        var gradeScaleSettings = parseGradeScaleTextareaValue_(scaleField ? scaleField.value : '');
         if (!internalExams.length || !mockExams.length) {
           setNotice('내신 시험과 모의고사 시험명을 각각 1개 이상 입력해주세요.', 'warning');
           return;
+        }
+        if (!testExams.length) {
+          testExams = ['테스트'];
+        }
+        if (testExams.indexOf('테스트') === -1) {
+          testExams.unshift('테스트');
         }
         if (mockExams.indexOf('수능') === -1) {
           mockExams.push('수능');
         }
         var previousOptions = APP_STATE.gradeExamOptions;
+        var previousScaleSettings = APP_STATE.gradeScaleSettings;
         APP_STATE.gradeExamOptions = normalizeGradeExamOptions_({
+          testExams: testExams,
           internalExams: internalExams,
           mockExams: mockExams
         });
+        APP_STATE.gradeScaleSettings = normalizeGradeScaleSettings_(gradeScaleSettings);
         apiRequest('saveGradeExamOptions', {
           token: APP_STATE.token,
+          testExamsJson: JSON.stringify(testExams),
           internalExamsJson: JSON.stringify(internalExams),
-          mockExamsJson: JSON.stringify(mockExams)
+          mockExamsJson: JSON.stringify(mockExams),
+          gradeScaleSettingsJson: JSON.stringify(APP_STATE.gradeScaleSettings)
         }).then(function(data) {
           APP_STATE.gradeExamOptions = normalizeGradeExamOptions_(data.examOptions || APP_STATE.gradeExamOptions);
+          APP_STATE.gradeScaleSettings = normalizeGradeScaleSettings_(data.gradeScaleSettings || APP_STATE.gradeScaleSettings);
           var currentOptions = getGradeExamOptions_();
           if (currentOptions.indexOf(APP_STATE.gradeFilters.examName) === -1) {
             APP_STATE.gradeFilters.examName = getDefaultGradeExamName_(APP_STATE.gradeFilters.examCategory || '내신');
@@ -26994,6 +27226,7 @@
           renderGrades();
         }).catch(function(error) {
           APP_STATE.gradeExamOptions = previousOptions;
+          APP_STATE.gradeScaleSettings = previousScaleSettings;
           handleApiError_(error);
           renderGrades();
         });
@@ -27003,6 +27236,34 @@
         return uniqueList_(String(value || '').split(/\r?\n|,/).map(function(item) {
           return item.trim();
         }).filter(Boolean));
+      }
+
+      function parseGradeScaleTextareaValue_(value) {
+        return String(value || '').split(/\r?\n/).map(function(line) {
+          var text = line.trim();
+          if (!text) {
+            return null;
+          }
+          var parts = text.split('|').map(function(part) { return part.trim(); });
+          if (parts.length < 5) {
+            parts = text.split(',').map(function(part) { return part.trim(); });
+          }
+          return {
+            examCategory: parts[0] || '',
+            examName: parts[1] || '',
+            subjectName: parts[2] || '',
+            gradeLevel: parts[3] || '',
+            minScore: parts[4] || ''
+          };
+        }).filter(function(item) {
+          return item && item.gradeLevel && item.minScore;
+        });
+      }
+
+      function formatGradeScaleSettingsForTextarea_(items) {
+        return normalizeGradeScaleSettings_(items || []).map(function(item) {
+          return [item.examCategory, item.examName, item.subjectName || item.subjectCategory, item.gradeLevel, item.minScore].join(' | ');
+        }).join('\n');
       }
 
       function downloadGradeTemplateV2_() {
@@ -27332,7 +27593,7 @@
       function renderGradeMobileHero_() {
         return [
           '<section class="grades-v3-hero grades-mobile-hero">',
-          '  <div><h3>성적 관리</h3><p>' + escapeHtml(getGradeCurrentExamLabel_()) + '</p><div class="grades-chip-row"><span class="grade-year-pill">' + escapeHtml(getGradeYear_()) + '년</span><span class="grade-chip teal">직보 과목 연동</span>' + (APP_STATE.gradesLoading ? '<span class="grade-status-badge saving"><i data-lucide="loader-2"></i> 동기화</span>' : '') + '</div></div>',
+          '  <div><h3>성적 관리</h3><p>' + escapeHtml(getGradeCurrentExamLabel_()) + '</p><div class="grades-chip-row"><span class="grade-year-pill">' + escapeHtml(getGradeYear_()) + '년</span><span class="grade-chip teal">4개 시험 유형</span>' + (APP_STATE.gradesLoading ? '<span class="grade-status-badge saving"><i data-lucide="loader-2"></i> 동기화</span>' : '') + '</div></div>',
           '  <div class="grades-v3-actions">',
           '    <button type="button" class="mini-button" data-grade-action="sync"><i data-lucide="refresh-cw"></i> 동기화</button>',
           '    <button type="button" class="mini-button" data-grade-action="upload"><i data-lucide="upload"></i> 업로드</button>',
@@ -27344,7 +27605,10 @@
       }
 
       function renderGradeMobileMainCard_() {
-        var tab = APP_STATE.gradeTab || 'input';
+        var tab = APP_STATE.gradeTab || 'overview';
+        if (tab === 'overview') {
+          return '<section class="grades-v3-main-card grades-mobile-card">' + renderGradeOverviewTab_() + '</section>';
+        }
         if (tab === 'input') {
           return '<section class="grades-v3-main-card grades-mobile-card">' + renderGradeMobileInputTab_() + '</section>';
         }
@@ -27372,6 +27636,91 @@
           '</div>',
           renderGradeMobileStudentCards_(students, subjects)
         ].join('');
+      }
+
+      function renderGradeOverviewTab_() {
+        var students = getGradeFilteredStudents_();
+        var records = getGradeOverviewRecords_(students);
+        var grouped = groupGradeOverviewByStudent_(students, records);
+        return [
+          renderGradeFilters_(),
+          '<div class="grades-v3-table-head grades-overview-head">',
+          '  <div><h3>성적 조회</h3><p>학생 이름 아래에 입력된 성적을 시험 유형별로 묶어 표시합니다.</p></div>',
+          '  <div class="grades-toolbar-actions"><span class="grade-chip blue">' + records.length + '건</span><button type="button" class="mini-button" data-grade-action="sync"><i data-lucide="refresh-cw"></i> 새로고침</button></div>',
+          '</div>',
+          grouped.length ? '<div class="grade-overview-list">' + grouped.map(renderGradeOverviewStudentCard_).join('') + '</div>' : '<div class="grade-empty">표시할 성적 데이터가 없습니다.</div>'
+        ].join('');
+      }
+
+      function getGradeOverviewRecords_(students) {
+        var filters = APP_STATE.gradeFilters || {};
+        var studentIds = {};
+        var selectedSubject = filters.subject ? findGradeSubjectById_(filters.subject) : null;
+        (students || []).forEach(function(student) {
+          studentIds[student.studentId] = true;
+        });
+        return (APP_STATE.grades || []).filter(function(record) {
+          return studentIds[record.studentId] &&
+            (!filters.examYear || String(record.examYear || record.schoolYear || '') === String(filters.examYear)) &&
+            (!filters.subjectCategory || record.subjectCategory === filters.subjectCategory) &&
+            (!filters.subject || record.subjectName === filters.subject || (selectedSubject && isGradeBroadSubjectV3_(selectedSubject) && normalizeSearchText(record.subjectCategory || record.subjectArea) === normalizeSearchText(selectedSubject.subjectCategory)));
+        }).sort(sortGradesByUpdatedDesc_);
+      }
+
+      function groupGradeOverviewByStudent_(students, records) {
+        var map = {};
+        (students || []).forEach(function(student) {
+          map[student.studentId] = { student: student, records: [] };
+        });
+        (records || []).forEach(function(record) {
+          if (!map[record.studentId]) {
+            map[record.studentId] = { student: findGradeStudentById_(record.studentId) || record, records: [] };
+          }
+          map[record.studentId].records.push(record);
+        });
+        return Object.keys(map).map(function(studentId) {
+          return map[studentId];
+        }).filter(function(item) {
+          return item.records.length;
+        });
+      }
+
+      function renderGradeOverviewStudentCard_(item) {
+        var student = item.student || {};
+        var types = ['테스트', '내신', '모의고사', '수능'];
+        var typeBlocks = types.map(function(type) {
+          var rows = (item.records || []).filter(function(record) {
+            return getGradeExamTypeGroup_(record) === type;
+          });
+          return renderGradeOverviewTypeBlock_(type, rows);
+        }).join('');
+        return [
+          '<article class="grade-overview-card">',
+          '  <div class="grade-overview-student">',
+          '    <button type="button" class="grade-student-profile-button" data-grade-action="show-student-profile" data-student-id="' + escapeAttribute(student.studentId || '') + '"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + escapeHtml([student.school, student.grade, student.studentId].filter(Boolean).join(' · ')) + '</span></button>',
+          '  </div>',
+          '  <div class="grade-overview-types">' + typeBlocks + '</div>',
+          '</article>'
+        ].join('');
+      }
+
+      function renderGradeOverviewTypeBlock_(type, rows) {
+        var scores = rows.map(getGradeRecordScoreNumber_).filter(function(score) { return !isNaN(score); });
+        var average = scores.length ? averageClient_(scores) : '';
+        var width = average === '' ? 0 : Math.max(4, Math.min(100, Number(average)));
+        return [
+          '<section class="grade-overview-type">',
+          '  <div class="grade-overview-type-head"><strong>' + escapeHtml(type) + '</strong><span>' + rows.length + '건</span></div>',
+          '  <div class="grade-overview-bar"><span style="width:' + width + '%;"></span></div>',
+          rows.length ? '<div class="grade-overview-scores">' + rows.slice(0, 8).map(renderGradeOverviewScoreChip_).join('') + (rows.length > 8 ? '<span class="grade-chip blue">+' + (rows.length - 8) + '</span>' : '') + '</div>' : '<div class="grades-v3-meta">입력 없음</div>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderGradeOverviewScoreChip_(record) {
+        var score = getGradeRecordScoreText_(record) || '-';
+        var expected = getExpectedGradeForRecord_(record, score);
+        return '<button type="button" class="grade-overview-score" data-grade-action="open-score-editor" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-id="' + escapeAttribute(record.subjectId || '') + '" data-grade-id="' + escapeAttribute(record.gradeId || '') + '"><strong>' + escapeHtml(record.subjectName || '-') + ' ' + escapeHtml(score) + '</strong><span>' + escapeHtml(record.examName || '-') + (expected ? ' · ' + escapeHtml(expected) : '') + '</span></button>';
       }
 
       function renderGradeMobileStudentCards_(students, subjects) {
@@ -27439,7 +27788,7 @@
       function renderGradeV3Hero_() {
         return [
           '<section class="grades-v3-hero">',
-          '  <div><h3>성적 관리</h3><p>내신, 모의고사, 수능 성적을 학생별로 입력하고 분석합니다.</p><div class="grades-chip-row" style="margin-top:9px;"><span class="grade-year-pill">' + escapeHtml(getGradeYear_()) + '년</span><span class="grade-chip teal">직보 과목 매니저 연동</span>' + (APP_STATE.gradesLoading ? '<span class="grade-status-badge saving"><i data-lucide="loader-2"></i> 동기화 중</span>' : '') + '</div></div>',
+          '  <div><h3>성적 관리</h3><p>테스트, 내신, 모의고사, 수능 성적을 학생별로 입력하고 분석합니다.</p><div class="grades-chip-row" style="margin-top:9px;"><span class="grade-year-pill">' + escapeHtml(getGradeYear_()) + '년</span><span class="grade-chip teal">직보 과목 매니저 연동</span>' + (APP_STATE.gradesLoading ? '<span class="grade-status-badge saving"><i data-lucide="loader-2"></i> 동기화 중</span>' : '') + '</div></div>',
           '  <div class="grades-v3-actions">',
           '    <button type="button" class="mini-button" data-grade-action="sync"><i data-lucide="refresh-cw"></i> 동기화</button>',
           '    <button type="button" class="mini-button" data-grade-action="download-template"><i data-lucide="file-down"></i> 양식</button>',
@@ -27456,6 +27805,7 @@
       function renderGradeV3Tabs_() {
         return [
           '<section class="grades-v3-tabs">',
+          renderGradeTabButton_('overview', '성적 조회'),
           renderGradeTabButton_('input', '성적 입력'),
           renderGradeTabButton_('history', '이력/수정 내역'),
           renderGradeTabButton_('ranking', '시험별 순위'),
@@ -27466,7 +27816,10 @@
       }
 
       function renderGradeV3MainCard_() {
-        var tab = APP_STATE.gradeTab || 'input';
+        var tab = APP_STATE.gradeTab || 'overview';
+        if (tab === 'overview') {
+          return '<section class="grades-v3-main-card">' + renderGradeOverviewTab_() + '</section>';
+        }
         if (tab === 'history') {
           return '<section class="grades-v3-main-card">' + renderGradeHistoryTabV2_() + '</section>';
         }
@@ -27590,6 +27943,7 @@
         var status = finalScore ? '실점' : (provisionalScore ? '가채점' : '미입력');
         var statusClass = finalScore ? 'actual' : (provisionalScore ? 'provisional' : '');
         var saving = APP_STATE.gradeSavingMap[key];
+        var expected = getExpectedGradeForRecord_(record, score);
         if (!recordList.length && !score && !saving) {
           return '<td><button type="button" class="grades-v3-score-button empty" data-grade-action="open-score-editor" data-student-id="' + escapeAttribute(student.studentId) + '" data-subject-id="' + escapeAttribute(subject.subjectId) + '">-</button></td>';
         }
@@ -27601,7 +27955,7 @@
         return [
           '<td><button type="button" class="grades-v3-score-button" data-grade-action="open-score-editor" data-student-id="' + escapeAttribute(student.studentId) + '" data-subject-id="' + escapeAttribute(subject.subjectId) + '">',
           '  <span class="grades-v3-score-main"><span>' + escapeHtml(score || '-') + '</span><span class="grade-status-badge ' + statusClass + '">' + escapeHtml(status) + '</span></span>',
-          saving ? '  <span class="grades-v3-save-state"><i data-lucide="loader-2"></i></span>' : (finalScore && provisionalScore ? '  <span class="grades-v3-score-sub">가 ' + escapeHtml(provisionalScore) + '</span>' : ''),
+          saving ? '  <span class="grades-v3-save-state"><i data-lucide="loader-2"></i></span>' : (expected ? '  <span class="grades-v3-score-sub">' + escapeHtml(expected) + '</span>' : (finalScore && provisionalScore ? '  <span class="grades-v3-score-sub">가 ' + escapeHtml(provisionalScore) + '</span>' : '')),
           '</button></td>'
         ].join('');
       }
@@ -27612,12 +27966,45 @@
         var score = finalScore || provisionalScore || '-';
         var status = finalScore ? '실점' : (provisionalScore ? '가채점' : '미입력');
         var statusClass = finalScore ? 'actual' : (provisionalScore ? 'provisional' : '');
+        var expected = getExpectedGradeForRecord_(record, score);
         return [
           '<button type="button" class="grades-v3-score-button" data-grade-action="open-score-editor" data-student-id="' + escapeAttribute(student.studentId) + '" data-subject-id="' + escapeAttribute(record.subjectId || subject.subjectId) + '" data-grade-id="' + escapeAttribute(record.gradeId || '') + '">',
           '  <span class="grades-v3-score-main"><span>' + escapeHtml(record.subjectName || subject.subjectName || '-') + ' ' + escapeHtml(score) + '</span><span class="grade-status-badge ' + statusClass + '">' + escapeHtml(status) + '</span></span>',
-          finalScore && provisionalScore ? '  <span class="grades-v3-score-sub">가 ' + escapeHtml(provisionalScore) + '</span>' : '',
+          expected ? '  <span class="grades-v3-score-sub">' + escapeHtml(expected) + '</span>' : (finalScore && provisionalScore ? '  <span class="grades-v3-score-sub">가 ' + escapeHtml(provisionalScore) + '</span>' : ''),
           '</button>'
         ].join('');
+      }
+
+      function getGradeRecordScoreText_(record) {
+        return String(record && (record.finalScore || record.provisionalScore || record.rawScore) || '').trim();
+      }
+
+      function getGradeRecordScoreNumber_(record) {
+        var score = Number(getGradeRecordScoreText_(record));
+        return isNaN(score) ? NaN : score;
+      }
+
+      function getExpectedGradeForRecord_(record, scoreValue) {
+        var score = Number(scoreValue || getGradeRecordScoreText_(record));
+        if (!record || isNaN(score)) {
+          return '';
+        }
+        var candidates = (APP_STATE.gradeScaleSettings || []).filter(function(setting) {
+          return (!setting.examCategory || setting.examCategory === getGradeExamTypeGroup_(record) || setting.examCategory === record.examCategory) &&
+            (!setting.examName || setting.examName === record.examName) &&
+            (!setting.subjectCategory || setting.subjectCategory === record.subjectCategory) &&
+            (!setting.subjectName || setting.subjectName === record.subjectName || setting.subjectName === record.subjectCategory);
+        }).sort(function(a, b) {
+          var aSpecific = [a.examCategory, a.examName, a.subjectCategory, a.subjectName].filter(Boolean).length;
+          var bSpecific = [b.examCategory, b.examName, b.subjectCategory, b.subjectName].filter(Boolean).length;
+          return bSpecific - aSpecific || Number(b.minScore) - Number(a.minScore);
+        });
+        var matched = candidates.filter(function(setting) {
+          return score >= Number(setting.minScore);
+        }).sort(function(a, b) {
+          return Number(b.minScore) - Number(a.minScore);
+        })[0];
+        return matched ? matched.gradeLevel + '등급 예상' : '';
       }
 
       function renderGradeV3Pager_(total, page, totalPages, pageSize) {
@@ -27696,17 +28083,24 @@
       }
 
       function renderGradeV3LeftRail_() {
-        var tab = APP_STATE.gradeTab || 'input';
+        var tab = APP_STATE.gradeTab || 'overview';
         var schools = getGradeSchools_();
         var grades = getGradeGrades_();
+        var examType = getGradeCurrentTypeGroup_();
         return [
           '<aside class="grades-v3-side">',
           '  <div class="grades-v3-side-section"><h3 class="grades-v3-side-title">성적 관리</h3><div class="grades-v3-nav">',
-          renderGradeV3NavButton_('input', 'square-pen', '성적 입력/관리', tab),
+          renderGradeV3NavButton_('overview', 'chart-line', '성적 조회', tab),
           renderGradeV3NavButton_('history', 'archive', '이력/수정 내역', tab),
           renderGradeV3NavButton_('ranking', 'chart-no-axes-column', '시험별 순위', tab),
           renderGradeV3NavButton_('studentHistory', 'history', '학생별 성적 이력', tab),
           renderGradeV3NavButton_('stats', 'chart-column', '성적 통계', tab),
+          '  </div></div>',
+          '  <div class="grades-v3-side-section"><h3 class="grades-v3-side-title">시험 유형 입력</h3><div class="grades-v3-nav">',
+          renderGradeV3ExamTypeButton_('테스트', 'flask-conical', examType),
+          renderGradeV3ExamTypeButton_('내신', 'school', examType),
+          renderGradeV3ExamTypeButton_('모의고사', 'file-text', examType),
+          renderGradeV3ExamTypeButton_('수능', 'graduation-cap', examType),
           '  </div></div>',
           '  <div class="grades-v3-side-section"><h3 class="grades-v3-side-title">학교 선택</h3><div class="grades-v3-nav">',
           renderGradeV3FilterButton_('set-school-filter', '', '전체 학교', getGradeFilteredCountV3_('school', ''), !APP_STATE.gradeFilters.school, '#2563eb'),
@@ -27727,6 +28121,37 @@
 
       function renderGradeV3NavButton_(tab, icon, label, activeTab) {
         return '<button type="button" class="grades-v3-nav-button ' + (activeTab === tab ? 'active' : '') + '" data-grade-tab="' + escapeAttribute(tab) + '"><i data-lucide="' + escapeAttribute(icon) + '"></i>' + escapeHtml(label) + '</button>';
+      }
+
+      function renderGradeV3ExamTypeButton_(type, icon, activeType) {
+        return '<button type="button" class="grades-v3-nav-button grade-type-button ' + (activeType === type ? 'active' : '') + '" data-grade-action="set-exam-type" data-value="' + escapeAttribute(type) + '"><i data-lucide="' + escapeAttribute(icon) + '"></i>' + escapeHtml(type) + '</button>';
+      }
+
+      function applyGradeExamType_(type) {
+        var nextType = ['테스트', '내신', '모의고사', '수능'].indexOf(type) === -1 ? '내신' : type;
+        APP_STATE.gradeFilters.examCategory = nextType;
+        APP_STATE.gradeFilters.term = nextType === '내신' ? (APP_STATE.gradeFilters.term || '1학기') : '';
+        APP_STATE.gradeFilters.examName = getDefaultGradeExamName_(nextType);
+        APP_STATE.gradeFilters.examRound = '';
+      }
+
+      function getGradeCurrentTypeGroup_() {
+        return getGradeExamTypeGroup_(APP_STATE.gradeFilters || {});
+      }
+
+      function getGradeExamTypeGroup_(record) {
+        var category = String(record && record.examCategory || '').trim();
+        var examName = String(record && record.examName || '').trim();
+        if (category === '테스트') {
+          return '테스트';
+        }
+        if (category === '내신') {
+          return '내신';
+        }
+        if (category === '수능' || examName === '수능') {
+          return '수능';
+        }
+        return '모의고사';
       }
 
       function renderGradeV3FilterButton_(action, value, label, count, active, color) {
@@ -27824,6 +28249,11 @@
         var action = button.getAttribute('data-grade-action');
         if (action === 'set-school-filter') {
           APP_STATE.gradeFilters.school = button.getAttribute('data-value') || '';
+          APP_STATE.gradePage = 1;
+          renderGrades();
+        } else if (action === 'set-exam-type') {
+          applyGradeExamType_(button.getAttribute('data-value') || '내신');
+          APP_STATE.gradeTab = 'input';
           APP_STATE.gradePage = 1;
           renderGrades();
         } else if (action === 'show-student-profile') {
