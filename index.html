@@ -11278,15 +11278,23 @@
 
       .school-with-logo,
       .school-meta-line {
-        display: inline-flex;
+        display: inline-flex !important;
         align-items: center;
         gap: 5px;
         min-width: 0;
+        max-width: 100%;
+        flex-wrap: nowrap;
+        line-height: 1.2;
         vertical-align: middle;
       }
 
-      .school-with-logo {
-        max-width: 100%;
+      .school-meta-line > span,
+      .school-meta-line .school-with-logo,
+      .school-with-logo > span {
+        display: inline-flex !important;
+        align-items: center;
+        margin-top: 0 !important;
+        vertical-align: middle;
       }
 
       .school-logo,
@@ -11298,6 +11306,7 @@
       }
 
       .school-logo {
+        display: inline-block !important;
         object-fit: contain;
         border: 0;
         background: transparent;
@@ -11315,14 +11324,16 @@
 
       .school-logo.hidden,
       .school-logo-fallback.hidden {
-        display: none;
+        display: none !important;
       }
 
       .school-logo-name {
+        display: inline-block !important;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        margin-top: 0 !important;
       }
 
       .school-meta-separator {
