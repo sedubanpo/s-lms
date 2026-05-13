@@ -6704,6 +6704,20 @@
         font-weight: 800;
       }
 
+      .permission-instructor-list {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 5px;
+        min-width: 0;
+      }
+
+      .permission-instructor-list .teacher-chip {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
       .teacher-chip {
         display: inline-flex;
         align-items: center;
@@ -19202,7 +19216,6 @@
           '    <thead><tr>' + (isBulkMode ? '<th style="width:44px;">선택</th>' : '') + '<th>학생명</th><th>원</th><th>학년</th><th>연결 강사</th></tr></thead>',
           '    <tbody>',
           students.map(function(student) {
-            var count = (permissionMap[student.studentId] || []).length;
             var selectedClass = student.studentId === APP_STATE.selectedPermissionStudentId ? ' class="selected"' : '';
             var checked = APP_STATE.permissionBulkSelectedStudentIds && APP_STATE.permissionBulkSelectedStudentIds[student.studentId] ? ' checked' : '';
             return [
@@ -19211,7 +19224,7 @@
               '  <td>' + (isBulkMode ? '<strong>' + escapeHtml(student.studentName) + '</strong>' : '<button type="button" class="table-row-button" data-student-id="' + escapeAttribute(student.studentId) + '">' + escapeHtml(student.studentName) + '</button>') + '</td>',
               '  <td>' + renderSchoolNameWithLogo_(student.school || '-') + '</td>',
               '  <td>' + escapeHtml(student.grade ? String(student.grade) : '-') + '</td>',
-              '  <td>' + escapeHtml(String(count)) + '명</td>',
+              '  <td>' + renderPermissionInstructorList_(permissionMap[student.studentId] || []) + '</td>',
               '</tr>'
             ].join('');
           }).join(''),
@@ -19351,6 +19364,23 @@
           return;
         }
         APP_STATE.permissionDrafts[key] = uniqueList_((instructorIds || []).filter(Boolean));
+      }
+
+      function renderPermissionInstructorList_(instructorIds) {
+        var ids = uniqueList_((instructorIds || []).filter(Boolean));
+        if (!ids.length) {
+          return '<span class="teacher-chip unassigned">미배정</span>';
+        }
+        return '<div class="permission-instructor-list">' + ids.map(function(id) {
+          var instructor = (APP_STATE.instructors || []).find(function(item) {
+            return item.userId === id;
+          });
+          var label = instructor ? instructor.name : id;
+          var title = instructor
+            ? [instructor.name, instructor.userId, instructor.subject].filter(Boolean).join(' · ')
+            : id;
+          return '<span class="teacher-chip primary" title="' + escapeAttribute(title) + '">' + escapeHtml(label || id) + '</span>';
+        }).join('') + '</div>';
       }
 
       function applyPermissionSaveResult_(result, studentId) {
