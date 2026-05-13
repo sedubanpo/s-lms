@@ -2284,6 +2284,54 @@
         margin-bottom: 12px;
       }
 
+      .permission-mode-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .permission-mode-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 36px;
+        padding: 0 14px;
+        border-radius: 12px;
+        border: 1px solid #d7e4f7;
+        background: #ffffff;
+        color: #334155;
+        font-weight: 900;
+      }
+
+      .permission-mode-button.active {
+        border-color: #2563eb;
+        background: #eff6ff;
+        color: #1d4ed8;
+        box-shadow: inset 0 -3px 0 rgba(37, 99, 235, 0.18);
+      }
+
+      .permission-bulk-check {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--brand);
+      }
+
+      .permission-bulk-card {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border: 1px solid #dbeafe;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #f8fbff 0%, #f4f8ff 100%);
+      }
+
+      .permission-bulk-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
       .student-manage-stack {
         display: grid;
         gap: 12px;
@@ -12790,6 +12838,7 @@
             </div>
             <div id="permissionPanelTabs" class="permission-panel-tabs"></div>
             <div id="permissionInstructorPanel">
+              <div id="permissionAssignmentModeBar" class="permission-mode-bar"></div>
               <div class="compact-control-bar">
                 <input id="permissionSearchInput" class="field-input" type="text" placeholder="학생명 검색">
                 <select id="permissionSchoolFilter" class="field-select"></select>
@@ -13473,8 +13522,16 @@
         homeroomSelectionSourceInstructorId: '',
         selectedPermissionStudentId: '',
         permissionTab: 'instructors',
+        permissionAssignmentMode: 'student',
         permissionInstructorKeyword: '',
+        permissionBulkInstructorKeyword: '',
+        permissionBulkInstructorId: '',
+        permissionBulkSelectedStudentIds: {},
         isPermissionInstructorComposing: false,
+        permissionInstructorRenderTimer: null,
+        permissionInstructorFocusRole: '',
+        permissionInstructorSelectionStart: null,
+        permissionInstructorSelectionEnd: null,
         permissionDrafts: {},
         allStudents: [],
         instructors: [],
@@ -13803,6 +13860,8 @@
         document.getElementById('permissionSchoolFilter').addEventListener('change', renderPermissionView);
         document.getElementById('permissionGradeFilter').addEventListener('change', renderPermissionView);
         document.getElementById('permissionStudentTableWrap').addEventListener('click', handlePermissionListClick);
+        document.getElementById('permissionStudentTableWrap').addEventListener('change', handlePermissionStudentTableChange_);
+        document.getElementById('permissionAssignmentModeBar').addEventListener('click', handlePermissionAssignmentModeClick_);
         document.getElementById('permissionDetailPanel').addEventListener('input', handlePermissionInstructorSearch);
         document.getElementById('permissionDetailPanel').addEventListener('change', handlePermissionDetailChange_);
         document.getElementById('permissionDetailPanel').addEventListener('click', handlePermissionDetailClick_);
@@ -19035,11 +19094,13 @@
         }
 
         renderPermissionPanelTabs_();
+        renderPermissionAssignmentModeBar_();
         renderStudentManageFormState_();
         populatePermissionFilters();
         syncSelectedPermissionStudent_();
         document.getElementById('permissionInstructorPanel').classList.toggle('hidden', APP_STATE.permissionTab !== 'instructors');
         document.getElementById('permissionStudentManagePanel').classList.toggle('hidden', APP_STATE.permissionTab !== 'students');
+        document.getElementById('savePermissionButton').classList.toggle('hidden', APP_STATE.permissionAssignmentMode !== 'student');
 
         if (APP_STATE.permissionTab === 'students') {
           renderStudentManageTable();
@@ -19055,6 +19116,23 @@
           '<button type="button" class="material-subtab-button ' + (APP_STATE.permissionTab === 'instructors' ? 'active' : '') + '" data-permission-tab="instructors">강사</button>',
           '<button type="button" class="material-subtab-button ' + (APP_STATE.permissionTab === 'students' ? 'active' : '') + '" data-permission-tab="students">학생</button>'
         ].join('');
+      }
+
+      function renderPermissionAssignmentModeBar_() {
+        var wrap = document.getElementById('permissionAssignmentModeBar');
+        if (!wrap) {
+          return;
+        }
+        wrap.classList.toggle('hidden', APP_STATE.permissionTab !== 'instructors');
+        if (APP_STATE.permissionTab !== 'instructors') {
+          wrap.innerHTML = '';
+          return;
+        }
+        wrap.innerHTML = [
+          '<button type="button" class="permission-mode-button ' + (APP_STATE.permissionAssignmentMode === 'student' ? 'active' : '') + '" data-permission-mode="student"><i data-lucide="user-check"></i> 학생별 권한</button>',
+          '<button type="button" class="permission-mode-button ' + (APP_STATE.permissionAssignmentMode === 'bulk' ? 'active' : '') + '" data-permission-mode="bulk"><i data-lucide="users-round"></i> 강사별 일괄 부여</button>'
+        ].join('');
+        renderLucideIcons_();
       }
 
       function populatePermissionFilters() {
@@ -19111,6 +19189,7 @@
         var wrap = document.getElementById('permissionStudentTableWrap');
         var students = getFilteredPermissionStudents_();
         var permissionMap = getPermissionMap();
+        var isBulkMode = APP_STATE.permissionAssignmentMode === 'bulk';
 
         if (!students.length) {
           wrap.innerHTML = '<div class="empty-state">조건에 맞는 학생이 없습니다.<br>학생명, 원, 학년 필터를 조정해 주세요.</div>';
@@ -19120,14 +19199,16 @@
         wrap.innerHTML = [
           '<div class="data-table-wrap">',
           '  <table class="data-table">',
-          '    <thead><tr><th>학생명</th><th>원</th><th>학년</th><th>연결 강사</th></tr></thead>',
+          '    <thead><tr>' + (isBulkMode ? '<th style="width:44px;">선택</th>' : '') + '<th>학생명</th><th>원</th><th>학년</th><th>연결 강사</th></tr></thead>',
           '    <tbody>',
           students.map(function(student) {
             var count = (permissionMap[student.studentId] || []).length;
             var selectedClass = student.studentId === APP_STATE.selectedPermissionStudentId ? ' class="selected"' : '';
+            var checked = APP_STATE.permissionBulkSelectedStudentIds && APP_STATE.permissionBulkSelectedStudentIds[student.studentId] ? ' checked' : '';
             return [
-              '<tr' + selectedClass + '>',
-              '  <td><button type="button" class="table-row-button" data-student-id="' + escapeAttribute(student.studentId) + '">' + escapeHtml(student.studentName) + '</button></td>',
+              '<tr' + (isBulkMode ? '' : selectedClass) + '>',
+              isBulkMode ? '  <td><input class="permission-bulk-check" type="checkbox" data-permission-bulk-student-id="' + escapeAttribute(student.studentId) + '"' + checked + '></td>' : '',
+              '  <td>' + (isBulkMode ? '<strong>' + escapeHtml(student.studentName) + '</strong>' : '<button type="button" class="table-row-button" data-student-id="' + escapeAttribute(student.studentId) + '">' + escapeHtml(student.studentName) + '</button>') + '</td>',
               '  <td>' + renderSchoolNameWithLogo_(student.school || '-') + '</td>',
               '  <td>' + escapeHtml(student.grade ? String(student.grade) : '-') + '</td>',
               '  <td>' + escapeHtml(String(count)) + '명</td>',
@@ -19142,6 +19223,11 @@
 
       function renderPermissionDetailPanel() {
         var wrap = document.getElementById('permissionDetailPanel');
+        if (APP_STATE.permissionAssignmentMode === 'bulk') {
+          renderPermissionBulkInstructorPanel_();
+          return;
+        }
+
         var student = getSelectedPermissionStudent_();
 
         if (!student) {
@@ -19198,6 +19284,51 @@
           '  <div class="dense-summary-item"><span>현재 적용 과목</span><strong>' + escapeHtml(subjectLabel) + ' (' + escapeHtml(subjectSourceLabel) + ')</strong></div>',
           '  <div class="dense-summary-item"><span>현재 허용 강사 수</span><strong>' + escapeHtml(String(selected.length)) + '명</strong></div>',
           '  <div class="dense-summary-item"><span>허용 강사 목록</span><strong>' + escapeHtml(summary.length ? summary.join(', ') : '없음') + '</strong></div>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderPermissionBulkInstructorPanel_() {
+        var wrap = document.getElementById('permissionDetailPanel');
+        var selectedStudentIds = getPermissionBulkSelectedStudentIds_();
+        var visibleInstructors = getVisiblePermissionBulkInstructors_();
+        var selectedInstructor = getSelectedPermissionBulkInstructor_();
+        var selectedCount = selectedStudentIds.length;
+        var currentCount = selectedInstructor ? getInstructorPermissionStudentCount_(selectedInstructor.userId) : 0;
+
+        wrap.innerHTML = [
+          '<h4>강사별 일괄 권한</h4>',
+          '<div class="dense-meta">강사 1명을 선택한 뒤 좌측에서 여러 학생을 체크해 열람 권한을 한 번에 추가하거나 제거합니다.</div>',
+          '<div class="permission-fast-panel">',
+          '  <div class="permission-fast-head"><strong>학생 선택</strong><span>' + escapeHtml(String(selectedCount)) + '명 선택됨</span></div>',
+          '  <div class="permission-fast-actions"><button type="button" class="mini-button" data-action="permission-bulk-select-visible">검색 결과 모두 선택</button><button type="button" class="mini-button" data-action="permission-bulk-clear-students">선택 초기화</button></div>',
+          '</div>',
+          '<div class="permission-bulk-card">',
+          '  <label class="field-label" for="permissionBulkInstructorSearchInput">권한을 부여할 강사</label>',
+          '  <input id="permissionBulkInstructorSearchInput" class="field-input permission-instructor-search" data-role="bulk-instructor-search" type="text" placeholder="강사명 검색" value="' + escapeAttribute(APP_STATE.permissionBulkInstructorKeyword) + '">',
+          '  <div class="compact-check-grid">',
+          visibleInstructors.map(function(instructor) {
+            var checked = instructor.userId === APP_STATE.permissionBulkInstructorId ? ' checked' : '';
+            return [
+              '<label class="compact-check permission-check-card' + (checked ? ' selected' : '') + '">',
+              '  <input type="radio" name="permissionBulkInstructor" data-bulk-instructor-id="' + escapeAttribute(instructor.userId) + '"' + checked + '>',
+              '  <div>',
+              '    <strong>' + escapeHtml(instructor.name) + '</strong>',
+              '    <span>' + escapeHtml([instructor.userId, instructor.subject].filter(Boolean).join(' · ')) + '</span>',
+              '  </div>',
+              '</label>'
+            ].join('');
+          }).join(''),
+          '  </div>',
+          '</div>',
+          '<div class="dense-summary-list">',
+          '  <div class="dense-summary-item"><span>선택 강사</span><strong>' + escapeHtml(selectedInstructor ? selectedInstructor.name : '선택 필요') + '</strong></div>',
+          '  <div class="dense-summary-item"><span>현재 권한 학생 수</span><strong>' + escapeHtml(String(currentCount)) + '명</strong></div>',
+          '  <div class="dense-summary-item"><span>작업 대상 학생</span><strong>' + escapeHtml(String(selectedCount)) + '명</strong></div>',
+          '</div>',
+          '<div class="permission-bulk-actions">',
+          '  <button type="button" class="button-primary" data-action="permission-bulk-save-add">선택 학생에게 추가</button>',
+          '  <button type="button" class="mini-button" data-action="permission-bulk-save-remove">선택 학생에서 제거</button>',
           '</div>'
         ].join('');
       }
@@ -19270,6 +19401,45 @@
         });
       }
 
+      function getVisiblePermissionBulkInstructors_() {
+        var instructorKeyword = normalizeSearchText(APP_STATE.permissionBulkInstructorKeyword);
+        return (APP_STATE.instructors || []).slice().sort(compareInstructorsByName_).filter(function(instructor) {
+          if (!instructorKeyword) {
+            return true;
+          }
+          var searchText = normalizeSearchText([instructor.name, instructor.userId, instructor.subject].join(' '));
+          return searchText.indexOf(instructorKeyword) !== -1;
+        });
+      }
+
+      function getPermissionBulkSelectedStudentIds_() {
+        var selectedMap = APP_STATE.permissionBulkSelectedStudentIds || {};
+        var activeMap = {};
+        (APP_STATE.activeStudents || []).forEach(function(student) {
+          activeMap[student.studentId] = true;
+        });
+        return Object.keys(selectedMap).filter(function(studentId) {
+          return selectedMap[studentId] && activeMap[studentId];
+        });
+      }
+
+      function getSelectedPermissionBulkInstructor_() {
+        var instructorId = APP_STATE.permissionBulkInstructorId;
+        return (APP_STATE.instructors || []).find(function(item) {
+          return item.userId === instructorId;
+        }) || null;
+      }
+
+      function getInstructorPermissionStudentCount_(instructorId) {
+        var studentMap = {};
+        (APP_STATE.permissions || []).forEach(function(item) {
+          if (item.instructorId === instructorId && item.studentId) {
+            studentMap[item.studentId] = true;
+          }
+        });
+        return Object.keys(studentMap).length;
+      }
+
       function getSelectedPermissionStudent_() {
         var selectedId = APP_STATE.selectedPermissionStudentId;
         var students = APP_STATE.activeStudents.filter(function(student) {
@@ -19279,6 +19449,12 @@
       }
 
       function handlePermissionListClick(event) {
+        if (APP_STATE.permissionAssignmentMode === 'bulk') {
+          var checkbox = event.target.closest('[data-permission-bulk-student-id]');
+          if (checkbox) {
+            return;
+          }
+        }
         var button = event.target.closest('[data-student-id]');
         if (!button) {
           return;
@@ -19287,6 +19463,23 @@
         APP_STATE.selectedPermissionStudentId = button.getAttribute('data-student-id');
         APP_STATE.permissionInstructorKeyword = '';
         renderPermissionStudentTable();
+        renderPermissionDetailPanel();
+      }
+
+      function handlePermissionStudentTableChange_(event) {
+        var input = event.target.closest('[data-permission-bulk-student-id]');
+        if (!input) {
+          return;
+        }
+        var studentId = input.getAttribute('data-permission-bulk-student-id');
+        if (!APP_STATE.permissionBulkSelectedStudentIds) {
+          APP_STATE.permissionBulkSelectedStudentIds = {};
+        }
+        if (input.checked) {
+          APP_STATE.permissionBulkSelectedStudentIds[studentId] = true;
+        } else {
+          delete APP_STATE.permissionBulkSelectedStudentIds[studentId];
+        }
         renderPermissionDetailPanel();
       }
 
@@ -19299,22 +19492,33 @@
         renderPermissionView();
       }
 
+      function handlePermissionAssignmentModeClick_(event) {
+        var button = event.target.closest('[data-permission-mode]');
+        if (!button) {
+          return;
+        }
+        APP_STATE.permissionAssignmentMode = button.getAttribute('data-permission-mode') || 'student';
+        clearPermissionInstructorRenderTimer_();
+        renderPermissionView();
+      }
+
       function handlePermissionInstructorSearch(event) {
-        var input = event.target.closest('[data-role="instructor-search"]');
+        var input = event.target.closest('[data-role="instructor-search"], [data-role="bulk-instructor-search"]');
         if (!input) {
           return;
         }
+        var role = input.getAttribute('data-role') || 'instructor-search';
 
         if (APP_STATE.isPermissionInstructorComposing || event.isComposing) {
-          APP_STATE.permissionInstructorKeyword = input.value || '';
+          setPermissionInstructorKeywordForRole_(role, input.value || '');
           return;
         }
 
-        syncPermissionInstructorSearchInput_(input.value || '', input.selectionStart, input.selectionEnd);
+        syncPermissionInstructorSearchInput_(role, input.value || '', input.selectionStart, input.selectionEnd, 140);
       }
 
       function handlePermissionInstructorCompositionStart(event) {
-        var input = event.target.closest('[data-role="instructor-search"]');
+        var input = event.target.closest('[data-role="instructor-search"], [data-role="bulk-instructor-search"]');
         if (!input) {
           return;
         }
@@ -19322,30 +19526,67 @@
       }
 
       function handlePermissionInstructorCompositionEnd(event) {
-        var input = event.target.closest('[data-role="instructor-search"]');
+        var input = event.target.closest('[data-role="instructor-search"], [data-role="bulk-instructor-search"]');
         if (!input) {
           return;
         }
         APP_STATE.isPermissionInstructorComposing = false;
-        syncPermissionInstructorSearchInput_(input.value || '', input.selectionStart, input.selectionEnd);
+        syncPermissionInstructorSearchInput_(input.getAttribute('data-role') || 'instructor-search', input.value || '', input.selectionStart, input.selectionEnd, 180);
       }
 
-      function syncPermissionInstructorSearchInput_(value, selectionStart, selectionEnd) {
+      function syncPermissionInstructorSearchInput_(role, value, selectionStart, selectionEnd, delay) {
         var safeSelectionStart = typeof selectionStart === 'number' ? selectionStart : null;
         var safeSelectionEnd = typeof selectionEnd === 'number' ? selectionEnd : null;
-        APP_STATE.permissionInstructorKeyword = value || '';
-        renderPermissionDetailPanel();
+        setPermissionInstructorKeywordForRole_(role, value || '');
+        APP_STATE.permissionInstructorFocusRole = role || 'instructor-search';
+        APP_STATE.permissionInstructorSelectionStart = safeSelectionStart;
+        APP_STATE.permissionInstructorSelectionEnd = safeSelectionEnd;
+        schedulePermissionDetailRender_(typeof delay === 'number' ? delay : 120);
+      }
 
-        var nextInput = document.querySelector('#permissionDetailPanel [data-role="instructor-search"]');
+      function setPermissionInstructorKeywordForRole_(role, value) {
+        if (role === 'bulk-instructor-search') {
+          APP_STATE.permissionBulkInstructorKeyword = value || '';
+          return;
+        }
+        APP_STATE.permissionInstructorKeyword = value || '';
+      }
+
+      function clearPermissionInstructorRenderTimer_() {
+        if (APP_STATE.permissionInstructorRenderTimer) {
+          clearTimeout(APP_STATE.permissionInstructorRenderTimer);
+          APP_STATE.permissionInstructorRenderTimer = null;
+        }
+      }
+
+      function schedulePermissionDetailRender_(delay) {
+        clearPermissionInstructorRenderTimer_();
+        APP_STATE.permissionInstructorRenderTimer = window.setTimeout(function() {
+          APP_STATE.permissionInstructorRenderTimer = null;
+          renderPermissionDetailPanel();
+          restorePermissionInstructorSearchFocus_();
+        }, delay || 120);
+      }
+
+      function restorePermissionInstructorSearchFocus_() {
+        var role = APP_STATE.permissionInstructorFocusRole || 'instructor-search';
+        var nextInput = document.querySelector('#permissionDetailPanel [data-role="' + role + '"]');
         if (nextInput) {
           nextInput.focus();
-          if (safeSelectionStart !== null && safeSelectionEnd !== null) {
-            nextInput.setSelectionRange(safeSelectionStart, safeSelectionEnd);
+          if (APP_STATE.permissionInstructorSelectionStart !== null && APP_STATE.permissionInstructorSelectionEnd !== null) {
+            nextInput.setSelectionRange(APP_STATE.permissionInstructorSelectionStart, APP_STATE.permissionInstructorSelectionEnd);
           }
         }
       }
 
       function handlePermissionDetailChange_(event) {
+        var bulkInstructorInput = event.target.closest('input[type="radio"][data-bulk-instructor-id]');
+        if (bulkInstructorInput) {
+          APP_STATE.permissionBulkInstructorId = bulkInstructorInput.getAttribute('data-bulk-instructor-id') || '';
+          renderPermissionDetailPanel();
+          return;
+        }
+
         var input = event.target.closest('input[type="checkbox"][data-instructor-id]');
         if (!input) {
           return;
@@ -19379,12 +19620,17 @@
           return;
         }
 
+        event.preventDefault();
+        if (APP_STATE.permissionAssignmentMode === 'bulk') {
+          handlePermissionBulkAction_(action, button);
+          return;
+        }
+
         var student = getSelectedPermissionStudent_();
         if (!student) {
           return;
         }
 
-        event.preventDefault();
         var selected = getPermissionDraftSelection_(student.studentId);
         var instructorId = button.getAttribute('data-instructor-id');
 
@@ -19404,6 +19650,32 @@
 
         setPermissionDraftSelection_(student.studentId, selected);
         renderPermissionDetailPanel();
+      }
+
+      function handlePermissionBulkAction_(action, button) {
+        if (action === 'permission-bulk-select-visible') {
+          if (!APP_STATE.permissionBulkSelectedStudentIds) {
+            APP_STATE.permissionBulkSelectedStudentIds = {};
+          }
+          getFilteredPermissionStudents_().forEach(function(student) {
+            APP_STATE.permissionBulkSelectedStudentIds[student.studentId] = true;
+          });
+          renderPermissionStudentTable();
+          renderPermissionDetailPanel();
+          return;
+        }
+
+        if (action === 'permission-bulk-clear-students') {
+          APP_STATE.permissionBulkSelectedStudentIds = {};
+          renderPermissionStudentTable();
+          renderPermissionDetailPanel();
+          return;
+        }
+
+        if (action === 'permission-bulk-save-add' || action === 'permission-bulk-save-remove') {
+          handlePermissionBulkSave_(action === 'permission-bulk-save-remove' ? 'remove' : 'add');
+          return;
+        }
       }
 
       function renderPermissionModalOptions() {
@@ -19499,6 +19771,47 @@
             renderAll();
             switchView('permissions');
             setNotice(result.message || '학생 열람 권한이 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
+      function handlePermissionBulkSave_(mode) {
+        if (!APP_STATE.isAdmin) {
+          setNotice('관리자만 권한을 저장할 수 있습니다.', 'warning');
+          return;
+        }
+
+        var instructor = getSelectedPermissionBulkInstructor_();
+        var studentIds = getPermissionBulkSelectedStudentIds_();
+        if (!instructor) {
+          setNotice('권한을 부여하거나 제거할 강사를 먼저 선택해주세요.', 'warning');
+          return;
+        }
+        if (!studentIds.length) {
+          setNotice('좌측 목록에서 학생을 먼저 선택해주세요.', 'warning');
+          return;
+        }
+
+        var selectedMap = {};
+        studentIds.forEach(function(studentId) {
+          selectedMap[studentId] = true;
+        });
+        setLoading(mode === 'remove' ? '선택 학생의 강사 열람 권한을 제거하는 중입니다.' : '선택 학생에게 강사 열람 권한을 부여하는 중입니다.', true);
+        apiRequest('savePermissionsByInstructor', {
+          token: APP_STATE.token,
+          instructorId: instructor.userId,
+          studentIds: JSON.stringify(studentIds),
+          mode: mode || 'add'
+        })
+          .then(function(result) {
+            hydrateStudentDataOnly(result || {});
+            APP_STATE.permissionAssignmentMode = 'bulk';
+            APP_STATE.permissionBulkInstructorId = instructor.userId;
+            APP_STATE.permissionBulkSelectedStudentIds = selectedMap;
+            renderAll();
+            switchView('permissions');
+            setNotice(result.message || '강사별 일괄 권한이 저장되었습니다.', 'success');
           })
           .catch(handleApiError_)
           .finally(clearLoading);
@@ -26050,7 +26363,12 @@
         APP_STATE.homeroomSelectionSourceInstructorId = '';
         APP_STATE.selectedPermissionStudentId = '';
         APP_STATE.permissionTab = 'instructors';
+        APP_STATE.permissionAssignmentMode = 'student';
         APP_STATE.permissionInstructorKeyword = '';
+        APP_STATE.permissionBulkInstructorKeyword = '';
+        APP_STATE.permissionBulkInstructorId = '';
+        APP_STATE.permissionBulkSelectedStudentIds = {};
+        clearPermissionInstructorRenderTimer_();
         APP_STATE.allStudents = [];
         APP_STATE.instructors = [];
         APP_STATE.permissions = [];
@@ -26173,6 +26491,7 @@
 
         var shouldUsePost = [
           'savePermissions',
+          'savePermissionsByInstructor',
           'saveStudentSubject',
           'saveHomeroomAssignments',
           'saveHomeroomAssignmentsByInstructor',
