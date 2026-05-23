@@ -14421,7 +14421,7 @@
         var password = document.getElementById('passwordInput').value.trim();
 
         setLoading('로그인 정보를 확인하는 중입니다.', true);
-        apiRequest('login', { userId: userId, password: password, includeDashboard: 'true' })
+        apiRequest('login', { userId: userId, password: password, includeDashboard: 'false' })
           .then(function(result) {
             APP_STATE.token = result.token;
             APP_STATE.user = result.user || null;
@@ -14431,14 +14431,16 @@
             writeStoredSession();
             syncBranding();
             showAppOnly();
-            setNotice(result.message || '로그인되었습니다.', 'success');
-            if (result.initialDashboard) {
-              hydrateDashboard(result.initialDashboard, null, null);
-              renderAll();
-              writeDashboardSnapshot_();
-              return null;
-            }
-            return loadDashboard({ useStagedLoading: true, forceOverlay: true });
+            var hasSnapshot = hydrateDashboardSnapshot_(readDashboardSnapshot_());
+            renderAll();
+            setNotice(
+              hasSnapshot
+                ? '로그인되었습니다. 저장된 화면을 먼저 표시하고 최신 데이터를 동기화합니다.'
+                : '로그인되었습니다. 학생 데이터를 불러오는 중입니다.',
+              hasSnapshot ? 'success' : 'info'
+            );
+            loadDashboard({ useStagedLoading: true, silent: true });
+            return null;
           })
           .catch(function(error) {
             if (APP_STATE.token) {
