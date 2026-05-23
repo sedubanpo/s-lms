@@ -20019,14 +20019,45 @@
           studentId: studentId
         })
           .then(function(result) {
-            hydrateStudentDataOnly(result || {});
+            applyPermissionRequestResult_(result || {}, studentId);
             APP_STATE.selectedStudentId = studentId;
             renderAll();
             switchView('students');
             setNotice(result.message || '권한 요청이 접수되었습니다.', 'success');
+            if (result && result.alreadyGranted) {
+              loadDashboard({ silent: true, preloadCurrentView: true }).catch(function() {});
+            }
           })
           .catch(handleApiError_)
           .finally(clearLoading);
+      }
+
+      function applyPermissionRequestResult_(result, studentId) {
+        if (result && result.visibleStudents) {
+          hydrateStudentDataOnly(result);
+          return;
+        }
+        var request = result && result.permissionRequest;
+        var targetId = String((result && result.studentId) || studentId || '');
+        if (request && request.requestId) {
+          APP_STATE.permissionRequests = (APP_STATE.permissionRequests || []).filter(function(item) {
+            return item.requestId !== request.requestId;
+          }).concat([request]);
+        }
+        ['searchableStudents', 'activeStudents', 'visibleStudents'].forEach(function(stateKey) {
+          APP_STATE[stateKey] = (APP_STATE[stateKey] || []).map(function(student) {
+            if (String(student.studentId || '') !== targetId) {
+              return student;
+            }
+            return Object.assign({}, student, {
+              accessStatus: result.accessStatus || 'pending',
+              permissionRequestId: request && request.requestId || student.permissionRequestId || '',
+              permissionRequestStatus: request && request.status || student.permissionRequestStatus || 'PENDING',
+              permissionRequestedAt: request && request.requestedAt || student.permissionRequestedAt || ''
+            });
+          });
+        });
+        writeDashboardSnapshot_();
       }
 
       function handlePermissionBulkSave_(mode) {
