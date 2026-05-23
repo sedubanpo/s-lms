@@ -6753,6 +6753,57 @@
         font-weight: 900;
       }
 
+      .permission-request-alert {
+        position: fixed;
+        top: 86px;
+        right: 22px;
+        z-index: 80;
+        width: min(360px, calc(100vw - 32px));
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border-radius: 12px;
+        border: 1px solid #bfdbfe;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 20px 48px rgba(15, 23, 42, 0.16);
+      }
+
+      .permission-request-alert.hidden {
+        display: none !important;
+      }
+
+      .permission-request-alert-head,
+      .permission-request-alert-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .permission-request-alert-head strong {
+        color: #0f172a;
+        font-size: 0.9rem;
+      }
+
+      .permission-request-alert p {
+        margin: 0;
+        color: #475569;
+        font-size: 0.78rem;
+        line-height: 1.55;
+      }
+
+      .permission-request-alert-close {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        color: #475569;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+      }
+
       .teacher-chip {
         display: inline-flex;
         align-items: center;
@@ -12830,6 +12881,7 @@
         </header>
 
         <div id="noticeBar" class="dashboard-notice notice-bar notice-info hidden"></div>
+        <div id="permissionRequestAlert" class="permission-request-alert hidden" aria-live="polite"></div>
 
         <section id="view-students" class="dashboard-view active">
           <input id="studentSearchInput" class="hidden" type="text">
@@ -13583,6 +13635,7 @@
         permissionInstructorFocusRole: '',
         permissionInstructorSelectionStart: null,
         permissionInstructorSelectionEnd: null,
+        permissionRequestAlertDismissedKey: '',
         permissionDrafts: {},
         allStudents: [],
         instructors: [],
@@ -13923,6 +13976,7 @@
         document.getElementById('permissionPanelTabs').addEventListener('click', handlePermissionTabClick);
         document.getElementById('permissionRequestPanel').addEventListener('click', handlePermissionRequestPanelClick_);
         document.getElementById('permissionRequestPanel').addEventListener('change', handlePermissionRequestPanelChange_);
+        document.getElementById('permissionRequestAlert').addEventListener('click', handlePermissionRequestAlertClick_);
         document.getElementById('addStudentButton').addEventListener('click', handleStudentAdd);
         bindDeferredTextRender_('studentManageSearchInput', renderPermissionView, 180);
         document.getElementById('studentManageSchoolFilter').addEventListener('change', renderPermissionView);
@@ -14931,6 +14985,7 @@
         renderGrades();
         renderMaterials();
         switchView(APP_STATE.currentView);
+        renderPermissionRequestAlert_();
       }
 
       function renderUserSummary() {
@@ -19489,6 +19544,67 @@
           '  </table>',
           '</div>'
         ].join('');
+      }
+
+      function getPermissionRequestAlertKey_(requests) {
+        return (requests || []).map(function(item) {
+          return item.requestId || [item.studentId, item.instructorId, item.requestedAt].join(':');
+        }).filter(Boolean).sort().join('|');
+      }
+
+      function renderPermissionRequestAlert_() {
+        var wrap = document.getElementById('permissionRequestAlert');
+        if (!wrap) {
+          return;
+        }
+        var requests = APP_STATE.isAdmin ? getPendingPermissionRequests_() : [];
+        var alertKey = getPermissionRequestAlertKey_(requests);
+        var isViewingRequests = APP_STATE.currentView === 'permissions' && APP_STATE.permissionTab === 'requests';
+        if (!requests.length || !alertKey || APP_STATE.permissionRequestAlertDismissedKey === alertKey || isViewingRequests) {
+          wrap.classList.add('hidden');
+          wrap.innerHTML = '';
+          return;
+        }
+        var latest = requests.slice().sort(function(a, b) {
+          return String(b.requestedAt || '').localeCompare(String(a.requestedAt || ''));
+        })[0] || {};
+        wrap.setAttribute('data-request-alert-key', alertKey);
+        wrap.innerHTML = [
+          '<div class="permission-request-alert-head">',
+          '  <strong>권한 요청 ' + escapeHtml(String(requests.length)) + '건 접수</strong>',
+          '  <button type="button" class="permission-request-alert-close" data-action="permission-alert-close" aria-label="권한 요청 알림 닫기"><i data-lucide="x"></i></button>',
+          '</div>',
+          '<p>' + escapeHtml((latest.instructorName || '강사') + ' 선생님이 ' + (latest.studentName || '학생') + ' 학생 열람 권한을 요청했습니다.') + '</p>',
+          '<div class="permission-request-alert-actions">',
+          '  <span class="permission-request-status">승인 대기</span>',
+          '  <button type="button" class="mini-button" data-action="permission-alert-open"><i data-lucide="shield-check"></i> 요청 보기</button>',
+          '</div>'
+        ].join('');
+        wrap.classList.remove('hidden');
+        renderLucideIcons_();
+      }
+
+      function handlePermissionRequestAlertClick_(event) {
+        var actionButton = event.target.closest('[data-action]');
+        if (!actionButton) {
+          return;
+        }
+        var action = actionButton.getAttribute('data-action');
+        var wrap = document.getElementById('permissionRequestAlert');
+        var alertKey = wrap ? (wrap.getAttribute('data-request-alert-key') || '') : '';
+        if (action === 'permission-alert-close') {
+          APP_STATE.permissionRequestAlertDismissedKey = alertKey;
+          renderPermissionRequestAlert_();
+          return;
+        }
+        if (action === 'permission-alert-open') {
+          APP_STATE.permissionTab = 'requests';
+          if (wrap) {
+            wrap.classList.add('hidden');
+          }
+          switchView('permissions');
+          renderPermissionView();
+        }
       }
 
       function compareInstructorsByName_(a, b) {
@@ -26653,6 +26769,7 @@
         APP_STATE.permissionBulkInstructorKeyword = '';
         APP_STATE.permissionBulkInstructorId = '';
         APP_STATE.permissionBulkSelectedStudentIds = {};
+        APP_STATE.permissionRequestAlertDismissedKey = '';
         clearPermissionInstructorRenderTimer_();
         APP_STATE.allStudents = [];
         APP_STATE.instructors = [];
