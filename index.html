@@ -13541,6 +13541,12 @@
       const DASHBOARD_CACHE_KEY = 'slms_dashboard_snapshot';
       const DASHBOARD_CACHE_MAX_AGE_MS = 1000 * 60 * 60;
       const LOGIN_ID_STORAGE_KEY = 'slms_saved_login_id';
+      const FIREBASE_DIRECT_DEFAULT_FLAGS = {
+        logRead: false,
+        logReactionWrite: false,
+        logCreateWrite: false,
+        logDeleteWrite: false
+      };
       const LOG_TAG_OPTIONS = [
         '수업현황',
         '첫수업 정보',
@@ -13637,6 +13643,13 @@
         permissionInstructorSelectionEnd: null,
         permissionRequestAlertDismissedKey: '',
         permissionDrafts: {},
+        firebaseDirect: {
+          enabled: false,
+          config: null,
+          customToken: '',
+          featureFlags: Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS),
+          collections: {}
+        },
         allStudents: [],
         instructors: [],
         permissions: [],
@@ -14557,6 +14570,17 @@
         APP_STATE.logoUrl = studentData.logoUrl || APP_STATE.logoUrl;
         writeStoredSession();
         syncBranding();
+      }
+
+      function hydrateFirebaseDirectState_(authData) {
+        APP_STATE.firebaseDirect = {
+          enabled: Boolean(authData && authData.enabled),
+          config: authData && authData.config ? authData.config : null,
+          customToken: authData && authData.customToken ? authData.customToken : '',
+          featureFlags: Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, authData && authData.featureFlags ? authData.featureFlags : {}),
+          collections: authData && authData.collections ? authData.collections : {}
+        };
+        return APP_STATE.firebaseDirect;
       }
 
       function mergeSavedStudentLog_(savedLog) {
