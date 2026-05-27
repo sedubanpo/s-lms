@@ -6491,6 +6491,139 @@
         min-height: 520px;
       }
 
+      .student-data-loading-card {
+        position: relative;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 14px;
+        min-height: 132px;
+        padding: 18px;
+        overflow: hidden;
+        border: 1px solid #cfe0fb;
+        border-radius: 8px;
+        background: #f8fbff;
+      }
+
+      .student-data-loading-card::after {
+        content: '';
+        position: absolute;
+        inset: auto 18px 16px 18px;
+        height: 3px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(11, 85, 217, 0.12), rgba(11, 85, 217, 0.78), rgba(20, 184, 166, 0.2));
+        transform-origin: left center;
+        animation: studentInitialLoadSweep 1.15s ease-in-out infinite;
+      }
+
+      .student-data-loading-card strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.95rem;
+        font-weight: 950;
+      }
+
+      .student-data-loading-card p {
+        margin: 5px 0 0;
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .student-data-loading-mark {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border: 2px solid #b9cdf5;
+        border-radius: 8px;
+        background: #ffffff;
+        box-shadow: 0 8px 20px rgba(11, 85, 217, 0.1);
+      }
+
+      .student-data-loading-mark::before,
+      .student-data-loading-mark::after {
+        content: '';
+        position: absolute;
+        left: 9px;
+        right: 9px;
+        height: 2px;
+        border-radius: 999px;
+        background: #0b55d9;
+        animation: studentLogSaveLine 1.05s ease-in-out infinite;
+      }
+
+      .student-data-loading-mark::before {
+        top: 13px;
+      }
+
+      .student-data-loading-mark::after {
+        top: 23px;
+        animation-delay: 0.18s;
+      }
+
+      .student-data-loading-rows {
+        display: grid;
+        gap: 10px;
+        padding: 16px 18px 18px;
+      }
+
+      .student-data-loading-row {
+        display: grid;
+        grid-template-columns: minmax(110px, 0.75fr) minmax(220px, 1.4fr) minmax(160px, 1fr) 86px;
+        align-items: center;
+        gap: 12px;
+        min-height: 46px;
+        padding: 0 10px;
+        border: 1px solid #e5edf8;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .student-data-loading-line {
+        display: block;
+        height: 10px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #e8eef7 0%, #f8fbff 45%, #dbe8fb 100%);
+        background-size: 220% 100%;
+        animation: studentInitialLoadShimmer 1.2s ease-in-out infinite;
+      }
+
+      .student-data-loading-line.short {
+        width: 58%;
+      }
+
+      .student-data-loading-line.mid {
+        width: 76%;
+      }
+
+      .student-data-loading-line.long {
+        width: 92%;
+      }
+
+      .profile-board-loading {
+        padding: 18px;
+      }
+
+      @keyframes studentInitialLoadSweep {
+        0%, 100% {
+          transform: scaleX(0.18);
+          opacity: 0.45;
+        }
+        50% {
+          transform: scaleX(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes studentInitialLoadShimmer {
+        0% {
+          background-position: 120% 0;
+        }
+        100% {
+          background-position: -120% 0;
+        }
+      }
+
       .student-index-head,
       .profile-board-head {
         display: flex;
@@ -13752,6 +13885,7 @@
         studentPermissionInstructorFilter: '',
         studentLogPages: {},
         studentLogReactionSaving: {},
+        studentDataLoading: false,
         selectedStudentId: '',
         selectedStudentDetailId: '',
         studentDetailTab: 'logs',
@@ -14001,8 +14135,14 @@
           APP_STATE.user = savedSession.user || null;
           var hasSnapshot = hydrateDashboardSnapshot_(readDashboardSnapshot_());
           if (hasSnapshot) {
+            APP_STATE.studentDataLoading = false;
             renderAll();
             showAppOnly();
+          } else {
+            APP_STATE.studentDataLoading = true;
+            renderAll();
+            showAppOnly();
+            setNotice('저장된 화면이 없어 학생 데이터를 불러오는 중입니다.', 'info');
           }
           prepareFirebaseDirectAuth_({ silent: true });
           loadDashboard({ useStagedLoading: true, silent: true });
@@ -14450,6 +14590,7 @@
         }
 
         hydrateStudentDataOnly(snapshot.studentData || {});
+        APP_STATE.studentDataLoading = false;
         APP_STATE.materials = snapshot.materials || [];
         APP_STATE.materialSettings = snapshot.materialSettings || APP_STATE.materialSettings;
         APP_STATE.materialOpenLogs = [];
@@ -14594,6 +14735,7 @@
             syncBranding();
             showAppOnly();
             var hasSnapshot = hydrateDashboardSnapshot_(readDashboardSnapshot_());
+            APP_STATE.studentDataLoading = !hasSnapshot;
             renderAll();
             setNotice(
               hasSnapshot
@@ -14635,9 +14777,14 @@
         if (config.forceOverlay && !config.silent) {
           setLoading('학생 데이터, 자료, 일정을 동기화하는 중입니다.', true);
         }
+        if (config.useStagedLoading && !APP_STATE.visibleStudents.length) {
+          APP_STATE.studentDataLoading = true;
+          renderStudents();
+        }
 
         return apiRequest('getStudents', { token: APP_STATE.token })
           .then(function(studentData) {
+            APP_STATE.studentDataLoading = false;
             hydrateStudentDataOnly(studentData);
             if (config.useStagedLoading) {
               renderUserSummary();
@@ -14666,7 +14813,11 @@
           .then(function() {
             showAppOnly();
           })
-          .catch(handleApiError_)
+          .catch(function(error) {
+            APP_STATE.studentDataLoading = false;
+            renderStudents();
+            handleApiError_(error);
+          })
           .finally(function() {
             if (config.forceOverlay && !config.silent) {
               clearLoading();
@@ -14686,6 +14837,7 @@
         APP_STATE.permissions = studentData.permissions || [];
         APP_STATE.permissionRequests = studentData.permissionRequests || [];
         APP_STATE.homeroomAssignments = studentData.homeroomAssignments || [];
+        APP_STATE.studentDataLoading = false;
         APP_STATE.materials = materialData && materialData.materials ? materialData.materials : APP_STATE.materials;
         APP_STATE.materialSettings = materialData && materialData.settings ? materialData.settings : APP_STATE.materialSettings;
         if (materialData && materialData.openLogs) {
@@ -14716,6 +14868,7 @@
         APP_STATE.permissions = studentData.permissions || [];
         APP_STATE.permissionRequests = studentData.permissionRequests || [];
         APP_STATE.homeroomAssignments = studentData.homeroomAssignments || [];
+        APP_STATE.studentDataLoading = false;
         APP_STATE.appName = studentData.appName || APP_STATE.appName;
         APP_STATE.logoUrl = studentData.logoUrl || APP_STATE.logoUrl;
         writeStoredSession();
@@ -15479,6 +15632,13 @@
         setTextIfPresent_('metricVisibleLabel', APP_STATE.isAdmin ? '표시 학생' : '내 열람 가능 학생');
         setTextIfPresent_('metricActiveLabel', '전체 활성 학생');
         setTextIfPresent_('metricPermissionLabel', APP_STATE.isAdmin ? '권한 매핑' : '내 권한 매핑');
+        if (APP_STATE.studentDataLoading && !APP_STATE.visibleStudents.length) {
+          setTextIfPresent_('visibleStudentCount', '불러오는 중');
+          setTextIfPresent_('activeStudentCount', '-');
+          setTextIfPresent_('permissionCount', '-');
+          setTextIfPresent_('logCount', '-');
+          return;
+        }
         setTextIfPresent_('visibleStudentCount', APP_STATE.visibleStudents.length + '명');
         setTextIfPresent_('activeStudentCount', APP_STATE.totalActiveStudentCount + '명');
         setTextIfPresent_('permissionCount', getScopedPermissions_().length + '건');
@@ -15684,6 +15844,13 @@
         var wrap = document.getElementById('studentList');
         var students = getFilteredStudents();
 
+        if (APP_STATE.studentDataLoading && !students.length) {
+          wrap.className = 'student-console summary-mode is-loading';
+          wrap.innerHTML = renderStudentDataLoadingShell_();
+          renderLucideIcons_();
+          return;
+        }
+
         if (!students.length) {
           wrap.className = 'student-console ' + getStudentViewModeClass_();
           wrap.innerHTML = renderStudentConsoleShell_(students, getStudentEmptyStateHtml());
@@ -15695,6 +15862,62 @@
         wrap.className = 'student-console ' + getStudentViewModeClass_();
         wrap.innerHTML = renderStudentConsoleShell_(students, '');
         renderLucideIcons_();
+      }
+
+      function renderStudentDataLoadingShell_() {
+        if (isMobileViewport_()) {
+          return [
+            '<section class="mobile-scope-card ops-surface">',
+            '  <div><span>학생 데이터</span><strong>동기화 중</strong></div>',
+            '  <div><span>권한</span><strong>확인 중</strong></div>',
+            '  <div><span>상담</span><strong>정리 중</strong></div>',
+            '</section>',
+            '<section class="mobile-card-surface">',
+                 renderStudentDataLoadingPanel_('학생 데이터를 불러오는 중입니다.', '권한 범위와 상담 기록을 함께 맞춰보고 있습니다.'),
+            '</section>'
+          ].join('');
+        }
+        return [
+          '<section class="scope-banner ops-surface">',
+          '  <div class="scope-icon"><i data-lucide="loader-2"></i></div>',
+          '  <div><div class="scope-title">학생 데이터를 불러오는 중입니다.</div><div class="scope-text">권한 범위, 상담 기록, 학교 연결 정보를 순서대로 정리하고 있습니다.</div></div>',
+          '  <div class="scope-chip-row"><span class="ops-chip blue">동기화 중</span><span class="ops-chip teal">잠시만 기다려 주세요</span></div>',
+          '</section>',
+          '<div class="student-ops-layout">',
+          '  <section class="student-index-panel ops-surface">',
+          '    <div class="student-index-head"><div><h3>학생 인덱스</h3><div class="helper-text">학생 목록을 불러오는 중입니다.</div></div></div>',
+               renderStudentDataLoadingRows_(),
+          '  </section>',
+          '  <aside class="profile-board ops-surface">',
+          '    <div class="profile-board-head"><div><h3>프로필 보드</h3><div class="helper-text">첫 학생의 상담/자료 상태를 준비하고 있습니다.</div></div></div>',
+          '    <div class="profile-board-loading">' + renderStudentDataLoadingPanel_('프로필 보드를 준비하는 중입니다.', '학생 데이터가 도착하면 자동으로 첫 학생을 선택합니다.') + '</div>',
+          '  </aside>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderStudentDataLoadingPanel_(title, message) {
+        return [
+          '<div class="student-data-loading-card" role="status" aria-live="polite">',
+          '  <span class="student-data-loading-mark" aria-hidden="true"></span>',
+          '  <div><strong>' + escapeHtml(title) + '</strong><p>' + escapeHtml(message) + '</p></div>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderStudentDataLoadingRows_() {
+        var rows = [];
+        for (var i = 0; i < 7; i += 1) {
+          rows.push([
+            '<div class="student-data-loading-row">',
+            '  <span class="student-data-loading-line ' + (i % 2 ? 'mid' : 'short') + '"></span>',
+            '  <span class="student-data-loading-line long"></span>',
+            '  <span class="student-data-loading-line mid"></span>',
+            '  <span class="student-data-loading-line short"></span>',
+            '</div>'
+          ].join(''));
+        }
+        return '<div class="student-data-loading-rows">' + rows.join('') + '</div>';
       }
 
       function populateStudentFilters() {
