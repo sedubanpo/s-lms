@@ -13648,7 +13648,14 @@
           config: null,
           customToken: '',
           featureFlags: Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS),
-          collections: {}
+          collections: {},
+          app: null,
+          auth: null,
+          firestore: null,
+          sdkLoadPromise: null,
+          authPromise: null,
+          user: null,
+          lastError: ''
         },
         allStudents: [],
         instructors: [],
@@ -13856,6 +13863,7 @@
             renderAll();
             showAppOnly();
           }
+          prepareFirebaseDirectAuth_({ silent: true });
           loadDashboard({ useStagedLoading: true, silent: true });
           return;
         }
@@ -14452,6 +14460,7 @@
                 : '로그인되었습니다. 학생 데이터를 불러오는 중입니다.',
               hasSnapshot ? 'success' : 'info'
             );
+            prepareFirebaseDirectAuth_({ silent: true });
             loadDashboard({ useStagedLoading: true, silent: true });
             return null;
           })
@@ -14573,14 +14582,247 @@
       }
 
       function hydrateFirebaseDirectState_(authData) {
+        var previous = APP_STATE.firebaseDirect || {};
         APP_STATE.firebaseDirect = {
           enabled: Boolean(authData && authData.enabled),
           config: authData && authData.config ? authData.config : null,
           customToken: authData && authData.customToken ? authData.customToken : '',
           featureFlags: Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, authData && authData.featureFlags ? authData.featureFlags : {}),
-          collections: authData && authData.collections ? authData.collections : {}
+          collections: authData && authData.collections ? authData.collections : {},
+          app: previous.app || null,
+          auth: previous.auth || null,
+          firestore: previous.firestore || null,
+          sdkLoadPromise: previous.sdkLoadPromise || null,
+          authPromise: previous.authPromise || null,
+          user: previous.user || null,
+          lastError: ''
         };
         return APP_STATE.firebaseDirect;
+      }
+
+      function resetFirebaseDirectState_() {
+        APP_STATE.firebaseDirect = {
+          enabled: false,
+          config: null,
+          customToken: '',
+          featureFlags: Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS),
+          collections: {},
+          app: null,
+          auth: null,
+          firestore: null,
+          sdkLoadPromise: null,
+          authPromise: null,
+          user: null,
+          lastError: ''
+        };
+      }
+
+      function loadScriptOnce_(src, globalTest) {
+        if (typeof globalTest === 'function' && globalTest()) {
+          return Promise.resolve();
+        }
+        return new Promise(function(resolve, reject) {
+          var existing = document.querySelector('script[src="' + src + '"]');
+          if (existing) {
+            existing.addEventListener('load', function() { resolve(); }, { once: true });
+            existing.addEventListener('error', function() { reject(new Error('스크립트를 불러오지 못했습니다.')); }, { once: true });
+            if (typeof globalTest === 'function' && globalTest()) {
+              resolve();
+            }
+            return;
+          }
+          var script = document.createElement('script');
+          script.src = src;
+          script.async = true;
+          script.onload = function() { resolve(); };
+          script.onerror = function() { reject(new Error('스크립트를 불러오지 못했습니다.')); };
+          document.head.appendChild(script);
+        });
+      }
+
+      function loadFirebaseDirectSdk_() {
+        var state = APP_STATE.firebaseDirect || {};
+        if (state.sdkLoadPromise) {
+          return state.sdkLoadPromise;
+        }
+        state.sdkLoadPromise = loadScriptOnce_(
+          'https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js',
+          function() { return !!(window.firebase && window.firebase.initializeApp); }
+        ).then(function() {
+          return loadScriptOnce_(
+            'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js',
+            function() { return !!(window.firebase && window.firebase.auth); }
+          );
+        }).then(function() {
+          return loadScriptOnce_(
+            'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js',
+            function() { return !!(window.firebase && window.firebase.firestore); }
+          );
+        });
+        APP_STATE.firebaseDirect.sdkLoadPromise = state.sdkLoadPromise;
+        return state.sdkLoadPromise;
+      }
+
+      function prepareFirebaseDirectAuth_(options) {
+        var config = options || {};
+        if (!APP_STATE.token) {
+          return Promise.resolve(null);
+        }
+        var currentState = APP_STATE.firebaseDirect || {};
+        if (currentState.authPromise) {
+          return currentState.authPromise;
+        }
+        currentState.authPromise = apiRequest('getFirebaseClientAuth', { token: APP_STATE.token })
+          .then(function(authData) {
+            var state = hydrateFirebaseDirectState_(authData);
+            if (!state.enabled || !state.config || !state.customToken) {
+              return state;
+            }
+            return loadFirebaseDirectSdk_().then(function() {
+              var appName = 'slms-direct';
+              var app = null;
+              try {
+                app = window.firebase.app(appName);
+              } catch (error) {
+                app = window.firebase.initializeApp(state.config, appName);
+              }
+              state.app = app;
+              state.auth = app.auth();
+              state.firestore = app.firestore();
+              return state.auth.signInWithCustomToken(state.customToken).then(function(credential) {
+                state.user = credential && credential.user ? credential.user : state.auth.currentUser;
+                state.customToken = '';
+                return state;
+              });
+            });
+          })
+          .catch(function(error) {
+            var state = APP_STATE.firebaseDirect || {};
+            state.enabled = false;
+            state.lastError = getErrorMessage(error);
+            if (!config.silent) {
+              setNotice('Firebase 직접 연결 준비에 실패했습니다. 기존 저장 방식으로 계속 진행합니다.', 'warning');
+            }
+            return state;
+          })
+          .finally(function() {
+            if (APP_STATE.firebaseDirect) {
+              APP_STATE.firebaseDirect.authPromise = null;
+            }
+          });
+        APP_STATE.firebaseDirect.authPromise = currentState.authPromise;
+        return currentState.authPromise;
+      }
+
+      function isFirebaseDirectFeatureEnabled_(featureName) {
+        var state = APP_STATE.firebaseDirect || {};
+        return Boolean(state.enabled && state.featureFlags && state.featureFlags[featureName]);
+      }
+
+      function isFirebaseStudentLogId_(rowKey) {
+        return String(rowKey || '').indexOf('LOG-') === 0;
+      }
+
+      function parseFirebaseDirectReactions_(value) {
+        if (Array.isArray(value)) {
+          return value;
+        }
+        if (!value) {
+          return [];
+        }
+        try {
+          var parsed = JSON.parse(String(value || ''));
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function findStudentLogByRowKey_(rowKey) {
+        var key = String(rowKey || '');
+        var found = null;
+        ['visibleStudents', 'activeStudents'].some(function(stateKey) {
+          return (APP_STATE[stateKey] || []).some(function(student) {
+            return (student.logs || []).some(function(log) {
+              if (String(log.rowNumber || '') === key) {
+                found = log;
+                return true;
+              }
+              return false;
+            });
+          });
+        });
+        return found;
+      }
+
+      function saveStudentLogReactionViaFirebaseDirect_(rowKey, reaction) {
+        if (!isFirebaseStudentLogId_(rowKey)) {
+          return Promise.reject(new Error('Firestore 기록 ID가 아닙니다.'));
+        }
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('logReactionWrite')) {
+            throw new Error('Firebase 직접 반응 저장이 비활성화되어 있습니다.');
+          }
+          var user = APP_STATE.user || {};
+          var userId = String(user.userId || '').trim();
+          if (!userId) {
+            throw new Error('로그인 사용자 정보를 확인할 수 없습니다.');
+          }
+          var collectionName = (state.collections && state.collections.studentLogs) || 'studentLogs';
+          var logRef = state.firestore.collection(collectionName).doc(String(rowKey));
+          var timestamp = new Date().toISOString();
+          return state.firestore.runTransaction(function(transaction) {
+            return transaction.get(logRef).then(function(doc) {
+              if (!doc.exists) {
+                throw new Error('존재하지 않는 기록입니다.');
+              }
+              var data = doc.data() || {};
+              var reactions = parseFirebaseDirectReactions_(data.reactionsJson).filter(function(item) {
+                return String(item && item.userId || '') !== userId;
+              });
+              reactions.push({
+                userId: userId,
+                userName: user.name || userId,
+                reaction: reaction,
+                reactedAt: timestamp
+              });
+              transaction.update(logRef, {
+                reactionsJson: JSON.stringify(reactions),
+                reactionsUpdatedAt: timestamp
+              });
+              return {
+                ok: true,
+                updatedLog: Object.assign({}, findStudentLogByRowKey_(rowKey) || {}, {
+                  rowNumber: String(rowKey),
+                  reactions: reactions,
+                  reactionsUpdatedAt: timestamp
+                }),
+                directFirebase: true
+              };
+            });
+          });
+        });
+      }
+
+      function saveStudentLogReaction_(rowKey, reaction) {
+        if (isFirebaseDirectFeatureEnabled_('logReactionWrite') && isFirebaseStudentLogId_(rowKey)) {
+          return saveStudentLogReactionViaFirebaseDirect_(rowKey, reaction).catch(function(error) {
+            if (window.console && console.warn) {
+              console.warn('Firebase direct reaction fallback:', error);
+            }
+            return apiRequest('reactStudentLog', {
+              token: APP_STATE.token,
+              logRowNumber: rowKey,
+              reaction: reaction
+            });
+          });
+        }
+        return apiRequest('reactStudentLog', {
+          token: APP_STATE.token,
+          logRowNumber: rowKey,
+          reaction: reaction
+        });
       }
 
       function mergeSavedStudentLog_(savedLog) {
@@ -18539,11 +18781,7 @@
           renderStudentDetailModal_();
         }
         setNotice('반응을 저장하는 중입니다.', 'info');
-        apiRequest('reactStudentLog', {
-          token: APP_STATE.token,
-          logRowNumber: logRowNumber,
-          reaction: reaction
-        })
+        saveStudentLogReaction_(logRowNumber, reaction)
           .then(function(result) {
             if (result && result.updatedLog && mergeUpdatedStudentLog_(result.updatedLog)) {
               renderStudents();
@@ -26796,6 +27034,7 @@
         APP_STATE.permissionBulkInstructorId = '';
         APP_STATE.permissionBulkSelectedStudentIds = {};
         APP_STATE.permissionRequestAlertDismissedKey = '';
+        resetFirebaseDirectState_();
         clearPermissionInstructorRenderTimer_();
         APP_STATE.allStudents = [];
         APP_STATE.instructors = [];
