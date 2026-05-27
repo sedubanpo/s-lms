@@ -1049,6 +1049,72 @@
         line-height: 1.7;
       }
 
+      .system-settings-modal-card {
+        width: min(720px, 100%);
+      }
+
+      .system-settings-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .system-settings-item {
+        min-height: 72px;
+        padding: 13px 14px;
+        border: 1px solid #dbe7f7;
+        border-radius: 14px;
+        background: #f8fbff;
+      }
+
+      .system-settings-item span {
+        display: block;
+        color: #64748b;
+        font-size: 0.76rem;
+        font-weight: 800;
+      }
+
+      .system-settings-item strong {
+        display: block;
+        margin-top: 6px;
+        color: var(--text-main);
+        font-size: 0.95rem;
+        font-weight: 900;
+      }
+
+      .system-settings-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .system-status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 26px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.76rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .system-status-pill.ready {
+        border-color: #bbf7d0;
+        background: #ecfdf5;
+        color: #047857;
+      }
+
+      .system-status-pill.warning {
+        border-color: #fed7aa;
+        background: #fff7ed;
+        color: #c2410c;
+      }
+
       .dashboard-view {
         display: none;
       }
@@ -13394,6 +13460,19 @@
       </div>
     </div>
 
+    <div id="systemSettingsModal" class="modal-backdrop hidden">
+      <div class="modal-card system-settings-modal-card">
+        <div class="modal-top">
+          <div>
+            <h3>운영 설정</h3>
+            <p>Firebase 직접 저장 상태를 확인하고 상담/관리 기록 반응 입력만 제한적으로 전환합니다.</p>
+          </div>
+          <button id="closeSystemSettingsButton" type="button" class="icon-button" aria-label="운영 설정창 닫기">×</button>
+        </div>
+        <div id="systemSettingsContent" class="modal-body"></div>
+      </div>
+    </div>
+
     <div id="teachingLogDetailModal" class="modal-backdrop hidden">
       <div class="modal-card detail-modal-card">
         <div class="modal-top">
@@ -13881,9 +13960,7 @@
         document.getElementById('topLogoutButton').addEventListener('click', handleLogout);
         document.getElementById('refreshButton').addEventListener('click', refreshDashboard);
         document.getElementById('topRefreshButton').addEventListener('click', refreshDashboard);
-        document.getElementById('settingsButton').addEventListener('click', function() {
-          setNotice('설정은 현재 운영 콘솔 디자인에 맞춰 준비 중입니다.', 'info');
-        });
+        document.getElementById('settingsButton').addEventListener('click', openSystemSettingsModal_);
         document.getElementById('quickAddStudentButton').addEventListener('click', handleQuickAddStudentOpen);
         document.getElementById('materialOpenLogsButton').addEventListener('click', handleMaterialOpenLogButtonClick_);
         document.getElementById('openPermissionModalButton').addEventListener('click', function() {
@@ -13895,6 +13972,8 @@
         });
         document.getElementById('closePermissionModalButton').addEventListener('click', closePermissionModal);
         document.getElementById('permissionModal').addEventListener('click', handlePermissionModalBackdropClick);
+        document.getElementById('closeSystemSettingsButton').addEventListener('click', closeSystemSettingsModal_);
+        document.getElementById('systemSettingsModal').addEventListener('click', handleSystemSettingsModalClick_);
         document.getElementById('closeTeachingLogDetailButton').addEventListener('click', closeTeachingLogDetailModal);
         document.getElementById('teachingLogDetailModal').addEventListener('click', handleTeachingLogDetailBackdropClick);
         document.getElementById('closeStudentDetailModalButton').addEventListener('click', closeStudentDetailModal_);
@@ -20559,6 +20638,110 @@
         }
       }
 
+      function openSystemSettingsModal_() {
+        if (!APP_STATE.isAdmin) {
+          setNotice('운영 설정은 관리자만 사용할 수 있습니다.', 'warning');
+          return;
+        }
+        document.getElementById('systemSettingsModal').classList.remove('hidden');
+        renderSystemSettingsLoading_();
+        loadSystemSettings_();
+      }
+
+      function closeSystemSettingsModal_() {
+        document.getElementById('systemSettingsModal').classList.add('hidden');
+      }
+
+      function handleSystemSettingsModalClick_(event) {
+        if (event.target.id === 'systemSettingsModal') {
+          closeSystemSettingsModal_();
+          return;
+        }
+        var button = event.target.closest('[data-system-settings-action]');
+        if (!button) {
+          return;
+        }
+        var action = button.getAttribute('data-system-settings-action');
+        if (action === 'refresh') {
+          loadSystemSettings_();
+          return;
+        }
+        if (action === 'enable-reaction' || action === 'disable-reaction') {
+          updateFirebaseDirectReactionWrite_(action === 'enable-reaction');
+        }
+      }
+
+      function renderSystemSettingsLoading_() {
+        document.getElementById('systemSettingsContent').innerHTML =
+          '<div class="hint-box">운영 설정 상태를 확인하는 중입니다.</div>';
+      }
+
+      function loadSystemSettings_() {
+        apiRequest('getFirebaseDirectStatus', { token: APP_STATE.token })
+          .then(function(status) {
+            renderSystemSettings_(status);
+          })
+          .catch(function(error) {
+            document.getElementById('systemSettingsContent').innerHTML =
+              '<div class="hint-box">운영 설정을 불러오지 못했습니다. ' + escapeHtml(getErrorMessage(error)) + '</div>';
+          });
+      }
+
+      function renderSystemSettings_(status) {
+        var flags = status && status.featureFlags ? status.featureFlags : {};
+        var reactionEnabled = Boolean(flags.logReactionWrite);
+        var canEnable = Boolean(status && status.directClientReady);
+        var html = [
+          '<div class="hint-box">이번 단계에서는 상담/관리 기록의 반응 입력만 Firebase 직접 저장으로 전환합니다. 기록 작성/삭제와 목록 조회는 기존 저장 방식을 유지합니다.</div>',
+          '<div class="system-settings-grid">',
+          renderSystemSettingsItem_('Firestore 서버 경로', status && status.firestoreEnabled ? '사용 가능' : '비활성 또는 미확인', Boolean(status && status.firestoreEnabled)),
+          renderSystemSettingsItem_('Firebase 클라이언트', canEnable ? '설정 완료' : '설정 필요', canEnable),
+          renderSystemSettingsItem_('웹 API 키', status && status.hasWebApiKey ? '등록됨' : '미등록', Boolean(status && status.hasWebApiKey)),
+          renderSystemSettingsItem_('서비스 계정', status && status.hasServiceAccount ? '등록됨' : '미등록', Boolean(status && status.hasServiceAccount)),
+          renderSystemSettingsItem_('프로젝트', status && status.projectId ? status.projectId : '-', Boolean(status && status.projectId)),
+          renderSystemSettingsItem_('반응 직접 저장', reactionEnabled ? '켜짐' : '꺼짐', reactionEnabled),
+          '</div>',
+          '<div class="system-settings-actions">',
+          '<button type="button" class="mini-button" data-system-settings-action="refresh"><i data-lucide="refresh-cw"></i>상태 새로고침</button>',
+          reactionEnabled
+            ? '<button type="button" class="mini-button" data-system-settings-action="disable-reaction"><i data-lucide="power"></i>반응 직접 저장 끄기</button>'
+            : '<button type="button" class="button-primary" data-system-settings-action="enable-reaction"' + (canEnable ? '' : ' disabled') + '><i data-lucide="zap"></i>반응 직접 저장 켜기</button>',
+          '</div>'
+        ].join('');
+        document.getElementById('systemSettingsContent').innerHTML = html;
+        renderLucideIcons_();
+      }
+
+      function renderSystemSettingsItem_(label, value, ready) {
+        return [
+          '<div class="system-settings-item">',
+          '<span>' + escapeHtml(label) + '</span>',
+          '<strong>' + escapeHtml(value) + '</strong>',
+          '<div class="system-status-pill ' + (ready ? 'ready' : 'warning') + '">' + (ready ? '확인' : '점검 필요') + '</div>',
+          '</div>'
+        ].join('');
+      }
+
+      function updateFirebaseDirectReactionWrite_(enabled) {
+        setLoading(enabled ? '반응 직접 저장을 켜는 중입니다.' : '반응 직접 저장을 끄는 중입니다.', true);
+        apiRequest('setFirebaseDirectReactionWrite', {
+          token: APP_STATE.token,
+          enabled: enabled ? 'true' : 'false'
+        })
+          .then(function(status) {
+            if (enabled) {
+              resetFirebaseDirectState_();
+              prepareFirebaseDirectAuth_({ silent: true });
+            } else {
+              resetFirebaseDirectState_();
+            }
+            renderSystemSettings_(status);
+            setNotice(status.message || 'Firebase 직접 저장 설정이 변경되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(clearLoading);
+      }
+
       function handlePermissionModalSave() {
         if (!APP_STATE.isAdmin) {
           setNotice('관리자만 권한을 저장할 수 있습니다.', 'warning');
@@ -27172,6 +27355,7 @@
         clearStoredSession();
         clearDashboardSnapshot_();
         closePermissionModal();
+        closeSystemSettingsModal_();
         closeMaterialSettingsModal();
         closeMaterialOpenLogModal_();
         closeStudentDetailModal_();
@@ -27196,6 +27380,7 @@
         var shouldUsePost = [
           'savePermissions',
           'savePermissionsByInstructor',
+          'setFirebaseDirectReactionWrite',
           'requestPermissionAccess',
           'approvePermissionRequests',
           'saveStudentSubject',
