@@ -735,6 +735,16 @@
         transform: translateY(-1px);
       }
 
+      .button-primary:disabled,
+      .button-secondary:disabled,
+      .button-ghost:disabled,
+      .mini-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.48;
+        transform: none;
+        box-shadow: none;
+      }
+
       .button-primary {
         background: linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%);
         color: #fff;
@@ -20691,6 +20701,9 @@
         var flags = status && status.featureFlags ? status.featureFlags : {};
         var reactionEnabled = Boolean(flags.logReactionWrite);
         var canEnable = Boolean(status && status.directClientReady);
+        var blockedReason = canEnable
+          ? ''
+          : 'Firebase 직접 반응 저장을 켜려면 웹 API 키와 클라이언트 도메인 설정이 필요합니다. 현재는 기존 Apps Script 저장 방식이 유지됩니다.';
         var html = [
           '<div class="hint-box">이번 단계에서는 상담/관리 기록의 반응 입력만 Firebase 직접 저장으로 전환합니다. 기록 작성/삭제와 목록 조회는 기존 저장 방식을 유지합니다.</div>',
           '<div class="system-settings-grid">',
@@ -20701,6 +20714,7 @@
           renderSystemSettingsItem_('프로젝트', status && status.projectId ? status.projectId : '-', Boolean(status && status.projectId)),
           renderSystemSettingsItem_('반응 직접 저장', reactionEnabled ? '켜짐' : '꺼짐', reactionEnabled),
           '</div>',
+          blockedReason ? '<div class="hint-box">' + escapeHtml(blockedReason) + '</div>' : '',
           '<div class="system-settings-actions">',
           '<button type="button" class="mini-button" data-system-settings-action="refresh"><i data-lucide="refresh-cw"></i>상태 새로고침</button>',
           reactionEnabled
