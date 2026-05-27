@@ -14133,6 +14133,7 @@
         if (savedSession && savedSession.token) {
           APP_STATE.token = savedSession.token;
           APP_STATE.user = savedSession.user || null;
+          APP_STATE.isAdmin = Boolean(APP_STATE.user && APP_STATE.user.role === 'ADMIN');
           var hasSnapshot = hydrateDashboardSnapshot_(readDashboardSnapshot_());
           if (hasSnapshot) {
             APP_STATE.studentDataLoading = false;
@@ -14728,6 +14729,7 @@
           .then(function(result) {
             APP_STATE.token = result.token;
             APP_STATE.user = result.user || null;
+            APP_STATE.isAdmin = Boolean(APP_STATE.user && APP_STATE.user.role === 'ADMIN');
             APP_STATE.appName = result.appName || APP_STATE.appName;
             APP_STATE.logoUrl = result.logoUrl || APP_STATE.logoUrl;
             persistSavedLoginId_(userId);
