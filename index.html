@@ -1098,6 +1098,58 @@
         gap: 8px;
       }
 
+      .system-settings-form {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border: 1px solid #dbe7f7;
+        border-radius: 14px;
+        background: #ffffff;
+      }
+
+      .system-settings-form-title {
+        margin: 0;
+        color: var(--text-main);
+        font-size: 0.92rem;
+        font-weight: 950;
+      }
+
+      .system-settings-field-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+        gap: 10px;
+      }
+
+      .system-settings-field {
+        display: grid;
+        gap: 6px;
+      }
+
+      .system-settings-field label {
+        color: #475569;
+        font-size: 0.75rem;
+        font-weight: 850;
+      }
+
+      .system-settings-field input {
+        width: 100%;
+        min-height: 42px;
+        padding: 0 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #f8fbff;
+        color: var(--text-main);
+        font: inherit;
+        font-size: 0.84rem;
+        font-weight: 750;
+      }
+
+      .system-settings-field input:focus {
+        outline: none;
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgba(36, 86, 214, 0.12);
+      }
+
       .system-status-pill {
         display: inline-flex;
         align-items: center;
@@ -20676,6 +20728,10 @@
           loadSystemSettings_();
           return;
         }
+        if (action === 'save-client-config') {
+          updateFirebaseClientSettings_();
+          return;
+        }
         if (action === 'enable-reaction' || action === 'disable-reaction') {
           updateFirebaseDirectReactionWrite_(action === 'enable-reaction');
         }
@@ -20715,6 +20771,22 @@
           renderSystemSettingsItem_('반응 직접 저장', reactionEnabled ? '켜짐' : '꺼짐', reactionEnabled),
           '</div>',
           blockedReason ? '<div class="hint-box">' + escapeHtml(blockedReason) + '</div>' : '',
+          '<div class="system-settings-form">',
+          '<p class="system-settings-form-title">Firebase 웹 설정 등록</p>',
+          '<div class="system-settings-field-grid">',
+          '<div class="system-settings-field">',
+          '<label for="firebaseWebApiKeyInput">웹 API 키</label>',
+          '<input id="firebaseWebApiKeyInput" type="password" autocomplete="off" placeholder="' + (status && status.hasWebApiKey ? '등록된 키 유지, 변경 시 새 키 입력' : 'AIza로 시작하는 Firebase Web API Key') + '">',
+          '</div>',
+          '<div class="system-settings-field">',
+          '<label for="firebaseAuthDomainInput">Auth 도메인</label>',
+          '<input id="firebaseAuthDomainInput" type="text" autocomplete="off" placeholder="project.firebaseapp.com" value="' + escapeAttribute(status && status.authDomain ? status.authDomain : '') + '">',
+          '</div>',
+          '</div>',
+          '<div class="system-settings-actions">',
+          '<button type="button" class="mini-button" data-system-settings-action="save-client-config"><i data-lucide="save"></i>웹 설정 저장</button>',
+          '</div>',
+          '</div>',
           '<div class="system-settings-actions">',
           '<button type="button" class="mini-button" data-system-settings-action="refresh"><i data-lucide="refresh-cw"></i>상태 새로고침</button>',
           reactionEnabled
@@ -20734,6 +20806,32 @@
           '<div class="system-status-pill ' + (ready ? 'ready' : 'warning') + '">' + (ready ? '확인' : '점검 필요') + '</div>',
           '</div>'
         ].join('');
+      }
+
+      function updateFirebaseClientSettings_() {
+        var apiKeyInput = document.getElementById('firebaseWebApiKeyInput');
+        var authDomainInput = document.getElementById('firebaseAuthDomainInput');
+        var webApiKey = apiKeyInput ? apiKeyInput.value.trim() : '';
+        var authDomain = authDomainInput ? authDomainInput.value.trim() : '';
+        if (!webApiKey && !authDomain) {
+          setNotice('Firebase 웹 API 키 또는 Auth 도메인을 입력해주세요.', 'warning');
+          return;
+        }
+        setLoading('Firebase 웹 설정을 저장하는 중입니다.', true);
+        apiRequest('saveFirebaseClientSettings', {
+          token: APP_STATE.token,
+          webApiKey: webApiKey,
+          authDomain: authDomain
+        })
+          .then(function(status) {
+            resetFirebaseDirectState_();
+            renderSystemSettings_(status);
+            setNotice(status.message || 'Firebase 웹 설정이 저장되었습니다.', 'success');
+          })
+          .catch(handleApiError_)
+          .finally(function() {
+            setLoading('', false);
+          });
       }
 
       function updateFirebaseDirectReactionWrite_(enabled) {
@@ -27394,6 +27492,7 @@
         var shouldUsePost = [
           'savePermissions',
           'savePermissionsByInstructor',
+          'saveFirebaseClientSettings',
           'setFirebaseDirectReactionWrite',
           'requestPermissionAccess',
           'approvePermissionRequests',
