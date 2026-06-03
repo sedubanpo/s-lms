@@ -14807,12 +14807,14 @@
                 hydrateDashboard(studentData, null, null);
                 renderAll();
                 writeDashboardSnapshot_();
+                saveDashboardSnapshotViaFirebaseDirect_(studentData);
               });
             }
 
             hydrateDashboard(studentData, null, null);
             renderAll();
             writeDashboardSnapshot_();
+            saveDashboardSnapshotViaFirebaseDirect_(studentData);
             return null;
           })
           .then(function() {
@@ -15078,6 +15080,43 @@
         }).catch(function(error) {
           if (window.console && console.warn) {
             console.warn('Firebase dashboard snapshot fallback:', error);
+          }
+          return false;
+        });
+      }
+
+      function saveDashboardSnapshotViaFirebaseDirect_(studentData) {
+        if (!APP_STATE.token || !APP_STATE.user || !APP_STATE.user.userId || !studentData || !studentData.ok) {
+          return Promise.resolve(false);
+        }
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('dashboardRead') || !state.dashboardSnapshotDocId) {
+            return false;
+          }
+          var payload = {
+            storedAt: Date.now(),
+            userId: APP_STATE.user.userId,
+            userRole: normalizeRole(APP_STATE.user.role),
+            studentData: studentData
+          };
+          var snapshotJson = JSON.stringify(payload);
+          if (snapshotJson.length > 900000) {
+            return false;
+          }
+          var collectionName = (state.collections && state.collections.dashboardSnapshots) || 'dashboardSnapshots';
+          return state.firestore.collection(collectionName).doc(String(state.dashboardSnapshotDocId)).set({
+            userId: payload.userId,
+            userRole: payload.userRole,
+            updatedAt: new Date().toISOString(),
+            updatedAtMs: payload.storedAt,
+            snapshotJson: snapshotJson
+          }).then(function() {
+            return true;
+          });
+        }).catch(function(error) {
+          if (window.console && console.warn) {
+            console.warn('Firebase dashboard snapshot save fallback:', error);
           }
           return false;
         });
