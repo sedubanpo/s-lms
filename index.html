@@ -13660,7 +13660,7 @@
         <div class="modal-top">
           <div>
             <h3>운영 설정</h3>
-            <p>Firebase 직접 저장 상태를 확인하고 상담/관리 기록 반응 입력만 제한적으로 전환합니다.</p>
+            <p>Firebase 직접 저장 상태를 확인하고 상담/관리 기록 입력, 삭제, 반응을 단계적으로 전환합니다.</p>
           </div>
           <button id="closeSystemSettingsButton" type="button" class="icon-button" aria-label="운영 설정창 닫기">×</button>
         </div>
@@ -15084,6 +15084,97 @@
         });
       }
 
+      function createFirebaseStudentLogId_() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return 'LOG-' + window.crypto.randomUUID();
+        }
+        return 'LOG-' + Date.now() + '-' + Math.random().toString(36).slice(2, 12);
+      }
+
+      function saveStudentLogEntryViaFirebaseDirect_(studentId, content, tags, authorInstructorId, clientRequestId) {
+        if (authorInstructorId) {
+          return Promise.reject(new Error('작성자 대리 입력은 기존 저장 경로를 사용합니다.'));
+        }
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('logCreateWrite')) {
+            throw new Error('Firebase 직접 기록 저장이 비활성화되어 있습니다.');
+          }
+          var student = findStudentById_(studentId) || {};
+          var user = APP_STATE.user || {};
+          var userId = String(user.userId || '').trim();
+          if (!userId) {
+            throw new Error('로그인 사용자 정보를 확인할 수 없습니다.');
+          }
+          var logId = createFirebaseStudentLogId_();
+          var timestamp = new Date().toISOString();
+          var normalizedTags = Array.isArray(tags) ? tags : [];
+          var collectionName = (state.collections && state.collections.studentLogs) || 'studentLogs';
+          var payload = {
+            logId: logId,
+            rowNumber: logId,
+            studentId: String(studentId || ''),
+            studentName: student.studentName || '',
+            content: content,
+            tagsText: normalizedTags.join(', '),
+            createdById: userId,
+            createdByName: user.name || userId,
+            createdByRole: user.role || '',
+            createdAt: timestamp,
+            reactionsJson: '[]',
+            reactionsUpdatedAt: '',
+            createdAtMs: Date.now()
+          };
+          return state.firestore.collection(collectionName).doc(logId).set(payload).then(function() {
+            notifyStudentLogDirectWrite_('create');
+            return {
+              ok: true,
+              directFirebase: true,
+              savedLog: {
+                rowNumber: logId,
+                clientRequestId: clientRequestId || '',
+                studentId: payload.studentId,
+                studentName: payload.studentName,
+                content: payload.content,
+                tags: normalizedTags,
+                createdById: payload.createdById,
+                createdByName: payload.createdByName,
+                createdByRole: payload.createdByRole,
+                createdAt: payload.createdAt,
+                reactions: []
+              },
+              message: '상담/관리 기록이 저장되었습니다.'
+            };
+          });
+        });
+      }
+
+      function saveStudentLogEntry_(studentId, content, tags, authorInstructorId, clientRequestId) {
+        if (isFirebaseDirectFeatureEnabled_('logCreateWrite')) {
+          return saveStudentLogEntryViaFirebaseDirect_(studentId, content, tags, authorInstructorId, clientRequestId).catch(function(error) {
+            if (window.console && console.warn) {
+              console.warn('Firebase direct log create fallback:', error);
+            }
+            return apiRequest('addStudentLog', {
+              token: APP_STATE.token,
+              studentId: studentId,
+              content: content,
+              tags: JSON.stringify(tags),
+              authorInstructorId: authorInstructorId,
+              clientRequestId: clientRequestId
+            });
+          });
+        }
+        return apiRequest('addStudentLog', {
+          token: APP_STATE.token,
+          studentId: studentId,
+          content: content,
+          tags: JSON.stringify(tags),
+          authorInstructorId: authorInstructorId,
+          clientRequestId: clientRequestId
+        });
+      }
+
       function saveStudentLogReactionViaFirebaseDirect_(rowKey, reaction) {
         if (!isFirebaseStudentLogId_(rowKey)) {
           return Promise.reject(new Error('Firestore 기록 ID가 아닙니다.'));
@@ -15154,6 +15245,48 @@
           token: APP_STATE.token,
           logRowNumber: rowKey,
           reaction: reaction
+        });
+      }
+
+      function deleteStudentLogViaFirebaseDirect_(rowKey) {
+        if (!isFirebaseStudentLogId_(rowKey)) {
+          return Promise.reject(new Error('Firestore 기록 ID가 아닙니다.'));
+        }
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('logDeleteWrite')) {
+            throw new Error('Firebase 직접 기록 삭제가 비활성화되어 있습니다.');
+          }
+          var targetLog = findStudentLogByRowKey_(rowKey) || {};
+          var collectionName = (state.collections && state.collections.studentLogs) || 'studentLogs';
+          return state.firestore.collection(collectionName).doc(String(rowKey)).delete().then(function() {
+            notifyStudentLogDirectWrite_('delete');
+            return {
+              ok: true,
+              directFirebase: true,
+              deletedLogRowNumber: String(rowKey),
+              deletedStudentId: targetLog.studentId || '',
+              message: '상담/관리 기록이 삭제되었습니다.'
+            };
+          });
+        });
+      }
+
+      function deleteStudentLog_(rowKey) {
+        if (isFirebaseDirectFeatureEnabled_('logDeleteWrite') && isFirebaseStudentLogId_(rowKey)) {
+          return deleteStudentLogViaFirebaseDirect_(rowKey).catch(function(error) {
+            if (window.console && console.warn) {
+              console.warn('Firebase direct log delete fallback:', error);
+            }
+            return apiRequest('deleteStudentLog', {
+              token: APP_STATE.token,
+              logRowNumber: rowKey
+            });
+          });
+        }
+        return apiRequest('deleteStudentLog', {
+          token: APP_STATE.token,
+          logRowNumber: rowKey
         });
       }
 
@@ -18839,12 +18972,7 @@
         }
 
         setLoading('티칭로그를 저장하는 중입니다.');
-        apiRequest('addStudentLog', {
-          token: APP_STATE.token,
-          studentId: studentId,
-          content: content,
-          tags: JSON.stringify(tags)
-        })
+        saveStudentLogEntry_(studentId, content, tags, '', '')
           .then(function(result) {
             return applyStudentLogSaveResult_(result);
           })
@@ -19127,14 +19255,7 @@
 
         setStudentLogFormSaving_(form, true);
         setNotice('상담/관리 기록을 저장하는 중입니다.', 'info');
-        apiRequest('addStudentLog', {
-          token: APP_STATE.token,
-          studentId: studentId,
-          content: content,
-          tags: JSON.stringify([tag]),
-          authorInstructorId: authorInstructorId,
-          clientRequestId: clientRequestId
-        })
+        saveStudentLogEntry_(studentId, content, [tag], authorInstructorId, clientRequestId)
           .then(function(result) {
             return applyStudentLogSaveResult_(result);
           })
@@ -19228,10 +19349,7 @@
           renderStudentDetailModal_();
         }
         setNotice('상담/관리 기록을 삭제하는 중입니다.', 'info');
-        apiRequest('deleteStudentLog', {
-          token: APP_STATE.token,
-          logRowNumber: logRowNumber
-        })
+        deleteStudentLog_(logRowNumber)
           .then(function(result) {
             if (!(result && result.deletedLogRowNumber)) {
               hydrateStudentDataOnly(result);
@@ -20981,18 +21099,23 @@
       function renderSystemSettings_(status) {
         var flags = status && status.featureFlags ? status.featureFlags : {};
         var reactionEnabled = Boolean(flags.logReactionWrite);
+        var createEnabled = Boolean(flags.logCreateWrite);
+        var deleteEnabled = Boolean(flags.logDeleteWrite);
+        var logWriteEnabled = Boolean(reactionEnabled && createEnabled && deleteEnabled);
         var canEnable = Boolean(status && status.directClientReady);
         var blockedReason = canEnable
           ? ''
-          : 'Firebase 직접 반응 저장을 켜려면 웹 API 키와 클라이언트 도메인 설정이 필요합니다. 현재는 기존 Apps Script 저장 방식이 유지됩니다.';
+          : 'Firebase 직접 저장을 켜려면 웹 API 키와 클라이언트 도메인 설정이 필요합니다. 현재는 기존 Apps Script 저장 방식이 유지됩니다.';
         var html = [
-          '<div class="hint-box">이번 단계에서는 상담/관리 기록의 반응 입력만 Firebase 직접 저장으로 전환합니다. 기록 작성/삭제와 목록 조회는 기존 저장 방식을 유지합니다.</div>',
+          '<div class="hint-box">상담/관리 기록의 입력, 삭제, 반응을 Firebase 직접 저장으로 전환합니다. 목록 조회와 초기 학생 데이터는 아직 기존 동기화 경로를 유지합니다.</div>',
           '<div class="system-settings-grid">',
           renderSystemSettingsItem_('Firestore 서버 경로', status && status.firestoreEnabled ? '사용 가능' : '비활성 또는 미확인', Boolean(status && status.firestoreEnabled)),
           renderSystemSettingsItem_('Firebase 클라이언트', canEnable ? '설정 완료' : '설정 필요', canEnable),
           renderSystemSettingsItem_('웹 API 키', status && status.hasWebApiKey ? '등록됨' : '미등록', Boolean(status && status.hasWebApiKey)),
           renderSystemSettingsItem_('서비스 계정', status && status.hasServiceAccount ? '등록됨' : '미등록', Boolean(status && status.hasServiceAccount)),
           renderSystemSettingsItem_('프로젝트', status && status.projectId ? status.projectId : '-', Boolean(status && status.projectId)),
+          renderSystemSettingsItem_('기록 입력 직접 저장', createEnabled ? '켜짐' : '꺼짐', createEnabled),
+          renderSystemSettingsItem_('기록 삭제 직접 저장', deleteEnabled ? '켜짐' : '꺼짐', deleteEnabled),
           renderSystemSettingsItem_('반응 직접 저장', reactionEnabled ? '켜짐' : '꺼짐', reactionEnabled),
           '</div>',
           blockedReason ? '<div class="hint-box">' + escapeHtml(blockedReason) + '</div>' : '',
@@ -21014,9 +21137,9 @@
           '</div>',
           '<div class="system-settings-actions">',
           '<button type="button" class="mini-button" data-system-settings-action="refresh"><i data-lucide="refresh-cw"></i>상태 새로고침</button>',
-          reactionEnabled
-            ? '<button type="button" class="mini-button" data-system-settings-action="disable-reaction"><i data-lucide="power"></i>반응 직접 저장 끄기</button>'
-            : '<button type="button" class="button-primary" data-system-settings-action="enable-reaction"' + (canEnable ? '' : ' disabled') + '><i data-lucide="zap"></i>반응 직접 저장 켜기</button>',
+          logWriteEnabled
+            ? '<button type="button" class="mini-button" data-system-settings-action="disable-reaction"><i data-lucide="power"></i>기록 직접 저장 끄기</button>'
+            : '<button type="button" class="button-primary" data-system-settings-action="enable-reaction"' + (canEnable ? '' : ' disabled') + '><i data-lucide="zap"></i>기록 직접 저장 켜기</button>',
           '</div>'
         ].join('');
         document.getElementById('systemSettingsContent').innerHTML = html;
@@ -21060,7 +21183,7 @@
       }
 
       function updateFirebaseDirectReactionWrite_(enabled) {
-        setLoading(enabled ? '반응 직접 저장을 켜는 중입니다.' : '반응 직접 저장을 끄는 중입니다.', true);
+        setLoading(enabled ? '기록 직접 저장을 켜는 중입니다.' : '기록 직접 저장을 끄는 중입니다.', true);
         apiRequest('setFirebaseDirectReactionWrite', {
           token: APP_STATE.token,
           enabled: enabled ? 'true' : 'false'
