@@ -14970,6 +14970,17 @@
         return state.sdkLoadPromise;
       }
 
+      function isFirebaseDirectAuthReusable_(state) {
+        if (!state || !state.enabled || !state.auth || !state.firestore || !APP_STATE.user) {
+          return false;
+        }
+        var currentUser = state.auth.currentUser || state.user || null;
+        if (!currentUser || !currentUser.uid) {
+          return false;
+        }
+        return String(currentUser.uid || '') === String(APP_STATE.user.userId || '');
+      }
+
       function prepareFirebaseDirectAuth_(options) {
         var config = options || {};
         if (!APP_STATE.token) {
@@ -14977,6 +14988,11 @@
         }
         var requestedToken = APP_STATE.token;
         var currentState = APP_STATE.firebaseDirect || {};
+        if (isFirebaseDirectAuthReusable_(currentState)) {
+          currentState.user = currentState.auth.currentUser || currentState.user;
+          currentState.customToken = '';
+          return Promise.resolve(currentState);
+        }
         if (currentState.authPromise) {
           return currentState.authPromise;
         }
