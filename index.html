@@ -13819,7 +13819,8 @@
         logRead: false,
         logReactionWrite: false,
         logCreateWrite: false,
-        logDeleteWrite: false
+        logDeleteWrite: false,
+        dashboardRead: false
       };
       const LOG_TAG_OPTIONS = [
         '수업현황',
@@ -13924,6 +13925,7 @@
           customToken: '',
           featureFlags: Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS),
           collections: {},
+          dashboardSnapshotDocId: '',
           app: null,
           auth: null,
           firestore: null,
@@ -14782,6 +14784,7 @@
         if (config.useStagedLoading && !APP_STATE.visibleStudents.length) {
           APP_STATE.studentDataLoading = true;
           renderStudents();
+          loadDashboardSnapshotViaFirebaseDirect_();
         }
 
         return apiRequest('getStudents', { token: APP_STATE.token })
@@ -14885,6 +14888,7 @@
           customToken: authData && authData.customToken ? authData.customToken : '',
           featureFlags: Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, authData && authData.featureFlags ? authData.featureFlags : {}),
           collections: authData && authData.collections ? authData.collections : {},
+          dashboardSnapshotDocId: authData && authData.dashboardSnapshotDocId ? authData.dashboardSnapshotDocId : '',
           app: previous.app || null,
           auth: previous.auth || null,
           firestore: previous.firestore || null,
@@ -14907,6 +14911,7 @@
           customToken: '',
           featureFlags: Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS),
           collections: {},
+          dashboardSnapshotDocId: '',
           app: null,
           auth: null,
           firestore: null,
@@ -15027,6 +15032,55 @@
           });
         APP_STATE.firebaseDirect.authPromise = currentState.authPromise;
         return currentState.authPromise;
+      }
+
+      function loadDashboardSnapshotViaFirebaseDirect_() {
+        if (!APP_STATE.token || !APP_STATE.user || !APP_STATE.user.userId) {
+          return Promise.resolve(false);
+        }
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('dashboardRead') || !state.dashboardSnapshotDocId) {
+            return false;
+          }
+          var collectionName = (state.collections && state.collections.dashboardSnapshots) || 'dashboardSnapshots';
+          return state.firestore.collection(collectionName).doc(String(state.dashboardSnapshotDocId)).get().then(function(doc) {
+            if (!doc.exists) {
+              return false;
+            }
+            var data = doc.data() || {};
+            var snapshotText = data.snapshotJson || '';
+            if (!snapshotText) {
+              return false;
+            }
+            var snapshot = JSON.parse(String(snapshotText));
+            if (!snapshot || snapshot.userId !== APP_STATE.user.userId || !snapshot.studentData) {
+              return false;
+            }
+            var storedAt = Number(snapshot.storedAt || data.updatedAtMs || 0);
+            if (storedAt && Date.now() - storedAt > DASHBOARD_CACHE_MAX_AGE_MS) {
+              return false;
+            }
+            hydrateStudentDataOnly(snapshot.studentData);
+            APP_STATE.studentDataLoading = false;
+            renderUserSummary();
+            renderStats();
+            renderStudents();
+            renderHomeroomView();
+            renderPermissionView();
+            renderJikboView();
+            switchView(APP_STATE.currentView);
+            showAppOnly();
+            writeDashboardSnapshot_();
+            setNotice('저장된 실시간 스냅샷을 먼저 표시하고 최신 데이터를 동기화합니다.', 'success');
+            return true;
+          });
+        }).catch(function(error) {
+          if (window.console && console.warn) {
+            console.warn('Firebase dashboard snapshot fallback:', error);
+          }
+          return false;
+        });
       }
 
       function isFirebaseDirectFeatureEnabled_(featureName) {
@@ -21101,6 +21155,7 @@
         var reactionEnabled = Boolean(flags.logReactionWrite);
         var createEnabled = Boolean(flags.logCreateWrite);
         var deleteEnabled = Boolean(flags.logDeleteWrite);
+        var dashboardReadEnabled = Boolean(flags.dashboardRead);
         var logWriteEnabled = Boolean(reactionEnabled && createEnabled && deleteEnabled);
         var canEnable = Boolean(status && status.directClientReady);
         var blockedReason = canEnable
@@ -21117,6 +21172,7 @@
           renderSystemSettingsItem_('기록 입력 직접 저장', createEnabled ? '켜짐' : '꺼짐', createEnabled),
           renderSystemSettingsItem_('기록 삭제 직접 저장', deleteEnabled ? '켜짐' : '꺼짐', deleteEnabled),
           renderSystemSettingsItem_('반응 직접 저장', reactionEnabled ? '켜짐' : '꺼짐', reactionEnabled),
+          renderSystemSettingsItem_('초기 스냅샷 직접 읽기', dashboardReadEnabled ? '켜짐' : '꺼짐', dashboardReadEnabled),
           '</div>',
           blockedReason ? '<div class="hint-box">' + escapeHtml(blockedReason) + '</div>' : '',
           '<div class="system-settings-form">',
