@@ -15048,6 +15048,10 @@
         return window.btoa(binary).replace(/=+$/g, '').replace(/\+/g, '-').replace(/\//g, '_');
       }
 
+      function normalizeRole(value) {
+        return String(value || '').trim().toUpperCase();
+      }
+
       function buildFirebaseDashboardSnapshotDocId_() {
         var user = APP_STATE.user || {};
         var role = normalizeRole(user.role) || 'USER';
