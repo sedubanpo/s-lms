@@ -983,46 +983,11 @@
       }
 
       #globalNoticeWrap {
-        display: grid;
-        width: 100%;
-        max-width: 1800px;
-        margin: 0 auto 14px;
-        box-sizing: border-box;
-      }
-
-      #globalNoticeWrap.global-notice-empty-wrap {
         display: none;
       }
 
-      #globalNoticeWrap.notice-layout-grade {
-        grid-template-columns: 250px minmax(0, 1fr) 270px;
-        gap: 18px;
-      }
-
-      #globalNoticeWrap.notice-layout-grade .global-notice-card {
-        grid-column: 2;
-      }
-
-      #globalNoticeWrap.notice-layout-student-summary {
-        grid-template-columns: minmax(760px, 1.35fr) minmax(430px, 0.85fr);
-        gap: 14px;
-      }
-
-      #globalNoticeWrap.notice-layout-student-summary .global-notice-card {
-        grid-column: 1;
-      }
-
-      #globalNoticeWrap.notice-layout-materials {
-        grid-template-columns: 260px minmax(0, 1fr) 320px;
-        gap: 12px;
-      }
-
-      #globalNoticeWrap.notice-layout-materials .global-notice-card {
-        grid-column: 2;
-      }
-
-      #globalNoticeWrap.notice-layout-full .global-notice-card {
-        grid-column: 1;
+      .global-notice-inline {
+        margin-bottom: 12px;
       }
 
       .global-notice-card {
@@ -1034,39 +999,30 @@
         width: 100%;
         box-sizing: border-box;
         margin: 0;
-        min-height: 64px;
-        padding: 13px 14px 13px 16px;
+        min-height: 58px;
+        padding: 12px;
         overflow: hidden;
-        border: 1px solid #bcd1f4;
+        border: 1px solid #dbe5f3;
         border-radius: 8px;
-        background: linear-gradient(135deg, #f8fbff 0%, #eef5ff 58%, #f7fbff 100%);
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
-      }
-
-      .global-notice-card::before {
-        content: '';
-        position: absolute;
-        inset: 0 auto 0 0;
-        width: 5px;
-        background: #155bd8;
+        background: #ffffff;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
       }
 
       .global-notice-icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 38px;
-        height: 38px;
+        width: 34px;
+        height: 34px;
         border-radius: 8px;
-        background: #ffffff;
+        background: #eef5ff;
         color: #155bd8;
-        border: 1px solid #c8d8f2;
-        box-shadow: 0 6px 14px rgba(21, 91, 216, 0.12);
+        border: 1px solid #d7e5fb;
       }
 
       .global-notice-icon svg {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
       }
 
       .global-notice-body {
@@ -1086,7 +1042,7 @@
 
       .global-notice-content {
         color: #111827;
-        font-size: 0.98rem;
+        font-size: 0.9rem;
         font-weight: 800;
         line-height: 1.42;
         white-space: pre-wrap;
@@ -1109,8 +1065,8 @@
         padding: 0 12px;
         border-radius: 8px;
         box-shadow: none;
-        background: rgba(255, 255, 255, 0.82);
-        border: 1px solid #c8d8f2;
+        background: #ffffff;
+        border: 1px solid #d7e5fb;
       }
 
       .global-notice-form {
@@ -9688,16 +9644,6 @@
       }
 
       @media (max-width: 1180px) {
-        #globalNoticeWrap.notice-layout-student-summary,
-        #globalNoticeWrap.notice-layout-materials {
-          grid-template-columns: 1fr;
-        }
-
-        #globalNoticeWrap.notice-layout-student-summary .global-notice-card,
-        #globalNoticeWrap.notice-layout-materials .global-notice-card {
-          grid-column: 1;
-        }
-
         .search-layout,
         .split-grid,
         .compact-control-bar,
@@ -12465,10 +12411,6 @@
       }
 
       @media (max-width: 1500px) {
-        #globalNoticeWrap.notice-layout-grade {
-          grid-template-columns: 220px minmax(0, 1fr);
-        }
-
         .grades-v3-shell {
           grid-template-columns: 220px minmax(0, 1fr);
         }
@@ -12481,14 +12423,6 @@
       }
 
       @media (max-width: 1100px) {
-        #globalNoticeWrap.notice-layout-grade {
-          grid-template-columns: 1fr;
-        }
-
-        #globalNoticeWrap.notice-layout-grade .global-notice-card {
-          grid-column: 1;
-        }
-
         .grades-v3-shell {
           grid-template-columns: 1fr;
         }
@@ -13147,10 +13081,6 @@
           grid-template-columns: auto 1fr;
         }
 
-        #globalNoticeWrap {
-          max-width: none;
-        }
-
         .global-notice-card > .mini-button {
           grid-column: 1 / -1;
           justify-self: stretch;
@@ -13754,6 +13684,7 @@
           </section>
 
           <section class="material-library">
+            <div id="materialsNoticeWrap"></div>
             <div id="materialsSummaryWrap" class="material-summary-strip"></div>
             <div id="materialsOpenLogWrap" class="material-open-log-host hidden"></div>
             <section class="material-console">
@@ -14017,7 +13948,8 @@
         logReactionWrite: false,
         logCreateWrite: false,
         logDeleteWrite: false,
-        dashboardRead: false
+        dashboardRead: false,
+        globalNoticeWrite: false
       };
       const LOG_TAG_OPTIONS = [
         '수업현황',
@@ -14373,7 +14305,7 @@
         document.getElementById('settingsButton').addEventListener('click', openSystemSettingsModal_);
         document.getElementById('quickAddStudentButton').addEventListener('click', handleQuickAddStudentOpen);
         document.getElementById('materialOpenLogsButton').addEventListener('click', handleMaterialOpenLogButtonClick_);
-        document.getElementById('globalNoticeWrap').addEventListener('click', handleGlobalNoticeClick_);
+        document.getElementById('appScreen').addEventListener('click', handleGlobalNoticeClick_);
         document.getElementById('openPermissionModalButton').addEventListener('click', function() {
           if (!APP_STATE.isAdmin) {
             setNotice('권한 관리 메뉴는 관리자만 사용할 수 있습니다.', 'warning');
@@ -14989,20 +14921,30 @@
         if (!wrap) {
           return;
         }
-        wrap.className = getGlobalNoticeLayoutClass_();
+        wrap.className = '';
+        wrap.innerHTML = '';
+        if (APP_STATE.currentView === 'grades') {
+          renderGrades();
+        } else if (APP_STATE.currentView === 'students') {
+          renderStudentsPreservingSearchFocus_();
+        } else if (APP_STATE.currentView === 'materials') {
+          renderMaterials();
+        }
+      }
+
+      function renderGlobalNoticeCardHtml_() {
         var notice = APP_STATE.globalNotice || {};
         var content = String(notice.content || '').trim();
         if (!content && !APP_STATE.isAdmin) {
-          wrap.className = 'global-notice-empty-wrap';
-          wrap.innerHTML = '';
-          return;
+          return '';
         }
         var editing = APP_STATE.globalNoticeEditing && APP_STATE.isAdmin;
         var meta = [notice.updatedByName, formatGradeDateTime_(notice.updatedAt || '')].filter(Boolean).join(' · ');
         var body = content
           ? '<div class="global-notice-content">' + escapeHtml(content) + '</div>'
           : '<div class="global-notice-content global-notice-empty">공지사항을 입력해 주세요.</div>';
-        wrap.innerHTML = [
+        return [
+          '<div class="global-notice-inline">',
           '<section class="global-notice-card" aria-label="전역 공지사항">',
           '  <span class="global-notice-icon"><i data-lucide="megaphone"></i></span>',
           '  <div class="global-notice-body">',
@@ -15012,22 +14954,9 @@
           '  </div>',
              APP_STATE.isAdmin && !editing ? '<button type="button" class="mini-button" data-global-notice-action="edit"><i data-lucide="edit-3"></i> 수정</button>' : '',
              editing ? renderGlobalNoticeForm_() : '',
-          '</section>'
+          '</section>',
+          '</div>'
         ].join('');
-        renderLucideIcons_();
-      }
-
-      function getGlobalNoticeLayoutClass_() {
-        if (APP_STATE.currentView === 'grades') {
-          return 'notice-layout-grade';
-        }
-        if (APP_STATE.currentView === 'students' && (APP_STATE.studentViewMode || 'summary') === 'summary') {
-          return 'notice-layout-student-summary';
-        }
-        if (APP_STATE.currentView === 'materials') {
-          return 'notice-layout-materials';
-        }
-        return 'notice-layout-full';
       }
 
       function renderGlobalNoticeForm_() {
@@ -15076,21 +15005,35 @@
         renderGlobalNoticeCard_();
         saveGlobalNoticeViaFirebaseDirect_(content).catch(function(firebaseError) {
           if (window.console && console.warn) {
-            console.warn('Global notice Firebase save fallback:', firebaseError);
+            console.warn('Global notice Firebase save unavailable:', firebaseError);
           }
-          return apiRequest('saveGlobalNotice', {
-            token: APP_STATE.token,
-            content: content
-          });
+          return saveGlobalNoticeLocally_(content);
         }).then(function(result) {
           hydrateGlobalNotice_(result.globalNotice);
           APP_STATE.globalNoticeEditing = false;
-          setNotice(result.message || '공지사항이 저장되었습니다.', 'success');
+          setNotice(result.message || '공지사항이 저장되었습니다.', result.localOnly ? 'warning' : 'success');
           renderGlobalNoticeCard_();
           writeDashboardSnapshot_();
         }).catch(handleApiError_).finally(function() {
           APP_STATE.globalNoticeSaving = false;
           renderGlobalNoticeCard_();
+        });
+      }
+
+      function saveGlobalNoticeLocally_(content) {
+        var now = new Date();
+        var notice = {
+          content: String(content || ''),
+          updatedByName: APP_STATE.user && APP_STATE.user.name ? APP_STATE.user.name : '현재 사용자',
+          updatedAt: now.toISOString()
+        };
+        APP_STATE.globalNotice = notice;
+        writeDashboardSnapshot_();
+        return Promise.resolve({
+          ok: true,
+          localOnly: true,
+          globalNotice: notice,
+          message: '공지사항을 현재 화면에 반영했습니다. 서버 공지 저장 경로는 배포 확인이 필요합니다.'
         });
       }
 
@@ -15452,7 +15395,7 @@
           var nextState = APP_STATE.firebaseDirect || {};
           nextState.enabled = true;
           nextState.config = nextState.config || FIREBASE_DIRECT_BOOTSTRAP_CONFIG;
-          nextState.featureFlags = Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, nextState.featureFlags || {}, { dashboardRead: true });
+          nextState.featureFlags = Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, nextState.featureFlags || {}, { dashboardRead: true, globalNoticeWrite: true });
           nextState.collections = Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, nextState.collections || {});
           nextState.dashboardSnapshotDocId = nextState.dashboardSnapshotDocId || buildFirebaseDashboardSnapshotDocId_();
           nextState.app = app;
@@ -15692,7 +15635,7 @@
         }
         return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
           state = state || APP_STATE.firebaseDirect || {};
-          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('dashboardRead')) {
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('globalNoticeWrite')) {
             throw new Error('Firebase 공지 저장 경로가 준비되지 않았습니다.');
           }
           var now = new Date();
@@ -16797,18 +16740,21 @@
         }
         if (mode === 'school') {
           return [
+            renderGlobalNoticeCardHtml_(),
             renderScopeBanner_(allScopedStudents),
             renderSchoolMode_(students)
           ].join('');
         }
         if (mode === 'list') {
           return [
+            renderGlobalNoticeCardHtml_(),
             renderScopeBanner_(allScopedStudents),
             renderInsightBand_(allScopedStudents),
             renderStudentLogListMode_(students, emptyHtml)
           ].join('');
         }
         return [
+          renderGlobalNoticeCardHtml_(),
           renderScopeBanner_(allScopedStudents),
           renderInsightBand_(allScopedStudents),
           mode === 'permission' ? renderPermissionMode_(students) : '',
@@ -25346,6 +25292,10 @@
         renderMaterialSchoolTabs_();
         renderMaterialYearTabs_();
         syncMaterialCreatePanel_();
+        var noticeWrap = document.getElementById('materialsNoticeWrap');
+        if (noticeWrap) {
+          noticeWrap.innerHTML = renderGlobalNoticeCardHtml_();
+        }
 
         var filterState = getCurrentMaterialFilterState_();
         var school = filterState.school;
@@ -25369,6 +25319,7 @@
           document.getElementById('materialsOpenLogWrap').classList.add('hidden');
           document.getElementById('materialsSummaryWrap').innerHTML = '';
           wrap.innerHTML = renderMaterialsLoadingCard_();
+          renderLucideIcons_();
           return;
         }
 
@@ -25381,6 +25332,7 @@
         document.getElementById('materialsCoverageWrap').innerHTML = '';
         if (!groupedSource.length) {
           wrap.innerHTML = renderMaterialLibraryLayout_([], '<div class="empty-state">검색 조건에 맞는 자료가 없습니다.</div>');
+          renderLucideIcons_();
           return;
         }
 
@@ -28276,7 +28228,69 @@
         return Math.min.apply(null, levels);
       }
 
+      function getGradeUpdatedTime_(record) {
+        var candidates = [
+          record && record.updatedAtMs,
+          record && record.createdAtMs,
+          record && record.updatedAt,
+          record && record.createdAt
+        ];
+        for (var i = 0; i < candidates.length; i += 1) {
+          var parsed = parseGradeDateValue_(candidates[i]);
+          if (parsed > 0) {
+            return parsed;
+          }
+        }
+        return 0;
+      }
+
+      function parseGradeDateValue_(value) {
+        if (typeof value === 'number' && isFinite(value)) {
+          return value;
+        }
+        var text = String(value || '').trim();
+        if (!text) {
+          return 0;
+        }
+        if (/^\d+$/.test(text)) {
+          return Number(text);
+        }
+        var parsed = new Date(text);
+        if (!isNaN(parsed.getTime())) {
+          return parsed.getTime();
+        }
+        var ko = text.match(/(\d{2,4})년\s*(\d{1,2})월\s*(\d{1,2})일(?:\s*(오전|오후))?\s*(\d{1,2})?시?\s*(\d{1,2})?분?/);
+        if (ko) {
+          var year = Number(ko[1]);
+          if (year < 100) {
+            year += 2000;
+          }
+          var hour = Number(ko[5] || 0);
+          var minute = Number(ko[6] || 0);
+          if (ko[4] === '오후' && hour < 12) {
+            hour += 12;
+          }
+          if (ko[4] === '오전' && hour === 12) {
+            hour = 0;
+          }
+          return new Date(year, Number(ko[2]) - 1, Number(ko[3]), hour, minute).getTime();
+        }
+        var slash = text.match(/(\d{2,4})[-/.](\d{1,2})[-/.](\d{1,2})(?:\s+(\d{1,2}):(\d{2}))?/);
+        if (slash) {
+          var slashYear = Number(slash[1]);
+          if (slashYear < 100) {
+            slashYear += 2000;
+          }
+          return new Date(slashYear, Number(slash[2]) - 1, Number(slash[3]), Number(slash[4] || 0), Number(slash[5] || 0)).getTime();
+        }
+        return 0;
+      }
+
       function sortGradesByUpdatedDesc_(a, b) {
+        var timeCompare = getGradeUpdatedTime_(b) - getGradeUpdatedTime_(a);
+        if (timeCompare !== 0) {
+          return timeCompare;
+        }
         return String(b.updatedAt || b.createdAt || '').localeCompare(String(a.updatedAt || a.createdAt || ''));
       }
 
@@ -30364,7 +30378,12 @@
           APP_STATE.gradeDrafts = {};
           APP_STATE.gradeRowMessages = {};
           APP_STATE.gradeSavingMap = {};
+          APP_STATE.gradeHistoryLoaded = false;
+          APP_STATE.gradeHistory = [];
           setNotice(successMessage || '성적을 저장했습니다.', 'success');
+          if (APP_STATE.gradeTab === 'history') {
+            ensureGradeHistoryLoaded_(true);
+          }
         }).catch(handleApiError_).finally(function() {
           APP_STATE.gradeSavingMap = {};
           renderGrades();
@@ -30479,6 +30498,7 @@
           '<div class="grades-v3-shell ' + escapeAttribute(getGradeThemeClass_()) + '">',
           renderGradeV3LeftRail_(),
           '<div class="grades-v3-main">',
+          renderGlobalNoticeCardHtml_(),
           renderGradeV3Hero_(),
           renderGradeV3Tabs_(),
           renderGradeV3MainCard_(),
@@ -30491,6 +30511,7 @@
       function renderGradeMobileShell_() {
         return [
           '<div class="grades-mobile-shell ' + escapeAttribute(getGradeThemeClass_()) + '">',
+          renderGlobalNoticeCardHtml_(),
           renderGradeMobileHero_(),
           renderGradeV3Tabs_(),
           renderGradeMobileMainCard_(),
