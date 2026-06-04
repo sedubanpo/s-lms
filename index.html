@@ -13815,6 +13815,16 @@
       const DASHBOARD_CACHE_KEY = 'slms_dashboard_snapshot';
       const DASHBOARD_CACHE_MAX_AGE_MS = 1000 * 60 * 60 * 24;
       const LOGIN_ID_STORAGE_KEY = 'slms_saved_login_id';
+      const FIREBASE_DIRECT_BOOTSTRAP_CONFIG = {
+        apiKey: 'AIzaSyCFM21ZxgwIYwmjRPaAOp5bL9Kprqiyppg',
+        authDomain: 'fir-lms-prod.firebaseapp.com',
+        projectId: 'fir-lms-prod'
+      };
+      const FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS = {
+        studentLogs: 'studentLogs',
+        permissions: 'studentPermissions',
+        dashboardSnapshots: 'dashboardSnapshots'
+      };
       const FIREBASE_DIRECT_DEFAULT_FLAGS = {
         logRead: false,
         logReactionWrite: false,
@@ -14147,7 +14157,7 @@
             showAppOnly();
             setNotice('저장된 화면이 없어 학생 데이터를 불러오는 중입니다.', 'info');
           }
-          prepareFirebaseDirectAuth_({ silent: true });
+          initializeFirebaseDirectBootstrapState_();
           loadDashboard({ useStagedLoading: true, silent: true });
           return;
         }
@@ -14747,7 +14757,7 @@
                 : '로그인되었습니다. 학생 데이터를 불러오는 중입니다.',
               hasSnapshot ? 'success' : 'info'
             );
-            prepareFirebaseDirectAuth_({ silent: true });
+            initializeFirebaseDirectBootstrapState_();
             loadDashboard({ useStagedLoading: true, silent: true });
             return null;
           })
@@ -14784,7 +14794,7 @@
         if (config.useStagedLoading && !APP_STATE.visibleStudents.length) {
           APP_STATE.studentDataLoading = true;
           renderStudents();
-          loadDashboardSnapshotViaFirebaseDirect_();
+          loadDashboardSnapshotViaFirebaseDirect_({ bootstrapOnly: true });
         }
 
         return apiRequest('getStudents', { token: APP_STATE.token })
@@ -14981,6 +14991,109 @@
         return String(currentUser.uid || '') === String(APP_STATE.user.userId || '');
       }
 
+      function firebaseDirectBase64UrlEncode_(value) {
+        var text = String(value || '');
+        var binary = '';
+        if (window.TextEncoder) {
+          var bytes = new TextEncoder().encode(text);
+          for (var i = 0; i < bytes.length; i += 1) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+        } else {
+          binary = unescape(encodeURIComponent(text));
+        }
+        return window.btoa(binary).replace(/=+$/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+      }
+
+      function buildFirebaseDashboardSnapshotDocId_() {
+        var user = APP_STATE.user || {};
+        var role = normalizeRole(user.role) || 'USER';
+        var userId = String(user.userId || '').trim() || 'unknown';
+        return 'DASH-' + firebaseDirectBase64UrlEncode_([role, userId].join('|'));
+      }
+
+      function waitForFirebaseCurrentUser_(auth, timeoutMs) {
+        if (!auth || auth.currentUser) {
+          return Promise.resolve(auth ? auth.currentUser : null);
+        }
+        return new Promise(function(resolve) {
+          var settled = false;
+          var unsubscribe = null;
+          var timer = window.setTimeout(function() {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            if (typeof unsubscribe === 'function') {
+              unsubscribe();
+            }
+            resolve(auth.currentUser || null);
+          }, timeoutMs || 1200);
+          unsubscribe = auth.onAuthStateChanged(function(user) {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            window.clearTimeout(timer);
+            if (typeof unsubscribe === 'function') {
+              unsubscribe();
+            }
+            resolve(user || auth.currentUser || null);
+          }, function() {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            window.clearTimeout(timer);
+            if (typeof unsubscribe === 'function') {
+              unsubscribe();
+            }
+            resolve(null);
+          });
+        });
+      }
+
+      function initializeFirebaseDirectBootstrapState_() {
+        if (!APP_STATE.token || !APP_STATE.user || !APP_STATE.user.userId) {
+          return Promise.resolve(APP_STATE.firebaseDirect || null);
+        }
+        var currentState = APP_STATE.firebaseDirect || {};
+        if (isFirebaseDirectAuthReusable_(currentState)) {
+          return Promise.resolve(currentState);
+        }
+        return loadFirebaseDirectSdk_().then(function() {
+          var appName = 'slms-direct';
+          var app = null;
+          try {
+            app = window.firebase.app(appName);
+          } catch (error) {
+            app = window.firebase.initializeApp(FIREBASE_DIRECT_BOOTSTRAP_CONFIG, appName);
+          }
+          var nextState = APP_STATE.firebaseDirect || {};
+          nextState.enabled = true;
+          nextState.config = nextState.config || FIREBASE_DIRECT_BOOTSTRAP_CONFIG;
+          nextState.featureFlags = Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, nextState.featureFlags || {}, { dashboardRead: true });
+          nextState.collections = Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, nextState.collections || {});
+          nextState.dashboardSnapshotDocId = nextState.dashboardSnapshotDocId || buildFirebaseDashboardSnapshotDocId_();
+          nextState.app = app;
+          nextState.auth = app.auth();
+          nextState.firestore = app.firestore();
+          nextState.lastError = '';
+          APP_STATE.firebaseDirect = nextState;
+          return waitForFirebaseCurrentUser_(nextState.auth, 1200).then(function(user) {
+            if (user && String(user.uid || '') === String(APP_STATE.user.userId || '')) {
+              nextState.user = user;
+              nextState.customToken = '';
+            }
+            return nextState;
+          });
+        }).catch(function(error) {
+          var state = APP_STATE.firebaseDirect || {};
+          state.lastError = getErrorMessage(error);
+          return state;
+        });
+      }
+
       function prepareFirebaseDirectAuth_(options) {
         var config = options || {};
         if (!APP_STATE.token) {
@@ -15052,46 +15165,62 @@
         return currentState.authPromise;
       }
 
-      function loadDashboardSnapshotViaFirebaseDirect_() {
+      function readDashboardSnapshotFromFirebaseState_(state) {
+        state = state || APP_STATE.firebaseDirect || {};
+        if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('dashboardRead') || !state.dashboardSnapshotDocId) {
+          return Promise.resolve(false);
+        }
+        var collectionName = (state.collections && state.collections.dashboardSnapshots) || 'dashboardSnapshots';
+        return state.firestore.collection(collectionName).doc(String(state.dashboardSnapshotDocId)).get().then(function(doc) {
+          if (!doc.exists) {
+            return false;
+          }
+          var data = doc.data() || {};
+          var snapshotText = data.snapshotJson || '';
+          if (!snapshotText) {
+            return false;
+          }
+          var snapshot = JSON.parse(String(snapshotText));
+          if (!snapshot || snapshot.userId !== APP_STATE.user.userId || !snapshot.studentData) {
+            return false;
+          }
+          var storedAt = Number(snapshot.storedAt || data.updatedAtMs || 0);
+          if (storedAt && Date.now() - storedAt > DASHBOARD_CACHE_MAX_AGE_MS) {
+            return false;
+          }
+          hydrateStudentDataOnly(snapshot.studentData);
+          APP_STATE.studentDataLoading = false;
+          renderUserSummary();
+          renderStats();
+          renderStudents();
+          renderHomeroomView();
+          renderPermissionView();
+          renderJikboView();
+          switchView(APP_STATE.currentView);
+          showAppOnly();
+          writeDashboardSnapshot_();
+          setNotice('저장된 실시간 스냅샷을 먼저 표시하고 최신 데이터를 동기화합니다.', 'success');
+          return true;
+        });
+      }
+
+      function loadDashboardSnapshotViaFirebaseDirect_(options) {
+        var config = options || {};
         if (!APP_STATE.token || !APP_STATE.user || !APP_STATE.user.userId) {
           return Promise.resolve(false);
         }
-        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
-          state = state || APP_STATE.firebaseDirect || {};
-          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('dashboardRead') || !state.dashboardSnapshotDocId) {
+        return initializeFirebaseDirectBootstrapState_().then(function(state) {
+          if (isFirebaseDirectAuthReusable_(state)) {
+            return readDashboardSnapshotFromFirebaseState_(state);
+          }
+          if (config.bootstrapOnly) {
             return false;
           }
-          var collectionName = (state.collections && state.collections.dashboardSnapshots) || 'dashboardSnapshots';
-          return state.firestore.collection(collectionName).doc(String(state.dashboardSnapshotDocId)).get().then(function(doc) {
-            if (!doc.exists) {
+          return prepareFirebaseDirectAuth_({ silent: true }).then(function(authState) {
+            if (!isFirebaseDirectAuthReusable_(authState)) {
               return false;
             }
-            var data = doc.data() || {};
-            var snapshotText = data.snapshotJson || '';
-            if (!snapshotText) {
-              return false;
-            }
-            var snapshot = JSON.parse(String(snapshotText));
-            if (!snapshot || snapshot.userId !== APP_STATE.user.userId || !snapshot.studentData) {
-              return false;
-            }
-            var storedAt = Number(snapshot.storedAt || data.updatedAtMs || 0);
-            if (storedAt && Date.now() - storedAt > DASHBOARD_CACHE_MAX_AGE_MS) {
-              return false;
-            }
-            hydrateStudentDataOnly(snapshot.studentData);
-            APP_STATE.studentDataLoading = false;
-            renderUserSummary();
-            renderStats();
-            renderStudents();
-            renderHomeroomView();
-            renderPermissionView();
-            renderJikboView();
-            switchView(APP_STATE.currentView);
-            showAppOnly();
-            writeDashboardSnapshot_();
-            setNotice('저장된 실시간 스냅샷을 먼저 표시하고 최신 데이터를 동기화합니다.', 'success');
-            return true;
+            return readDashboardSnapshotFromFirebaseState_(authState);
           });
         }).catch(function(error) {
           if (window.console && console.warn) {
