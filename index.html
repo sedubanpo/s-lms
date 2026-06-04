@@ -982,6 +982,11 @@
         box-shadow: var(--shadow-xl);
       }
 
+      #globalNoticeWrap {
+        max-width: min(100%, 1100px);
+        margin: 0 auto;
+      }
+
       .global-notice-card {
         display: grid;
         grid-template-columns: auto 1fr auto;
@@ -13057,6 +13062,10 @@
 
         .global-notice-card {
           grid-template-columns: auto 1fr;
+        }
+
+        #globalNoticeWrap {
+          max-width: none;
         }
 
         .global-notice-card > .mini-button {
