@@ -983,12 +983,50 @@
       }
 
       #globalNoticeWrap {
-        width: min(100%, 1120px);
-        max-width: 1120px;
+        display: grid;
+        width: 100%;
+        max-width: 1800px;
         margin: 0 auto 14px;
+        box-sizing: border-box;
+      }
+
+      #globalNoticeWrap.global-notice-empty-wrap {
+        display: none;
+      }
+
+      #globalNoticeWrap.notice-layout-grade {
+        grid-template-columns: 250px minmax(0, 1fr) 270px;
+        gap: 18px;
+      }
+
+      #globalNoticeWrap.notice-layout-grade .global-notice-card {
+        grid-column: 2;
+      }
+
+      #globalNoticeWrap.notice-layout-student-summary {
+        grid-template-columns: minmax(760px, 1.35fr) minmax(430px, 0.85fr);
+        gap: 14px;
+      }
+
+      #globalNoticeWrap.notice-layout-student-summary .global-notice-card {
+        grid-column: 1;
+      }
+
+      #globalNoticeWrap.notice-layout-materials {
+        grid-template-columns: 260px minmax(0, 1fr) 320px;
+        gap: 12px;
+      }
+
+      #globalNoticeWrap.notice-layout-materials .global-notice-card {
+        grid-column: 2;
+      }
+
+      #globalNoticeWrap.notice-layout-full .global-notice-card {
+        grid-column: 1;
       }
 
       .global-notice-card {
+        position: relative;
         display: grid;
         grid-template-columns: auto 1fr auto;
         gap: 12px;
@@ -996,12 +1034,21 @@
         width: 100%;
         box-sizing: border-box;
         margin: 0;
-        padding: 12px 14px;
+        min-height: 64px;
+        padding: 13px 14px 13px 16px;
+        overflow: hidden;
         border: 1px solid #bcd1f4;
-        border-left: 4px solid #155bd8;
         border-radius: 8px;
         background: linear-gradient(135deg, #f8fbff 0%, #eef5ff 58%, #f7fbff 100%);
         box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
+      }
+
+      .global-notice-card::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 5px;
+        background: #155bd8;
       }
 
       .global-notice-icon {
@@ -1039,7 +1086,7 @@
 
       .global-notice-content {
         color: #111827;
-        font-size: 1rem;
+        font-size: 0.98rem;
         font-weight: 800;
         line-height: 1.42;
         white-space: pre-wrap;
@@ -9641,6 +9688,16 @@
       }
 
       @media (max-width: 1180px) {
+        #globalNoticeWrap.notice-layout-student-summary,
+        #globalNoticeWrap.notice-layout-materials {
+          grid-template-columns: 1fr;
+        }
+
+        #globalNoticeWrap.notice-layout-student-summary .global-notice-card,
+        #globalNoticeWrap.notice-layout-materials .global-notice-card {
+          grid-column: 1;
+        }
+
         .search-layout,
         .split-grid,
         .compact-control-bar,
@@ -12408,6 +12465,10 @@
       }
 
       @media (max-width: 1500px) {
+        #globalNoticeWrap.notice-layout-grade {
+          grid-template-columns: 220px minmax(0, 1fr);
+        }
+
         .grades-v3-shell {
           grid-template-columns: 220px minmax(0, 1fr);
         }
@@ -12420,6 +12481,14 @@
       }
 
       @media (max-width: 1100px) {
+        #globalNoticeWrap.notice-layout-grade {
+          grid-template-columns: 1fr;
+        }
+
+        #globalNoticeWrap.notice-layout-grade .global-notice-card {
+          grid-column: 1;
+        }
+
         .grades-v3-shell {
           grid-template-columns: 1fr;
         }
@@ -14920,9 +14989,11 @@
         if (!wrap) {
           return;
         }
+        wrap.className = getGlobalNoticeLayoutClass_();
         var notice = APP_STATE.globalNotice || {};
         var content = String(notice.content || '').trim();
         if (!content && !APP_STATE.isAdmin) {
+          wrap.className = 'global-notice-empty-wrap';
           wrap.innerHTML = '';
           return;
         }
@@ -14944,6 +15015,19 @@
           '</section>'
         ].join('');
         renderLucideIcons_();
+      }
+
+      function getGlobalNoticeLayoutClass_() {
+        if (APP_STATE.currentView === 'grades') {
+          return 'notice-layout-grade';
+        }
+        if (APP_STATE.currentView === 'students' && (APP_STATE.studentViewMode || 'summary') === 'summary') {
+          return 'notice-layout-student-summary';
+        }
+        if (APP_STATE.currentView === 'materials') {
+          return 'notice-layout-materials';
+        }
+        return 'notice-layout-full';
       }
 
       function renderGlobalNoticeForm_() {
@@ -28285,6 +28369,7 @@
         }
 
         APP_STATE.currentView = viewName;
+        renderGlobalNoticeCard_();
 
         Array.prototype.slice.call(document.querySelectorAll('.dashboard-view')).forEach(function(view) {
           view.classList.toggle('active', view.id === 'view-' + viewName);
