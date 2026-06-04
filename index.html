@@ -13813,9 +13813,7 @@
       const LOGO_URL = 'https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png';
       const SESSION_STORAGE_KEY = 'slms_api_session';
       const DASHBOARD_CACHE_KEY = 'slms_dashboard_snapshot';
-      const GRADE_CACHE_KEY = 'slms_grade_snapshot';
       const DASHBOARD_CACHE_MAX_AGE_MS = 1000 * 60 * 60 * 24;
-      const GRADE_SYNC_SOFT_TIMEOUT_MS = 6000;
       const LOGIN_ID_STORAGE_KEY = 'slms_saved_login_id';
       const FIREBASE_DIRECT_BOOTSTRAP_CONFIG = {
         apiKey: 'AIzaSyCFM21ZxgwIYwmjRPaAOp5bL9Kprqiyppg',
@@ -14029,7 +14027,6 @@
         gradesRemoteLoaded: false,
         gradesLoading: false,
         gradeLoadPromise: null,
-        gradeLoadSoftTimeoutTimer: null,
         gradeSyncIssue: '',
         gradeTab: 'overview',
         gradeFilters: {
@@ -14602,52 +14599,15 @@
       }
 
       function readGradeSnapshot_() {
-        try {
-          var raw = localStorage.getItem(GRADE_CACHE_KEY);
-          if (!raw) {
-            return null;
-          }
-          var parsed = JSON.parse(raw);
-          if (!parsed || !parsed.storedAt || !parsed.userId) {
-            return null;
-          }
-          if ((Date.now() - Number(parsed.storedAt || 0)) > DASHBOARD_CACHE_MAX_AGE_MS) {
-            return null;
-          }
-          return parsed;
-        } catch (error) {
-          return null;
-        }
+        return null;
       }
 
       function writeGradeSnapshot_() {
-        if (!APP_STATE.user || !APP_STATE.user.userId || !APP_STATE.token || !APP_STATE.gradesLoaded) {
-          return;
-        }
-        try {
-          localStorage.setItem(GRADE_CACHE_KEY, JSON.stringify({
-            userId: APP_STATE.user.userId,
-            storedAt: Date.now(),
-            gradeData: {
-              user: APP_STATE.user,
-              isAdmin: APP_STATE.isAdmin,
-              students: APP_STATE.gradeStudents,
-              grades: APP_STATE.grades,
-              subjectDefinitions: APP_STATE.gradeSubjects,
-              summary: APP_STATE.gradeSummary,
-              examOptions: APP_STATE.gradeExamOptions,
-              gradeScaleSettings: APP_STATE.gradeScaleSettings
-            }
-          }));
-        } catch (error) {
-          if (window.console && console.warn) {
-            console.warn('Grade snapshot save failed:', error);
-          }
-        }
+        return;
       }
 
       function clearGradeSnapshot_() {
-        localStorage.removeItem(GRADE_CACHE_KEY);
+        return;
       }
 
       function hydrateDashboardSnapshot_(snapshot) {
@@ -14668,51 +14628,31 @@
       }
 
       function hydrateGradeSnapshot_(snapshot) {
-        if (!snapshot || !APP_STATE.user || snapshot.userId !== APP_STATE.user.userId || !snapshot.gradeData) {
-          return false;
-        }
-        hydrateGradeData_(snapshot.gradeData);
-        APP_STATE.gradesLoaded = true;
-        return true;
+        return false;
       }
 
       function clearGradeSyncSoftTimeout_() {
-        if (APP_STATE.gradeLoadSoftTimeoutTimer) {
-          window.clearTimeout(APP_STATE.gradeLoadSoftTimeoutTimer);
-        }
-        APP_STATE.gradeLoadSoftTimeoutTimer = null;
+        return;
       }
 
       function armGradeSyncSoftTimeout_() {
-        clearGradeSyncSoftTimeout_();
-        APP_STATE.gradeLoadSoftTimeoutTimer = window.setTimeout(function() {
-          if (!APP_STATE.gradesLoading || APP_STATE.gradesRemoteLoaded) {
-            return;
-          }
-          APP_STATE.gradesLoading = false;
-          APP_STATE.gradeLoadPromise = null;
-          APP_STATE.gradeSyncIssue = 'timeout';
-          if (APP_STATE.currentView === 'grades') {
-            renderGrades();
-            setNotice('성적 원격 동기화가 지연되어 저장된 화면으로 계속 사용합니다. 동기화는 뒤에서 계속 진행됩니다.', 'warning');
-          }
-        }, GRADE_SYNC_SOFT_TIMEOUT_MS);
+        return;
       }
 
       function handleGradeSyncFailure_(error) {
         APP_STATE.gradesLoading = false;
         APP_STATE.gradeLoadPromise = null;
         APP_STATE.gradeSyncIssue = 'failed';
-        if (!APP_STATE.gradesLoaded) {
-          ensureGradeFallbackData_();
-          APP_STATE.gradesLoaded = true;
-        }
+        APP_STATE.gradesLoaded = false;
+        APP_STATE.gradesRemoteLoaded = false;
+        APP_STATE.grades = [];
+        APP_STATE.gradeSummary = null;
         if (window.console && console.warn) {
           console.warn('Grade sync failed:', error);
         }
         if (APP_STATE.currentView === 'grades') {
           renderGrades();
-          setNotice('성적 원격 동기화가 실패했습니다. 저장된 화면 또는 기본 입력 화면으로 계속 사용할 수 있습니다.', 'warning');
+          setNotice('성적 데이터를 서버에서 확정 동기화하지 못했습니다. 입력을 중단하고 다시 동기화해 주세요.', 'error');
         }
         return null;
       }
@@ -15447,7 +15387,7 @@
           if (!userId) {
             throw new Error('로그인 사용자 정보를 확인할 수 없습니다.');
           }
-          var logId = createFirebaseStudentLogId_();
+          var logId = isFirebaseStudentLogId_(clientRequestId) ? String(clientRequestId || '') : createFirebaseStudentLogId_();
           var timestamp = new Date().toISOString();
           var normalizedTags = Array.isArray(tags) ? tags : [];
           var collectionName = (state.collections && state.collections.studentLogs) || 'studentLogs';
@@ -16010,7 +15950,6 @@
             }
             return Promise.resolve();
           }
-          hydrateGradeSnapshot_(readGradeSnapshot_());
           if (APP_STATE.gradesLoading) {
             var pendingGrades = APP_STATE.gradeLoadPromise || Promise.resolve();
             if (!config.silent && APP_STATE.currentView === 'grades') {
@@ -16025,20 +15964,19 @@
             }
             return pendingGrades;
           }
-          ensureGradeFallbackData_();
           APP_STATE.gradesLoading = true;
+          APP_STATE.gradesLoaded = false;
+          APP_STATE.gradesRemoteLoaded = false;
           APP_STATE.gradeSyncIssue = '';
           if (!config.silent && APP_STATE.currentView === 'grades') {
             renderGrades();
           }
-          armGradeSyncSoftTimeout_();
           APP_STATE.gradeLoadPromise = apiRequest('getGrades', { token: APP_STATE.token })
             .then(function(gradeData) {
               hydrateGradeData_(gradeData);
               APP_STATE.gradesLoaded = true;
               APP_STATE.gradesRemoteLoaded = true;
               APP_STATE.gradeSyncIssue = '';
-              writeGradeSnapshot_();
               if (!config.silent && APP_STATE.currentView === 'grades') {
                 renderGrades();
               }
@@ -27184,9 +27122,6 @@
         if (APP_STATE.gradesLoading) {
           return '<span class="grade-status-badge saving"><i data-lucide="loader-2"></i> 동기화 중</span>';
         }
-        if (APP_STATE.gradeSyncIssue === 'timeout') {
-          return '<span class="grade-status-badge dirty">저장 화면 사용 중</span>';
-        }
         if (APP_STATE.gradeSyncIssue === 'failed') {
           return '<span class="grade-status-badge error">동기화 실패</span>';
         }
@@ -27506,15 +27441,13 @@
       }
 
       function refreshGrades_() {
-        hydrateGradeSnapshot_(readGradeSnapshot_());
         APP_STATE.gradesRemoteLoaded = false;
         APP_STATE.gradesLoading = true;
+        APP_STATE.gradesLoaded = false;
         APP_STATE.gradeHistoryLoaded = false;
         APP_STATE.gradeHistory = [];
         APP_STATE.gradeSyncIssue = '';
-        ensureGradeFallbackData_();
         renderGrades();
-        armGradeSyncSoftTimeout_();
         APP_STATE.gradeLoadPromise = apiRequest('getGrades', { token: APP_STATE.token })
           .then(function(data) {
             hydrateGradeData_(data);
@@ -27523,7 +27456,6 @@
             APP_STATE.gradeSyncIssue = '';
             APP_STATE.gradeDrafts = {};
             APP_STATE.gradeRowMessages = {};
-            writeGradeSnapshot_();
             setNotice('성적 데이터를 동기화했습니다.', 'success');
           })
           .catch(function(error) {
@@ -28871,7 +28803,6 @@
             hydrateGradeData_(data);
             APP_STATE.gradesLoaded = true;
             APP_STATE.gradesRemoteLoaded = true;
-            writeGradeSnapshot_();
             delete APP_STATE.gradeDrafts[key];
             APP_STATE.gradeRowMessages[key] = { tone: 'success', message: '저장됨' };
             setNotice('과목 성적을 저장했습니다.', 'success');
@@ -29806,7 +29737,6 @@
           hydrateGradeData_(data);
           APP_STATE.gradesLoaded = true;
           APP_STATE.gradesRemoteLoaded = true;
-          writeGradeSnapshot_();
           APP_STATE.gradeDrafts = {};
           APP_STATE.gradeRowMessages = {};
           APP_STATE.gradeSavingMap = {};
@@ -29866,7 +29796,6 @@
 
       function renderGrades() {
         initGradeV3State_();
-        ensureGradeFallbackData_();
         var container = document.getElementById('gradesConsole');
         if (!container) {
           return;
@@ -29875,6 +29804,11 @@
         container.classList.add('grades-v3');
         if (APP_STATE.gradesLoading && !APP_STATE.gradesLoaded) {
           container.innerHTML = renderGradesLoadingState_();
+          renderLucideIcons_();
+          return;
+        }
+        if (!APP_STATE.gradesLoaded) {
+          container.innerHTML = renderGradesUnavailableState_();
           renderLucideIcons_();
           return;
         }
@@ -29890,6 +29824,24 @@
           '    <div class="grades-loading-spinner" aria-hidden="true"><i data-lucide="loader-2"></i></div>',
           '    <div><h3>성적 관리 데이터를 불러오는 중입니다</h3><p>학생 목록, 과목 매니저, Firestore 성적 기록을 맞춰 보고 있습니다.</p></div>',
           '    <div class="grades-loading-lines" aria-hidden="true"><span></span><span></span><span></span></div>',
+          '  </section>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderGradesUnavailableState_() {
+        var message = APP_STATE.gradeSyncIssue === 'failed'
+          ? '서버에서 성적 데이터를 확정 동기화하지 못했습니다.'
+          : '성적 관리 데이터를 아직 불러오지 못했습니다.';
+        var helper = APP_STATE.gradeSyncIssue === 'failed'
+          ? '잘못된 화면에서 입력하지 않도록 성적 입력을 잠시 멈췄습니다. 동기화를 다시 시도해 주세요.'
+          : '학생 목록과 Firestore 성적 기록을 불러온 뒤 입력 화면을 열겠습니다.';
+        return [
+          '<div class="grades-loading-shell">',
+          '  <section class="grades-loading-card grades-loading-card-error">',
+          '    <div class="grades-loading-spinner" aria-hidden="true"><i data-lucide="alert-circle"></i></div>',
+          '    <div><h3>' + escapeHtml(message) + '</h3><p>' + escapeHtml(helper) + '</p></div>',
+          '    <button type="button" class="mini-button" data-grade-action="sync"><i data-lucide="refresh-cw"></i> 다시 동기화</button>',
           '  </section>',
           '</div>'
         ].join('');
