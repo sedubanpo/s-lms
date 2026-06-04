@@ -29557,20 +29557,19 @@
       }
 
       function downloadGradeTemplateV2_() {
-        var subjects = getGradeVisibleSubjects_();
-        var students = getGradeFilteredStudents_().slice(0, 1);
+        var currentYear = getGradeYear_();
+        var currentCategory = APP_STATE.gradeFilters.examCategory || '내신';
+        var currentTerm = APP_STATE.gradeFilters.term || '';
+        var currentExamName = APP_STATE.gradeFilters.examName || '';
         var rows = [
-          ['입력강사명', getGradeCurrentUserNameV2_()],
-          ['안내', '학생ID는 선택입니다. 학생명+학교+학년으로 자동 매칭됩니다. 저장 작성자는 로그인 계정으로 기록됩니다.'],
+          ['입력강사명', getGradeCurrentUserNameV2_(), '', '', '', '', '', '', '', '', '', '', '', '', ''],
+          ['작성법: 학생명', '학교명', '학년 숫자', '연도', '시험분류 4종', '내신만 학기', '시험명', '선택', '대분류', '세부과목', '선택', '최종점수 권장', '선택', '선택', '학생ID 선택'],
+          ['예시학생', '예시고', '2', currentYear, currentCategory, currentTerm, currentExamName, '', '과학', '생명과학', '90', '92', '2', '작성 참고용', ''],
+          ['주의: 실제 성적은 아래 헤더 밑에 입력', '학생ID는 비워도 됨', '동명이인은 학교/학년 필수', '', '', '', '', '', '', '', '', '', '', '', ''],
           [],
           ['학생명', '학교', '학년', '연도', '시험분류', '학기', '시험명', '시험회차', '과목분류', '과목명', '가채점', '최종점수', '등급', '메모', '학생ID(선택)']
         ];
-        (students.length ? students : [{ studentId: '', studentName: '', school: '', grade: '' }]).forEach(function(student) {
-          (subjects.length ? subjects : getGradeSubjectDefinitionsV2_().slice(0, 1)).forEach(function(subject) {
-            rows.push([student.studentName || '', student.school || '', student.grade || '', getGradeYear_(), APP_STATE.gradeFilters.examCategory || '내신', APP_STATE.gradeFilters.term || '', APP_STATE.gradeFilters.examName || '', APP_STATE.gradeFilters.examRound || '', subject.subjectCategory, subject.subjectName, '', '', '', '', student.studentId || '']);
-          });
-        });
-        downloadTextFileV2_('s-lms-grade-template-' + getGradeYear_() + '.csv', rows.map(function(row) {
+        downloadTextFileV2_('s-lms-grade-template-' + currentYear + '.csv', rows.map(function(row) {
           return row.map(csvEscapeV2_).join(',');
         }).join('\n'));
       }
