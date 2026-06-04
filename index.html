@@ -29314,21 +29314,47 @@
       function renderGradeUploadModalV2_() {
         var preview = APP_STATE.gradeUploadPreview || [];
         var hasErrors = preview.some(function(row) { return row && row.__error; });
+        var uploadMeta = getGradeUploadPreviewMetaV2_(preview);
         return [
           '<div class="modal-backdrop"><div class="modal-card grade-modal-panel wide">',
           '<div class="modal-top"><div><h3>엑셀 업로드</h3><p>양식 파일을 업로드하면 저장 전 미리보기를 확인합니다. 오류 행이 있으면 저장하지 않습니다.</p></div><button type="button" class="icon-button" data-grade-action="close-grade-modal" aria-label="닫기">×</button></div>',
           '<div class="modal-body"><input class="field-input" type="file" accept=".xlsx,.xls,.csv,.tsv,.txt" data-grade-upload-file>',
+          uploadMeta,
           preview.length ? renderGradeUploadPreviewTableV2_(preview) : '<div class="grade-empty" style="margin-top:12px;">업로드할 CSV 또는 TSV 파일을 선택해주세요.</div>',
           '<div class="grade-modal-actions"><button type="button" class="mini-button" data-grade-action="download-template"><i data-lucide="file-down"></i> 양식 다운로드</button><button type="button" class="mini-button" data-grade-action="close-grade-modal">취소</button><button type="button" class="button-primary" data-grade-action="apply-upload-preview" ' + (!preview.length || hasErrors ? 'disabled' : '') + '><i data-lucide="save"></i> 미리보기 저장</button></div></div>',
           '</div></div>'
         ].join('');
       }
 
+      function getGradeUploadPreviewMetaV2_(rows) {
+        if (!rows || !rows.length) {
+          return '';
+        }
+        var instructorName = '';
+        rows.some(function(row) {
+          instructorName = row && row.__uploadInstructorName ? row.__uploadInstructorName : '';
+          return Boolean(instructorName);
+        });
+        var currentUserName = getGradeCurrentUserNameV2_();
+        var notices = [];
+        if (instructorName) {
+          notices.push('양식 입력강사: ' + instructorName);
+        }
+        if (currentUserName) {
+          notices.push('실제 저장 계정: ' + currentUserName);
+        }
+        if (!notices.length) {
+          return '';
+        }
+        var mismatch = instructorName && currentUserName && normalizeSearchText(instructorName) !== normalizeSearchText(currentUserName);
+        return '<div class="grade-empty" style="margin-top:12px;text-align:left;">' + escapeHtml(notices.join(' · ') + (mismatch ? ' · 입력강사명과 로그인 계정이 다릅니다. 저장 작성자는 로그인 계정으로 기록됩니다.' : '')) + '</div>';
+      }
+
       function renderGradeUploadPreviewTableV2_(rows) {
-        var html = ['<div class="grade-upload-preview"><table class="grades-table"><thead><tr><th>상태</th><th>학생</th><th>과목</th><th>가채점</th><th>최종</th><th>등급</th><th>메모</th></tr></thead><tbody>'];
+        var html = ['<div class="grade-upload-preview"><table class="grades-table"><thead><tr><th>상태</th><th>학생</th><th>학교/학년</th><th>과목</th><th>가채점</th><th>최종</th><th>등급</th><th>메모</th></tr></thead><tbody>'];
         rows.slice(0, 120).forEach(function(row) {
           var status = row.__error ? '<span class="grade-status-badge error">오류</span>' : '<span class="grade-status-badge saved">확인</span>';
-          html.push('<tr><td>' + status + '</td><td>' + escapeHtml(row.studentName || row.studentId || '-') + '</td><td>' + escapeHtml(row.__error || [row.subjectCategory, row.subjectName].filter(Boolean).join(' · ') || '-') + '</td><td>' + escapeHtml(row.provisionalScore || '-') + '</td><td>' + escapeHtml(row.finalScore || '-') + '</td><td>' + escapeHtml(row.gradeLevel || '-') + '</td><td>' + escapeHtml(row.memo || '-') + '</td></tr>');
+          html.push('<tr><td>' + status + '</td><td>' + escapeHtml(row.studentName || row.studentId || '-') + '</td><td>' + escapeHtml([row.school, row.grade].filter(Boolean).join(' · ') || '-') + '</td><td>' + escapeHtml(row.__error || [row.subjectCategory, row.subjectName].filter(Boolean).join(' · ') || '-') + '</td><td>' + escapeHtml(row.provisionalScore || '-') + '</td><td>' + escapeHtml(row.finalScore || '-') + '</td><td>' + escapeHtml(row.gradeLevel || '-') + '</td><td>' + escapeHtml(row.memo || '-') + '</td></tr>');
         });
         html.push('</tbody></table></div>');
         return html.join('');
@@ -29533,10 +29559,15 @@
       function downloadGradeTemplateV2_() {
         var subjects = getGradeVisibleSubjects_();
         var students = getGradeFilteredStudents_().slice(0, 1);
-        var rows = [['학생ID', '학생명', '학교', '학년', '연도', '시험분류', '학기', '시험명', '시험회차', '과목분류', '과목명', '가채점', '최종점수', '등급', '메모']];
+        var rows = [
+          ['입력강사명', getGradeCurrentUserNameV2_()],
+          ['안내', '학생ID는 선택입니다. 학생명+학교+학년으로 자동 매칭됩니다. 저장 작성자는 로그인 계정으로 기록됩니다.'],
+          [],
+          ['학생명', '학교', '학년', '연도', '시험분류', '학기', '시험명', '시험회차', '과목분류', '과목명', '가채점', '최종점수', '등급', '메모', '학생ID(선택)']
+        ];
         (students.length ? students : [{ studentId: '', studentName: '', school: '', grade: '' }]).forEach(function(student) {
           (subjects.length ? subjects : getGradeSubjectDefinitionsV2_().slice(0, 1)).forEach(function(subject) {
-            rows.push([student.studentId || '', student.studentName || '', student.school || '', student.grade || '', getGradeYear_(), APP_STATE.gradeFilters.examCategory || '내신', APP_STATE.gradeFilters.term || '', APP_STATE.gradeFilters.examName || '', APP_STATE.gradeFilters.examRound || '', subject.subjectCategory, subject.subjectName, '', '', '', '']);
+            rows.push([student.studentName || '', student.school || '', student.grade || '', getGradeYear_(), APP_STATE.gradeFilters.examCategory || '내신', APP_STATE.gradeFilters.term || '', APP_STATE.gradeFilters.examName || '', APP_STATE.gradeFilters.examRound || '', subject.subjectCategory, subject.subjectName, '', '', '', '', student.studentId || '']);
           });
         });
         downloadTextFileV2_('s-lms-grade-template-' + getGradeYear_() + '.csv', rows.map(function(row) {
@@ -29571,52 +29602,110 @@
           }
           var workbook = window.XLSX.read(content, { type: 'array' });
           var sheetName = workbook.SheetNames[0];
-          var rows = window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
-          return rows.map(function(row, index) {
-            return buildGradePayloadFromImportRowV2_(normalizeGradeImportRowKeysV2_(row), index + 2);
-          });
+          var matrix = window.XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: '' });
+          return parseGradeUploadMatrixV2_(matrix);
         }
         return parseGradeUploadRowsV2_(String(content || ''));
       }
 
       function parseGradeUploadRowsV2_(text) {
         var lines = text.split(/\r?\n/).filter(function(line) { return line.trim(); });
-        if (lines.length < 2) {
+        var delimiter = text.indexOf('\t') !== -1 ? '\t' : ',';
+        return parseGradeUploadMatrixV2_(lines.map(function(line) {
+          return splitDelimitedLineV2_(line, delimiter);
+        }));
+      }
+
+      function parseGradeUploadMatrixV2_(matrix) {
+        var rows = (matrix || []).map(function(row) {
+          return (row || []).map(function(cell) {
+            return String(cell === null || cell === undefined ? '' : cell).replace(/^\ufeff/, '').trim();
+          });
+        }).filter(function(row) {
+          return row.some(Boolean);
+        });
+        if (!rows.length) {
           return [];
         }
-        var delimiter = lines[0].indexOf('\t') !== -1 ? '\t' : ',';
-        var headers = splitDelimitedLineV2_(lines[0], delimiter).map(function(header) { return header.replace(/^\ufeff/, '').trim(); });
-        return lines.slice(1).map(function(line, index) {
-          var cells = splitDelimitedLineV2_(line, delimiter);
+        var headerIndex = findGradeUploadHeaderIndexV2_(rows);
+        if (headerIndex < 0) {
+          throw new Error('업로드 양식의 헤더 행을 찾지 못했습니다. 양식을 다시 다운로드해 사용해주세요.');
+        }
+        var meta = parseGradeUploadMetaRowsV2_(rows.slice(0, headerIndex));
+        var headers = rows[headerIndex].map(normalizeGradeUploadHeaderV2_);
+        return rows.slice(headerIndex + 1).map(function(cells, index) {
           var row = {};
-          headers.forEach(function(header, index) { row[header] = cells[index] || ''; });
-          return buildGradePayloadFromImportRowV2_(row, index + 2);
+          headers.forEach(function(header, cellIndex) {
+            if (header) {
+              row[header] = cells[cellIndex] || '';
+            }
+          });
+          row.__uploadInstructorName = meta.instructorName || '';
+          return buildGradePayloadFromImportRowV2_(row, headerIndex + index + 2);
         });
+      }
+
+      function findGradeUploadHeaderIndexV2_(rows) {
+        for (var i = 0; i < rows.length; i += 1) {
+          var headers = rows[i].map(normalizeGradeUploadHeaderV2_);
+          if (headers.indexOf('학생명') !== -1 && (headers.indexOf('과목명') !== -1 || headers.indexOf('과목') !== -1 || headers.indexOf('세부과목') !== -1)) {
+            return i;
+          }
+        }
+        return -1;
+      }
+
+      function parseGradeUploadMetaRowsV2_(rows) {
+        var meta = { instructorName: '' };
+        (rows || []).forEach(function(row) {
+          var key = normalizeSearchText(row[0] || '');
+          var value = row.slice(1).filter(Boolean).join(' ').trim();
+          if (/^(입력강사명|강사명|입력자|담당강사)$/.test(key) && value) {
+            meta.instructorName = value;
+          }
+        });
+        return meta;
+      }
+
+      function normalizeGradeUploadHeaderV2_(header) {
+        var text = String(header || '').replace(/^\ufeff/, '').trim();
+        if (/^학생ID/.test(text)) {
+          return '학생ID';
+        }
+        return text;
       }
 
       function normalizeGradeImportRowKeysV2_(row) {
         var normalized = {};
         Object.keys(row || {}).forEach(function(key) {
-          normalized[String(key || '').replace(/^\ufeff/, '').trim()] = row[key];
+          normalized[normalizeGradeUploadHeaderV2_(key)] = row[key];
         });
         return normalized;
       }
 
       function buildGradePayloadFromImportRowV2_(row, lineNumber) {
-        var studentLabel = String(row['학생ID'] || row['학생명'] || '').trim();
+        var studentIdLabel = String(row['학생ID'] || '').trim();
+        var studentNameLabel = String(row['학생명'] || '').trim();
+        var schoolLabel = String(row['학교'] || '').trim();
+        var gradeLabel = String(row['학년'] || '').trim();
+        var studentLabel = studentIdLabel || studentNameLabel;
         var subjectName = String(row['과목명'] || row['세부과목'] || row['과목'] || '').trim();
-        var student = findGradeStudentById_(studentLabel) || (APP_STATE.gradeStudents || []).find(function(item) { return item.studentName === studentLabel; });
+        var studentMatch = findGradeStudentForImportV2_(studentIdLabel, studentNameLabel, schoolLabel, gradeLabel);
+        var student = studentMatch.student || null;
         var subject = findGradeSubjectForImportV2_(subjectName, String(row['과목분류'] || '').trim());
-        if (!student || !subject) {
+        if (!student || !subject || studentMatch.error) {
           return {
-            __error: (lineNumber ? lineNumber + '행: ' : '') + (!student ? '학생 매칭 실패' : '과목 매칭 실패'),
+            __error: (lineNumber ? lineNumber + '행: ' : '') + (studentMatch.error || (!student ? '학생 매칭 실패' : '과목 매칭 실패')),
             studentId: studentLabel,
-            studentName: row['학생명'] || studentLabel,
+            studentName: studentNameLabel || studentLabel,
+            school: schoolLabel,
+            grade: gradeLabel,
             subjectName: subjectName,
             provisionalScore: row['가채점'] || '',
             finalScore: row['최종점수'] || '',
             gradeLevel: row['등급'] || '',
-            memo: row['메모'] || ''
+            memo: row['메모'] || '',
+            __uploadInstructorName: row.__uploadInstructorName || ''
           };
         }
         return {
@@ -29643,8 +29732,56 @@
           gradeLevel: row['등급'] || '',
           memo: row['메모'] || '',
           note: row['메모'] || '',
-          status: row['최종점수'] ? 'final' : 'provisional'
+          status: row['최종점수'] ? 'final' : 'provisional',
+          __uploadInstructorName: row.__uploadInstructorName || ''
         };
+      }
+
+      function findGradeStudentForImportV2_(studentId, studentName, school, grade) {
+        var byId = studentId ? findGradeStudentById_(studentId) : null;
+        if (studentId && byId) {
+          return { student: byId, error: '' };
+        }
+        var nameKey = normalizeSearchText(studentName);
+        if (!nameKey) {
+          return { student: null, error: '학생명 또는 학생ID가 필요합니다.' };
+        }
+        var schoolKey = normalizeSearchText(school);
+        var gradeKey = normalizeGradeMatchKeyV2_(grade);
+        var candidates = (APP_STATE.gradeStudents || []).filter(function(student) {
+          return normalizeSearchText(student.studentName) === nameKey;
+        });
+        if (!candidates.length) {
+          return { student: null, error: '학생 매칭 실패' };
+        }
+        if (schoolKey) {
+          candidates = candidates.filter(function(student) {
+            return normalizeSearchText(student.school) === schoolKey;
+          });
+        }
+        if (gradeKey) {
+          candidates = candidates.filter(function(student) {
+            return normalizeGradeMatchKeyV2_(student.grade) === gradeKey;
+          });
+        }
+        if (candidates.length === 1) {
+          return { student: candidates[0], error: '' };
+        }
+        if (candidates.length > 1) {
+          return { student: null, error: '학생 매칭 중복: 학교와 학년을 확인해주세요.' };
+        }
+        return { student: null, error: '학생 매칭 실패: 이름, 학교, 학년을 확인해주세요.' };
+      }
+
+      function normalizeGradeMatchKeyV2_(value) {
+        var text = normalizeSearchText(value).replace(/학년$/g, '');
+        var digitMatch = text.match(/\d+/);
+        return digitMatch ? digitMatch[0] : text;
+      }
+
+      function getGradeCurrentUserNameV2_() {
+        var user = APP_STATE.user || {};
+        return user.name || user.userName || user.email || '';
       }
 
       function findGradeSubjectForImportV2_(subjectName, subjectCategory) {
