@@ -29563,11 +29563,18 @@
         var currentExamName = APP_STATE.gradeFilters.examName || '';
         var rows = [
           ['입력강사명', getGradeCurrentUserNameV2_(), '', '', '', '', '', '', '', '', '', '', '', '', ''],
-          ['작성법: 학생명', '학교명', '학년 숫자', '연도', '시험분류 4종', '내신만 학기', '시험명', '선택', '대분류', '세부과목', '선택', '최종점수 권장', '선택', '선택', '학생ID 선택'],
-          ['예시학생', '예시고', '2', currentYear, currentCategory, currentTerm, currentExamName, '', '과학', '생명과학', '90', '92', '2', '작성 참고용', ''],
-          ['주의: 실제 성적은 아래 헤더 밑에 입력', '학생ID는 비워도 됨', '동명이인은 학교/학년 필수', '', '', '', '', '', '', '', '', '', '', '', ''],
-          [],
-          ['학생명', '학교', '학년', '연도', '시험분류', '학기', '시험명', '시험회차', '과목분류', '과목명', '가채점', '최종점수', '등급', '메모', '학생ID(선택)']
+          ['작성법', '한 행=학생 1명', '학교명', '학년 숫자', '연도', '시험분류', '학기', '시험명', '시험회차', '과목분류', '과목명', '가채점', '최종점수', '등급', '학생ID 선택'],
+          ['내신', '학생명', '학교', '2', currentYear, '내신', '1학기/2학기', '1학기 중간고사', '보통 비움', '과학', '생명과학', '90', '92', '2', ''],
+          ['모의고사', '학생명', '학교', '3', currentYear, '모의고사', '비워도 됨', '3월 모의고사', '보통 비움', '국어', '국어', '', '87', '2', ''],
+          ['테스트', '학생명', '학교', '3', currentYear, '테스트', '비워도 됨', '단어 테스트', '1회', '영어', '영어', '18', '20', '', ''],
+          ['수능', '학생명', '학교', '3', currentYear, '수능', '비움', '수능', '비움', '수학', '확통', '', '84', '2', ''],
+          ['중요', '아래 제목줄 삭제 금지', '입력은 제목줄 아래 빈 줄부터', '동명이인은 학교/학년 필수', '시험분류는 내신/테스트/모의고사/수능 중 하나', '', '', '', '', '', '', '', '', '', ''],
+          ['학생명', '학교', '학년', '연도', '시험분류', '학기', '시험명', '시험회차', '과목분류', '과목명', '가채점', '최종점수', '등급', '메모', '학생ID(선택)'],
+          ['', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+          ['', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+          ['', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+          ['', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+          ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
         ];
         downloadTextFileV2_('s-lms-grade-template-' + currentYear + '.csv', rows.map(function(row) {
           return row.map(csvEscapeV2_).join(',');
@@ -29584,7 +29591,9 @@
             APP_STATE.gradeUploadPreview = parseGradeUploadFileV2_(file, reader.result);
             renderGrades();
           } catch (error) {
+            APP_STATE.gradeUploadPreview = [createGradeUploadErrorPreviewV2_(error.message || '업로드 파일을 읽지 못했습니다.')];
             setNotice(error.message || '업로드 파일을 읽지 못했습니다.', 'error');
+            renderGrades();
           }
         };
         if (/\.(xlsx|xls)$/i.test(file.name || '')) {
@@ -29628,7 +29637,7 @@
         }
         var headerIndex = findGradeUploadHeaderIndexV2_(rows);
         if (headerIndex < 0) {
-          throw new Error('업로드 양식의 헤더 행을 찾지 못했습니다. 양식을 다시 다운로드해 사용해주세요.');
+          return parseGradeUploadMatrixWithoutHeaderV2_(rows);
         }
         var meta = parseGradeUploadMetaRowsV2_(rows.slice(0, headerIndex));
         var headers = rows[headerIndex].map(normalizeGradeUploadHeaderV2_);
@@ -29642,6 +29651,53 @@
           row.__uploadInstructorName = meta.instructorName || '';
           return buildGradePayloadFromImportRowV2_(row, headerIndex + index + 2);
         });
+      }
+
+      function createGradeUploadErrorPreviewV2_(message) {
+        return {
+          __error: message,
+          studentId: '',
+          studentName: '업로드 파일',
+          school: '',
+          grade: '',
+          subjectName: '',
+          provisionalScore: '',
+          finalScore: '',
+          gradeLevel: '',
+          memo: '',
+          __uploadInstructorName: ''
+        };
+      }
+
+      function parseGradeUploadMatrixWithoutHeaderV2_(rows) {
+        var meta = parseGradeUploadMetaRowsV2_(rows);
+        var dataRows = rows.filter(looksLikeGradeUploadDataRowV2_);
+        if (!dataRows.length) {
+          throw new Error('업로드 양식의 제목줄을 찾지 못했습니다. 제목줄(학생명, 학교, 학년...)은 삭제하지 말고, 실제 성적은 제목줄 아래 빈 줄부터 입력해주세요.');
+        }
+        var headers = ['학생명', '학교', '학년', '연도', '시험분류', '학기', '시험명', '시험회차', '과목분류', '과목명', '가채점', '최종점수', '등급', '메모', '학생ID'];
+        return dataRows.map(function(cells) {
+          var row = {};
+          headers.forEach(function(header, cellIndex) {
+            row[header] = cells[cellIndex] || '';
+          });
+          row.__uploadInstructorName = meta.instructorName || '';
+          return buildGradePayloadFromImportRowV2_(row, rows.indexOf(cells) + 1);
+        });
+      }
+
+      function looksLikeGradeUploadDataRowV2_(row) {
+        var cells = row || [];
+        var firstCell = normalizeSearchText(cells[0] || '');
+        if (!firstCell || /^(작성법|중요|주의|예시|입력강사명)/.test(firstCell) || /^(내신|모의고사|테스트|수능)$/.test(firstCell)) {
+          return false;
+        }
+        var yearText = String(cells[3] || '').trim();
+        var categoryText = String(cells[4] || '').trim();
+        var hasYear = /^\d{4}$/.test(yearText);
+        var hasCategory = /^(내신|테스트|모의고사|수능)$/.test(categoryText);
+        var hasSubject = !!String(cells[9] || cells[8] || '').trim();
+        return hasYear && hasCategory && hasSubject;
       }
 
       function findGradeUploadHeaderIndexV2_(rows) {
@@ -29682,16 +29738,34 @@
         return normalized;
       }
 
+      function cleanGradeUploadCellV2_(value) {
+        var text = String(value || '').trim();
+        if (/^(선택|비움|보통 비움|학기|시험회차|학생ID\(선택\)|학생ID 선택|작성 참고용)$/.test(text)) {
+          return '';
+        }
+        return text;
+      }
+
       function buildGradePayloadFromImportRowV2_(row, lineNumber) {
-        var studentIdLabel = String(row['학생ID'] || '').trim();
-        var studentNameLabel = String(row['학생명'] || '').trim();
-        var schoolLabel = String(row['학교'] || '').trim();
-        var gradeLabel = String(row['학년'] || '').trim();
+        var studentIdLabel = cleanGradeUploadCellV2_(row['학생ID']);
+        var studentNameLabel = cleanGradeUploadCellV2_(row['학생명']);
+        var schoolLabel = cleanGradeUploadCellV2_(row['학교']);
+        var gradeLabel = cleanGradeUploadCellV2_(row['학년']);
         var studentLabel = studentIdLabel || studentNameLabel;
-        var subjectName = String(row['과목명'] || row['세부과목'] || row['과목'] || '').trim();
+        var subjectCategoryLabel = cleanGradeUploadCellV2_(row['과목분류']);
+        var subjectName = cleanGradeUploadCellV2_(row['과목명'] || row['세부과목'] || row['과목']);
+        var provisionalScore = cleanGradeUploadCellV2_(row['가채점']);
+        var finalScore = cleanGradeUploadCellV2_(row['최종점수']);
+        var gradeLevel = cleanGradeUploadCellV2_(row['등급']);
+        var memo = cleanGradeUploadCellV2_(row['메모']);
+        var examYear = cleanGradeUploadCellV2_(row['연도']);
+        var examCategory = cleanGradeUploadCellV2_(row['시험분류']) || APP_STATE.gradeFilters.examCategory || '내신';
+        var term = cleanGradeUploadCellV2_(row['학기']) || APP_STATE.gradeFilters.term || '';
+        var examName = cleanGradeUploadCellV2_(row['시험명']) || APP_STATE.gradeFilters.examName || '';
+        var examRound = cleanGradeUploadCellV2_(row['시험회차']) || APP_STATE.gradeFilters.examRound || '';
         var studentMatch = findGradeStudentForImportV2_(studentIdLabel, studentNameLabel, schoolLabel, gradeLabel);
         var student = studentMatch.student || null;
-        var subject = findGradeSubjectForImportV2_(subjectName, String(row['과목분류'] || '').trim());
+        var subject = findGradeSubjectForImportV2_(subjectName, subjectCategoryLabel);
         if (!student || !subject || studentMatch.error) {
           return {
             __error: (lineNumber ? lineNumber + '행: ' : '') + (studentMatch.error || (!student ? '학생 매칭 실패' : '과목 매칭 실패')),
@@ -29700,10 +29774,10 @@
             school: schoolLabel,
             grade: gradeLabel,
             subjectName: subjectName,
-            provisionalScore: row['가채점'] || '',
-            finalScore: row['최종점수'] || '',
-            gradeLevel: row['등급'] || '',
-            memo: row['메모'] || '',
+            provisionalScore: provisionalScore,
+            finalScore: finalScore,
+            gradeLevel: gradeLevel,
+            memo: memo,
             __uploadInstructorName: row.__uploadInstructorName || ''
           };
         }
@@ -29713,25 +29787,25 @@
           studentName: student.studentName || '',
           school: student.school || '',
           grade: student.grade || '',
-          schoolYear: row['연도'] || getGradeYear_(),
-          examYear: row['연도'] || getGradeYear_(),
-          examCategory: row['시험분류'] || APP_STATE.gradeFilters.examCategory || '내신',
-          term: row['학기'] || APP_STATE.gradeFilters.term || '',
-          examName: row['시험명'] || APP_STATE.gradeFilters.examName || '',
-          examRound: row['시험회차'] || APP_STATE.gradeFilters.examRound || '',
-          examMonth: getGradeExamMonth_(row['시험명'] || APP_STATE.gradeFilters.examName || ''),
+          schoolYear: examYear || getGradeYear_(),
+          examYear: examYear || getGradeYear_(),
+          examCategory: examCategory,
+          term: term,
+          examName: examName,
+          examRound: examRound,
+          examMonth: getGradeExamMonth_(examName),
           subjectId: subject.subjectId,
-          subjectCategory: row['과목분류'] || subject.subjectCategory,
+          subjectCategory: subjectCategoryLabel || subject.subjectCategory,
           subjectName: subject.subjectName,
-          subjectArea: row['과목분류'] || subject.subjectCategory,
+          subjectArea: subjectCategoryLabel || subject.subjectCategory,
           detailSubject: subject.subjectName,
-          provisionalScore: row['가채점'] || '',
-          finalScore: row['최종점수'] || '',
-          rawScore: row['최종점수'] || row['가채점'] || '',
-          gradeLevel: row['등급'] || '',
-          memo: row['메모'] || '',
-          note: row['메모'] || '',
-          status: row['최종점수'] ? 'final' : 'provisional',
+          provisionalScore: provisionalScore,
+          finalScore: finalScore,
+          rawScore: finalScore || provisionalScore || '',
+          gradeLevel: gradeLevel,
+          memo: memo,
+          note: memo,
+          status: finalScore ? 'final' : 'provisional',
           __uploadInstructorName: row.__uploadInstructorName || ''
         };
       }
