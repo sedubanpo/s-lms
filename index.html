@@ -982,6 +982,91 @@
         box-shadow: var(--shadow-xl);
       }
 
+      .global-notice-card {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 14px;
+        align-items: start;
+        margin: 0 0 14px;
+        padding: 14px 16px;
+        border: 1px solid #c8d8f2;
+        border-left: 4px solid #155bd8;
+        border-radius: 8px;
+        background: #f8fbff;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+      }
+
+      .global-notice-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: #e8f1ff;
+        color: #155bd8;
+      }
+
+      .global-notice-icon svg {
+        width: 19px;
+        height: 19px;
+      }
+
+      .global-notice-body {
+        display: grid;
+        gap: 5px;
+        min-width: 0;
+      }
+
+      .global-notice-title {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        color: #0f2d5c;
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      .global-notice-content {
+        color: #172033;
+        font-size: 0.95rem;
+        font-weight: 800;
+        line-height: 1.55;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .global-notice-empty {
+        color: #64748b;
+        font-weight: 700;
+      }
+
+      .global-notice-meta {
+        color: #64748b;
+        font-size: 0.76rem;
+        font-weight: 700;
+      }
+
+      .global-notice-form {
+        grid-column: 1 / -1;
+        display: grid;
+        gap: 10px;
+        padding-top: 2px;
+      }
+
+      .global-notice-form textarea {
+        width: 100%;
+        min-height: 78px;
+        resize: vertical;
+      }
+
+      .global-notice-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
       .permission-trigger {
         display: inline-flex;
       }
@@ -12969,6 +13054,15 @@
           right: 10px;
           top: 64px;
         }
+
+        .global-notice-card {
+          grid-template-columns: auto 1fr;
+        }
+
+        .global-notice-card > .mini-button {
+          grid-column: 1 / -1;
+          justify-self: stretch;
+        }
       }
     </style>
   </head>
@@ -13143,6 +13237,7 @@
 
         <div id="noticeBar" class="dashboard-notice notice-bar notice-info hidden"></div>
         <div id="permissionRequestAlert" class="permission-request-alert hidden" aria-live="polite"></div>
+        <div id="globalNoticeWrap"></div>
 
         <section id="view-students" class="dashboard-view active">
           <input id="studentSearchInput" class="hidden" type="text">
@@ -14042,6 +14137,13 @@
         isGradeSearchComposing: false,
         pendingGradeSearchRenderAfterComposition: false,
         gradeSearchRenderTimer: null,
+        globalNotice: {
+          content: '',
+          updatedByName: '',
+          updatedAt: ''
+        },
+        globalNoticeEditing: false,
+        globalNoticeSaving: false,
         selectedGradeStudentId: '',
         gradeSelectedStudentIds: {},
         gradeModal: '',
@@ -14179,6 +14281,7 @@
         document.getElementById('settingsButton').addEventListener('click', openSystemSettingsModal_);
         document.getElementById('quickAddStudentButton').addEventListener('click', handleQuickAddStudentOpen);
         document.getElementById('materialOpenLogsButton').addEventListener('click', handleMaterialOpenLogButtonClick_);
+        document.getElementById('globalNoticeWrap').addEventListener('click', handleGlobalNoticeClick_);
         document.getElementById('openPermissionModalButton').addEventListener('click', function() {
           if (!APP_STATE.isAdmin) {
             setNotice('권한 관리 메뉴는 관리자만 사용할 수 있습니다.', 'warning');
@@ -14584,7 +14687,8 @@
             permissionRequests: APP_STATE.permissionRequests,
             homeroomAssignments: APP_STATE.homeroomAssignments,
             appName: APP_STATE.appName,
-            logoUrl: APP_STATE.logoUrl
+            logoUrl: APP_STATE.logoUrl,
+            globalNotice: APP_STATE.globalNotice
           },
           materials: APP_STATE.materials,
           materialSettings: APP_STATE.materialSettings,
@@ -14622,6 +14726,7 @@
         APP_STATE.materialOpenLogs = [];
         APP_STATE.materialOpenLogsLoaded = false;
         APP_STATE.events = snapshot.events || [];
+        hydrateGlobalNotice_(snapshot.studentData && snapshot.studentData.globalNotice);
         APP_STATE.materialsLoaded = Boolean(snapshot.materialsLoaded);
         APP_STATE.eventsLoaded = Boolean(snapshot.eventsLoaded);
         return true;
@@ -14773,6 +14878,115 @@
         bar.textContent = '';
       }
 
+      function hydrateGlobalNotice_(notice) {
+        if (!notice) {
+          return;
+        }
+        APP_STATE.globalNotice = {
+          content: String(notice.content || ''),
+          updatedByName: String(notice.updatedByName || ''),
+          updatedAt: String(notice.updatedAt || '')
+        };
+        if (document.getElementById('globalNoticeWrap')) {
+          renderGlobalNoticeCard_();
+        }
+      }
+
+      function renderGlobalNoticeCard_() {
+        var wrap = document.getElementById('globalNoticeWrap');
+        if (!wrap) {
+          return;
+        }
+        var notice = APP_STATE.globalNotice || {};
+        var content = String(notice.content || '').trim();
+        if (!content && !APP_STATE.isAdmin) {
+          wrap.innerHTML = '';
+          return;
+        }
+        var editing = APP_STATE.globalNoticeEditing && APP_STATE.isAdmin;
+        var meta = [notice.updatedByName, formatGradeDateTime_(notice.updatedAt || '')].filter(Boolean).join(' · ');
+        var body = content
+          ? '<div class="global-notice-content">' + escapeHtml(content) + '</div>'
+          : '<div class="global-notice-content global-notice-empty">공지사항을 입력해 주세요.</div>';
+        wrap.innerHTML = [
+          '<section class="global-notice-card" aria-label="전역 공지사항">',
+          '  <span class="global-notice-icon"><i data-lucide="megaphone"></i></span>',
+          '  <div class="global-notice-body">',
+          '    <div class="global-notice-title"><span>공지사항</span><span class="grade-chip blue">전체 메뉴</span></div>',
+               body,
+               meta ? '<div class="global-notice-meta">' + escapeHtml(meta) + '</div>' : '',
+          '  </div>',
+             APP_STATE.isAdmin && !editing ? '<button type="button" class="mini-button" data-global-notice-action="edit"><i data-lucide="edit-3"></i> 수정</button>' : '',
+             editing ? renderGlobalNoticeForm_() : '',
+          '</section>'
+        ].join('');
+        renderLucideIcons_();
+      }
+
+      function renderGlobalNoticeForm_() {
+        var notice = APP_STATE.globalNotice || {};
+        return [
+          '<div class="global-notice-form">',
+          '  <textarea class="field-input" data-global-notice-content maxlength="500" placeholder="예: 6월 모의고사 성적 입력과 상담 내용을 등록해 주세요">' + escapeHtml(notice.content || '') + '</textarea>',
+          '  <div class="global-notice-actions">',
+          '    <button type="button" class="mini-button" data-global-notice-action="cancel">취소</button>',
+          '    <button type="button" class="button-primary" data-global-notice-action="save"' + (APP_STATE.globalNoticeSaving ? ' disabled' : '') + '><i data-lucide="' + (APP_STATE.globalNoticeSaving ? 'loader-2' : 'save') + '"></i> 저장</button>',
+          '  </div>',
+          '</div>'
+        ].join('');
+      }
+
+      function handleGlobalNoticeClick_(event) {
+        var button = event.target.closest('[data-global-notice-action]');
+        if (!button || !APP_STATE.isAdmin) {
+          return;
+        }
+        var action = button.getAttribute('data-global-notice-action');
+        if (action === 'edit') {
+          APP_STATE.globalNoticeEditing = true;
+          renderGlobalNoticeCard_();
+          var field = document.querySelector('[data-global-notice-content]');
+          if (field) {
+            field.focus();
+            field.setSelectionRange(field.value.length, field.value.length);
+          }
+          return;
+        }
+        if (action === 'cancel') {
+          APP_STATE.globalNoticeEditing = false;
+          renderGlobalNoticeCard_();
+          return;
+        }
+        if (action === 'save') {
+          saveGlobalNotice_();
+        }
+      }
+
+      function saveGlobalNotice_() {
+        var field = document.querySelector('[data-global-notice-content]');
+        var content = field ? field.value.trim() : '';
+        APP_STATE.globalNoticeSaving = true;
+        renderGlobalNoticeCard_();
+        saveGlobalNoticeViaFirebaseDirect_(content).catch(function(firebaseError) {
+          if (window.console && console.warn) {
+            console.warn('Global notice Firebase save fallback:', firebaseError);
+          }
+          return apiRequest('saveGlobalNotice', {
+            token: APP_STATE.token,
+            content: content
+          });
+        }).then(function(result) {
+          hydrateGlobalNotice_(result.globalNotice);
+          APP_STATE.globalNoticeEditing = false;
+          setNotice(result.message || '공지사항이 저장되었습니다.', 'success');
+          renderGlobalNoticeCard_();
+          writeDashboardSnapshot_();
+        }).catch(handleApiError_).finally(function() {
+          APP_STATE.globalNoticeSaving = false;
+          renderGlobalNoticeCard_();
+        });
+      }
+
       function handleLogin(event) {
         event.preventDefault();
 
@@ -14800,7 +15014,9 @@
                 : '로그인되었습니다. 학생 데이터를 불러오는 중입니다.',
               hasSnapshot ? 'success' : 'info'
             );
-            initializeFirebaseDirectBootstrapState_();
+            initializeFirebaseDirectBootstrapState_().then(function() {
+              return loadGlobalNoticeViaFirebaseDirect_();
+            });
             loadDashboard({ useStagedLoading: true, silent: true });
             return null;
           })
@@ -14861,6 +15077,7 @@
                 renderAll();
                 writeDashboardSnapshot_();
                 saveDashboardSnapshotViaFirebaseDirect_(studentData);
+                loadGlobalNoticeViaFirebaseDirect_();
               });
             }
 
@@ -14868,6 +15085,7 @@
             renderAll();
             writeDashboardSnapshot_();
             saveDashboardSnapshotViaFirebaseDirect_(studentData);
+            loadGlobalNoticeViaFirebaseDirect_();
             return null;
           })
           .then(function() {
@@ -14897,9 +15115,13 @@
         APP_STATE.permissions = studentData.permissions || [];
         APP_STATE.permissionRequests = studentData.permissionRequests || [];
         APP_STATE.homeroomAssignments = studentData.homeroomAssignments || [];
+        hydrateGlobalNotice_(studentData.globalNotice);
         APP_STATE.studentDataLoading = false;
         APP_STATE.materials = materialData && materialData.materials ? materialData.materials : APP_STATE.materials;
         APP_STATE.materialSettings = materialData && materialData.settings ? materialData.settings : APP_STATE.materialSettings;
+        if (materialData && materialData.globalNotice) {
+          hydrateGlobalNotice_(materialData.globalNotice);
+        }
         if (materialData && materialData.openLogs) {
           APP_STATE.materialOpenLogs = materialData.openLogs || [];
           APP_STATE.materialOpenLogsLoaded = true;
@@ -14908,6 +15130,9 @@
         APP_STATE.materialYearTabsBySchool = {};
         APP_STATE.editingMaterialRowNumber = '';
         APP_STATE.events = eventData && eventData.events ? eventData.events : APP_STATE.events;
+        if (eventData && eventData.globalNotice) {
+          hydrateGlobalNotice_(eventData.globalNotice);
+        }
         APP_STATE.eventsLoaded = APP_STATE.eventsLoaded || Boolean(eventData);
         APP_STATE.appName = studentData.appName || APP_STATE.appName;
         APP_STATE.logoUrl = studentData.logoUrl || APP_STATE.logoUrl;
@@ -14928,6 +15153,7 @@
         APP_STATE.permissions = studentData.permissions || [];
         APP_STATE.permissionRequests = studentData.permissionRequests || [];
         APP_STATE.homeroomAssignments = studentData.homeroomAssignments || [];
+        hydrateGlobalNotice_(studentData.globalNotice);
         APP_STATE.studentDataLoading = false;
         APP_STATE.appName = studentData.appName || APP_STATE.appName;
         APP_STATE.logoUrl = studentData.logoUrl || APP_STATE.logoUrl;
@@ -15311,6 +15537,74 @@
             console.warn('Firebase dashboard snapshot save fallback:', error);
           }
           return false;
+        });
+      }
+
+      function getGlobalNoticeFirebaseDocId_() {
+        return 'GLOBAL_NOTICE';
+      }
+
+      function normalizeGlobalNoticeFirebaseData_(data) {
+        data = data || {};
+        return {
+          content: String(data.content || ''),
+          updatedByName: String(data.updatedByName || ''),
+          updatedAt: String(data.updatedAt || '')
+        };
+      }
+
+      function loadGlobalNoticeViaFirebaseDirect_() {
+        if (!APP_STATE.token || !APP_STATE.user || !APP_STATE.user.userId) {
+          return Promise.resolve(false);
+        }
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('dashboardRead')) {
+            return false;
+          }
+          var collectionName = (state.collections && state.collections.dashboardSnapshots) || 'dashboardSnapshots';
+          return state.firestore.collection(collectionName).doc(getGlobalNoticeFirebaseDocId_()).get().then(function(doc) {
+            if (!doc.exists) {
+              return false;
+            }
+            hydrateGlobalNotice_(normalizeGlobalNoticeFirebaseData_(doc.data() || {}));
+            writeDashboardSnapshot_();
+            return true;
+          });
+        }).catch(function(error) {
+          if (window.console && console.warn) {
+            console.warn('Global notice Firebase load fallback:', error);
+          }
+          return false;
+        });
+      }
+
+      function saveGlobalNoticeViaFirebaseDirect_(content) {
+        if (!APP_STATE.token || !APP_STATE.user || !APP_STATE.user.userId || !APP_STATE.isAdmin) {
+          return Promise.reject(new Error('관리자만 공지사항을 저장할 수 있습니다.'));
+        }
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('dashboardRead')) {
+            throw new Error('Firebase 공지 저장 경로가 준비되지 않았습니다.');
+          }
+          var now = new Date();
+          var notice = {
+            content: String(content || ''),
+            updatedById: String(APP_STATE.user.userId || ''),
+            updatedByName: String(APP_STATE.user.name || APP_STATE.user.userId || ''),
+            updatedAt: now.toISOString(),
+            updatedAtMs: now.getTime(),
+            type: 'globalNotice'
+          };
+          var collectionName = (state.collections && state.collections.dashboardSnapshots) || 'dashboardSnapshots';
+          return state.firestore.collection(collectionName).doc(getGlobalNoticeFirebaseDocId_()).set(notice).then(function() {
+            return {
+              ok: true,
+              globalNotice: normalizeGlobalNoticeFirebaseData_(notice),
+              message: notice.content ? '공지사항이 저장되었습니다.' : '공지사항이 비워졌습니다.'
+            };
+          });
         });
       }
 
@@ -15872,6 +16166,7 @@
             .then(function(materialData) {
               APP_STATE.materials = materialData && materialData.materials ? materialData.materials : [];
               APP_STATE.materialSettings = materialData && materialData.settings ? materialData.settings : APP_STATE.materialSettings;
+              hydrateGlobalNotice_(materialData && materialData.globalNotice);
               if (materialData && materialData.openLogs) {
                 APP_STATE.materialOpenLogs = materialData.openLogs || [];
                 APP_STATE.materialOpenLogsLoaded = true;
@@ -15906,6 +16201,7 @@
           return apiRequest('getEvents', { token: APP_STATE.token })
             .then(function(eventData) {
               APP_STATE.events = eventData && eventData.events ? eventData.events : [];
+              hydrateGlobalNotice_(eventData && eventData.globalNotice);
               APP_STATE.eventsLoaded = true;
               writeDashboardSnapshot_();
               if (!config.silent) {
@@ -16012,6 +16308,7 @@
         renderEvents();
         renderGrades();
         renderMaterials();
+        renderGlobalNoticeCard_();
         switchView(APP_STATE.currentView);
         renderPermissionRequestAlert_();
       }
@@ -27873,7 +28170,7 @@
       }
 
       function sortGradesByUpdatedDesc_(a, b) {
-        return String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''));
+        return String(b.updatedAt || b.createdAt || '').localeCompare(String(a.updatedAt || a.createdAt || ''));
       }
 
       function buildGradeSummaryClient_(grades, students) {
@@ -28182,7 +28479,8 @@
           'saveGrade',
           'bulkSaveGrades',
           'deleteGrade',
-          'saveGradeExamOptions'
+          'saveGradeExamOptions',
+          'saveGlobalNotice'
         ].indexOf(action) !== -1;
 
         if (shouldUsePost) {
@@ -28307,6 +28605,7 @@
         APP_STATE.gradeSubjects = normalizeGradeSubjectDefinitions_(gradeData && gradeData.subjectDefinitions ? gradeData.subjectDefinitions : APP_STATE.gradeSubjects);
         APP_STATE.gradeExamOptions = normalizeGradeExamOptions_(gradeData && gradeData.examOptions ? gradeData.examOptions : APP_STATE.gradeExamOptions);
         APP_STATE.gradeScaleSettings = normalizeGradeScaleSettings_(gradeData && gradeData.gradeScaleSettings ? gradeData.gradeScaleSettings : APP_STATE.gradeScaleSettings);
+        hydrateGlobalNotice_(gradeData && gradeData.globalNotice);
         if (gradeData && gradeData.gradeHistory && gradeData.gradeHistory.length) {
           APP_STATE.gradeHistory = gradeData.gradeHistory.map(normalizeGradeRecordV2_);
           APP_STATE.gradeHistoryLoaded = true;
@@ -28659,6 +28958,9 @@
         if (tabButton) {
           APP_STATE.gradeTab = tabButton.getAttribute('data-grade-tab') || 'input';
           renderGrades();
+          if (APP_STATE.gradeTab === 'history') {
+            ensureGradeHistoryLoaded_(false);
+          }
           return;
         }
         var button = event.target.closest('[data-grade-action]');
@@ -30816,6 +31118,9 @@
           APP_STATE.gradeTab = tabButton.getAttribute('data-grade-tab') || 'input';
           APP_STATE.gradePage = 1;
           renderGrades();
+          if (APP_STATE.gradeTab === 'history') {
+            ensureGradeHistoryLoaded_(false);
+          }
           return;
         }
         var button = event.target.closest('[data-grade-action]');
