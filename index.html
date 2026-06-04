@@ -13813,6 +13813,7 @@
       const LOGO_URL = 'https://raw.githubusercontent.com/whdtjd5294/whdtjd5294.github.io/main/sedu_logo.png';
       const SESSION_STORAGE_KEY = 'slms_api_session';
       const DASHBOARD_CACHE_KEY = 'slms_dashboard_snapshot';
+      const GRADE_CACHE_KEY = 'slms_grade_snapshot';
       const DASHBOARD_CACHE_MAX_AGE_MS = 1000 * 60 * 60 * 24;
       const LOGIN_ID_STORAGE_KEY = 'slms_saved_login_id';
       const FIREBASE_DIRECT_BOOTSTRAP_CONFIG = {
@@ -14597,6 +14598,55 @@
         localStorage.removeItem(DASHBOARD_CACHE_KEY);
       }
 
+      function readGradeSnapshot_() {
+        try {
+          var raw = localStorage.getItem(GRADE_CACHE_KEY);
+          if (!raw) {
+            return null;
+          }
+          var parsed = JSON.parse(raw);
+          if (!parsed || !parsed.storedAt || !parsed.userId) {
+            return null;
+          }
+          if ((Date.now() - Number(parsed.storedAt || 0)) > DASHBOARD_CACHE_MAX_AGE_MS) {
+            return null;
+          }
+          return parsed;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function writeGradeSnapshot_() {
+        if (!APP_STATE.user || !APP_STATE.user.userId || !APP_STATE.token || !APP_STATE.gradesLoaded) {
+          return;
+        }
+        try {
+          localStorage.setItem(GRADE_CACHE_KEY, JSON.stringify({
+            userId: APP_STATE.user.userId,
+            storedAt: Date.now(),
+            gradeData: {
+              user: APP_STATE.user,
+              isAdmin: APP_STATE.isAdmin,
+              students: APP_STATE.gradeStudents,
+              grades: APP_STATE.grades,
+              subjectDefinitions: APP_STATE.gradeSubjects,
+              summary: APP_STATE.gradeSummary,
+              examOptions: APP_STATE.gradeExamOptions,
+              gradeScaleSettings: APP_STATE.gradeScaleSettings
+            }
+          }));
+        } catch (error) {
+          if (window.console && console.warn) {
+            console.warn('Grade snapshot save failed:', error);
+          }
+        }
+      }
+
+      function clearGradeSnapshot_() {
+        localStorage.removeItem(GRADE_CACHE_KEY);
+      }
+
       function hydrateDashboardSnapshot_(snapshot) {
         if (!snapshot || !APP_STATE.user || snapshot.userId !== APP_STATE.user.userId) {
           return false;
@@ -14611,6 +14661,15 @@
         APP_STATE.events = snapshot.events || [];
         APP_STATE.materialsLoaded = Boolean(snapshot.materialsLoaded);
         APP_STATE.eventsLoaded = Boolean(snapshot.eventsLoaded);
+        return true;
+      }
+
+      function hydrateGradeSnapshot_(snapshot) {
+        if (!snapshot || !APP_STATE.user || snapshot.userId !== APP_STATE.user.userId || !snapshot.gradeData) {
+          return false;
+        }
+        hydrateGradeData_(snapshot.gradeData);
+        APP_STATE.gradesLoaded = true;
         return true;
       }
 
@@ -15907,6 +15966,7 @@
             }
             return Promise.resolve();
           }
+          hydrateGradeSnapshot_(readGradeSnapshot_());
           if (APP_STATE.gradesLoading) {
             var pendingGrades = APP_STATE.gradeLoadPromise || Promise.resolve();
             if (!config.silent && APP_STATE.currentView === 'grades') {
@@ -15928,6 +15988,7 @@
               hydrateGradeData_(gradeData);
               APP_STATE.gradesLoaded = true;
               APP_STATE.gradesRemoteLoaded = true;
+              writeGradeSnapshot_();
               if (!config.silent && APP_STATE.currentView === 'grades') {
                 renderGrades();
               }
@@ -28054,6 +28115,7 @@
         APP_STATE.selectedLogRow = '';
         clearStoredSession();
         clearDashboardSnapshot_();
+        clearGradeSnapshot_();
         closePermissionModal();
         closeSystemSettingsModal_();
         closeMaterialSettingsModal();
@@ -28730,6 +28792,9 @@
         apiRequest('saveGrade', payload)
           .then(function(data) {
             hydrateGradeData_(data);
+            APP_STATE.gradesLoaded = true;
+            APP_STATE.gradesRemoteLoaded = true;
+            writeGradeSnapshot_();
             delete APP_STATE.gradeDrafts[key];
             APP_STATE.gradeRowMessages[key] = { tone: 'success', message: '저장됨' };
             setNotice('과목 성적을 저장했습니다.', 'success');
@@ -29662,6 +29727,9 @@
           gradesJson: JSON.stringify(payloads)
         }).then(function(data) {
           hydrateGradeData_(data);
+          APP_STATE.gradesLoaded = true;
+          APP_STATE.gradesRemoteLoaded = true;
+          writeGradeSnapshot_();
           APP_STATE.gradeDrafts = {};
           APP_STATE.gradeRowMessages = {};
           APP_STATE.gradeSavingMap = {};
@@ -29728,7 +29796,7 @@
         }
         container.classList.remove('grades-v2');
         container.classList.add('grades-v3');
-        if (APP_STATE.gradesLoading && !APP_STATE.gradesRemoteLoaded) {
+        if (APP_STATE.gradesLoading && !APP_STATE.gradesLoaded) {
           container.innerHTML = renderGradesLoadingState_();
           renderLucideIcons_();
           return;
