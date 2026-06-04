@@ -13815,6 +13815,7 @@
       const DASHBOARD_CACHE_KEY = 'slms_dashboard_snapshot';
       const GRADE_CACHE_KEY = 'slms_grade_snapshot';
       const DASHBOARD_CACHE_MAX_AGE_MS = 1000 * 60 * 60 * 24;
+      const GRADE_SYNC_SOFT_TIMEOUT_MS = 6000;
       const LOGIN_ID_STORAGE_KEY = 'slms_saved_login_id';
       const FIREBASE_DIRECT_BOOTSTRAP_CONFIG = {
         apiKey: 'AIzaSyCFM21ZxgwIYwmjRPaAOp5bL9Kprqiyppg',
@@ -14028,6 +14029,8 @@
         gradesRemoteLoaded: false,
         gradesLoading: false,
         gradeLoadPromise: null,
+        gradeLoadSoftTimeoutTimer: null,
+        gradeSyncIssue: '',
         gradeTab: 'overview',
         gradeFilters: {
           schoolYear: '2026',
@@ -14671,6 +14674,47 @@
         hydrateGradeData_(snapshot.gradeData);
         APP_STATE.gradesLoaded = true;
         return true;
+      }
+
+      function clearGradeSyncSoftTimeout_() {
+        if (APP_STATE.gradeLoadSoftTimeoutTimer) {
+          window.clearTimeout(APP_STATE.gradeLoadSoftTimeoutTimer);
+        }
+        APP_STATE.gradeLoadSoftTimeoutTimer = null;
+      }
+
+      function armGradeSyncSoftTimeout_() {
+        clearGradeSyncSoftTimeout_();
+        APP_STATE.gradeLoadSoftTimeoutTimer = window.setTimeout(function() {
+          if (!APP_STATE.gradesLoading || APP_STATE.gradesRemoteLoaded) {
+            return;
+          }
+          APP_STATE.gradesLoading = false;
+          APP_STATE.gradeLoadPromise = null;
+          APP_STATE.gradeSyncIssue = 'timeout';
+          if (APP_STATE.currentView === 'grades') {
+            renderGrades();
+            setNotice('성적 원격 동기화가 지연되어 저장된 화면으로 계속 사용합니다. 동기화는 뒤에서 계속 진행됩니다.', 'warning');
+          }
+        }, GRADE_SYNC_SOFT_TIMEOUT_MS);
+      }
+
+      function handleGradeSyncFailure_(error) {
+        APP_STATE.gradesLoading = false;
+        APP_STATE.gradeLoadPromise = null;
+        APP_STATE.gradeSyncIssue = 'failed';
+        if (!APP_STATE.gradesLoaded) {
+          ensureGradeFallbackData_();
+          APP_STATE.gradesLoaded = true;
+        }
+        if (window.console && console.warn) {
+          console.warn('Grade sync failed:', error);
+        }
+        if (APP_STATE.currentView === 'grades') {
+          renderGrades();
+          setNotice('성적 원격 동기화가 실패했습니다. 저장된 화면 또는 기본 입력 화면으로 계속 사용할 수 있습니다.', 'warning');
+        }
+        return null;
       }
 
       function showLoginOnly() {
@@ -15970,7 +16014,10 @@
           if (APP_STATE.gradesLoading) {
             var pendingGrades = APP_STATE.gradeLoadPromise || Promise.resolve();
             if (!config.silent && APP_STATE.currentView === 'grades') {
-              return pendingGrades.finally(function() {
+              renderGrades();
+              return pendingGrades.catch(function(error) {
+                return handleGradeSyncFailure_(error);
+              }).finally(function() {
                 if (APP_STATE.currentView === 'grades') {
                   renderGrades();
                 }
@@ -15980,20 +16027,27 @@
           }
           ensureGradeFallbackData_();
           APP_STATE.gradesLoading = true;
+          APP_STATE.gradeSyncIssue = '';
           if (!config.silent && APP_STATE.currentView === 'grades') {
             renderGrades();
           }
+          armGradeSyncSoftTimeout_();
           APP_STATE.gradeLoadPromise = apiRequest('getGrades', { token: APP_STATE.token })
             .then(function(gradeData) {
               hydrateGradeData_(gradeData);
               APP_STATE.gradesLoaded = true;
               APP_STATE.gradesRemoteLoaded = true;
+              APP_STATE.gradeSyncIssue = '';
               writeGradeSnapshot_();
               if (!config.silent && APP_STATE.currentView === 'grades') {
                 renderGrades();
               }
             })
+            .catch(function(error) {
+              return handleGradeSyncFailure_(error);
+            })
             .finally(function() {
+              clearGradeSyncSoftTimeout_();
               APP_STATE.gradesLoading = false;
               APP_STATE.gradeLoadPromise = null;
               if (APP_STATE.currentView === 'grades') {
@@ -27126,6 +27180,19 @@
         return '<span class="grade-status-badge">미입력</span>';
       }
 
+      function renderGradeSyncStatusBadge_() {
+        if (APP_STATE.gradesLoading) {
+          return '<span class="grade-status-badge saving"><i data-lucide="loader-2"></i> 동기화 중</span>';
+        }
+        if (APP_STATE.gradeSyncIssue === 'timeout') {
+          return '<span class="grade-status-badge dirty">저장 화면 사용 중</span>';
+        }
+        if (APP_STATE.gradeSyncIssue === 'failed') {
+          return '<span class="grade-status-badge error">동기화 실패</span>';
+        }
+        return '';
+      }
+
       function renderGradeInputSidePanel_() {
         var selected = getSelectedGradeStudent_();
         var records = selected ? getGradesForStudent_(selected.studentId) : [];
@@ -27439,25 +27506,33 @@
       }
 
       function refreshGrades_() {
-        APP_STATE.gradesLoaded = false;
+        hydrateGradeSnapshot_(readGradeSnapshot_());
         APP_STATE.gradesRemoteLoaded = false;
         APP_STATE.gradesLoading = true;
         APP_STATE.gradeHistoryLoaded = false;
         APP_STATE.gradeHistory = [];
+        APP_STATE.gradeSyncIssue = '';
         ensureGradeFallbackData_();
         renderGrades();
-        apiRequest('getGrades', { token: APP_STATE.token })
+        armGradeSyncSoftTimeout_();
+        APP_STATE.gradeLoadPromise = apiRequest('getGrades', { token: APP_STATE.token })
           .then(function(data) {
             hydrateGradeData_(data);
             APP_STATE.gradesLoaded = true;
             APP_STATE.gradesRemoteLoaded = true;
+            APP_STATE.gradeSyncIssue = '';
             APP_STATE.gradeDrafts = {};
             APP_STATE.gradeRowMessages = {};
+            writeGradeSnapshot_();
             setNotice('성적 데이터를 동기화했습니다.', 'success');
           })
-          .catch(handleApiError_)
+          .catch(function(error) {
+            return handleGradeSyncFailure_(error);
+          })
           .finally(function() {
+            clearGradeSyncSoftTimeout_();
             APP_STATE.gradesLoading = false;
+            APP_STATE.gradeLoadPromise = null;
             renderGrades();
           });
       }
@@ -28082,6 +28157,8 @@
         APP_STATE.gradesRemoteLoaded = false;
         APP_STATE.gradesLoading = false;
         APP_STATE.gradeLoadPromise = null;
+        clearGradeSyncSoftTimeout_();
+        APP_STATE.gradeSyncIssue = '';
         APP_STATE.gradeTab = 'input';
         APP_STATE.gradeFilters = {
           schoolYear: '2026',
@@ -28335,7 +28412,7 @@
           '  <div>',
           '    <h3>성적 관리</h3>',
           '    <p>학년별, 연도별, 과목별 가채점과 최종 성적을 입력하고 Firestore 기반 기록으로 분석합니다.</p>',
-          '    <div class="grades-chip-row" style="margin-top:8px;"><span class="grade-year-pill">' + escapeHtml(getGradeYear_()) + '년</span><span class="grade-chip teal">직보 과목 매니저 연동</span>' + (APP_STATE.gradesLoading ? '<span class="grade-status-badge saving"><i data-lucide="loader-2"></i> 동기화 중</span>' : '') + '</div>',
+          '    <div class="grades-chip-row" style="margin-top:8px;"><span class="grade-year-pill">' + escapeHtml(getGradeYear_()) + '년</span><span class="grade-chip teal">직보 과목 매니저 연동</span>' + renderGradeSyncStatusBadge_() + '</div>',
           '  </div>',
           '  <div class="grades-toolbar-actions">',
           '    <button type="button" class="mini-button" data-grade-action="sync"><i data-lucide="refresh-cw"></i> 동기화</button>',
@@ -29848,7 +29925,7 @@
       function renderGradeMobileHero_() {
         return [
           '<section class="grades-v3-hero grades-mobile-hero">',
-          '  <div><h3>성적 관리</h3><p>' + escapeHtml(getGradeCurrentExamLabel_()) + '</p><div class="grades-chip-row"><span class="grade-year-pill">' + escapeHtml(getGradeYear_()) + '년</span><span class="grade-chip teal">내신-테스트-모의고사-수능</span>' + (APP_STATE.gradesLoading ? '<span class="grade-status-badge saving"><i data-lucide="loader-2"></i> 동기화</span>' : '') + '</div></div>',
+          '  <div><h3>성적 관리</h3><p>' + escapeHtml(getGradeCurrentExamLabel_()) + '</p><div class="grades-chip-row"><span class="grade-year-pill">' + escapeHtml(getGradeYear_()) + '년</span><span class="grade-chip teal">내신-테스트-모의고사-수능</span>' + renderGradeSyncStatusBadge_() + '</div></div>',
           '  <div class="grades-v3-actions">',
           '    <button type="button" class="mini-button" data-grade-action="sync"><i data-lucide="refresh-cw"></i> 동기화</button>',
           '    <button type="button" class="mini-button" data-grade-action="upload"><i data-lucide="upload"></i> 업로드</button>',
@@ -30050,7 +30127,7 @@
       function renderGradeV3Hero_() {
         return [
           '<section class="grades-v3-hero">',
-          '  <div><h3>성적 관리</h3><p>내신, 테스트, 모의고사, 수능 성적을 학생별로 입력하고 분석합니다.</p><div class="grades-chip-row" style="margin-top:9px;"><span class="grade-year-pill">' + escapeHtml(getGradeYear_()) + '년</span><span class="grade-chip teal">직보 과목 매니저 연동</span>' + (APP_STATE.gradesLoading ? '<span class="grade-status-badge saving"><i data-lucide="loader-2"></i> 동기화 중</span>' : '') + '</div></div>',
+          '  <div><h3>성적 관리</h3><p>내신, 테스트, 모의고사, 수능 성적을 학생별로 입력하고 분석합니다.</p><div class="grades-chip-row" style="margin-top:9px;"><span class="grade-year-pill">' + escapeHtml(getGradeYear_()) + '년</span><span class="grade-chip teal">직보 과목 매니저 연동</span>' + renderGradeSyncStatusBadge_() + '</div></div>',
           '  <div class="grades-v3-actions">',
           '    <button type="button" class="mini-button" data-grade-action="sync"><i data-lucide="refresh-cw"></i> 동기화</button>',
           '    <button type="button" class="mini-button" data-grade-action="download-template"><i data-lucide="file-down"></i> 양식</button>',
