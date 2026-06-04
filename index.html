@@ -13955,7 +13955,9 @@
       const FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS = {
         studentLogs: 'studentLogs',
         permissions: 'studentPermissions',
-        dashboardSnapshots: 'dashboardSnapshots'
+        dashboardSnapshots: 'dashboardSnapshots',
+        grades: 'studentGrades',
+        gradeHistories: 'studentGradeHistories'
       };
       const FIREBASE_DIRECT_DEFAULT_FLAGS = {
         logRead: false,
@@ -13963,7 +13965,10 @@
         logCreateWrite: false,
         logDeleteWrite: false,
         dashboardRead: false,
-        globalNoticeWrite: false
+        globalNoticeWrite: false,
+        gradeRead: false,
+        gradeWrite: false,
+        gradeDelete: false
       };
       const LOG_TAG_OPTIONS = [
         '수업현황',
@@ -15674,6 +15679,238 @@
         return Boolean(state.enabled && state.featureFlags && state.featureFlags[featureName]);
       }
 
+      function isGradeFirebaseDirectReady_(state, featureName) {
+        state = state || APP_STATE.firebaseDirect || {};
+        return Boolean(state.enabled && state.firestore && (!featureName || isFirebaseDirectFeatureEnabled_(featureName)));
+      }
+
+      function getGradeFirebaseCollectionName_(name) {
+        var collections = (APP_STATE.firebaseDirect && APP_STATE.firebaseDirect.collections) || {};
+        if (name === 'history') {
+          return collections.gradeHistories || 'studentGradeHistories';
+        }
+        return collections.grades || 'studentGrades';
+      }
+
+      function normalizeGradeFirebaseDoc_(doc, changeType) {
+        var data = doc && typeof doc.data === 'function' ? (doc.data() || {}) : {};
+        var grade = normalizeGradeRecordV2_(Object.assign({}, data, {
+          gradeId: data.gradeId || (doc && doc.id) || '',
+          historyId: data.historyId || (changeType ? ((doc && doc.id) || '') : ''),
+          changeType: data.changeType || changeType || ''
+        }));
+        grade.updatedAtMs = Number(data.updatedAtMs || data.createdAtMs || parseGradeDateValue_(grade.updatedAt || grade.createdAt) || 0);
+        return grade;
+      }
+
+      function loadGradesViaFirebaseDirect_() {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!isGradeFirebaseDirectReady_(state, 'gradeRead')) {
+            throw new Error('성적 Firestore 직접 조회가 아직 활성화되지 않았습니다.');
+          }
+          return state.firestore.collection(getGradeFirebaseCollectionName_('grades')).get().then(function(snapshot) {
+            var grades = [];
+            snapshot.forEach(function(doc) {
+              var grade = normalizeGradeFirebaseDoc_(doc);
+              if (grade.studentId && grade.examCategory && grade.examName) {
+                grades.push(grade);
+              }
+            });
+            grades.sort(sortGradesByUpdatedDesc_);
+            return {
+              ok: true,
+              directFirebase: true,
+              grades: grades
+            };
+          });
+        });
+      }
+
+      function loadGradeHistoryViaFirebaseDirect_(limit) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!isGradeFirebaseDirectReady_(state, 'gradeRead')) {
+            throw new Error('성적 Firestore 직접 조회가 아직 활성화되지 않았습니다.');
+          }
+          return state.firestore.collection(getGradeFirebaseCollectionName_('history'))
+            .orderBy('updatedAtMs', 'desc')
+            .limit(Math.max(1, Math.min(500, Number(limit || 300))))
+            .get()
+            .then(function(snapshot) {
+              var rows = [];
+              snapshot.forEach(function(doc) {
+                var grade = normalizeGradeFirebaseDoc_(doc, 'update');
+                if (grade.studentId && grade.examCategory && grade.examName) {
+                  rows.push(grade);
+                }
+              });
+              rows.sort(sortGradesByUpdatedDesc_);
+              return rows;
+            });
+        });
+      }
+
+      function buildGradeFirebasePayload_(payload, gradeId, existing) {
+        var now = new Date();
+        var timestamp = now.toISOString();
+        var currentUser = APP_STATE.user || {};
+        var createdAt = existing && existing.createdAt ? existing.createdAt : (payload.createdAt || timestamp);
+        var createdByName = existing && existing.createdByName ? existing.createdByName : (payload.createdByName || currentUser.name || currentUser.userId || '');
+        var createdById = existing && existing.createdById ? existing.createdById : (payload.createdById || currentUser.userId || '');
+        if (APP_STATE.isAdmin && payload.createdByName) {
+          createdByName = payload.createdByName;
+          createdById = payload.createdById || createdById || currentUser.userId || '';
+        }
+        var subjectName = payload.subjectName || payload.detailSubject || payload.subjectArea || '';
+        var subjectCategory = normalizeGradeSubjectCategoryClient_(payload.subjectCategory || payload.subjectArea, subjectName);
+        var subjectId = buildGradeSubjectIdClient_(subjectCategory, subjectName) || payload.subjectId || '';
+        return Object.assign({}, payload, {
+          gradeId: gradeId,
+          subjectId: subjectId,
+          subjectArea: subjectCategory,
+          detailSubject: subjectName,
+          subjectCategory: subjectCategory,
+          subjectName: subjectName,
+          rawScore: payload.rawScore || payload.finalScore || payload.provisionalScore || '',
+          finalScore: payload.finalScore || payload.rawScore || '',
+          createdAt: createdAt,
+          createdById: createdById,
+          createdByName: createdByName,
+          updatedAt: timestamp,
+          updatedAtMs: now.getTime(),
+          updatedById: currentUser.userId || '',
+          updatedByName: currentUser.name || currentUser.userId || ''
+        });
+      }
+
+      function buildGradeFirebaseDocId_(payload) {
+        if (payload.gradeId) {
+          return payload.gradeId;
+        }
+        var key = [
+          payload.studentId,
+          payload.examYear || payload.year || payload.schoolYear,
+          payload.examCategory,
+          payload.term,
+          payload.examName,
+          payload.examRound,
+          payload.examMonth,
+          payload.examDate,
+          payload.subjectId || buildGradeSubjectIdClient_(payload.subjectCategory, payload.subjectName),
+          payload.subjectCategory,
+          payload.subjectName
+        ].map(function(value) {
+          return String(value || '').replace(/\s+/g, '');
+        }).join('|');
+        return 'GRADE-' + firebaseDirectBase64UrlEncode_(key).slice(0, 80);
+      }
+
+      function saveGradePayloadsViaFirebaseDirect_(payloads) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!isGradeFirebaseDirectReady_(state, 'gradeWrite')) {
+            throw new Error('성적 Firestore 직접 저장이 아직 활성화되지 않았습니다.');
+          }
+          var gradeCollection = state.firestore.collection(getGradeFirebaseCollectionName_('grades'));
+          var historyCollection = state.firestore.collection(getGradeFirebaseCollectionName_('history'));
+          var batch = state.firestore.batch();
+          var savedGrades = [];
+          (payloads || []).forEach(function(payload) {
+            var gradeId = buildGradeFirebaseDocId_(payload);
+            var existing = findGradeRecordById_(gradeId) || findGradeRecordByDedupePayload_(payload);
+            var grade = buildGradeFirebasePayload_(payload, gradeId, existing);
+            var historyId = 'GRADE-HISTORY-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+            var history = Object.assign({}, grade, {
+              historyId: historyId,
+              changeType: existing ? 'update' : 'create',
+              snapshotAt: grade.updatedAt,
+              snapshotById: grade.updatedById,
+              snapshotByName: grade.updatedByName
+            });
+            batch.set(gradeCollection.doc(gradeId), grade, { merge: true });
+            batch.set(historyCollection.doc(historyId), history, { merge: true });
+            savedGrades.push(normalizeGradeRecordV2_(grade));
+          });
+          return batch.commit().then(function() {
+            mergeGradeRecordsAfterDirectSave_(savedGrades);
+            return {
+              ok: true,
+              directFirebase: true,
+              grades: APP_STATE.grades,
+              savedCount: savedGrades.length
+            };
+          });
+        });
+      }
+
+      function deleteGradeViaFirebaseDirect_(gradeId) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!isGradeFirebaseDirectReady_(state, 'gradeDelete')) {
+            throw new Error('성적 Firestore 직접 삭제가 아직 활성화되지 않았습니다.');
+          }
+          return state.firestore.collection(getGradeFirebaseCollectionName_('grades')).doc(String(gradeId || '')).delete().then(function() {
+            APP_STATE.grades = (APP_STATE.grades || []).filter(function(record) {
+              return String(record.gradeId || '') !== String(gradeId || '');
+            });
+            APP_STATE.gradeHistory = [];
+            APP_STATE.gradeHistoryLoaded = false;
+            return { ok: true, directFirebase: true };
+          });
+        });
+      }
+
+      function findGradeRecordByDedupePayload_(payload) {
+        var targetKey = [
+          payload.studentId,
+          payload.examYear || payload.year || payload.schoolYear,
+          payload.examCategory,
+          payload.term,
+          payload.examName,
+          payload.examRound,
+          payload.examMonth,
+          payload.examDate,
+          payload.subjectId || buildGradeSubjectIdClient_(payload.subjectCategory, payload.subjectName),
+          payload.subjectCategory,
+          payload.subjectName
+        ].map(function(value) {
+          return String(value || '').replace(/\s+/g, '');
+        }).join('|');
+        return (APP_STATE.grades || []).find(function(record) {
+          var recordKey = [
+            record.studentId,
+            record.examYear || record.year || record.schoolYear,
+            record.examCategory,
+            record.term,
+            record.examName,
+            record.examRound,
+            record.examMonth,
+            record.examDate,
+            record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName),
+            record.subjectCategory,
+            record.subjectName
+          ].map(function(value) {
+            return String(value || '').replace(/\s+/g, '');
+          }).join('|');
+          return recordKey === targetKey;
+        }) || null;
+      }
+
+      function mergeGradeRecordsAfterDirectSave_(records) {
+        var map = {};
+        (APP_STATE.grades || []).forEach(function(record) {
+          map[String(record.gradeId || '')] = record;
+        });
+        (records || []).forEach(function(record) {
+          map[String(record.gradeId || '')] = record;
+        });
+        APP_STATE.grades = Object.keys(map).map(function(key) { return map[key]; }).filter(function(record) {
+          return record && record.gradeId;
+        }).sort(sortGradesByUpdatedDesc_);
+        APP_STATE.gradeSummary = buildGradeSummaryClient_(APP_STATE.grades, APP_STATE.gradeStudents);
+      }
+
       function isFirebaseStudentLogId_(rowKey) {
         return String(rowKey || '').indexOf('LOG-') === 0;
       }
@@ -16332,8 +16569,16 @@
           if (!config.silent && APP_STATE.currentView === 'grades') {
             renderGrades();
           }
-          APP_STATE.gradeLoadPromise = apiRequest('getGrades', { token: APP_STATE.token })
+          APP_STATE.gradeLoadPromise = loadGradesViaFirebaseDirect_().catch(function(error) {
+            console.warn('Firebase direct grades load fallback:', error);
+            return apiRequest('getGrades', { token: APP_STATE.token });
+          })
             .then(function(gradeData) {
+              if (gradeData && gradeData.directFirebase) {
+                gradeData.students = APP_STATE.gradeStudents && APP_STATE.gradeStudents.length ? APP_STATE.gradeStudents : APP_STATE.visibleStudents;
+                gradeData.subjectDefinitions = APP_STATE.gradeSubjects || [];
+                gradeData.examOptions = APP_STATE.gradeExamOptions;
+              }
               hydrateGradeData_(gradeData);
               APP_STATE.gradesLoaded = true;
               APP_STATE.gradesRemoteLoaded = true;
@@ -27819,8 +28064,16 @@
         APP_STATE.gradeHistory = [];
         APP_STATE.gradeSyncIssue = '';
         renderGrades();
-        APP_STATE.gradeLoadPromise = apiRequest('getGrades', { token: APP_STATE.token })
+        APP_STATE.gradeLoadPromise = loadGradesViaFirebaseDirect_().catch(function(error) {
+          console.warn('Firebase direct grades refresh fallback:', error);
+          return apiRequest('getGrades', { token: APP_STATE.token });
+        })
           .then(function(data) {
+            if (data && data.directFirebase) {
+              data.students = APP_STATE.gradeStudents && APP_STATE.gradeStudents.length ? APP_STATE.gradeStudents : APP_STATE.visibleStudents;
+              data.subjectDefinitions = APP_STATE.gradeSubjects || [];
+              data.examOptions = APP_STATE.gradeExamOptions;
+            }
             hydrateGradeData_(data);
             APP_STATE.gradesLoaded = true;
             APP_STATE.gradesRemoteLoaded = true;
@@ -27849,9 +28102,14 @@
         }
         APP_STATE.gradeHistoryLoading = true;
         renderGrades();
-        apiRequest('getGradeHistory', {
-          token: APP_STATE.token,
-          limit: '300'
+        loadGradeHistoryViaFirebaseDirect_(300).then(function(rows) {
+          return { gradeHistory: rows, directFirebase: true };
+        }).catch(function(error) {
+          console.warn('Firebase direct grade history fallback:', error);
+          return apiRequest('getGradeHistory', {
+            token: APP_STATE.token,
+            limit: '300'
+          });
         }).then(function(data) {
           APP_STATE.gradeHistory = (data && data.gradeHistory ? data.gradeHistory : []).map(normalizeGradeRecordV2_);
           APP_STATE.gradeHistoryLoaded = true;
@@ -27923,17 +28181,28 @@
         if (!gradeId || !window.confirm('선택한 성적을 삭제할까요?')) {
           return;
         }
-        apiRequest('deleteGrade', {
-          token: APP_STATE.token,
-          gradeId: gradeId
+        deleteGradeViaFirebaseDirect_(gradeId).catch(function(directError) {
+          console.warn('Firebase direct grade delete fallback:', directError);
+          return apiRequest('deleteGrade', {
+            token: APP_STATE.token,
+            gradeId: gradeId
+          });
         }).then(function(data) {
-          hydrateGradeData_(data);
+          if (data && !data.directFirebase) {
+            hydrateGradeData_(data);
+          }
           APP_STATE.gradeModal = '';
           APP_STATE.gradeEditor = null;
           APP_STATE.gradeHistory = [];
           APP_STATE.gradeHistoryLoaded = false;
           setNotice('성적이 삭제되었습니다.', 'success');
-        }).catch(handleApiError_).finally(renderGrades);
+        }).catch(function(error) {
+          if (/UrlFetchApp\.fetch|script\.external_request|권한이 없습니다/i.test(getErrorMessage(error))) {
+            setNotice('성적 삭제는 Firestore direct 권한 설정이 필요합니다. Apps Script의 UrlFetch 권한 오류를 피하려면 Firebase 직접 저장을 활성화해 주세요.', 'error');
+            return;
+          }
+          handleApiError_(error);
+        }).finally(renderGrades);
       }
 
       function buildGradePayloadForStudent_(studentId, subject, silent) {
@@ -29282,9 +29551,14 @@
         var key = getGradeDraftKey_(studentId, subjectId);
         APP_STATE.gradeSavingMap[key] = true;
         renderGrades();
-        apiRequest('saveGrade', payload)
+        saveGradePayloadsViaFirebaseDirect_([payload]).catch(function(directError) {
+          console.warn('Firebase direct grade save fallback:', directError);
+          return apiRequest('saveGrade', payload);
+        })
           .then(function(data) {
-            hydrateGradeData_(data);
+            if (data && !data.directFirebase) {
+              hydrateGradeData_(data);
+            }
             APP_STATE.gradesLoaded = true;
             APP_STATE.gradesRemoteLoaded = true;
             delete APP_STATE.gradeDrafts[key];
@@ -30473,11 +30747,16 @@
       }
 
       function saveGradePayloadListV2_(payloads, successMessage) {
-        apiRequest('bulkSaveGrades', {
-          token: APP_STATE.token,
-          gradesJson: JSON.stringify(payloads)
+        saveGradePayloadsViaFirebaseDirect_(payloads).catch(function(directError) {
+          console.warn('Firebase direct bulk grade save fallback:', directError);
+          return apiRequest('bulkSaveGrades', {
+            token: APP_STATE.token,
+            gradesJson: JSON.stringify(payloads)
+          });
         }).then(function(data) {
-          hydrateGradeData_(data);
+          if (data && !data.directFirebase) {
+            hydrateGradeData_(data);
+          }
           APP_STATE.gradesLoaded = true;
           APP_STATE.gradesRemoteLoaded = true;
           APP_STATE.gradeDrafts = {};
