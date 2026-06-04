@@ -13684,7 +13684,7 @@
           </section>
 
           <section class="material-library">
-            <div id="materialsNoticeWrap"></div>
+            <div id="materialsNoticeWrap" class="global-notice-inline" data-global-notice-slot></div>
             <div id="materialsSummaryWrap" class="material-summary-strip"></div>
             <div id="materialsOpenLogWrap" class="material-open-log-host hidden"></div>
             <section class="material-console">
@@ -14918,21 +14918,20 @@
 
       function renderGlobalNoticeCard_() {
         var wrap = document.getElementById('globalNoticeWrap');
-        if (!wrap) {
-          return;
+        if (wrap) {
+          wrap.className = '';
+          wrap.innerHTML = '';
         }
-        wrap.className = '';
-        wrap.innerHTML = '';
-        if (APP_STATE.currentView === 'grades') {
-          renderGrades();
-        } else if (APP_STATE.currentView === 'students') {
-          renderStudentsPreservingSearchFocus_();
-        } else if (APP_STATE.currentView === 'materials') {
-          renderMaterials();
-        }
+        Array.prototype.slice.call(document.querySelectorAll('[data-global-notice-slot]')).forEach(function(slot) {
+          slot.innerHTML = renderGlobalNoticeCardHtmlInner_();
+        });
       }
 
-      function renderGlobalNoticeCardHtml_() {
+      function renderGlobalNoticeSlotHtml_() {
+        return '<div class="global-notice-inline" data-global-notice-slot>' + renderGlobalNoticeCardHtmlInner_() + '</div>';
+      }
+
+      function renderGlobalNoticeCardHtmlInner_() {
         var notice = APP_STATE.globalNotice || {};
         var content = String(notice.content || '').trim();
         if (!content && !APP_STATE.isAdmin) {
@@ -14944,7 +14943,6 @@
           ? '<div class="global-notice-content">' + escapeHtml(content) + '</div>'
           : '<div class="global-notice-content global-notice-empty">공지사항을 입력해 주세요.</div>';
         return [
-          '<div class="global-notice-inline">',
           '<section class="global-notice-card" aria-label="전역 공지사항">',
           '  <span class="global-notice-icon"><i data-lucide="megaphone"></i></span>',
           '  <div class="global-notice-body">',
@@ -14954,8 +14952,7 @@
           '  </div>',
              APP_STATE.isAdmin && !editing ? '<button type="button" class="mini-button" data-global-notice-action="edit"><i data-lucide="edit-3"></i> 수정</button>' : '',
              editing ? renderGlobalNoticeForm_() : '',
-          '</section>',
-          '</div>'
+          '</section>'
         ].join('');
       }
 
@@ -16740,21 +16737,21 @@
         }
         if (mode === 'school') {
           return [
-            renderGlobalNoticeCardHtml_(),
+            renderGlobalNoticeSlotHtml_(),
             renderScopeBanner_(allScopedStudents),
             renderSchoolMode_(students)
           ].join('');
         }
         if (mode === 'list') {
           return [
-            renderGlobalNoticeCardHtml_(),
+            renderGlobalNoticeSlotHtml_(),
             renderScopeBanner_(allScopedStudents),
             renderInsightBand_(allScopedStudents),
             renderStudentLogListMode_(students, emptyHtml)
           ].join('');
         }
         return [
-          renderGlobalNoticeCardHtml_(),
+          renderGlobalNoticeSlotHtml_(),
           renderScopeBanner_(allScopedStudents),
           renderInsightBand_(allScopedStudents),
           mode === 'permission' ? renderPermissionMode_(students) : '',
@@ -25294,7 +25291,7 @@
         syncMaterialCreatePanel_();
         var noticeWrap = document.getElementById('materialsNoticeWrap');
         if (noticeWrap) {
-          noticeWrap.innerHTML = renderGlobalNoticeCardHtml_();
+          noticeWrap.innerHTML = renderGlobalNoticeCardHtmlInner_();
         }
 
         var filterState = getCurrentMaterialFilterState_();
@@ -28383,7 +28380,6 @@
         }
 
         APP_STATE.currentView = viewName;
-        renderGlobalNoticeCard_();
 
         Array.prototype.slice.call(document.querySelectorAll('.dashboard-view')).forEach(function(view) {
           view.classList.toggle('active', view.id === 'view-' + viewName);
@@ -30498,7 +30494,7 @@
           '<div class="grades-v3-shell ' + escapeAttribute(getGradeThemeClass_()) + '">',
           renderGradeV3LeftRail_(),
           '<div class="grades-v3-main">',
-          renderGlobalNoticeCardHtml_(),
+          renderGlobalNoticeSlotHtml_(),
           renderGradeV3Hero_(),
           renderGradeV3Tabs_(),
           renderGradeV3MainCard_(),
@@ -30511,7 +30507,7 @@
       function renderGradeMobileShell_() {
         return [
           '<div class="grades-mobile-shell ' + escapeAttribute(getGradeThemeClass_()) + '">',
-          renderGlobalNoticeCardHtml_(),
+          renderGlobalNoticeSlotHtml_(),
           renderGradeMobileHero_(),
           renderGradeV3Tabs_(),
           renderGradeMobileMainCard_(),
