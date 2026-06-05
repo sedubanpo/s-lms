@@ -1168,6 +1168,20 @@
 
       .system-settings-modal-card {
         width: min(980px, 100%);
+        max-height: calc(100vh - 44px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .system-settings-modal-card .modal-top {
+        flex: 0 0 auto;
+      }
+
+      #systemSettingsContent {
+        min-height: 0;
+        overflow: auto;
+        padding-right: 4px;
       }
 
       .system-settings-grid {
@@ -1177,8 +1191,8 @@
       }
 
       .system-settings-item {
-        min-height: 72px;
-        padding: 13px 14px;
+        min-height: 58px;
+        padding: 10px 12px;
         border: 1px solid #dbe7f7;
         border-radius: 14px;
         background: #f8fbff;
@@ -1266,6 +1280,7 @@
         display: grid;
         grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
         gap: 12px;
+        align-items: start;
       }
 
       .account-list-panel,
@@ -1304,7 +1319,7 @@
       }
 
       .account-table-wrap {
-        max-height: 340px;
+        max-height: clamp(160px, calc(100vh - 520px), 300px);
         overflow: auto;
         border: 1px solid #e2e8f0;
         border-radius: 12px;
@@ -15432,17 +15447,37 @@
         }
       }
 
-      function normalizeFirebasePermissionForApp_(doc) {
+      function normalizeFirebasePermissionRowsForApp_(doc) {
         var data = normalizeFirebasePlainDoc_(doc);
         var studentId = String(data.studentId || data.id || '').trim();
-        var instructorId = String(data.instructorId || data.userId || data.teacherId || data.uid || '').trim();
-        return Object.assign({}, data, {
-          studentId: studentId,
-          studentName: data.studentName || data.name || '',
-          instructorId: instructorId,
-          instructorName: data.instructorName || data.teacherName || data.userName || '',
-          permission: data.permission || data.access || 'ALLOW'
+        var ids = parseFirebaseJsonArray_(data.instructorIdsJson);
+        var names = parseFirebaseJsonArray_(data.instructorNamesJson);
+        var subjects = parseFirebaseJsonArray_(data.instructorSubjectsJson);
+        if (!ids.length && (data.instructorId || data.userId || data.teacherId || data.uid)) {
+          ids = [data.instructorId || data.userId || data.teacherId || data.uid];
+          names = [data.instructorName || data.teacherName || data.userName || ''];
+          subjects = [data.subject || ''];
+        }
+        return ids.map(function(instructorId, index) {
+          return Object.assign({}, data, {
+            studentId: studentId,
+            studentName: data.studentName || data.name || '',
+            instructorId: String(instructorId || '').trim(),
+            instructorName: names[index] || '',
+            subject: subjects[index] || data.subject || '',
+            permission: data.permission || data.access || 'ALLOW'
+          });
+        }).filter(function(item) {
+          return item.studentId && item.instructorId;
         });
+      }
+
+      function flattenFirebasePermissionSnapshot_(snapshot) {
+        var rows = [];
+        (snapshot.docs || []).forEach(function(doc) {
+          rows = rows.concat(normalizeFirebasePermissionRowsForApp_(doc));
+        });
+        return rows;
       }
 
       function normalizeFirebasePermissionRequestForApp_(doc) {
@@ -15525,22 +15560,23 @@
           if (user.status === 'DISABLED' || user.role === 'DISABLED') {
             throw new Error('비활성화된 계정입니다. 관리자에게 문의하세요.');
           }
-          var adminDataPromise = user.role === 'ADMIN'
-            ? Promise.all([
-                db.collection(collections.users || 'users').get(),
-                db.collection(collections.userProfiles || 'userProfiles').get(),
-                db.collection(collections.permissions || 'studentPermissions').get(),
-                db.collection(collections.permissionRequests || 'permissionRequests').get(),
-                db.collection(collections.homerooms || 'studentHomerooms').get(),
-                db.collection(collections.studentLogs || 'studentLogs').get().catch(function(error) {
-                  if (window.console && console.warn) {
-                    console.warn('Firebase student log list skipped:', error);
-                  }
-                  return { docs: [] };
-                })
-              ])
-            : Promise.resolve([{ docs: [] }, { docs: [] }, { docs: [] }, { docs: [] }, { docs: [] }, { docs: [] }]);
-          return adminDataPromise.then(function(adminResults) {
+          var safeCollectionGet = function(collectionName, label) {
+            return db.collection(collectionName).get().catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase ' + label + ' list skipped:', error);
+              }
+              return { docs: [] };
+            });
+          };
+          var contextDataPromise = Promise.all([
+            user.role === 'ADMIN' ? safeCollectionGet(collections.users || 'users', 'user') : Promise.resolve({ docs: [] }),
+            user.role === 'ADMIN' ? safeCollectionGet(collections.userProfiles || 'userProfiles', 'profile') : Promise.resolve({ docs: [] }),
+            safeCollectionGet(collections.permissions || 'studentPermissions', 'student permission'),
+            safeCollectionGet(collections.permissionRequests || 'permissionRequests', 'permission request'),
+            user.role === 'ADMIN' ? safeCollectionGet(collections.homerooms || 'studentHomerooms', 'homeroom') : Promise.resolve({ docs: [] }),
+            safeCollectionGet(collections.studentLogs || 'studentLogs', 'student log')
+          ]);
+          return contextDataPromise.then(function(adminResults) {
           var userSnapshot = adminResults[0];
           var profileSnapshot = adminResults[1];
           var permissionSnapshot = adminResults[2];
@@ -15564,12 +15600,16 @@
               subject: data.subject || profile.department || profile.subject || profileSubjects || ''
             };
           });
-          var permissions = permissionSnapshot.docs.map(normalizeFirebasePermissionForApp_).filter(function(item) {
-            return item.studentId && item.instructorId;
-          });
+          var permissions = flattenFirebasePermissionSnapshot_(permissionSnapshot);
           var permissionRequests = permissionRequestSnapshot.docs.map(normalizeFirebasePermissionRequestForApp_).filter(function(item) {
             return item.requestId || item.studentId;
           });
+          if (user.role !== 'ADMIN') {
+            permissionRequests = permissionRequests.filter(function(item) {
+              return sameInstructorIdentifier_(item.instructorId, user.userId) ||
+                sameInstructorIdentifier_(item.instructorId, user.loginId);
+            });
+          }
           var homeroomAssignments = [];
           homeroomSnapshot.docs.forEach(function(doc) {
             homeroomAssignments = homeroomAssignments.concat(normalizeFirebaseHomeroomRowsForApp_(doc));
@@ -15596,13 +15636,57 @@
           var activeStudents = students.filter(function(student) {
             return student.active !== false && student.status !== 'INACTIVE';
           });
+          var permissionMap = {};
+          permissions.forEach(function(item) {
+            if (!permissionMap[item.studentId]) {
+              permissionMap[item.studentId] = [];
+            }
+            if (item.instructorId && permissionMap[item.studentId].indexOf(item.instructorId) === -1) {
+              permissionMap[item.studentId].push(item.instructorId);
+            }
+          });
+          var requestMap = {};
+          permissionRequests.forEach(function(item) {
+            if (String(item.status || '').toUpperCase() !== 'PENDING') {
+              return;
+            }
+            requestMap[item.studentId] = item;
+          });
+          var scopedStudents = activeStudents;
+          var searchableStudents = students;
+          if (user.role !== 'ADMIN') {
+            scopedStudents = activeStudents.filter(function(student) {
+              return (permissionMap[student.studentId] || []).some(function(instructorId) {
+                return sameInstructorIdentifier_(instructorId, user.userId) ||
+                  sameInstructorIdentifier_(instructorId, user.loginId);
+              });
+            });
+            var scopedMap = {};
+            scopedStudents.forEach(function(student) {
+              scopedMap[student.studentId] = true;
+            });
+            searchableStudents = activeStudents.map(function(student) {
+              if (scopedMap[student.studentId]) {
+                return student;
+              }
+              var request = requestMap[student.studentId] || null;
+              return Object.assign({}, student, {
+                logs: [],
+                isRestricted: true,
+                accessStatus: request ? 'pending' : 'none',
+                permissionRequestId: request && request.requestId || '',
+                permissionRequestStatus: request && request.status || '',
+                permissionRequestedAt: request && request.requestedAt || ''
+              });
+            });
+          }
           return {
             ok: true,
             directFirebase: true,
             user: user,
             isAdmin: user.role === 'ADMIN',
-            visibleStudents: user.role === 'ADMIN' ? activeStudents : [],
-            searchableStudents: user.role === 'ADMIN' ? students : activeStudents,
+            visibleStudents: user.role === 'ADMIN' ? activeStudents : scopedStudents,
+            searchableStudents: user.role === 'ADMIN' ? students : searchableStudents,
             activeStudents: activeStudents,
             allStudents: students,
             totalActiveStudentCount: activeStudents.length,
