@@ -1167,7 +1167,7 @@
       }
 
       .system-settings-modal-card {
-        width: min(720px, 100%);
+        width: min(980px, 100%);
       }
 
       .system-settings-grid {
@@ -1255,6 +1255,160 @@
         outline: none;
         border-color: var(--brand);
         box-shadow: 0 0 0 3px rgba(36, 86, 214, 0.12);
+      }
+
+      .account-admin-panel {
+        display: grid;
+        gap: 12px;
+      }
+
+      .account-admin-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+        gap: 12px;
+      }
+
+      .account-list-panel,
+      .account-edit-panel {
+        min-width: 0;
+        padding: 12px;
+        border: 1px solid #dbe7f7;
+        border-radius: 14px;
+        background: #ffffff;
+      }
+
+      .account-list-head,
+      .account-edit-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .account-list-head strong,
+      .account-edit-head strong {
+        display: block;
+        color: var(--text-main);
+        font-size: 0.95rem;
+        font-weight: 950;
+      }
+
+      .account-list-head span,
+      .account-edit-head span {
+        display: block;
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 0.76rem;
+        font-weight: 750;
+      }
+
+      .account-table-wrap {
+        max-height: 340px;
+        overflow: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+      }
+
+      .account-table {
+        width: 100%;
+        min-width: 520px;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+      }
+
+      .account-table th,
+      .account-table td {
+        padding: 8px 9px;
+        border-bottom: 1px solid #edf2f7;
+        text-align: left;
+        vertical-align: middle;
+      }
+
+      .account-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #f8fbff;
+        color: #475569;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .account-table tr.selected td {
+        background: #eff6ff;
+      }
+
+      .account-name-cell strong {
+        display: block;
+        color: var(--text-main);
+        font-weight: 950;
+      }
+
+      .account-name-cell span {
+        display: block;
+        margin-top: 2px;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 750;
+      }
+
+      .account-role-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 22px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 0.72rem;
+        font-weight: 950;
+      }
+
+      .account-role-badge.disabled {
+        background: #f1f5f9;
+        color: #64748b;
+      }
+
+      .account-edit-form {
+        display: grid;
+        gap: 10px;
+      }
+
+      .account-permission-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .account-check {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 36px;
+        padding: 0 10px;
+        border: 1px solid #dbe7f7;
+        border-radius: 10px;
+        background: #f8fbff;
+        color: #334155;
+        font-size: 0.78rem;
+        font-weight: 850;
+      }
+
+      .account-check input {
+        width: 15px;
+        height: 15px;
+      }
+
+      .account-disabled-note {
+        padding: 10px 12px;
+        border: 1px solid #fed7aa;
+        border-radius: 12px;
+        background: #fff7ed;
+        color: #9a3412;
+        font-size: 0.78rem;
+        line-height: 1.65;
+        font-weight: 780;
       }
 
       .system-status-pill {
@@ -14087,6 +14241,13 @@
           user: null,
           lastError: ''
         },
+        accountManagement: {
+          accounts: [],
+          selectedUid: '',
+          loading: false,
+          saving: false,
+          lastError: ''
+        },
         allStudents: [],
         instructors: [],
         permissions: [],
@@ -15265,6 +15426,9 @@
               String(a.studentName || '').localeCompare(String(b.studentName || ''), 'ko');
           });
           var user = normalizeFirebaseUserForApp_(uid, userDoc, profileDoc, accessDoc);
+          if (user.status === 'DISABLED' || user.role === 'DISABLED') {
+            throw new Error('비활성화된 계정입니다. 관리자에게 문의하세요.');
+          }
           var userListPromise = user.role === 'ADMIN'
             ? db.collection(collections.users || 'users').get()
             : Promise.resolve({ docs: [] });
@@ -22275,6 +22439,19 @@
           updateFirebaseClientSettings_();
           return;
         }
+        if (action === 'refresh-accounts') {
+          loadFirebaseAccountsForSettings_();
+          return;
+        }
+        if (action === 'select-account') {
+          APP_STATE.accountManagement.selectedUid = button.getAttribute('data-account-uid') || '';
+          renderSystemSettings_(APP_STATE.systemSettingsStatus || getLocalFirebaseSystemStatus_());
+          return;
+        }
+        if (action === 'save-account') {
+          saveSelectedFirebaseAccount_();
+          return;
+        }
         if (action === 'enable-reaction' || action === 'disable-reaction') {
           updateFirebaseDirectReactionWrite_(action === 'enable-reaction');
         }
@@ -22286,14 +22463,41 @@
       }
 
       function loadSystemSettings_() {
+        if (isFirebaseSessionToken_(APP_STATE.token)) {
+          APP_STATE.systemSettingsStatus = getLocalFirebaseSystemStatus_();
+          renderSystemSettings_(APP_STATE.systemSettingsStatus);
+          loadFirebaseAccountsForSettings_();
+          return;
+        }
         apiRequest('getFirebaseDirectStatus', { token: APP_STATE.token })
           .then(function(status) {
+            APP_STATE.systemSettingsStatus = status;
             renderSystemSettings_(status);
+            loadFirebaseAccountsForSettings_();
           })
           .catch(function(error) {
             document.getElementById('systemSettingsContent').innerHTML =
               '<div class="hint-box">운영 설정을 불러오지 못했습니다. ' + escapeHtml(getErrorMessage(error)) + '</div>';
           });
+      }
+
+      function getLocalFirebaseSystemStatus_() {
+        return {
+          ok: true,
+          firestoreEnabled: true,
+          directClientReady: true,
+          hasWebApiKey: Boolean(FIREBASE_DIRECT_BOOTSTRAP_CONFIG.apiKey),
+          hasServiceAccount: true,
+          projectId: FIREBASE_DIRECT_BOOTSTRAP_CONFIG.projectId,
+          authDomain: FIREBASE_DIRECT_BOOTSTRAP_CONFIG.authDomain,
+          featureFlags: Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, {
+            dashboardRead: true,
+            globalNoticeWrite: true,
+            gradeRead: true,
+            gradeWrite: true,
+            gradeDelete: true
+          })
+        };
       }
 
       function renderSystemSettings_(status) {
@@ -22342,7 +22546,8 @@
           logWriteEnabled
             ? '<button type="button" class="mini-button" data-system-settings-action="disable-reaction"><i data-lucide="power"></i>기록 직접 저장 끄기</button>'
             : '<button type="button" class="button-primary" data-system-settings-action="enable-reaction"' + (canEnable ? '' : ' disabled') + '><i data-lucide="zap"></i>기록 직접 저장 켜기</button>',
-          '</div>'
+          '</div>',
+          renderFirebaseAccountManagementPanel_()
         ].join('');
         document.getElementById('systemSettingsContent').innerHTML = html;
         renderLucideIcons_();
@@ -22356,6 +22561,233 @@
           '<div class="system-status-pill ' + (ready ? 'ready' : 'warning') + '">' + (ready ? '확인' : '점검 필요') + '</div>',
           '</div>'
         ].join('');
+      }
+
+      function getAccountRoleLabel_(role) {
+        return roleLabelForFirebaseUser_(String(role || '').toUpperCase());
+      }
+
+      function getDefaultAccountAppsForRole_(role) {
+        role = String(role || '').toUpperCase();
+        return {
+          sLms: role !== 'DISABLED',
+          teacherPortal: role === 'ADMIN' || role === 'INSTRUCTOR',
+          deskPortal: role === 'ADMIN' || role === 'STAFF',
+          liveTimetable: role !== 'DISABLED'
+        };
+      }
+
+      function getDefaultAccountPermissionsForRole_(role) {
+        role = String(role || '').toUpperCase();
+        return {
+          canManageAccounts: role === 'ADMIN',
+          canEditGrades: role === 'ADMIN' || role === 'INSTRUCTOR',
+          canDeleteGrades: role === 'ADMIN',
+          canManageMaterials: role === 'ADMIN' || role === 'STAFF',
+          canManageSchedules: role === 'ADMIN' || role === 'STAFF'
+        };
+      }
+
+      function renderFirebaseAccountManagementPanel_() {
+        var state = APP_STATE.accountManagement || {};
+        var accounts = state.accounts || [];
+        var selected = accounts.find(function(account) {
+          return account.uid === state.selectedUid;
+        }) || accounts[0] || null;
+        if (selected && state.selectedUid !== selected.uid) {
+          state.selectedUid = selected.uid;
+        }
+        var rows = accounts.map(function(account) {
+          var selectedClass = account.uid === (selected && selected.uid) ? ' selected' : '';
+          var disabled = account.status === 'DISABLED' || account.role === 'DISABLED';
+          return [
+            '<tr class="' + selectedClass + '">',
+            '<td class="account-name-cell"><strong>' + escapeHtml(account.name || '-') + '</strong><span>' + escapeHtml(account.loginId || account.uid || '') + '</span></td>',
+            '<td><span class="account-role-badge ' + (disabled ? 'disabled' : '') + '">' + escapeHtml(getAccountRoleLabel_(account.role)) + '</span></td>',
+            '<td>' + escapeHtml(account.status === 'DISABLED' ? '비활성' : '활성') + '</td>',
+            '<td><button type="button" class="mini-button" data-system-settings-action="select-account" data-account-uid="' + escapeAttribute(account.uid || '') + '">선택</button></td>',
+            '</tr>'
+          ].join('');
+        }).join('');
+        return [
+          '<section class="account-admin-panel">',
+          '<div class="hint-box">계정 정보는 Firestore의 `users`, `userProfiles`, `userAppAccess`에 직접 저장됩니다. 비밀번호 초기화와 Firebase Auth 사용자 신규 생성은 Admin SDK 또는 Cloud Functions가 필요합니다.</div>',
+          '<div class="account-admin-grid">',
+          '<section class="account-list-panel">',
+          '<div class="account-list-head"><div><strong>Firebase 계정</strong><span>' + (state.loading ? '불러오는 중' : accounts.length + '개 계정') + '</span></div><button type="button" class="mini-button" data-system-settings-action="refresh-accounts"><i data-lucide="refresh-cw"></i>새로고침</button></div>',
+          state.lastError ? '<div class="account-disabled-note">' + escapeHtml(state.lastError) + '</div>' : '',
+          '<div class="account-table-wrap"><table class="account-table"><thead><tr><th>계정</th><th>역할</th><th>상태</th><th></th></tr></thead><tbody>',
+          rows || '<tr><td colspan="4">계정 목록이 없습니다.</td></tr>',
+          '</tbody></table></div>',
+          '</section>',
+          '<section class="account-edit-panel">',
+          renderFirebaseAccountEditPanel_(selected),
+          '</section>',
+          '</div>',
+          '<div class="account-disabled-note">신규 계정 추가와 비밀번호 초기화는 보안상 브라우저에서 직접 처리하지 않습니다. 다음 단계에서 Cloud Functions를 붙이거나, 현재 마이그레이션 스크립트를 계정 추가용 CLI로 확장해야 합니다.</div>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderFirebaseAccountEditPanel_(account) {
+        if (!account) {
+          return '<div class="account-edit-head"><div><strong>계정 편집</strong><span>왼쪽 목록에서 계정을 선택하세요.</span></div></div>';
+        }
+        var apps = Object.assign(getDefaultAccountAppsForRole_(account.role), account.apps || {});
+        var permissions = Object.assign(getDefaultAccountPermissionsForRole_(account.role), account.permissions || {});
+        function checked(value) {
+          return value ? ' checked' : '';
+        }
+        return [
+          '<div class="account-edit-head"><div><strong>계정 편집</strong><span>' + escapeHtml(account.uid || '') + '</span></div>' + (APP_STATE.accountManagement.saving ? '<span class="account-role-badge">저장 중</span>' : '') + '</div>',
+          '<form class="account-edit-form" onsubmit="return false;">',
+          '<div class="system-settings-field"><label for="accountNameInput">이름</label><input id="accountNameInput" type="text" value="' + escapeAttribute(account.name || '') + '"></div>',
+          '<div class="system-settings-field"><label for="accountSubjectInput">과목/부서</label><input id="accountSubjectInput" type="text" value="' + escapeAttribute(account.subject || '') + '"></div>',
+          '<div class="system-settings-field-grid">',
+          '<div class="system-settings-field"><label for="accountRoleSelect">역할</label><select id="accountRoleSelect" class="field-select"><option value="ADMIN"' + (account.role === 'ADMIN' ? ' selected' : '') + '>관리자</option><option value="STAFF"' + (account.role === 'STAFF' ? ' selected' : '') + '>실무자</option><option value="INSTRUCTOR"' + (account.role === 'INSTRUCTOR' ? ' selected' : '') + '>강사</option><option value="DISABLED"' + (account.role === 'DISABLED' ? ' selected' : '') + '>비활성</option></select></div>',
+          '<div class="system-settings-field"><label for="accountStatusSelect">상태</label><select id="accountStatusSelect" class="field-select"><option value="ACTIVE"' + (account.status !== 'DISABLED' ? ' selected' : '') + '>활성</option><option value="DISABLED"' + (account.status === 'DISABLED' ? ' selected' : '') + '>비활성</option></select></div>',
+          '</div>',
+          '<div class="account-permission-grid">',
+          '<label class="account-check"><input type="checkbox" id="accountAppSLms"' + checked(apps.sLms) + '>S-LMS</label>',
+          '<label class="account-check"><input type="checkbox" id="accountAppTeacher"' + checked(apps.teacherPortal) + '>강사 포털</label>',
+          '<label class="account-check"><input type="checkbox" id="accountAppDesk"' + checked(apps.deskPortal) + '>데스크 포털</label>',
+          '<label class="account-check"><input type="checkbox" id="accountAppLive"' + checked(apps.liveTimetable) + '>라이브 시간표</label>',
+          '<label class="account-check"><input type="checkbox" id="accountPermManageAccounts"' + checked(permissions.canManageAccounts) + '>계정 관리</label>',
+          '<label class="account-check"><input type="checkbox" id="accountPermEditGrades"' + checked(permissions.canEditGrades) + '>성적 입력</label>',
+          '<label class="account-check"><input type="checkbox" id="accountPermDeleteGrades"' + checked(permissions.canDeleteGrades) + '>성적 삭제</label>',
+          '<label class="account-check"><input type="checkbox" id="accountPermManageMaterials"' + checked(permissions.canManageMaterials) + '>자료 관리</label>',
+          '</div>',
+          '<div class="system-settings-actions"><button type="button" class="button-primary" data-system-settings-action="save-account"' + (APP_STATE.accountManagement.saving ? ' disabled' : '') + '><i data-lucide="save"></i>계정 저장</button></div>',
+          '</form>'
+        ].join('');
+      }
+
+      function loadFirebaseAccountsForSettings_() {
+        if (!APP_STATE.isAdmin) {
+          return;
+        }
+        var state = APP_STATE.accountManagement;
+        state.loading = true;
+        state.lastError = '';
+        renderSystemSettings_(APP_STATE.systemSettingsStatus || getLocalFirebaseSystemStatus_());
+        initializeFirebasePasswordAuthState_().then(function(firebaseState) {
+          var user = firebaseState.auth && firebaseState.auth.currentUser;
+          if (!user || !user.uid) {
+            throw new Error('계정 관리는 Firebase 로그인 세션에서 사용할 수 있습니다. 다시 로그인해주세요.');
+          }
+          var db = firebaseState.firestore;
+          var collections = firebaseState.collections || {};
+          return Promise.all([
+            db.collection(collections.users || 'users').get(),
+            db.collection(collections.userProfiles || 'userProfiles').get(),
+            db.collection(collections.userAppAccess || 'userAppAccess').get()
+          ]);
+        }).then(function(results) {
+          var profiles = {};
+          var access = {};
+          results[1].docs.forEach(function(doc) {
+            profiles[doc.id] = doc.data() || {};
+          });
+          results[2].docs.forEach(function(doc) {
+            access[doc.id] = doc.data() || {};
+          });
+          state.accounts = results[0].docs.map(function(doc) {
+            var user = doc.data() || {};
+            var profile = profiles[doc.id] || {};
+            var accessDoc = access[doc.id] || {};
+            return {
+              uid: doc.id,
+              loginId: user.loginId || profile.instructorId || '',
+              name: user.name || profile.displayName || doc.id,
+              subject: profile.department || (profile.subjects || []).join(', ') || '',
+              role: String(user.role || 'INSTRUCTOR').toUpperCase(),
+              status: user.status || 'ACTIVE',
+              apps: accessDoc.apps || {},
+              permissions: accessDoc.permissions || {}
+            };
+          }).sort(function(a, b) {
+            return String(a.role || '').localeCompare(String(b.role || '')) ||
+              String(a.name || '').localeCompare(String(b.name || ''), 'ko');
+          });
+          if (!state.selectedUid && state.accounts.length) {
+            state.selectedUid = state.accounts[0].uid;
+          }
+        }).catch(function(error) {
+          state.lastError = getErrorMessage(error);
+        }).finally(function() {
+          state.loading = false;
+          renderSystemSettings_(APP_STATE.systemSettingsStatus || getLocalFirebaseSystemStatus_());
+        });
+      }
+
+      function readAccountCheckbox_(id) {
+        var input = document.getElementById(id);
+        return Boolean(input && input.checked);
+      }
+
+      function saveSelectedFirebaseAccount_() {
+        var state = APP_STATE.accountManagement;
+        var uid = state.selectedUid;
+        if (!uid) {
+          setNotice('저장할 계정을 선택해주세요.', 'warning');
+          return;
+        }
+        var name = (document.getElementById('accountNameInput') || {}).value || '';
+        var subject = (document.getElementById('accountSubjectInput') || {}).value || '';
+        var role = (document.getElementById('accountRoleSelect') || {}).value || 'INSTRUCTOR';
+        var status = (document.getElementById('accountStatusSelect') || {}).value || 'ACTIVE';
+        if (!name.trim()) {
+          setNotice('계정 이름을 입력해주세요.', 'warning');
+          return;
+        }
+        var apps = {
+          sLms: readAccountCheckbox_('accountAppSLms'),
+          teacherPortal: readAccountCheckbox_('accountAppTeacher'),
+          deskPortal: readAccountCheckbox_('accountAppDesk'),
+          liveTimetable: readAccountCheckbox_('accountAppLive')
+        };
+        var permissions = {
+          canManageAccounts: readAccountCheckbox_('accountPermManageAccounts'),
+          canEditGrades: readAccountCheckbox_('accountPermEditGrades'),
+          canDeleteGrades: readAccountCheckbox_('accountPermDeleteGrades'),
+          canManageMaterials: readAccountCheckbox_('accountPermManageMaterials'),
+          canManageSchedules: readAccountCheckbox_('accountPermManageMaterials')
+        };
+        state.saving = true;
+        renderSystemSettings_(APP_STATE.systemSettingsStatus || getLocalFirebaseSystemStatus_());
+        initializeFirebasePasswordAuthState_().then(function(firebaseState) {
+          var db = firebaseState.firestore;
+          var collections = firebaseState.collections || {};
+          var now = window.firebase.firestore.FieldValue.serverTimestamp();
+          return Promise.all([
+            db.collection(collections.users || 'users').doc(uid).set({
+              name: name.trim(),
+              role: role,
+              status: status,
+              updatedAt: now,
+              updatedBy: APP_STATE.user && APP_STATE.user.userId || ''
+            }, { merge: true }),
+            db.collection(collections.userProfiles || 'userProfiles').doc(uid).set({
+              displayName: name.trim(),
+              department: subject.trim(),
+              subjects: subject.trim() ? [subject.trim()] : [],
+              updatedAt: now,
+              updatedBy: APP_STATE.user && APP_STATE.user.userId || ''
+            }, { merge: true }),
+            db.collection(collections.userAppAccess || 'userAppAccess').doc(uid).set({
+              apps: apps,
+              permissions: permissions,
+              updatedAt: now,
+              updatedBy: APP_STATE.user && APP_STATE.user.userId || ''
+            }, { merge: true })
+          ]);
+        }).then(function() {
+          setNotice('계정 정보가 저장되었습니다.', 'success');
+          loadFirebaseAccountsForSettings_();
+        }).catch(handleApiError_).finally(function() {
+          state.saving = false;
+          renderSystemSettings_(APP_STATE.systemSettingsStatus || getLocalFirebaseSystemStatus_());
+        });
       }
 
       function updateFirebaseClientSettings_() {
