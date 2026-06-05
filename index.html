@@ -1219,6 +1219,59 @@
         gap: 8px;
       }
 
+      .system-settings-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 4px;
+        border: 1px solid #dbe7f7;
+        border-radius: 12px;
+        background: #f8fbff;
+      }
+
+      .system-settings-tab {
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 9px;
+        color: #475569;
+        background: transparent;
+        font-weight: 900;
+      }
+
+      .system-settings-tab.active {
+        color: #0b4bb3;
+        background: #ffffff;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+      }
+
+      .account-dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .account-dashboard-card {
+        min-height: 78px;
+        padding: 12px;
+        border: 1px solid #dbe7f7;
+        border-radius: 12px;
+        background: #ffffff;
+      }
+
+      .account-dashboard-card span {
+        display: block;
+        color: #64748b;
+        font-size: 0.74rem;
+        font-weight: 850;
+      }
+
+      .account-dashboard-card strong {
+        display: block;
+        margin-top: 6px;
+        color: #0f172a;
+        font-size: 1.38rem;
+        font-weight: 950;
+      }
+
       .system-settings-form {
         display: grid;
         gap: 10px;
@@ -1276,6 +1329,12 @@
         gap: 12px;
       }
 
+      .account-workbench-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+        gap: 12px;
+      }
+
       .account-admin-grid {
         display: grid;
         grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
@@ -1284,7 +1343,9 @@
       }
 
       .account-list-panel,
-      .account-edit-panel {
+      .account-edit-panel,
+      .account-create-panel,
+      .account-password-panel {
         min-width: 0;
         padding: 12px;
         border: 1px solid #dbe7f7;
@@ -1388,6 +1449,20 @@
       .account-edit-form {
         display: grid;
         gap: 10px;
+      }
+
+      .account-command-box {
+        min-height: 72px;
+        padding: 10px;
+        border: 1px dashed #bfdbfe;
+        border-radius: 10px;
+        background: #f8fbff;
+        color: #0f172a;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.75rem;
+        line-height: 1.55;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
       }
 
       .account-permission-grid {
@@ -14261,8 +14336,11 @@
         accountManagement: {
           accounts: [],
           selectedUid: '',
+          tab: 'dashboard',
           loading: false,
           saving: false,
+          creating: false,
+          passwordCommand: '',
           lastError: ''
         },
         allStudents: [],
@@ -22905,6 +22983,11 @@
           return;
         }
         var action = button.getAttribute('data-system-settings-action');
+        if (action === 'set-tab') {
+          APP_STATE.accountManagement.tab = button.getAttribute('data-tab') || 'dashboard';
+          renderSystemSettings_(APP_STATE.systemSettingsStatus || getLocalFirebaseSystemStatus_());
+          return;
+        }
         if (action === 'refresh') {
           loadSystemSettings_();
           return;
@@ -22924,6 +23007,18 @@
         }
         if (action === 'save-account') {
           saveSelectedFirebaseAccount_();
+          return;
+        }
+        if (action === 'create-account') {
+          createFirebaseAccountFromSettings_();
+          return;
+        }
+        if (action === 'build-password-command') {
+          buildPasswordResetCommandFromSettings_();
+          return;
+        }
+        if (action === 'copy-password-command') {
+          copyPasswordCommandFromSettings_();
           return;
         }
         if (action === 'enable-reaction' || action === 'disable-reaction') {
@@ -22975,6 +23070,30 @@
       }
 
       function renderSystemSettings_(status) {
+        var state = APP_STATE.accountManagement || {};
+        var activeTab = state.tab || 'dashboard';
+        var html = [
+          renderSystemSettingsTabs_(activeTab),
+          activeTab === 'advanced'
+            ? renderSystemAdvancedSettings_(status)
+            : renderFirebaseAccountManagementPanel_()
+        ].join('');
+        document.getElementById('systemSettingsContent').innerHTML = html;
+        renderLucideIcons_();
+      }
+
+      function renderSystemSettingsTabs_(activeTab) {
+        var tabs = [
+          { key: 'dashboard', label: '관리자 대시보드' },
+          { key: 'accounts', label: '계정 관리' },
+          { key: 'advanced', label: '고급 설정' }
+        ];
+        return '<div class="system-settings-tabs">' + tabs.map(function(tab) {
+          return '<button type="button" class="system-settings-tab ' + (activeTab === tab.key ? 'active' : '') + '" data-system-settings-action="set-tab" data-tab="' + escapeAttribute(tab.key) + '">' + escapeHtml(tab.label) + '</button>';
+        }).join('') + '</div>';
+      }
+
+      function renderSystemAdvancedSettings_(status) {
         var flags = status && status.featureFlags ? status.featureFlags : {};
         var reactionEnabled = Boolean(flags.logReactionWrite);
         var createEnabled = Boolean(flags.logCreateWrite);
@@ -22985,7 +23104,7 @@
         var blockedReason = canEnable
           ? ''
           : 'Firebase 직접 저장을 켜려면 웹 API 키와 클라이언트 도메인 설정이 필요합니다. 현재는 기존 Apps Script 저장 방식이 유지됩니다.';
-        var html = [
+        return [
           '<div class="hint-box">상담/관리 기록의 입력, 삭제, 반응을 Firebase 직접 저장으로 전환합니다. 목록 조회와 초기 학생 데이터는 아직 기존 동기화 경로를 유지합니다.</div>',
           '<div class="system-settings-grid">',
           renderSystemSettingsItem_('Firestore 서버 경로', status && status.firestoreEnabled ? '사용 가능' : '비활성 또는 미확인', Boolean(status && status.firestoreEnabled)),
@@ -23020,11 +23139,8 @@
           logWriteEnabled
             ? '<button type="button" class="mini-button" data-system-settings-action="disable-reaction"><i data-lucide="power"></i>기록 직접 저장 끄기</button>'
             : '<button type="button" class="button-primary" data-system-settings-action="enable-reaction"' + (canEnable ? '' : ' disabled') + '><i data-lucide="zap"></i>기록 직접 저장 켜기</button>',
-          '</div>',
-          renderFirebaseAccountManagementPanel_()
+          '</div>'
         ].join('');
-        document.getElementById('systemSettingsContent').innerHTML = html;
-        renderLucideIcons_();
       }
 
       function renderSystemSettingsItem_(label, value, ready) {
@@ -23065,6 +23181,7 @@
       function renderFirebaseAccountManagementPanel_() {
         var state = APP_STATE.accountManagement || {};
         var accounts = state.accounts || [];
+        var activeTab = state.tab || 'dashboard';
         var selected = accounts.find(function(account) {
           return account.uid === state.selectedUid;
         }) || accounts[0] || null;
@@ -23083,22 +23200,92 @@
             '</tr>'
           ].join('');
         }).join('');
-        return [
-          '<section class="account-admin-panel">',
-          '<div class="hint-box">계정 정보는 Firestore의 `users`, `userProfiles`, `userAppAccess`에 직접 저장됩니다. 비밀번호 초기화와 Firebase Auth 사용자 신규 생성은 Admin SDK 또는 Cloud Functions가 필요합니다.</div>',
-          '<div class="account-admin-grid">',
+        var summary = {
+          total: accounts.length,
+          active: accounts.filter(function(account) { return account.status !== 'DISABLED' && account.role !== 'DISABLED'; }).length,
+          admins: accounts.filter(function(account) { return account.role === 'ADMIN'; }).length,
+          instructors: accounts.filter(function(account) { return account.role === 'INSTRUCTOR'; }).length
+        };
+        var dashboard = [
+          '<div class="account-dashboard-grid">',
+          renderAccountDashboardCard_('전체 계정', summary.total + '개'),
+          renderAccountDashboardCard_('활성 계정', summary.active + '개'),
+          renderAccountDashboardCard_('관리자', summary.admins + '명'),
+          renderAccountDashboardCard_('강사', summary.instructors + '명'),
+          '</div>'
+        ].join('');
+        var listPanel = [
           '<section class="account-list-panel">',
           '<div class="account-list-head"><div><strong>Firebase 계정</strong><span>' + (state.loading ? '불러오는 중' : accounts.length + '개 계정') + '</span></div><button type="button" class="mini-button" data-system-settings-action="refresh-accounts"><i data-lucide="refresh-cw"></i>새로고침</button></div>',
           state.lastError ? '<div class="account-disabled-note">' + escapeHtml(state.lastError) + '</div>' : '',
           '<div class="account-table-wrap"><table class="account-table"><thead><tr><th>계정</th><th>역할</th><th>상태</th><th></th></tr></thead><tbody>',
           rows || '<tr><td colspan="4">계정 목록이 없습니다.</td></tr>',
           '</tbody></table></div>',
-          '</section>',
+          '</section>'
+        ].join('');
+        var workbench = [
+          '<div class="account-workbench-grid">',
+          renderFirebaseAccountCreatePanel_(),
+          renderFirebasePasswordPanel_(selected),
+          '</div>'
+        ].join('');
+        return [
+          '<section class="account-admin-panel">',
+          activeTab === 'dashboard' ? dashboard : '',
+          activeTab === 'dashboard' ? workbench : '',
+          '<div class="account-admin-grid">',
+          listPanel,
           '<section class="account-edit-panel">',
           renderFirebaseAccountEditPanel_(selected),
           '</section>',
           '</div>',
-          '<div class="account-disabled-note">신규 계정 추가와 비밀번호 초기화는 보안상 브라우저에서 직접 처리하지 않습니다. 다음 단계에서 Cloud Functions를 붙이거나, 현재 마이그레이션 스크립트를 계정 추가용 CLI로 확장해야 합니다.</div>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderAccountDashboardCard_(label, value) {
+        return '<div class="account-dashboard-card"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>';
+      }
+
+      function renderFirebaseAccountCreatePanel_() {
+        var state = APP_STATE.accountManagement || {};
+        return [
+          '<section class="account-create-panel">',
+          '<div class="account-edit-head"><div><strong>신규 계정 추가</strong><span>Firebase Auth와 계정 문서를 함께 생성합니다.</span></div>' + (state.creating ? '<span class="account-role-badge">생성 중</span>' : '') + '</div>',
+          '<form class="account-edit-form" onsubmit="return false;">',
+          '<div class="system-settings-field-grid">',
+          '<div class="system-settings-field"><label for="newAccountNameInput">이름</label><input id="newAccountNameInput" type="text" autocomplete="off" placeholder="홍길동"></div>',
+          '<div class="system-settings-field"><label for="newAccountLoginInput">로그인 ID</label><input id="newAccountLoginInput" type="text" inputmode="numeric" autocomplete="off" placeholder="01000000000"></div>',
+          '</div>',
+          '<div class="system-settings-field-grid">',
+          '<div class="system-settings-field"><label for="newAccountSubjectInput">과목/부서</label><input id="newAccountSubjectInput" type="text" autocomplete="off" placeholder="수학"></div>',
+          '<div class="system-settings-field"><label for="newAccountPasswordInput">초기 비밀번호</label><input id="newAccountPasswordInput" type="text" autocomplete="off" placeholder="미입력 시 로그인 ID 사용"></div>',
+          '</div>',
+          '<div class="system-settings-field-grid">',
+          '<div class="system-settings-field"><label for="newAccountRoleSelect">역할</label><select id="newAccountRoleSelect" class="field-select"><option value="INSTRUCTOR">강사</option><option value="STAFF">실무자</option><option value="ADMIN">관리자</option><option value="DISABLED">비활성</option></select></div>',
+          '<div class="system-settings-field"><label for="newAccountStatusSelect">상태</label><select id="newAccountStatusSelect" class="field-select"><option value="ACTIVE">활성</option><option value="DISABLED">비활성</option></select></div>',
+          '</div>',
+          '<div class="system-settings-actions"><button type="button" class="button-primary" data-system-settings-action="create-account"' + (state.creating ? ' disabled' : '') + '><i data-lucide="user-plus"></i>계정 생성</button></div>',
+          '</form>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderFirebasePasswordPanel_(selected) {
+        var state = APP_STATE.accountManagement || {};
+        var loginId = selected && (selected.loginId || selected.uid) || '';
+        var command = state.passwordCommand || '';
+        return [
+          '<section class="account-password-panel">',
+          '<div class="account-edit-head"><div><strong>비밀번호 수정</strong><span>Admin SDK 명령을 생성해 안전하게 변경합니다.</span></div></div>',
+          '<form class="account-edit-form" onsubmit="return false;">',
+          '<div class="system-settings-field-grid">',
+          '<div class="system-settings-field"><label for="passwordAccountLoginInput">대상 로그인 ID</label><input id="passwordAccountLoginInput" type="text" value="' + escapeAttribute(loginId) + '" autocomplete="off"></div>',
+          '<div class="system-settings-field"><label for="passwordAccountNewInput">새 비밀번호</label><input id="passwordAccountNewInput" type="text" autocomplete="off" placeholder="6자 이상"></div>',
+          '</div>',
+          '<div class="system-settings-actions"><button type="button" class="mini-button" data-system-settings-action="build-password-command"><i data-lucide="terminal"></i>변경 명령 생성</button><button type="button" class="mini-button" data-system-settings-action="copy-password-command"' + (command ? '' : ' disabled') + '><i data-lucide="copy"></i>복사</button></div>',
+          '<div class="account-command-box">' + escapeHtml(command || '비밀번호 변경은 Firebase Admin SDK 권한이 필요합니다. 대상과 새 비밀번호를 입력하면 실행 명령을 생성합니다.') + '</div>',
+          '</form>',
           '</section>'
         ].join('');
       }
@@ -23197,6 +23384,173 @@
       function readAccountCheckbox_(id) {
         var input = document.getElementById(id);
         return Boolean(input && input.checked);
+      }
+
+      function authEmailForLoginId_(loginId) {
+        var canonical = canonicalFirebaseLoginId_(loginId);
+        return canonical + '@sedu-auth.local';
+      }
+
+      function uidForLoginId_(loginId) {
+        var canonical = canonicalFirebaseLoginId_(loginId);
+        return 'teacher_' + canonical;
+      }
+
+      function readInputValue_(id) {
+        var input = document.getElementById(id);
+        return input ? String(input.value || '').trim() : '';
+      }
+
+      function shellQuote_(value) {
+        return "'" + String(value || '').replace(/'/g, "'\\''") + "'";
+      }
+
+      function createFirebaseAccountFromSettings_() {
+        var state = APP_STATE.accountManagement;
+        var name = readInputValue_('newAccountNameInput');
+        var loginId = canonicalFirebaseLoginId_(readInputValue_('newAccountLoginInput'));
+        var subject = readInputValue_('newAccountSubjectInput');
+        var role = readInputValue_('newAccountRoleSelect') || 'INSTRUCTOR';
+        var status = readInputValue_('newAccountStatusSelect') || 'ACTIVE';
+        var password = readInputValue_('newAccountPasswordInput') || loginId;
+        if (!name || !loginId) {
+          setNotice('신규 계정의 이름과 로그인 ID를 입력해주세요.', 'warning');
+          return;
+        }
+        if (password.length < 6) {
+          setNotice('초기 비밀번호는 6자 이상이어야 합니다.', 'warning');
+          return;
+        }
+        var email = authEmailForLoginId_(loginId);
+        var createdUid = '';
+        state.creating = true;
+        state.lastError = '';
+        renderSystemSettings_(APP_STATE.systemSettingsStatus || getLocalFirebaseSystemStatus_());
+        initializeFirebasePasswordAuthState_().then(function(firebaseState) {
+          var db = firebaseState.firestore;
+          var collections = firebaseState.collections || {};
+          var appName = 'slms-account-create';
+          var app = null;
+          try {
+            app = window.firebase.app(appName);
+          } catch (error) {
+            app = window.firebase.initializeApp(FIREBASE_DIRECT_BOOTSTRAP_CONFIG, appName);
+          }
+          var secondaryAuth = app.auth();
+          var persistence = window.firebase.auth && window.firebase.auth.Auth && window.firebase.auth.Auth.Persistence
+            ? window.firebase.auth.Auth.Persistence.NONE
+            : null;
+          var authReady = persistence ? secondaryAuth.setPersistence(persistence) : Promise.resolve();
+          return authReady.then(function() {
+            return secondaryAuth.createUserWithEmailAndPassword(email, password).then(function(credential) {
+              var createdUser = credential && credential.user;
+              createdUid = createdUser && createdUser.uid || '';
+              if (!createdUid) {
+                throw new Error('생성된 Firebase Auth UID를 확인할 수 없습니다.');
+              }
+              var now = window.firebase.firestore.FieldValue.serverTimestamp();
+              var apps = getDefaultAccountAppsForRole_(role);
+              var permissions = getDefaultAccountPermissionsForRole_(role);
+              var aliases = buildFirebaseLoginAliasCandidates_(loginId);
+              var writes = [
+                db.collection(collections.users || 'users').doc(createdUid).set({
+                  uid: createdUid,
+                  loginId: loginId,
+                  email: email,
+                  name: name,
+                  role: role,
+                  status: status,
+                  phoneLast4: loginId.slice(-4),
+                  createdAt: now,
+                  updatedAt: now,
+                  updatedBy: APP_STATE.user && APP_STATE.user.userId || ''
+                }, { merge: true }),
+                db.collection(collections.userProfiles || 'userProfiles').doc(createdUid).set({
+                  uid: createdUid,
+                  displayName: name,
+                  instructorId: loginId,
+                  department: subject,
+                  subjects: subject ? [subject] : [],
+                  createdAt: now,
+                  updatedAt: now,
+                  updatedBy: APP_STATE.user && APP_STATE.user.userId || ''
+                }, { merge: true }),
+                db.collection(collections.userAppAccess || 'userAppAccess').doc(createdUid).set({
+                  uid: createdUid,
+                  apps: apps,
+                  permissions: permissions,
+                  createdAt: now,
+                  updatedAt: now,
+                  updatedBy: APP_STATE.user && APP_STATE.user.userId || ''
+                }, { merge: true })
+              ];
+              aliases.forEach(function(alias) {
+                writes.push(sha256Hex_(alias).then(function(aliasId) {
+                  return db.collection(collections.loginAliases || 'loginAliases').doc(aliasId).set({
+                    uid: createdUid,
+                    email: email,
+                    active: status === 'ACTIVE',
+                    role: role,
+                    provider: 'password',
+                    updatedAt: now
+                  }, { merge: true });
+                }));
+              });
+              return Promise.all(writes).then(function() {
+                return secondaryAuth.signOut().catch(function() {}).then(function() {
+                  return createdUser;
+                });
+              });
+            });
+          });
+        }).then(function() {
+          setNotice('신규 계정이 생성되었습니다.', 'success');
+          state.tab = 'accounts';
+          state.selectedUid = createdUid;
+          loadFirebaseAccountsForSettings_();
+        }).catch(function(error) {
+          state.lastError = getErrorMessage(error);
+          setNotice('계정 생성에 실패했습니다. ' + getErrorMessage(error), 'error');
+        }).finally(function() {
+          state.creating = false;
+          renderSystemSettings_(APP_STATE.systemSettingsStatus || getLocalFirebaseSystemStatus_());
+        });
+      }
+
+      function buildPasswordResetCommandFromSettings_() {
+        var loginId = canonicalFirebaseLoginId_(readInputValue_('passwordAccountLoginInput'));
+        var password = readInputValue_('passwordAccountNewInput');
+        if (!loginId || !password || password.length < 6) {
+          setNotice('대상 로그인 ID와 6자 이상의 새 비밀번호를 입력해주세요.', 'warning');
+          return;
+        }
+        APP_STATE.accountManagement.passwordCommand = [
+          'node',
+          shellQuote_('/Users/anjongseong/Documents/New project/s-lms/scripts/manage-firebase-accounts.js'),
+          '--action reset-password',
+          '--login-id ' + shellQuote_(loginId),
+          '--password ' + shellQuote_(password),
+          '--apply'
+        ].join(' ');
+        renderSystemSettings_(APP_STATE.systemSettingsStatus || getLocalFirebaseSystemStatus_());
+        setNotice('비밀번호 변경 명령을 생성했습니다.', 'success');
+      }
+
+      function copyPasswordCommandFromSettings_() {
+        var command = APP_STATE.accountManagement.passwordCommand || '';
+        if (!command) {
+          setNotice('먼저 비밀번호 변경 명령을 생성해주세요.', 'warning');
+          return;
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(command).then(function() {
+            setNotice('비밀번호 변경 명령을 복사했습니다.', 'success');
+          }).catch(function() {
+            setNotice('복사하지 못했습니다. 명령어 상자에서 직접 선택해 주세요.', 'warning');
+          });
+        } else {
+          setNotice('명령어 상자에서 직접 선택해 복사해 주세요.', 'info');
+        }
       }
 
       function saveSelectedFirebaseAccount_() {
