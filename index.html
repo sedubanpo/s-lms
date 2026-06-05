@@ -14122,9 +14122,9 @@
       };
       const FIREBASE_DIRECT_DEFAULT_FLAGS = {
         logRead: false,
-        logReactionWrite: false,
-        logCreateWrite: false,
-        logDeleteWrite: false,
+        logReactionWrite: true,
+        logCreateWrite: true,
+        logDeleteWrite: true,
         dashboardRead: false,
         globalNoticeWrite: false,
         gradeRead: false,
@@ -15311,6 +15311,10 @@
           state.featureFlags = Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, state.featureFlags || {}, {
             dashboardRead: true,
             globalNoticeWrite: true,
+            logRead: true,
+            logReactionWrite: true,
+            logCreateWrite: true,
+            logDeleteWrite: true,
             gradeRead: true,
             gradeWrite: true,
             gradeDelete: true
@@ -15479,11 +15483,13 @@
 
       function normalizeFirebaseStudentLogForApp_(doc) {
         var data = normalizeFirebasePlainDoc_(doc);
+        var firebaseLogId = data.logId || data.id || data.rowNumber || '';
         var tags = Array.isArray(data.tags)
           ? data.tags
           : String(data.tagsText || '').split(',').map(function(tag) { return tag.trim(); }).filter(Boolean);
         return Object.assign({}, data, {
-          rowNumber: data.rowNumber || data.logId || data.id || '',
+          rowNumber: firebaseLogId,
+          legacyRowNumber: data.rowNumber || '',
           studentId: String(data.studentId || '').trim(),
           studentName: data.studentName || '',
           content: data.content || '',
@@ -16081,6 +16087,10 @@
           nextState.featureFlags = Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, nextState.featureFlags || {}, {
             dashboardRead: true,
             globalNoticeWrite: true,
+            logRead: true,
+            logReactionWrite: true,
+            logCreateWrite: true,
+            logDeleteWrite: true,
             gradeRead: true,
             gradeWrite: true,
             gradeDelete: true
@@ -16594,7 +16604,8 @@
       }
 
       function isFirebaseStudentLogId_(rowKey) {
-        return String(rowKey || '').indexOf('LOG-') === 0;
+        var key = String(rowKey || '');
+        return key.indexOf('LOG-') === 0 || key.indexOf('RESTORED-LOG-ROW-') === 0;
       }
 
       function parseFirebaseDirectReactions_(value) {
@@ -16633,6 +16644,9 @@
         if (!APP_STATE.token) {
           return;
         }
+        if (isFirebaseSessionToken_(APP_STATE.token)) {
+          return;
+        }
         apiRequest('touchStudentLogDataVersion', {
           token: APP_STATE.token,
           reason: reason || 'direct-write'
@@ -16651,9 +16665,6 @@
       }
 
       function saveStudentLogEntryViaFirebaseDirect_(studentId, content, tags, authorInstructorId, clientRequestId) {
-        if (authorInstructorId) {
-          return Promise.reject(new Error('작성자 대리 입력은 기존 저장 경로를 사용합니다.'));
-        }
         return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
           state = state || APP_STATE.firebaseDirect || {};
           if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('logCreateWrite')) {
@@ -16664,6 +16675,11 @@
           var userId = String(user.userId || '').trim();
           if (!userId) {
             throw new Error('로그인 사용자 정보를 확인할 수 없습니다.');
+          }
+          var proxyAuthorId = String(authorInstructorId || '').trim();
+          var proxyAuthor = proxyAuthorId ? findInstructorById_(proxyAuthorId) : null;
+          if (proxyAuthorId && !APP_STATE.isAdmin) {
+            throw new Error('관리자만 작성자를 대리 지정할 수 있습니다.');
           }
           var logId = isFirebaseStudentLogId_(clientRequestId) ? String(clientRequestId || '') : createFirebaseStudentLogId_();
           var timestamp = new Date().toISOString();
@@ -16676,9 +16692,9 @@
             studentName: student.studentName || '',
             content: content,
             tagsText: normalizedTags.join(', '),
-            createdById: userId,
-            createdByName: user.name || userId,
-            createdByRole: user.role || '',
+            createdById: proxyAuthor ? (proxyAuthor.loginId || proxyAuthor.userId || proxyAuthorId) : userId,
+            createdByName: proxyAuthor ? (proxyAuthor.name || proxyAuthorId) : (user.name || userId),
+            createdByRole: proxyAuthor ? 'INSTRUCTOR' : (user.role || ''),
             createdAt: timestamp,
             reactionsJson: '[]',
             reactionsUpdatedAt: '',
@@ -16709,8 +16725,12 @@
       }
 
       function saveStudentLogEntry_(studentId, content, tags, authorInstructorId, clientRequestId) {
-        if (isFirebaseDirectFeatureEnabled_('logCreateWrite')) {
+        var shouldUseDirect = isFirebaseSessionToken_(APP_STATE.token) || isFirebaseDirectFeatureEnabled_('logCreateWrite');
+        if (shouldUseDirect) {
           return saveStudentLogEntryViaFirebaseDirect_(studentId, content, tags, authorInstructorId, clientRequestId).catch(function(error) {
+            if (isFirebaseSessionToken_(APP_STATE.token)) {
+              throw error;
+            }
             if (window.console && console.warn) {
               console.warn('Firebase direct log create fallback:', error);
             }
@@ -16788,8 +16808,12 @@
       }
 
       function saveStudentLogReaction_(rowKey, reaction) {
-        if (isFirebaseDirectFeatureEnabled_('logReactionWrite') && isFirebaseStudentLogId_(rowKey)) {
+        var shouldUseDirect = isFirebaseSessionToken_(APP_STATE.token) || isFirebaseDirectFeatureEnabled_('logReactionWrite');
+        if (shouldUseDirect && isFirebaseStudentLogId_(rowKey)) {
           return saveStudentLogReactionViaFirebaseDirect_(rowKey, reaction).catch(function(error) {
+            if (isFirebaseSessionToken_(APP_STATE.token)) {
+              throw error;
+            }
             if (window.console && console.warn) {
               console.warn('Firebase direct reaction fallback:', error);
             }
@@ -16799,6 +16823,9 @@
               reaction: reaction
             });
           });
+        }
+        if (isFirebaseSessionToken_(APP_STATE.token)) {
+          return Promise.reject(new Error('Firestore 기록 ID가 아니어서 반응을 저장할 수 없습니다. 새로고침 후 다시 시도해 주세요.'));
         }
         return apiRequest('reactStudentLog', {
           token: APP_STATE.token,
@@ -16832,8 +16859,12 @@
       }
 
       function deleteStudentLog_(rowKey) {
-        if (isFirebaseDirectFeatureEnabled_('logDeleteWrite') && isFirebaseStudentLogId_(rowKey)) {
+        var shouldUseDirect = isFirebaseSessionToken_(APP_STATE.token) || isFirebaseDirectFeatureEnabled_('logDeleteWrite');
+        if (shouldUseDirect && isFirebaseStudentLogId_(rowKey)) {
           return deleteStudentLogViaFirebaseDirect_(rowKey).catch(function(error) {
+            if (isFirebaseSessionToken_(APP_STATE.token)) {
+              throw error;
+            }
             if (window.console && console.warn) {
               console.warn('Firebase direct log delete fallback:', error);
             }
@@ -16842,6 +16873,9 @@
               logRowNumber: rowKey
             });
           });
+        }
+        if (isFirebaseSessionToken_(APP_STATE.token)) {
+          return Promise.reject(new Error('Firestore 기록 ID가 아니어서 기록을 삭제할 수 없습니다. 새로고침 후 다시 시도해 주세요.'));
         }
         return apiRequest('deleteStudentLog', {
           token: APP_STATE.token,
@@ -17281,6 +17315,9 @@
             renderGrades();
           }
           APP_STATE.gradeLoadPromise = loadGradesViaFirebaseDirect_().catch(function(error) {
+            if (isFirebaseSessionToken_(APP_STATE.token)) {
+              throw error;
+            }
             console.warn('Firebase direct grades load fallback:', error);
             return apiRequest('getGrades', { token: APP_STATE.token });
           })
@@ -29040,6 +29077,9 @@
         APP_STATE.gradeSyncIssue = '';
         renderGrades();
         APP_STATE.gradeLoadPromise = loadGradesViaFirebaseDirect_().catch(function(error) {
+          if (isFirebaseSessionToken_(APP_STATE.token)) {
+            throw error;
+          }
           console.warn('Firebase direct grades refresh fallback:', error);
           return apiRequest('getGrades', { token: APP_STATE.token });
         })
@@ -29080,6 +29120,9 @@
         loadGradeHistoryViaFirebaseDirect_(300).then(function(rows) {
           return { gradeHistory: rows, directFirebase: true };
         }).catch(function(error) {
+          if (isFirebaseSessionToken_(APP_STATE.token)) {
+            throw error;
+          }
           console.warn('Firebase direct grade history fallback:', error);
           return apiRequest('getGradeHistory', {
             token: APP_STATE.token,
@@ -30530,6 +30573,9 @@
         APP_STATE.gradeSavingMap[key] = true;
         renderGrades();
         saveGradePayloadsViaFirebaseDirect_([payload]).catch(function(directError) {
+          if (isFirebaseSessionToken_(APP_STATE.token)) {
+            throw directError;
+          }
           console.warn('Firebase direct grade save fallback:', directError);
           return apiRequest('saveGrade', payload);
         })
@@ -31726,6 +31772,9 @@
 
       function saveGradePayloadListV2_(payloads, successMessage) {
         saveGradePayloadsViaFirebaseDirect_(payloads).catch(function(directError) {
+          if (isFirebaseSessionToken_(APP_STATE.token)) {
+            throw directError;
+          }
           console.warn('Firebase direct bulk grade save fallback:', directError);
           return apiRequest('bulkSaveGrades', {
             token: APP_STATE.token,
