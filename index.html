@@ -15591,6 +15591,8 @@
             return student.active !== false && student.status !== 'INACTIVE';
           });
           return {
+            ok: true,
+            directFirebase: true,
             user: user,
             isAdmin: user.role === 'ADMIN',
             visibleStudents: user.role === 'ADMIN' ? activeStudents : [],
@@ -15717,6 +15719,65 @@
         if (!APP_STATE.token) {
           showLoginOnly();
           return Promise.resolve();
+        }
+
+        if (isFirebaseSessionToken_(APP_STATE.token)) {
+          if (config.forceOverlay && !config.silent) {
+            setLoading('Firebase에서 학생 데이터를 동기화하는 중입니다.', true);
+          }
+          if (config.useStagedLoading && !APP_STATE.visibleStudents.length) {
+            APP_STATE.studentDataLoading = true;
+            renderStudents();
+            loadDashboardSnapshotViaFirebaseDirect_({ bootstrapOnly: true });
+          }
+          return initializeFirebaseDirectBootstrapState_().then(function(state) {
+            return waitForFirebaseCurrentUser_(state.auth, 1600).then(function(user) {
+              if (!user || !user.uid) {
+                throw new Error('Firebase 로그인 세션이 만료되었습니다.');
+              }
+              return loadFirebaseLoginContext_(state, user.uid);
+            });
+          }).then(function(studentData) {
+            APP_STATE.studentDataLoading = false;
+            hydrateStudentDataOnly(studentData);
+            if (config.useStagedLoading) {
+              renderUserSummary();
+              renderStats();
+              renderStudents();
+              renderHomeroomView();
+              renderPermissionView();
+              renderJikboView();
+              switchView(APP_STATE.currentView);
+              showAppOnly();
+            }
+
+            if (config.preloadCurrentView) {
+              return ensureViewDataLoaded_(APP_STATE.currentView, { silent: true }).then(function() {
+                hydrateDashboard(studentData, null, null);
+                renderAll();
+                writeDashboardSnapshot_();
+                saveDashboardSnapshotViaFirebaseDirect_(studentData);
+                loadGlobalNoticeViaFirebaseDirect_();
+              });
+            }
+
+            hydrateDashboard(studentData, null, null);
+            renderAll();
+            writeDashboardSnapshot_();
+            saveDashboardSnapshotViaFirebaseDirect_(studentData);
+            loadGlobalNoticeViaFirebaseDirect_();
+            return null;
+          }).then(function() {
+            showAppOnly();
+          }).catch(function(error) {
+            APP_STATE.studentDataLoading = false;
+            renderStudents();
+            handleApiError_(error);
+          }).finally(function() {
+            if (config.forceOverlay && !config.silent) {
+              clearLoading();
+            }
+          });
         }
 
         if (config.forceOverlay && !config.silent) {
@@ -16017,7 +16078,13 @@
           var nextState = APP_STATE.firebaseDirect || {};
           nextState.enabled = true;
           nextState.config = nextState.config || FIREBASE_DIRECT_BOOTSTRAP_CONFIG;
-          nextState.featureFlags = Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, nextState.featureFlags || {}, { dashboardRead: true, globalNoticeWrite: true });
+          nextState.featureFlags = Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, nextState.featureFlags || {}, {
+            dashboardRead: true,
+            globalNoticeWrite: true,
+            gradeRead: true,
+            gradeWrite: true,
+            gradeDelete: true
+          });
           nextState.collections = Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, nextState.collections || {});
           nextState.dashboardSnapshotDocId = nextState.dashboardSnapshotDocId || buildFirebaseDashboardSnapshotDocId_();
           nextState.app = app;
@@ -16050,6 +16117,15 @@
           currentState.user = currentState.auth.currentUser || currentState.user;
           currentState.customToken = '';
           return Promise.resolve(currentState);
+        }
+        if (isFirebaseSessionToken_(requestedToken)) {
+          return initializeFirebaseDirectBootstrapState_().then(function(state) {
+            if (isFirebaseDirectAuthReusable_(state)) {
+              state.user = state.auth.currentUser || state.user;
+              state.customToken = '';
+            }
+            return state;
+          });
         }
         if (currentState.authPromise) {
           return currentState.authPromise;
@@ -29081,6 +29157,9 @@
           return;
         }
         deleteGradeViaFirebaseDirect_(gradeId).catch(function(directError) {
+          if (isFirebaseSessionToken_(APP_STATE.token)) {
+            throw directError;
+          }
           console.warn('Firebase direct grade delete fallback:', directError);
           return apiRequest('deleteGrade', {
             token: APP_STATE.token,
