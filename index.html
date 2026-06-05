@@ -16892,9 +16892,38 @@
 
       function findInstructorById_(instructorId) {
         var target = String(instructorId || '');
+        var targetPhone = normalizePhoneIdentifier_(target);
         return (APP_STATE.instructors || []).find(function(instructor) {
-          return String(instructor.userId || '') === target;
+          return String(instructor.userId || '') === target ||
+            String(instructor.loginId || '') === target ||
+            (targetPhone && normalizePhoneIdentifier_(instructor.userId) === targetPhone) ||
+            (targetPhone && normalizePhoneIdentifier_(instructor.loginId) === targetPhone);
         }) || null;
+      }
+
+      function normalizePhoneIdentifier_(value) {
+        var digits = String(value || '').replace(/\D/g, '');
+        if (digits.length === 8) {
+          return '010' + digits;
+        }
+        if (digits.length === 10 && digits.charAt(0) !== '0') {
+          return '0' + digits;
+        }
+        return digits;
+      }
+
+      function sameInstructorIdentifier_(left, right) {
+        var leftText = String(left || '');
+        var rightText = String(right || '');
+        if (!leftText || !rightText) {
+          return false;
+        }
+        if (leftText === rightText) {
+          return true;
+        }
+        var leftPhone = normalizePhoneIdentifier_(leftText);
+        var rightPhone = normalizePhoneIdentifier_(rightText);
+        return Boolean(leftPhone && rightPhone && leftPhone === rightPhone);
       }
 
       function applyStudentLogSaveResult_(result) {
@@ -17356,7 +17385,9 @@
           var matchesTag = !tag || tags.indexOf(tag) !== -1;
           var matchesInstructor = student.isRestricted
             ? !instructorFilter
-            : (!instructorFilter || (getPermissionMap()[student.studentId] || []).indexOf(instructorFilter) !== -1);
+            : (!instructorFilter || (getPermissionMap()[student.studentId] || []).some(function(id) {
+                return sameInstructorIdentifier_(id, instructorFilter);
+              }));
           return matchesKeyword && matchesSchool && matchesTag && matchesInstructor;
         }));
       }
@@ -17921,9 +17952,7 @@
         if (!instructorId) {
           return '';
         }
-        var instructor = (APP_STATE.instructors || []).find(function(item) {
-          return item.userId === instructorId;
-        }) || { userId: instructorId, name: instructorId };
+        var instructor = findInstructorById_(instructorId) || { userId: instructorId, name: instructorId };
         return '<div class="student-active-filter-row"><span class="student-active-filter-chip">권한 강사: ' + escapeHtml(instructor.name || instructor.userId || '-') + '<button type="button" data-action="clear-instructor-filter" aria-label="권한 강사 필터 해제">×</button></span></div>';
       }
 
@@ -19889,9 +19918,7 @@
       function getStudentPermissionInstructors_(studentId) {
         var ids = (getPermissionMap()[studentId] || []).slice();
         return ids.map(function(id) {
-          return (APP_STATE.instructors || []).find(function(instructor) {
-            return instructor.userId === id;
-          }) || { userId: id, name: id };
+          return findInstructorById_(id) || { userId: id, loginId: id, name: id };
         });
       }
 
@@ -20356,7 +20383,7 @@
         var instructorChip = event.target.closest('[data-action="filter-instructor"]');
         if (instructorChip) {
           var instructorId = instructorChip.getAttribute('data-instructor-id') || '';
-          var instructor = (APP_STATE.instructors || []).find(function(item) { return item.userId === instructorId; });
+          var instructor = findInstructorById_(instructorId);
           APP_STATE.studentPermissionInstructorFilter = instructorId;
           document.getElementById('studentSearchInput').value = '';
           document.getElementById('globalSearchInput').value = '';
@@ -21924,12 +21951,10 @@
           return '<span class="teacher-chip unassigned">미배정</span>';
         }
         return '<div class="permission-instructor-list">' + ids.map(function(id) {
-          var instructor = (APP_STATE.instructors || []).find(function(item) {
-            return item.userId === id;
-          });
+          var instructor = findInstructorById_(id);
           var label = instructor ? instructor.name : id;
           var title = instructor
-            ? [instructor.name, instructor.userId, instructor.subject].filter(Boolean).join(' · ')
+            ? [instructor.name, instructor.loginId || instructor.userId, instructor.subject].filter(Boolean).join(' · ')
             : id;
           return '<span class="teacher-chip primary" title="' + escapeAttribute(title) + '">' + escapeHtml(label || id) + '</span>';
         }).join('') + '</div>';
@@ -21953,7 +21978,7 @@
           return '<span class="permission-empty-selection">아직 선택된 열람 강사가 없습니다.</span>';
         }
         return selected.map(function(id) {
-          var instructor = (APP_STATE.instructors || []).find(function(item) { return item.userId === id; }) || { userId: id, name: id };
+          var instructor = findInstructorById_(id) || { userId: id, name: id };
           return '<button type="button" class="teacher-chip primary permission-selected-chip" data-action="permission-remove-instructor" data-instructor-id="' + escapeAttribute(id) + '">' + escapeHtml(instructor.name || id) + '<span aria-hidden="true">×</span></button>';
         }).join('');
       }
@@ -22015,7 +22040,7 @@
       function getInstructorPermissionStudentCount_(instructorId) {
         var studentMap = {};
         (APP_STATE.permissions || []).forEach(function(item) {
-          if (item.instructorId === instructorId && item.studentId) {
+          if (sameInstructorIdentifier_(item.instructorId, instructorId) && item.studentId) {
             studentMap[item.studentId] = true;
           }
         });
