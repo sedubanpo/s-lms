@@ -14116,7 +14116,9 @@
         userProfiles: 'userProfiles',
         userAppAccess: 'userAppAccess',
         loginAliases: 'loginAliases',
-        students: 'students'
+        students: 'students',
+        permissionRequests: 'permissionRequests',
+        homerooms: 'studentHomerooms'
       };
       const FIREBASE_DIRECT_DEFAULT_FLAGS = {
         logRead: false,
@@ -15406,6 +15408,94 @@
         };
       }
 
+      function normalizeFirebasePlainDoc_(doc) {
+        var data = doc && doc.data ? (doc.data() || {}) : (doc || {});
+        return Object.assign({ id: doc && doc.id ? doc.id : (data.id || '') }, data);
+      }
+
+      function parseFirebaseJsonArray_(value) {
+        if (Array.isArray(value)) {
+          return value;
+        }
+        if (!value) {
+          return [];
+        }
+        try {
+          var parsed = JSON.parse(String(value || ''));
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function normalizeFirebasePermissionForApp_(doc) {
+        var data = normalizeFirebasePlainDoc_(doc);
+        var studentId = String(data.studentId || data.id || '').trim();
+        var instructorId = String(data.instructorId || data.userId || data.teacherId || data.uid || '').trim();
+        return Object.assign({}, data, {
+          studentId: studentId,
+          studentName: data.studentName || data.name || '',
+          instructorId: instructorId,
+          instructorName: data.instructorName || data.teacherName || data.userName || '',
+          permission: data.permission || data.access || 'ALLOW'
+        });
+      }
+
+      function normalizeFirebasePermissionRequestForApp_(doc) {
+        var data = normalizeFirebasePlainDoc_(doc);
+        return Object.assign({}, data, {
+          requestId: data.requestId || data.id || '',
+          studentId: String(data.studentId || '').trim(),
+          studentName: data.studentName || '',
+          instructorId: String(data.instructorId || data.userId || data.teacherId || '').trim(),
+          instructorName: data.instructorName || data.teacherName || data.userName || '',
+          status: data.status || 'PENDING'
+        });
+      }
+
+      function normalizeFirebaseHomeroomRowsForApp_(doc) {
+        var data = normalizeFirebasePlainDoc_(doc);
+        var studentId = String(data.studentId || data.id || '').trim();
+        var studentName = data.studentName || data.name || '';
+        var assignments = Array.isArray(data.assignments) ? data.assignments : parseFirebaseJsonArray_(data.assignmentsJson);
+        if (!assignments.length && (data.instructorId || data.teacherId || data.userId)) {
+          assignments = [data];
+        }
+        return assignments.map(function(item) {
+          item = item || {};
+          return Object.assign({}, item, {
+            studentId: String(item.studentId || studentId || '').trim(),
+            studentName: item.studentName || studentName || '',
+            instructorId: String(item.instructorId || item.teacherId || item.userId || '').trim(),
+            instructorName: item.instructorName || item.teacherName || item.userName || '',
+            subject: item.subject || item.baseSubject || data.subject || '',
+            updatedAt: item.updatedAt || data.updatedAt || data.migratedAt || '',
+            updatedBy: item.updatedBy || data.updatedBy || ''
+          });
+        }).filter(function(item) {
+          return item.studentId && item.instructorId;
+        });
+      }
+
+      function normalizeFirebaseStudentLogForApp_(doc) {
+        var data = normalizeFirebasePlainDoc_(doc);
+        var tags = Array.isArray(data.tags)
+          ? data.tags
+          : String(data.tagsText || '').split(',').map(function(tag) { return tag.trim(); }).filter(Boolean);
+        return Object.assign({}, data, {
+          rowNumber: data.rowNumber || data.logId || data.id || '',
+          studentId: String(data.studentId || '').trim(),
+          studentName: data.studentName || '',
+          content: data.content || '',
+          tags: tags,
+          createdById: data.createdById || '',
+          createdByName: data.createdByName || data.authorName || data.writer || '',
+          createdByRole: data.createdByRole || '',
+          createdAt: data.createdAt || data.timestamp || data.updatedAt || '',
+          reactions: Array.isArray(data.reactions) ? data.reactions : parseFirebaseJsonArray_(data.reactionsJson)
+        });
+      }
+
       function loadFirebaseLoginContext_(state, uid) {
         var collections = state.collections || {};
         var db = state.firestore;
@@ -15429,20 +15519,73 @@
           if (user.status === 'DISABLED' || user.role === 'DISABLED') {
             throw new Error('비활성화된 계정입니다. 관리자에게 문의하세요.');
           }
-          var userListPromise = user.role === 'ADMIN'
-            ? db.collection(collections.users || 'users').get()
-            : Promise.resolve({ docs: [] });
-          return userListPromise.then(function(userSnapshot) {
+          var adminDataPromise = user.role === 'ADMIN'
+            ? Promise.all([
+                db.collection(collections.users || 'users').get(),
+                db.collection(collections.userProfiles || 'userProfiles').get(),
+                db.collection(collections.permissions || 'studentPermissions').get(),
+                db.collection(collections.permissionRequests || 'permissionRequests').get(),
+                db.collection(collections.homerooms || 'studentHomerooms').get(),
+                db.collection(collections.studentLogs || 'studentLogs').get().catch(function(error) {
+                  if (window.console && console.warn) {
+                    console.warn('Firebase student log list skipped:', error);
+                  }
+                  return { docs: [] };
+                })
+              ])
+            : Promise.resolve([{ docs: [] }, { docs: [] }, { docs: [] }, { docs: [] }, { docs: [] }, { docs: [] }]);
+          return adminDataPromise.then(function(adminResults) {
+          var userSnapshot = adminResults[0];
+          var profileSnapshot = adminResults[1];
+          var permissionSnapshot = adminResults[2];
+          var permissionRequestSnapshot = adminResults[3];
+          var homeroomSnapshot = adminResults[4];
+          var logSnapshot = adminResults[5];
+          var profileMap = {};
+          profileSnapshot.docs.forEach(function(doc) {
+            profileMap[doc.id] = doc.data() || {};
+          });
           var instructors = userSnapshot.docs.map(function(doc) {
             var data = doc.data() || {};
+            var profile = profileMap[doc.id] || {};
+            var profileSubjects = Array.isArray(profile.subjects) ? profile.subjects.join(', ') : '';
             return {
               userId: doc.id,
               loginId: data.loginId || '',
-              name: data.name || doc.id,
+              name: data.name || profile.displayName || doc.id,
               role: data.role || 'INSTRUCTOR',
               roleLabel: roleLabelForFirebaseUser_(String(data.role || 'INSTRUCTOR').toUpperCase()),
-              subject: data.subject || ''
+              subject: data.subject || profile.department || profile.subject || profileSubjects || ''
             };
+          });
+          var permissions = permissionSnapshot.docs.map(normalizeFirebasePermissionForApp_).filter(function(item) {
+            return item.studentId && item.instructorId;
+          });
+          var permissionRequests = permissionRequestSnapshot.docs.map(normalizeFirebasePermissionRequestForApp_).filter(function(item) {
+            return item.requestId || item.studentId;
+          });
+          var homeroomAssignments = [];
+          homeroomSnapshot.docs.forEach(function(doc) {
+            homeroomAssignments = homeroomAssignments.concat(normalizeFirebaseHomeroomRowsForApp_(doc));
+          });
+          var logsByStudent = {};
+          logSnapshot.docs.map(normalizeFirebaseStudentLogForApp_).filter(function(log) {
+            return log.studentId && log.content;
+          }).forEach(function(log) {
+            if (!logsByStudent[log.studentId]) {
+              logsByStudent[log.studentId] = [];
+            }
+            logsByStudent[log.studentId].push(log);
+          });
+          Object.keys(logsByStudent).forEach(function(studentId) {
+            logsByStudent[studentId].sort(function(a, b) {
+              return dateValueForSort_(b.createdAt || b.updatedAt || '') - dateValueForSort_(a.createdAt || a.updatedAt || '');
+            });
+          });
+          students = students.map(function(student) {
+            return Object.assign({}, student, {
+              logs: logsByStudent[student.studentId] || []
+            });
           });
           var activeStudents = students.filter(function(student) {
             return student.active !== false && student.status !== 'INACTIVE';
@@ -15456,9 +15599,9 @@
             allStudents: students,
             totalActiveStudentCount: activeStudents.length,
             instructors: instructors,
-            permissions: [],
-            permissionRequests: [],
-            homeroomAssignments: [],
+            permissions: permissions,
+            permissionRequests: permissionRequests,
+            homeroomAssignments: homeroomAssignments,
             appName: APP_STATE.appName,
             logoUrl: APP_STATE.logoUrl,
             globalNotice: APP_STATE.globalNotice
