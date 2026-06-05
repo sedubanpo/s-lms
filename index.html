@@ -14272,6 +14272,7 @@
         logReactionWrite: true,
         logCreateWrite: true,
         logDeleteWrite: true,
+        studentWrite: false,
         permissionRead: false,
         permissionWrite: false,
         permissionRequestWrite: false,
@@ -15468,6 +15469,7 @@
             logReactionWrite: true,
             logCreateWrite: true,
             logDeleteWrite: true,
+            studentWrite: true,
             permissionRead: true,
             permissionWrite: true,
             permissionRequestWrite: true,
@@ -15783,11 +15785,17 @@
             throw new Error('비활성화된 계정입니다. 관리자에게 문의하세요.');
           }
           var safeCollectionGet = function(collectionName, label) {
-            return db.collection(collectionName).get().catch(function(error) {
+            var collection = db.collection(collectionName);
+            return collection.get({ source: 'server' }).catch(function(error) {
               if (window.console && console.warn) {
-                console.warn('Firebase ' + label + ' list skipped:', error);
+                console.warn('Firebase ' + label + ' server list skipped; retrying default source:', error);
               }
-              return { docs: [] };
+              return collection.get().catch(function(fallbackError) {
+                if (window.console && console.warn) {
+                  console.warn('Firebase ' + label + ' list skipped:', fallbackError);
+                }
+                return { docs: [] };
+              });
             });
           };
           var contextDataPromise = Promise.all([
@@ -15830,6 +15838,11 @@
               }))
             };
           });
+          if (user.role !== 'ADMIN') {
+            instructors = [Object.assign({}, user, {
+              instructorIdentifiers: buildInstructorIdentifierCandidates_(user)
+            })];
+          }
           var permissions = flattenFirebasePermissionSnapshot_(permissionSnapshot);
           var permissionRequests = permissionRequestSnapshot.docs.map(normalizeFirebasePermissionRequestForApp_).filter(function(item) {
             return item.requestId || item.studentId;
@@ -16496,6 +16509,7 @@
             logReactionWrite: true,
             logCreateWrite: true,
             logDeleteWrite: true,
+            studentWrite: true,
             permissionRead: true,
             permissionWrite: true,
             permissionRequestWrite: true,
@@ -20527,10 +20541,37 @@
       }
 
       function getStudentPermissionInstructors_(studentId) {
-        var ids = (getPermissionMap()[studentId] || []).slice();
-        return ids.map(function(id) {
-          return findInstructorById_(id) || { userId: id, loginId: id, name: id };
+        var rows = (APP_STATE.permissions || []).filter(function(item) {
+          return String(item.studentId || '') === String(studentId || '') &&
+            String(item.permission || 'ALLOW').toUpperCase() === 'ALLOW';
         });
+        var seen = {};
+        return rows.map(function(item) {
+          var id = String(item.instructorId || item.userId || '').trim();
+          if (!id || seen[id]) {
+            return null;
+          }
+          seen[id] = true;
+          var instructor = findInstructorById_(id);
+          if (instructor) {
+            return instructor;
+          }
+          if (currentUserMatchesInstructorIdentifier_(id)) {
+            var user = APP_STATE.user || {};
+            return {
+              userId: user.userId || id,
+              loginId: user.loginId || id,
+              name: user.name || item.instructorName || id,
+              subject: user.subject || item.subject || ''
+            };
+          }
+          return {
+            userId: id,
+            loginId: id,
+            name: item.instructorName || id,
+            subject: item.subject || ''
+          };
+        }).filter(Boolean);
       }
 
       function getSchoolMaterialInfo_(school) {
@@ -24420,6 +24461,70 @@
         setStudentAddFeedback_('학생명을 입력하고 추가 버튼을 누르면 바로 등록됩니다.', '');
       }
 
+      function findAddedStudentFromResult_(result, previousStudentIds, draft) {
+        var existing = previousStudentIds || {};
+        var candidates = []
+          .concat(result && result.allStudents || [])
+          .concat(result && result.activeStudents || [])
+          .concat(result && result.visibleStudents || [])
+          .concat(result && result.searchableStudents || []);
+        var normalizedName = normalizeSearchText(draft.studentName);
+        var normalizedSchool = normalizeSearchText(draft.school);
+        var normalizedGrade = normalizeSearchText(draft.grade);
+        var matches = candidates.filter(function(student) {
+          return student && student.studentId && !existing[String(student.studentId || '')] &&
+            normalizeSearchText(student.studentName || student.name || '') === normalizedName &&
+            normalizeSearchText(student.school || '') === normalizedSchool &&
+            normalizeSearchText(student.grade || '') === normalizedGrade;
+        });
+        if (matches.length) {
+          return matches[matches.length - 1];
+        }
+        return candidates.filter(function(student) {
+          return student && student.studentId &&
+            normalizeSearchText(student.studentName || student.name || '') === normalizedName &&
+            normalizeSearchText(student.school || '') === normalizedSchool &&
+            normalizeSearchText(student.grade || '') === normalizedGrade;
+        }).pop() || null;
+      }
+
+      function saveAddedStudentViaFirebaseDirect_(student) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('studentWrite')) {
+            throw new Error('Firebase 직접 학생 저장 경로가 준비되지 않았습니다.');
+          }
+          if (!APP_STATE.isAdmin) {
+            throw new Error('관리자만 학생 정보를 Firebase에 저장할 수 있습니다.');
+          }
+          if (!student || !student.studentId) {
+            throw new Error('Firebase에 저장할 학생 ID를 찾을 수 없습니다.');
+          }
+          var now = new Date();
+          var payload = {
+            id: String(student.studentId || ''),
+            studentId: String(student.studentId || ''),
+            studentName: String(student.studentName || student.name || ''),
+            name: String(student.studentName || student.name || ''),
+            school: String(student.school || ''),
+            grade: String(student.grade || ''),
+            subject: String(student.subject || ''),
+            baseSubject: String(student.baseSubject || student.subject || ''),
+            status: student.active === false || student.isActive === false || student.status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',
+            active: !(student.active === false || student.isActive === false || student.status === 'INACTIVE'),
+            rowNumber: student.rowNumber || '',
+            updatedAt: now.toISOString(),
+            updatedAtMs: now.getTime(),
+            updatedById: APP_STATE.user && APP_STATE.user.userId || '',
+            updatedByName: APP_STATE.user && APP_STATE.user.name || ''
+          };
+          var collectionName = (state.collections && state.collections.students) || 'students';
+          return state.firestore.collection(collectionName).doc(payload.studentId).set(payload, { merge: true }).then(function() {
+            return payload;
+          });
+        });
+      }
+
       function handleStudentAdd() {
         if (!APP_STATE.isAdmin) {
           setNotice('관리자만 학생을 등록할 수 있습니다.', 'warning');
@@ -24432,14 +24537,43 @@
 
         clearStudentAddSuccessTimer_();
 
+        var draft = {
+          studentName: document.getElementById('studentManageNameInput').value.trim(),
+          school: document.getElementById('studentManageSchoolInput').value.trim(),
+          grade: document.getElementById('studentManageGradeInput').value.trim()
+        };
+        var previousStudentIds = {};
+        [].concat(APP_STATE.allStudents || [], APP_STATE.activeStudents || [], APP_STATE.visibleStudents || []).forEach(function(student) {
+          if (student && student.studentId) {
+            previousStudentIds[String(student.studentId || '')] = true;
+          }
+        });
+
         APP_STATE.isAddingStudent = true;
         setStudentAddFeedback_('학생 정보를 등록하는 중입니다. 잠시만 기다려 주세요.', 'pending');
         apiRequest('addStudent', {
           token: APP_STATE.token,
-          studentName: document.getElementById('studentManageNameInput').value.trim(),
-          school: document.getElementById('studentManageSchoolInput').value.trim(),
-          grade: document.getElementById('studentManageGradeInput').value.trim()
+          studentName: draft.studentName,
+          school: draft.school,
+          grade: draft.grade
         })
+          .then(function(result) {
+            if (!isFirebaseSessionToken_(APP_STATE.token)) {
+              return result;
+            }
+            var addedStudent = findAddedStudentFromResult_(result, previousStudentIds, draft);
+            return saveAddedStudentViaFirebaseDirect_(addedStudent).then(function() {
+              result.firebaseStudentSaved = true;
+              return result;
+            }).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase direct student save failed after sheet add:', error);
+              }
+              result.firebaseStudentSaved = false;
+              result.firebaseStudentSaveError = error && error.message ? error.message : String(error || '');
+              return result;
+            });
+          })
           .then(function(result) {
             hydrateStudentDataOnly(result);
             document.getElementById('studentManageNameInput').value = '';
@@ -24448,12 +24582,13 @@
             APP_STATE.permissionTab = 'students';
             renderAll();
             switchView('permissions');
-            setStudentAddFeedback_(result.message || '학생 등록이 완료되었습니다.', 'success');
+            var firebaseWarning = isFirebaseSessionToken_(APP_STATE.token) && result.firebaseStudentSaved === false;
+            setStudentAddFeedback_(firebaseWarning ? '시트에는 등록되었지만 Firebase 이중 저장을 확인하지 못했습니다. 동기화 후 확인해 주세요.' : (result.message || '학생 등록이 완료되었습니다.'), firebaseWarning ? '' : 'success');
             APP_STATE.studentAddSuccessTimer = setTimeout(function() {
               APP_STATE.studentAddSuccessTimer = null;
               setStudentAddFeedback_('', '');
             }, 1600);
-            setNotice(result.message || '학생이 등록되었습니다.', 'success');
+            setNotice(firebaseWarning ? '학생은 등록되었지만 Firebase 이중 저장 확인이 필요합니다.' : (result.message || '학생이 등록되었습니다.'), firebaseWarning ? 'warning' : 'success');
           })
           .catch(function(error) {
             setStudentAddFeedback_('학생 등록에 실패했습니다. 입력값을 확인한 뒤 다시 시도해 주세요.', '');
