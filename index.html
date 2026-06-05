@@ -13957,7 +13957,12 @@
         permissions: 'studentPermissions',
         dashboardSnapshots: 'dashboardSnapshots',
         grades: 'studentGrades',
-        gradeHistories: 'studentGradeHistories'
+        gradeHistories: 'studentGradeHistories',
+        users: 'users',
+        userProfiles: 'userProfiles',
+        userAppAccess: 'userAppAccess',
+        loginAliases: 'loginAliases',
+        students: 'students'
       };
       const FIREBASE_DIRECT_DEFAULT_FLAGS = {
         logRead: false,
@@ -14292,6 +14297,13 @@
           APP_STATE.token = savedSession.token;
           APP_STATE.user = savedSession.user || null;
           APP_STATE.isAdmin = Boolean(APP_STATE.user && APP_STATE.user.role === 'ADMIN');
+          if (isFirebaseSessionToken_(APP_STATE.token)) {
+            APP_STATE.studentDataLoading = true;
+            renderAll();
+            showAppOnly();
+            restoreFirebaseStoredSession_().finally(clearLoading);
+            return;
+          }
           var hasSnapshot = hydrateDashboardSnapshot_(readDashboardSnapshot_());
           if (hasSnapshot) {
             APP_STATE.studentDataLoading = false;
@@ -14686,6 +14698,30 @@
         }));
       }
 
+      function isFirebaseSessionToken_(token) {
+        return String(token || '').indexOf('firebase:') === 0;
+      }
+
+      function restoreFirebaseStoredSession_() {
+        return initializeFirebasePasswordAuthState_().then(function(state) {
+          return waitForFirebaseCurrentUser_(state.auth, 1600).then(function(user) {
+            if (!user || !user.uid) {
+              throw new Error('Firebase 로그인 세션이 만료되었습니다.');
+            }
+            return completeFirebaseLogin_(state, user, APP_STATE.user && (APP_STATE.user.loginId || APP_STATE.user.userId));
+          });
+        }).catch(function(error) {
+          clearStoredSession();
+          resetFirebaseDirectState_();
+          APP_STATE.token = '';
+          APP_STATE.user = null;
+          APP_STATE.isAdmin = false;
+          APP_STATE.studentDataLoading = false;
+          showLoginOnly();
+          setNotice(getErrorMessage(error) || '로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning');
+        });
+      }
+
       function clearStoredSession() {
         localStorage.removeItem(SESSION_STORAGE_KEY);
       }
@@ -15053,14 +15089,261 @@
         });
       }
 
-      function handleLogin(event) {
-        event.preventDefault();
+      function normalizeFirebaseLoginDigits_(value) {
+        return String(value || '').replace(/\D+/g, '');
+      }
 
-        var userId = document.getElementById('userIdInput').value.trim();
-        var password = document.getElementById('passwordInput').value.trim();
+      function canonicalFirebaseLoginId_(value) {
+        var normalized = normalizeFirebaseLoginDigits_(value);
+        if (normalized.length === 8) {
+          return '010' + normalized;
+        }
+        if (normalized.length === 10 && normalized.charAt(0) !== '0') {
+          return '0' + normalized;
+        }
+        return normalized;
+      }
 
-        setLoading('로그인 정보를 확인하는 중입니다.', true);
-        apiRequest('login', { userId: userId, password: password, includeDashboard: 'false' })
+      function buildFirebaseLoginAliasCandidates_(value) {
+        var rawDigits = normalizeFirebaseLoginDigits_(value);
+        var canonical = canonicalFirebaseLoginId_(value);
+        return uniqueList_([canonical, canonical && canonical.indexOf('010') === 0 && canonical.length === 11 ? canonical.slice(3) : '', rawDigits].filter(Boolean));
+      }
+
+      function buildFirebasePasswordCandidates_(value) {
+        var raw = String(value || '').trim();
+        var canonical = canonicalFirebaseLoginId_(raw);
+        return uniqueList_([raw, canonical].filter(function(item) {
+          return item && item.length >= 6;
+        }));
+      }
+
+      function sha256Hex_(value) {
+        var text = String(value || '');
+        if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) {
+          return Promise.reject(new Error('현재 브라우저에서 보안 해시를 사용할 수 없습니다.'));
+        }
+        return window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(function(buffer) {
+          return Array.prototype.map.call(new Uint8Array(buffer), function(byte) {
+            return byte.toString(16).padStart(2, '0');
+          }).join('');
+        });
+      }
+
+      function initializeFirebasePasswordAuthState_() {
+        var state = APP_STATE.firebaseDirect || {};
+        if (state.auth && state.firestore) {
+          return Promise.resolve(state);
+        }
+        return loadFirebaseDirectSdk_().then(function() {
+          var appName = 'slms-direct';
+          var app = null;
+          try {
+            app = window.firebase.app(appName);
+          } catch (error) {
+            app = window.firebase.initializeApp(FIREBASE_DIRECT_BOOTSTRAP_CONFIG, appName);
+          }
+          state.enabled = true;
+          state.config = FIREBASE_DIRECT_BOOTSTRAP_CONFIG;
+          state.featureFlags = Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, state.featureFlags || {}, {
+            dashboardRead: true,
+            globalNoticeWrite: true,
+            gradeRead: true,
+            gradeWrite: true,
+            gradeDelete: true
+          });
+          state.collections = Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, state.collections || {});
+          state.app = app;
+          state.auth = app.auth();
+          state.firestore = app.firestore();
+          state.lastError = '';
+          APP_STATE.firebaseDirect = state;
+          return state;
+        });
+      }
+
+      function findFirebaseLoginAlias_(state, userId) {
+        var aliases = buildFirebaseLoginAliasCandidates_(userId);
+        var collectionName = (state.collections && state.collections.loginAliases) || 'loginAliases';
+        return aliases.reduce(function(chain, alias) {
+          return chain.then(function(found) {
+            if (found) {
+              return found;
+            }
+            return sha256Hex_(alias).then(function(aliasId) {
+              return state.firestore.collection(collectionName).doc(aliasId).get();
+            }).then(function(doc) {
+              if (!doc.exists) {
+                return null;
+              }
+              var data = doc.data() || {};
+              if (data.active === false) {
+                throw new Error('비활성화된 계정입니다. 관리자에게 문의하세요.');
+              }
+              return data;
+            });
+          });
+        }, Promise.resolve(null));
+      }
+
+      function signInFirebasePasswordCandidates_(auth, email, password) {
+        var candidates = buildFirebasePasswordCandidates_(password);
+        if (!candidates.length) {
+          return Promise.reject(new Error('비밀번호를 입력해주세요.'));
+        }
+        return candidates.reduce(function(chain, candidate) {
+          return chain.catch(function() {
+            return auth.signInWithEmailAndPassword(email, candidate);
+          });
+        }, Promise.reject(new Error('비밀번호 확인 필요')));
+      }
+
+      function roleLabelForFirebaseUser_(role) {
+        if (role === 'ADMIN') {
+          return '관리자';
+        }
+        if (role === 'STAFF') {
+          return '실무자';
+        }
+        if (role === 'DISABLED') {
+          return '비활성';
+        }
+        return '강사';
+      }
+
+      function normalizeFirebaseUserForApp_(uid, userDoc, profileDoc, accessDoc) {
+        var user = userDoc || {};
+        var profile = profileDoc || {};
+        var access = accessDoc || {};
+        var role = String(user.role || 'INSTRUCTOR').toUpperCase();
+        return {
+          userId: uid,
+          loginId: user.loginId || profile.instructorId || '',
+          name: user.name || profile.displayName || uid,
+          subject: profile.department || (profile.subjects || []).join(', ') || '',
+          role: role,
+          roleLabel: roleLabelForFirebaseUser_(role),
+          status: user.status || 'ACTIVE',
+          appAccess: access.apps || {},
+          permissions: access.permissions || {},
+          firebaseAuth: true
+        };
+      }
+
+      function normalizeFirebaseStudentForApp_(doc) {
+        var data = doc.data ? (doc.data() || {}) : (doc || {});
+        return {
+          studentId: data.id || (doc.id || ''),
+          studentName: data.studentName || data.name || '',
+          school: data.school || '',
+          grade: data.grade || '',
+          status: data.status || (data.active === false ? 'INACTIVE' : 'ACTIVE'),
+          active: data.active !== false,
+          logs: [],
+          subject: data.subject || '',
+          baseSubject: data.baseSubject || ''
+        };
+      }
+
+      function loadFirebaseLoginContext_(state, uid) {
+        var collections = state.collections || {};
+        var db = state.firestore;
+        return Promise.all([
+          db.collection(collections.users || 'users').doc(uid).get(),
+          db.collection(collections.userProfiles || 'userProfiles').doc(uid).get(),
+          db.collection(collections.userAppAccess || 'userAppAccess').doc(uid).get(),
+          db.collection(collections.students || 'students').get()
+        ]).then(function(results) {
+          var userDoc = results[0].exists ? (results[0].data() || {}) : {};
+          var profileDoc = results[1].exists ? (results[1].data() || {}) : {};
+          var accessDoc = results[2].exists ? (results[2].data() || {}) : {};
+          var students = results[3].docs.map(normalizeFirebaseStudentForApp_).filter(function(student) {
+            return student.studentName;
+          }).sort(function(a, b) {
+            return String(a.school || '').localeCompare(String(b.school || ''), 'ko') ||
+              String(a.grade || '').localeCompare(String(b.grade || ''), 'ko') ||
+              String(a.studentName || '').localeCompare(String(b.studentName || ''), 'ko');
+          });
+          var user = normalizeFirebaseUserForApp_(uid, userDoc, profileDoc, accessDoc);
+          var userListPromise = user.role === 'ADMIN'
+            ? db.collection(collections.users || 'users').get()
+            : Promise.resolve({ docs: [] });
+          return userListPromise.then(function(userSnapshot) {
+          var instructors = userSnapshot.docs.map(function(doc) {
+            var data = doc.data() || {};
+            return {
+              userId: doc.id,
+              loginId: data.loginId || '',
+              name: data.name || doc.id,
+              role: data.role || 'INSTRUCTOR',
+              roleLabel: roleLabelForFirebaseUser_(String(data.role || 'INSTRUCTOR').toUpperCase()),
+              subject: data.subject || ''
+            };
+          });
+          var activeStudents = students.filter(function(student) {
+            return student.active !== false && student.status !== 'INACTIVE';
+          });
+          return {
+            user: user,
+            isAdmin: user.role === 'ADMIN',
+            visibleStudents: user.role === 'ADMIN' ? activeStudents : [],
+            searchableStudents: user.role === 'ADMIN' ? students : activeStudents,
+            activeStudents: activeStudents,
+            allStudents: students,
+            totalActiveStudentCount: activeStudents.length,
+            instructors: instructors,
+            permissions: [],
+            permissionRequests: [],
+            homeroomAssignments: [],
+            appName: APP_STATE.appName,
+            logoUrl: APP_STATE.logoUrl,
+            globalNotice: APP_STATE.globalNotice
+          };
+          });
+        });
+      }
+
+      function completeFirebaseLogin_(state, firebaseUser, userId) {
+        APP_STATE.token = 'firebase:' + String(firebaseUser.uid || '');
+        APP_STATE.studentDataLoading = true;
+        state.user = firebaseUser;
+        state.dashboardSnapshotDocId = '';
+        return loadFirebaseLoginContext_(state, firebaseUser.uid).then(function(studentData) {
+          APP_STATE.user = studentData.user || null;
+          APP_STATE.isAdmin = Boolean(studentData.isAdmin);
+          state.dashboardSnapshotDocId = buildFirebaseDashboardSnapshotDocId_();
+          hydrateStudentDataOnly(studentData);
+          APP_STATE.studentDataLoading = false;
+          persistSavedLoginId_(userId);
+          writeStoredSession();
+          syncBranding();
+          showAppOnly();
+          renderAll();
+          setNotice('Firebase 로그인으로 접속했습니다. 계정과 학생 목록을 Firestore에서 불러왔습니다.', 'success');
+          loadGlobalNoticeViaFirebaseDirect_();
+          return null;
+        });
+      }
+
+      function loginWithFirebaseAuthDirect_(userId, password) {
+        return initializeFirebasePasswordAuthState_().then(function(state) {
+          return findFirebaseLoginAlias_(state, userId).then(function(alias) {
+            if (!alias || !alias.email) {
+              throw new Error('등록된 Firebase 로그인 계정을 찾지 못했습니다.');
+            }
+            return signInFirebasePasswordCandidates_(state.auth, alias.email, password).then(function(credential) {
+              var firebaseUser = credential && credential.user ? credential.user : state.auth.currentUser;
+              if (!firebaseUser || !firebaseUser.uid) {
+                throw new Error('Firebase 로그인 사용자 정보를 확인하지 못했습니다.');
+              }
+              return completeFirebaseLogin_(state, firebaseUser, userId);
+            });
+          });
+        });
+      }
+
+      function handleLegacyAppsScriptLogin_(userId, password) {
+        return apiRequest('login', { userId: userId, password: password, includeDashboard: 'false' })
           .then(function(result) {
             APP_STATE.token = result.token;
             APP_STATE.user = result.user || null;
@@ -15085,6 +15368,22 @@
             });
             loadDashboard({ useStagedLoading: true, silent: true });
             return null;
+          });
+      }
+
+      function handleLogin(event) {
+        event.preventDefault();
+
+        var userId = document.getElementById('userIdInput').value.trim();
+        var password = document.getElementById('passwordInput').value.trim();
+
+        setLoading('로그인 정보를 확인하는 중입니다.', true);
+        loginWithFirebaseAuthDirect_(userId, password)
+          .catch(function(firebaseError) {
+            if (window.console && console.warn) {
+              console.warn('Firebase Auth direct login fallback:', firebaseError);
+            }
+            return handleLegacyAppsScriptLogin_(userId, password);
           })
           .catch(function(error) {
             if (APP_STATE.token) {
