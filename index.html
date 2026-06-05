@@ -19070,6 +19070,25 @@
         }) || null;
       }
 
+      function findAnyStudentById_(studentId) {
+        var target = String(studentId || '');
+        var sources = [
+          APP_STATE.visibleStudents || [],
+          APP_STATE.searchableStudents || [],
+          APP_STATE.activeStudents || [],
+          APP_STATE.allStudents || []
+        ];
+        for (var i = 0; i < sources.length; i += 1) {
+          var found = (sources[i] || []).find(function(student) {
+            return String(student.studentId || '') === target;
+          });
+          if (found) {
+            return found;
+          }
+        }
+        return null;
+      }
+
       function openStudentDetailModal_(studentId, options) {
         var config = options || {};
         var student = findStudentById_(studentId || APP_STATE.selectedStudentId);
@@ -22643,10 +22662,7 @@
           return;
         }
         setLoading('학생 열람 권한 요청을 보내는 중입니다.', true);
-        apiRequest('requestPermissionAccess', {
-          token: APP_STATE.token,
-          studentId: studentId
-        })
+        requestStudentPermissionAccess_(studentId)
           .then(function(result) {
             applyPermissionRequestResult_(result || {}, studentId);
             APP_STATE.selectedStudentId = studentId;
@@ -22659,6 +22675,99 @@
           })
           .catch(handleApiError_)
           .finally(clearLoading);
+      }
+
+      function createFirebasePermissionRequestId_() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return 'REQ-' + window.crypto.randomUUID();
+        }
+        return 'REQ-' + Date.now() + '-' + Math.random().toString(36).slice(2, 12);
+      }
+
+      function requestStudentPermissionAccessViaFirebaseDirect_(studentId) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore) {
+            throw new Error('Firebase 직접 권한 요청 저장을 사용할 수 없습니다.');
+          }
+          var student = findAnyStudentById_(studentId);
+          if (!student || !student.studentId) {
+            throw new Error('권한을 요청할 학생을 찾을 수 없습니다.');
+          }
+          var user = APP_STATE.user || {};
+          var userId = String(user.userId || '').trim();
+          if (!userId) {
+            throw new Error('로그인 사용자 정보를 확인할 수 없습니다.');
+          }
+          var alreadyGranted = (APP_STATE.permissions || []).some(function(item) {
+            return String(item.studentId || '') === String(student.studentId || '') &&
+              (sameInstructorIdentifier_(item.instructorId, user.userId) || sameInstructorIdentifier_(item.instructorId, user.loginId)) &&
+              String(item.permission || 'ALLOW').toUpperCase() === 'ALLOW';
+          });
+          if (alreadyGranted) {
+            return {
+              ok: true,
+              directFirebase: true,
+              studentId: student.studentId,
+              alreadyGranted: true,
+              accessStatus: 'granted',
+              message: '이미 열람 권한이 연결된 학생입니다.'
+            };
+          }
+          var existingPendingRequest = (APP_STATE.permissionRequests || []).find(function(item) {
+            return String(item.studentId || '') === String(student.studentId || '') &&
+              (sameInstructorIdentifier_(item.instructorId, user.userId) || sameInstructorIdentifier_(item.instructorId, user.loginId)) &&
+              String(item.status || '').toUpperCase() === 'PENDING';
+          });
+          if (existingPendingRequest) {
+            return {
+              ok: true,
+              directFirebase: true,
+              studentId: student.studentId,
+              accessStatus: 'pending',
+              permissionRequest: existingPendingRequest,
+              message: '이미 권한 요청이 접수되어 관리자 승인을 기다리고 있습니다.'
+            };
+          }
+          var timestamp = new Date().toISOString();
+          var requestId = createFirebasePermissionRequestId_();
+          var permissionRequest = {
+            requestId: requestId,
+            studentId: student.studentId,
+            studentName: student.studentName || '',
+            school: student.school || '',
+            grade: student.grade || '',
+            instructorId: userId,
+            instructorName: user.name || user.loginId || userId,
+            status: 'PENDING',
+            requestedAt: timestamp,
+            resolvedAt: '',
+            resolvedBy: '',
+            note: '',
+            createdAtMs: Date.now()
+          };
+          var collectionName = (state.collections && state.collections.permissionRequests) || 'permissionRequests';
+          return state.firestore.collection(collectionName).doc(requestId).set(permissionRequest).then(function() {
+            return {
+              ok: true,
+              directFirebase: true,
+              studentId: student.studentId,
+              accessStatus: 'pending',
+              permissionRequest: permissionRequest,
+              message: '권한 요청이 접수되었습니다. 관리자 승인 후 학생 데이터 열람이 가능합니다.'
+            };
+          });
+        });
+      }
+
+      function requestStudentPermissionAccess_(studentId) {
+        if (isFirebaseSessionToken_(APP_STATE.token)) {
+          return requestStudentPermissionAccessViaFirebaseDirect_(studentId);
+        }
+        return apiRequest('requestPermissionAccess', {
+          token: APP_STATE.token,
+          studentId: studentId
+        });
       }
 
       function applyPermissionRequestResult_(result, studentId) {
