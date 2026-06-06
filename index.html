@@ -11536,6 +11536,12 @@
         color: #1d4ed8;
       }
 
+      .grade-change-badge.delete {
+        border-color: #fecaca;
+        background: #fff1f2;
+        color: #b91c1c;
+      }
+
       .grade-status-badge.saved {
         border-color: #a7f3d0;
         background: #ecfdf5;
@@ -16963,20 +16969,37 @@
           var targetId = String(gradeId || '');
           var gradeCollection = state.firestore.collection(getGradeFirebaseCollectionName_('grades'));
           var historyCollection = state.firestore.collection(getGradeFirebaseCollectionName_('history'));
-          return historyCollection.where('gradeId', '==', targetId).get().then(function(historySnapshot) {
+          return gradeCollection.doc(targetId).get().then(function(gradeDoc) {
             var batch = state.firestore.batch();
-            batch.delete(gradeCollection.doc(targetId));
-            historySnapshot.forEach(function(doc) {
-              batch.delete(doc.ref);
+            var now = new Date();
+            var currentUser = APP_STATE.user || {};
+            var existing = findGradeRecordById_(targetId) || (gradeDoc.exists ? normalizeGradeFirebaseDoc_(gradeDoc) : {});
+            var historyId = 'GRADE-HISTORY-' + now.getTime() + '-' + Math.random().toString(36).slice(2, 10);
+            var deleteHistory = Object.assign({}, existing, {
+              gradeId: targetId,
+              historyId: historyId,
+              changeType: 'delete',
+              status: 'deleted',
+              deletedAt: now.toISOString(),
+              deletedAtMs: now.getTime(),
+              deletedById: currentUser.userId || '',
+              deletedByName: currentUser.name || currentUser.userId || '',
+              updatedAt: now.toISOString(),
+              updatedAtMs: now.getTime(),
+              updatedById: currentUser.userId || '',
+              updatedByName: currentUser.name || currentUser.userId || '',
+              snapshotAt: now.toISOString(),
+              snapshotById: currentUser.userId || '',
+              snapshotByName: currentUser.name || currentUser.userId || ''
             });
+            batch.delete(gradeCollection.doc(targetId));
+            batch.set(historyCollection.doc(historyId), deleteHistory, { merge: true });
             return batch.commit();
           }).then(function() {
             APP_STATE.grades = (APP_STATE.grades || []).filter(function(record) {
               return String(record.gradeId || '') !== targetId;
             });
-            APP_STATE.gradeHistory = (APP_STATE.gradeHistory || []).filter(function(record) {
-              return String(record.gradeId || '') !== targetId;
-            });
+            APP_STATE.gradeHistory = [];
             APP_STATE.gradeHistoryLoaded = false;
             return { ok: true, directFirebase: true };
           });
@@ -31563,35 +31586,14 @@
       }
 
       function groupGradeHistoryRows_(records) {
-        var map = {};
-        (records || []).forEach(function(record) {
-          var key = [
-            record.studentId || record.studentName || '',
-            record.examYear || record.schoolYear || '',
-            getGradeExamTypeGroup_(record),
-            record.term || '',
-            record.examName || '',
-            record.examRound || ''
-          ].join('|');
-          if (!map[key]) {
-            map[key] = {
-              studentId: record.studentId || '',
-              studentName: record.studentName || '',
-              year: record.examYear || record.schoolYear || '',
-              latest: record,
-              records: []
-            };
-          }
-          map[key].records.push(record);
-          if (sortGradesByUpdatedDesc_(record, map[key].latest) < 0) {
-            map[key].latest = record;
-          }
-        });
-        return Object.keys(map).map(function(key) {
-          map[key].records.sort(function(a, b) {
-            return String(a.subjectCategory + a.subjectName).localeCompare(String(b.subjectCategory + b.subjectName), 'ko');
-          });
-          return map[key];
+        return (records || []).map(function(record) {
+          return {
+            studentId: record.studentId || '',
+            studentName: record.studentName || '',
+            year: record.examYear || record.schoolYear || '',
+            latest: record,
+            records: [record]
+          };
         }).sort(function(a, b) {
           return sortGradesByUpdatedDesc_(a.latest, b.latest);
         });
@@ -31600,6 +31602,9 @@
       function renderGradeHistorySubjectChip_(record) {
         var score = getGradeRecordScoreText_(record) || '-';
         var expected = getExpectedGradeForRecord_(record, score);
+        if (String(record.changeType || '').toLowerCase() === 'delete') {
+          return '<span class="grade-history-subject-item"><span class="grade-history-subject-chip">' + renderGradeSubjectBadgeV2_(record.subjectCategory, record.subjectName) + '<strong>' + escapeHtml(score) + '</strong><span>삭제됨</span></span></span>';
+        }
         var editButton = '<button type="button" class="grade-history-subject-chip" data-grade-action="open-score-editor" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-id="' + escapeAttribute(record.subjectId || '') + '" data-grade-id="' + escapeAttribute(record.gradeId || '') + '">' + renderGradeSubjectBadgeV2_(record.subjectCategory, record.subjectName) + '<strong>' + escapeHtml(score) + '</strong>' + (record.gradeLevel ? '<span>' + escapeHtml(record.gradeLevel) + '등급</span>' : '') + (expected ? '<span>' + escapeHtml(expected) + '</span>' : '') + '</button>';
         var deleteButton = APP_STATE.isAdmin && record.gradeId ? '<button type="button" class="icon-button grade-history-delete" title="성적 삭제" data-grade-action="delete-grade" data-grade-id="' + escapeAttribute(record.gradeId || '') + '"><i data-lucide="trash-2"></i></button>' : '';
         return '<span class="grade-history-subject-item">' + editButton + deleteButton + '</span>';
@@ -31651,6 +31656,9 @@
         }
         if (changeType === 'update') {
           return '<span class="grade-change-badge update">수정</span>';
+        }
+        if (changeType === 'delete') {
+          return '<span class="grade-change-badge delete">삭제</span>';
         }
         return '<span class="grade-change-badge">-</span>';
       }
@@ -33285,12 +33293,82 @@
         (students || []).forEach(function(student) {
           studentIds[student.studentId] = true;
         });
-        return (APP_STATE.grades || []).filter(function(record) {
+        var matchesFilters = function(record) {
           return studentIds[record.studentId] &&
             (!filters.examYear || String(record.examYear || record.schoolYear || '') === String(filters.examYear)) &&
             (!filters.subjectCategory || record.subjectCategory === filters.subjectCategory) &&
             (!filters.subject || record.subjectName === filters.subject || (selectedSubject && isGradeBroadSubjectV3_(selectedSubject) && normalizeSearchText(record.subjectCategory || record.subjectArea) === normalizeSearchText(selectedSubject.subjectCategory)));
-        }).sort(sortGradesByUpdatedDesc_);
+        };
+        var currentRecords = (APP_STATE.grades || []).filter(matchesFilters);
+        var historyRecords = (APP_STATE.gradeHistoryLoaded ? (APP_STATE.gradeHistory || []) : []).filter(function(record) {
+          return matchesFilters(record) && String(record.changeType || '').toLowerCase() !== 'delete';
+        });
+        var bestHistoryByExam = buildLatestGradeHistoryDisplayGroups_(historyRecords);
+        var currentByExam = {};
+        currentRecords.forEach(function(record) {
+          var key = buildGradeExamGroupKey_(record);
+          if (!currentByExam[key]) {
+            currentByExam[key] = [];
+          }
+          currentByExam[key].push(record);
+        });
+        var merged = [];
+        var seen = {};
+        Object.keys(currentByExam).forEach(function(key) {
+          var historyGroup = bestHistoryByExam[key] || [];
+          var rows = historyGroup.length > currentByExam[key].length ? historyGroup : currentByExam[key];
+          merged = merged.concat(rows);
+          seen[key] = true;
+        });
+        Object.keys(bestHistoryByExam).forEach(function(key) {
+          if (!seen[key]) {
+            merged = merged.concat(bestHistoryByExam[key]);
+          }
+        });
+        return merged.sort(sortGradesByUpdatedDesc_);
+      }
+
+      function buildGradeExamGroupKey_(record) {
+        return [
+          record.studentId || record.studentName || '',
+          record.examYear || record.schoolYear || '',
+          getGradeExamTypeGroup_(record),
+          record.term || '',
+          record.examName || '',
+          record.examRound || ''
+        ].join('|');
+      }
+
+      function buildLatestGradeHistoryDisplayGroups_(records) {
+        var grouped = {};
+        (records || []).forEach(function(record) {
+          var examKey = buildGradeExamGroupKey_(record);
+          var eventKey = [
+            record.updatedAtMs || parseGradeDateValue_(record.updatedAt || record.createdAt || '') || '',
+            record.updatedAt || record.createdAt || '',
+            record.snapshotById || record.updatedById || record.createdById || ''
+          ].join('|');
+          if (!grouped[examKey]) {
+            grouped[examKey] = {};
+          }
+          if (!grouped[examKey][eventKey]) {
+            grouped[examKey][eventKey] = { latest: record, records: [] };
+          }
+          grouped[examKey][eventKey].records.push(record);
+          if (sortGradesByUpdatedDesc_(record, grouped[examKey][eventKey].latest) < 0) {
+            grouped[examKey][eventKey].latest = record;
+          }
+        });
+        var output = {};
+        Object.keys(grouped).forEach(function(examKey) {
+          var events = Object.keys(grouped[examKey]).map(function(eventKey) {
+            return grouped[examKey][eventKey];
+          }).sort(function(a, b) {
+            return sortGradesByUpdatedDesc_(a.latest, b.latest);
+          });
+          output[examKey] = events.length ? events[0].records : [];
+        });
+        return output;
       }
 
       function groupGradeOverviewByStudent_(students, records) {
