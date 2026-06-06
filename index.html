@@ -15800,10 +15800,56 @@
               });
             });
           };
+          var safePermissionGet = function(collectionName) {
+            var collection = db.collection(collectionName);
+            if (user.role === 'ADMIN') {
+              return safeCollectionGet(collectionName, 'student permission');
+            }
+            var candidateIds = buildInstructorIdentifierCandidates_(user);
+            var candidateMap = {};
+            candidateIds.forEach(function(candidate) {
+              candidateMap[String(candidate || '')] = true;
+              buildPhoneIdentifierVariants_(candidate).forEach(function(variant) {
+                candidateMap[variant] = true;
+              });
+            });
+            var queries = Object.keys(candidateMap).filter(Boolean).map(function(candidate) {
+              return collection.where('instructorId', '==', candidate).get({ source: 'server' });
+            });
+            if (user.name) {
+              queries.push(collection.where('instructorName', '==', user.name).get({ source: 'server' }));
+            }
+            if (!queries.length) {
+              return safeCollectionGet(collectionName, 'student permission');
+            }
+            return Promise.all(queries.map(function(query) {
+              return query.catch(function(error) {
+                if (window.console && console.warn) {
+                  console.warn('Firebase targeted permission query skipped:', error);
+                }
+                return { docs: [] };
+              });
+            })).then(function(snapshots) {
+              var docs = [];
+              var seen = {};
+              snapshots.forEach(function(snapshot) {
+                (snapshot.docs || []).forEach(function(doc) {
+                  if (!seen[doc.id]) {
+                    seen[doc.id] = true;
+                    docs.push(doc);
+                  }
+                });
+              });
+              if (docs.length) {
+                return { docs: docs };
+              }
+              return safeCollectionGet(collectionName, 'student permission');
+            });
+          };
           var contextDataPromise = Promise.all([
             user.role === 'ADMIN' ? safeCollectionGet(collections.users || 'users', 'user') : Promise.resolve({ docs: [] }),
             user.role === 'ADMIN' ? safeCollectionGet(collections.userProfiles || 'userProfiles', 'profile') : Promise.resolve({ docs: [] }),
-            safeCollectionGet(collections.permissions || 'studentPermissions', 'student permission'),
+            safePermissionGet(collections.permissions || 'studentPermissions'),
             safeCollectionGet(collections.permissionRequests || 'permissionRequests', 'permission request'),
             user.role === 'ADMIN' ? safeCollectionGet(collections.homerooms || 'studentHomerooms', 'homeroom') : Promise.resolve({ docs: [] }),
             safeCollectionGet(collections.studentLogs || 'studentLogs', 'student log')
@@ -17471,6 +17517,21 @@
         return digits;
       }
 
+      function buildPhoneIdentifierVariants_(value) {
+        var digits = normalizePhoneIdentifier_(value);
+        if (!digits) {
+          return [];
+        }
+        var variants = [digits];
+        if (digits.length === 11) {
+          variants.push(digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7));
+        }
+        if (digits.indexOf('010') === 0 && digits.length === 11) {
+          variants.push(digits.slice(3));
+        }
+        return uniqueList_(variants);
+      }
+
       function buildInstructorIdentifierCandidates_(source) {
         source = source || {};
         var raw = [
@@ -17498,6 +17559,9 @@
           var phone = normalizePhoneIdentifier_(text);
           if (phone) {
             values.push(phone);
+            buildPhoneIdentifierVariants_(phone).forEach(function(variant) {
+              values.push(variant);
+            });
           }
         });
         return uniqueList_(values);
