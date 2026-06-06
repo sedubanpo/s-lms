@@ -14621,19 +14621,15 @@
             restoreFirebaseStoredSession_().finally(clearLoading);
             return;
           }
-          var hasSnapshot = hydrateDashboardSnapshot_(readDashboardSnapshot_());
-          if (hasSnapshot) {
-            APP_STATE.studentDataLoading = false;
-            renderAll();
-            showAppOnly();
-          } else {
-            APP_STATE.studentDataLoading = true;
-            renderAll();
-            showAppOnly();
-            setNotice('저장된 화면이 없어 학생 데이터를 불러오는 중입니다.', 'info');
-          }
-          initializeFirebaseDirectBootstrapState_();
-          loadDashboard({ useStagedLoading: true, silent: true });
+          clearStoredSession();
+          clearDashboardSnapshot_();
+          clearGradeSnapshot_();
+          APP_STATE.token = '';
+          APP_STATE.user = null;
+          APP_STATE.isAdmin = false;
+          resetFirebaseDirectState_();
+          showLoginOnly();
+          setNotice('이전 로그인 세션은 Firebase 직접 저장을 사용할 수 없어 만료 처리했습니다. 다시 로그인해 주세요.', 'warning');
           return;
         }
 
@@ -30469,6 +30465,9 @@
           if (isFirebaseSessionToken_(APP_STATE.token)) {
             throw directError;
           }
+          if (/Firestore 직접 삭제가 아직 활성화|직접 연결 준비|직접 조회가 아직 활성화/i.test(getErrorMessage(directError))) {
+            throw new Error('성적 삭제는 Firebase 로그인 세션에서만 사용할 수 있습니다. 로그아웃 후 다시 로그인해 주세요.');
+          }
           console.warn('Firebase direct grade delete fallback:', directError);
           return apiRequest('deleteGrade', {
             token: APP_STATE.token,
@@ -30484,7 +30483,7 @@
           APP_STATE.gradeHistoryLoaded = false;
           setNotice('성적이 삭제되었습니다.', 'success');
         }).catch(function(error) {
-          if (/UrlFetchApp\.fetch|script\.external_request|권한이 없습니다/i.test(getErrorMessage(error))) {
+          if (/UrlFetchApp\.fetch|script\.external_request/i.test(getErrorMessage(error))) {
             setNotice('성적 삭제는 Firestore direct 권한 설정이 필요합니다. Apps Script의 UrlFetch 권한 오류를 피하려면 Firebase 직접 저장을 활성화해 주세요.', 'error');
             return;
           }
