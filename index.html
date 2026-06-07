@@ -17070,7 +17070,12 @@
             return null;
           }
           var collectionName = (state.collections && state.collections.materials) || 'materials';
-          return state.firestore.collection(collectionName).get().then(function(snapshot) {
+          return state.firestore.collection(collectionName).get({ source: 'server' }).catch(function(error) {
+            if (window.console && console.warn) {
+              console.warn('Firebase materials server read failed; retrying default source:', error);
+            }
+            return state.firestore.collection(collectionName).get();
+          }).then(function(snapshot) {
             var rows = [];
             snapshot.forEach(function(doc) {
               var material = normalizeMaterialFirebaseData_(doc.data() || {}, doc.id);
