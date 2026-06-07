@@ -17030,6 +17030,10 @@
         });
       }
 
+      function normalizeMaterialScope_(value) {
+        return String(value || '').trim().toLowerCase() === 'student' ? 'student' : 'shared';
+      }
+
       function normalizeMaterialFirebaseData_(data, docId) {
         data = data || {};
         var rowNumber = Number(data.rowNumber || String(docId || '').replace(/^MAT-/i, '')) || 0;
