@@ -7221,7 +7221,7 @@
       .student-index-table td:nth-child(5) { width: 112px; }
 
       .student-index-table th:nth-child(6),
-      .student-index-table td:nth-child(6) { width: 104px; }
+      .student-index-table td:nth-child(6) { width: 128px; }
 
       .student-index-table th {
         position: sticky;
@@ -7267,10 +7267,37 @@
         min-width: 0;
       }
 
+      .student-name-line {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        max-width: 100%;
+      }
+
       .student-name-main strong {
         display: block;
         color: #0f172a;
         font-size: 0.9rem;
+      }
+
+      .student-name-line strong {
+        min-width: 0;
+      }
+
+      .student-new-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 18px;
+        padding: 0 6px;
+        border: 1px solid #fecaca;
+        border-radius: 999px;
+        background: #fff1f2;
+        color: #dc2626;
+        font-size: 0.62rem;
+        font-weight: 950;
+        line-height: 1;
+        white-space: nowrap;
       }
 
       .student-name-main span {
@@ -7278,6 +7305,13 @@
         margin-top: 4px;
         color: #64748b;
         font-size: 0.75rem;
+      }
+
+      .student-name-line .student-new-badge {
+        display: inline-flex;
+        margin-top: 0;
+        color: #dc2626;
+        font-size: 0.62rem;
       }
 
       .student-record-count {
@@ -7519,6 +7553,17 @@
         display: grid;
         grid-template-columns: repeat(3, 30px);
         gap: 6px;
+      }
+
+      .action-cluster .student-permission-request-button {
+        grid-column: 1 / -1;
+      }
+
+      .student-permission-request-button {
+        min-width: 86px;
+        width: max-content;
+        padding: 0 10px;
+        white-space: nowrap;
       }
 
       .icon-mini {
@@ -15788,7 +15833,14 @@
           active: data.active !== false,
           logs: [],
           subject: data.subject || '',
-          baseSubject: data.baseSubject || ''
+          baseSubject: data.baseSubject || '',
+          rowNumber: data.rowNumber || data.row || '',
+          createdAt: data.createdAt || data.registeredAt || data.enrolledAt || '',
+          createdAtMs: Number(data.createdAtMs || data.registeredAtMs || data.enrolledAtMs || 0),
+          registeredAt: data.registeredAt || data.createdAt || data.enrolledAt || '',
+          registeredAtMs: Number(data.registeredAtMs || data.createdAtMs || data.enrolledAtMs || 0),
+          updatedAt: data.updatedAt || '',
+          updatedAtMs: Number(data.updatedAtMs || 0)
         };
       }
 
@@ -15935,6 +15987,13 @@
       function dateValueForSort_(value) {
         if (typeof value === 'number' && isFinite(value)) {
           return value;
+        }
+        if (value && typeof value.toDate === 'function') {
+          var dateValue = value.toDate();
+          return dateValue && !isNaN(dateValue.getTime()) ? dateValue.getTime() : 0;
+        }
+        if (value && typeof value.seconds === 'number') {
+          return (value.seconds * 1000) + Math.floor((value.nanoseconds || 0) / 1000000);
         }
         var text = String(value || '').trim();
         if (!text) {
@@ -16141,12 +16200,22 @@
             return student.active !== false && student.status !== 'INACTIVE';
           });
           var permissionMap = {};
+          var permissionMetaMap = {};
           permissions.forEach(function(item) {
             if (!permissionMap[item.studentId]) {
               permissionMap[item.studentId] = [];
             }
             if (item.instructorId && permissionMap[item.studentId].indexOf(item.instructorId) === -1) {
               permissionMap[item.studentId].push(item.instructorId);
+            }
+            var permissionMs = Number(item.createdAtMs || item.grantedAtMs || item.assignedAtMs || item.updatedAtMs || 0) ||
+              dateValueForSort_(item.createdAt || item.grantedAt || item.assignedAt || item.updatedAt || '');
+            if (item.instructorId && userMatchesInstructorIdentifier(item.instructorId) && (!permissionMetaMap[item.studentId] || permissionMs > (permissionMetaMap[item.studentId].permissionAddedAtMs || 0))) {
+              permissionMetaMap[item.studentId] = {
+                instructorId: item.instructorId,
+                permissionAddedAt: item.createdAt || item.grantedAt || item.assignedAt || item.updatedAt || '',
+                permissionAddedAtMs: permissionMs
+              };
             }
           });
           var requestMap = {};
@@ -16163,14 +16232,16 @@
               return (permissionMap[student.studentId] || []).some(function(instructorId) {
                 return userMatchesInstructorIdentifier(instructorId);
               });
+            }).map(function(student) {
+              return Object.assign({}, student, permissionMetaMap[student.studentId] || {});
             });
             var scopedMap = {};
             scopedStudents.forEach(function(student) {
-              scopedMap[student.studentId] = true;
+              scopedMap[student.studentId] = student;
             });
             searchableStudents = activeStudents.map(function(student) {
               if (scopedMap[student.studentId]) {
-                return student;
+                return scopedMap[student.studentId];
               }
               var request = requestMap[student.studentId] || null;
               return Object.assign({}, student, {
@@ -18575,10 +18646,67 @@
           : ((APP_STATE.searchableStudents && APP_STATE.searchableStudents.length) ? APP_STATE.searchableStudents : (APP_STATE.visibleStudents || []));
       }
 
+      function getStudentRegistrationSortMs_(student) {
+        student = student || {};
+        var registeredMs = Number(student.registeredAtMs || student.createdAtMs || student.enrolledAtMs || 0) ||
+          dateValueForSort_(student.registeredAt || student.createdAt || student.enrolledAt || '');
+        if (registeredMs) {
+          return registeredMs;
+        }
+        var rowNumber = Number(student.rowNumber || student.row || 0);
+        return isFinite(rowNumber) ? rowNumber : 0;
+      }
+
+      function getCurrentUserPermissionForStudent_(studentId) {
+        return (APP_STATE.permissions || []).filter(function(item) {
+          return String(item.studentId || '') === String(studentId || '') &&
+            currentUserMatchesInstructorIdentifier_(item.instructorId) &&
+            String(item.permission || 'ALLOW').toUpperCase() === 'ALLOW';
+        }).sort(function(a, b) {
+          var bMs = Number(b.createdAtMs || b.grantedAtMs || b.assignedAtMs || b.updatedAtMs || 0) ||
+            dateValueForSort_(b.createdAt || b.grantedAt || b.assignedAt || b.updatedAt || '');
+          var aMs = Number(a.createdAtMs || a.grantedAtMs || a.assignedAtMs || a.updatedAtMs || 0) ||
+            dateValueForSort_(a.createdAt || a.grantedAt || a.assignedAt || a.updatedAt || '');
+          return bMs - aMs;
+        })[0] || null;
+      }
+
+      function getStudentPermissionSortMs_(student) {
+        student = student || {};
+        var directMs = Number(student.permissionAddedAtMs || 0) || dateValueForSort_(student.permissionAddedAt || '');
+        if (directMs) {
+          return directMs;
+        }
+        var permission = getCurrentUserPermissionForStudent_(student.studentId);
+        return permission
+          ? (Number(permission.createdAtMs || permission.grantedAtMs || permission.assignedAtMs || permission.updatedAtMs || 0) ||
+            dateValueForSort_(permission.createdAt || permission.grantedAt || permission.assignedAt || permission.updatedAt || ''))
+          : 0;
+      }
+
+      function isRecentStudentDisplayItem_(student) {
+        var twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
+        var sortMs = APP_STATE.isAdmin ? getStudentRegistrationSortMs_(student) : getStudentPermissionSortMs_(student);
+        return Boolean(sortMs && sortMs > 1000000000000 && (Date.now() - sortMs) <= twoWeeksMs);
+      }
+
+      function renderStudentNewBadge_(student) {
+        return isRecentStudentDisplayItem_(student) ? '<span class="student-new-badge">NEW</span>' : '';
+      }
+
+      function renderStudentNameWithNewBadge_(student) {
+        return '<span class="student-name-line"><strong>' + escapeHtml(student && student.studentName || '-') + '</strong>' + renderStudentNewBadge_(student) + '</span>';
+      }
+
       function orderStudentsForDisplay_(students) {
         return (students || []).slice().sort(function(a, b) {
           if (Boolean(a.isHomeroom) !== Boolean(b.isHomeroom)) {
             return a.isHomeroom ? -1 : 1;
+          }
+          var primaryA = APP_STATE.isAdmin ? getStudentRegistrationSortMs_(a) : getStudentPermissionSortMs_(a);
+          var primaryB = APP_STATE.isAdmin ? getStudentRegistrationSortMs_(b) : getStudentPermissionSortMs_(b);
+          if (primaryA !== primaryB) {
+            return primaryB - primaryA;
           }
           return [
             a.subject || 'zzzz',
@@ -18915,7 +19043,7 @@
         return [
           '<article class="mobile-student-card' + selected + '" data-mobile-student-card data-student-id="' + escapeAttribute(student.studentId || '') + '">',
           '  <div class="mobile-student-card-head">',
-          '    <div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + renderStudentSchoolGradeHtml_(student, true) + '</span></div>',
+          '    <div>' + renderStudentNameWithNewBadge_(student) + '<span>' + renderStudentSchoolGradeHtml_(student, true) + '</span></div>',
                renderStudentRecordCountBadge_(logs.length),
           '  </div>',
           '  <div class="chip-row">' + (restricted ? renderPermissionRequestStatusChip_(student) : renderPermissionChips_(permissions, 3)) + '</div>',
@@ -19359,7 +19487,7 @@
         var restricted = Boolean(student.isRestricted);
         return [
           '<tr class="student-index-row' + selected + '" data-student-id="' + escapeAttribute(student.studentId || '') + '">',
-          '  <td class="student-name-cell"><div class="student-name-cell-inner"><div class="student-name-main"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + renderStudentSchoolGradeHtml_(student, true) + '</span></div>' + renderStudentRecordCountBadge_(logs.length) + '</div></td>',
+          '  <td class="student-name-cell"><div class="student-name-cell-inner"><div class="student-name-main">' + renderStudentNameWithNewBadge_(student) + '<span>' + renderStudentSchoolGradeHtml_(student, true) + '</span></div>' + renderStudentRecordCountBadge_(logs.length) + '</div></td>',
           '  <td><div class="permission-cell"><div class="chip-row">' + (restricted ? renderPermissionRequestStatusChip_(student) : renderPermissionChips_(permissions, 2)) + '</div></div></td>',
           '  <td><div class="status-grid ' + (restricted ? 'restricted-data' : '') + '">' + [
                renderStatusChip_('상담', logs.length ? 'slate' : 'muted'),
@@ -19548,9 +19676,9 @@
 
       function renderPermissionRequestButton_(student) {
         if (student && student.accessStatus === 'pending') {
-          return '<button class="mini-button" type="button" data-action="request-student-permission" disabled>요청 대기</button>';
+          return '<button class="mini-button student-permission-request-button" type="button" data-action="request-student-permission" disabled>요청 대기</button>';
         }
-        return '<button class="mini-button" type="button" data-action="request-student-permission"><i data-lucide="shield-plus"></i> 권한 요청</button>';
+        return '<button class="mini-button student-permission-request-button" type="button" data-action="request-student-permission"><i data-lucide="shield-plus"></i> 권한 요청</button>';
       }
 
       function renderInstructorPermissionChip_(item, tone, tagName) {
@@ -23698,8 +23826,19 @@
         }).join('__');
       }
 
+      function findExistingStudentPermissionRow_(studentId, instructorId) {
+        return (APP_STATE.permissions || []).find(function(item) {
+          return String(item.studentId || '') === String(studentId || '') &&
+            sameInstructorIdentifier_(item.instructorId, instructorId);
+        }) || null;
+      }
+
       function buildSingleStudentPermissionFirebasePayload_(studentId, instructorId) {
         var aggregate = buildStudentPermissionFirebasePayload_(studentId, [instructorId]);
+        var existing = findExistingStudentPermissionRow_(studentId, instructorId);
+        var createdAt = existing && (existing.createdAt || existing.grantedAt || existing.assignedAt) || aggregate.updatedAt;
+        var createdAtMs = Number(existing && (existing.createdAtMs || existing.grantedAtMs || existing.assignedAtMs) || 0) ||
+          dateValueForSort_(createdAt) || aggregate.updatedAtMs;
         return {
           permissionId: buildStudentInstructorPermissionDocId_(studentId, instructorId),
           studentId: aggregate.studentId,
@@ -23710,6 +23849,8 @@
           instructorName: aggregate.instructorNames[0] || '',
           subject: aggregate.instructorSubjects[0] || '',
           permission: 'ALLOW',
+          createdAt: createdAt,
+          createdAtMs: createdAtMs,
           updatedAt: aggregate.updatedAt,
           updatedAtMs: aggregate.updatedAtMs,
           updatedById: aggregate.updatedById,
@@ -23731,7 +23872,10 @@
             instructorName: names[index] || '',
             subject: subjects[index] || '',
             permission: 'ALLOW',
+            createdAt: payload.createdAt || payload.updatedAt,
+            createdAtMs: payload.createdAtMs || payload.updatedAtMs,
             updatedAt: payload.updatedAt,
+            updatedAtMs: payload.updatedAtMs,
             updatedById: payload.updatedById,
             updatedByName: payload.updatedByName
           };
@@ -23739,11 +23883,13 @@
       }
 
       function replaceStudentPermissionsInState_(studentId, instructorIds) {
-        var payload = buildStudentPermissionFirebasePayload_(studentId, instructorIds);
+        var rows = uniqueList_(instructorIds || []).map(function(instructorId) {
+          return buildSingleStudentPermissionFirebasePayload_(studentId, instructorId);
+        });
         APP_STATE.permissions = (APP_STATE.permissions || []).filter(function(item) {
           return String(item.studentId || '') !== String(studentId || '');
-        }).concat(buildPermissionRowsFromPayload_(payload));
-        return payload;
+        }).concat(rows);
+        return buildStudentPermissionFirebasePayload_(studentId, instructorIds);
       }
 
       function saveStudentPermissionsViaFirebaseDirect_(studentId, instructorIds) {
@@ -25084,6 +25230,10 @@
             status: student.active === false || student.isActive === false || student.status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',
             active: !(student.active === false || student.isActive === false || student.status === 'INACTIVE'),
             rowNumber: student.rowNumber || '',
+            createdAt: student.createdAt || student.registeredAt || now.toISOString(),
+            createdAtMs: Number(student.createdAtMs || student.registeredAtMs || 0) || now.getTime(),
+            registeredAt: student.registeredAt || student.createdAt || now.toISOString(),
+            registeredAtMs: Number(student.registeredAtMs || student.createdAtMs || 0) || now.getTime(),
             updatedAt: now.toISOString(),
             updatedAtMs: now.getTime(),
             updatedById: APP_STATE.user && APP_STATE.user.userId || '',
