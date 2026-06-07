@@ -14472,7 +14472,9 @@
         loginAliases: 'loginAliases',
         students: 'students',
         permissionRequests: 'permissionRequests',
-        homerooms: 'studentHomerooms'
+        homerooms: 'studentHomerooms',
+        materials: 'materials',
+        materialOpenLogs: 'materialOpenLogs'
       };
       const FIREBASE_DIRECT_DEFAULT_FLAGS = {
         logRead: false,
@@ -14487,7 +14489,9 @@
         globalNoticeWrite: false,
         gradeRead: false,
         gradeWrite: false,
-        gradeDelete: false
+        gradeDelete: false,
+        materialRead: false,
+        materialOpenLogRead: false
       };
       const LOG_TAG_OPTIONS = [
         '수업현황',
@@ -15678,7 +15682,9 @@
             permissionRequestWrite: true,
             gradeRead: true,
             gradeWrite: true,
-            gradeDelete: true
+            gradeDelete: true,
+            materialRead: true,
+            materialOpenLogRead: true
           });
           state.collections = Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, state.collections || {});
           state.app = app;
@@ -16764,7 +16770,9 @@
             permissionRequestWrite: true,
             gradeRead: true,
             gradeWrite: true,
-            gradeDelete: true
+            gradeDelete: true,
+            materialRead: true,
+            materialOpenLogRead: true
           });
           nextState.collections = Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, nextState.collections || {});
           nextState.dashboardSnapshotDocId = nextState.dashboardSnapshotDocId || buildFirebaseDashboardSnapshotDocId_();
@@ -17005,6 +17013,77 @@
             console.warn('Global notice Firebase load fallback:', error);
           }
           return false;
+        });
+      }
+
+      function normalizeMaterialFirebaseData_(data, docId) {
+        data = data || {};
+        var rowNumber = Number(data.rowNumber || String(docId || '').replace(/^MAT-/i, '')) || 0;
+        return {
+          rowNumber: rowNumber,
+          school: String(data.school || ''),
+          grade: String(data.grade || ''),
+          term: String(data.term || ''),
+          year: String(data.year || ''),
+          subject: String(data.subject || ''),
+          examType: String(data.examType || ''),
+          materialType: String(data.materialType || ''),
+          fileType: String(data.fileType || ''),
+          link: String(data.link || ''),
+          note: String(data.note || ''),
+          createdBy: String(data.createdBy || ''),
+          createdAt: String(data.createdAt || ''),
+          materialScope: normalizeMaterialScope_(data.materialScope || (data.school === '학생 자료' ? 'student' : 'shared')),
+          studentName: String(data.studentName || '')
+        };
+      }
+
+      function mergeMaterialRowsClient_(primaryRows, secondaryRows) {
+        var map = {};
+        var rows = [];
+        function pushRow(row) {
+          if (!row || !row.school) {
+            return;
+          }
+          var key = String(row.rowNumber || '') || [row.school, row.grade, row.year, row.subject, row.examType, row.materialType, row.fileType, row.link].join('|');
+          if (map[key]) {
+            return;
+          }
+          map[key] = true;
+          rows.push(row);
+        }
+        (primaryRows || []).forEach(pushRow);
+        (secondaryRows || []).forEach(pushRow);
+        return rows.sort(compareMaterialRows_);
+      }
+
+      function loadMaterialsViaFirebaseDirect_() {
+        if (!APP_STATE.token || !APP_STATE.user || !APP_STATE.user.userId) {
+          return Promise.resolve(null);
+        }
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('materialRead')) {
+            return null;
+          }
+          var collectionName = (state.collections && state.collections.materials) || 'materials';
+          return state.firestore.collection(collectionName).get().then(function(snapshot) {
+            var rows = [];
+            snapshot.forEach(function(doc) {
+              var material = normalizeMaterialFirebaseData_(doc.data() || {}, doc.id);
+              if (material.rowNumber && material.school) {
+                rows.push(material);
+              }
+            });
+            rows.sort(compareMaterialRows_);
+            return {
+              ok: true,
+              directFirebase: true,
+              materials: rows,
+              settings: APP_STATE.materialSettings,
+              globalNotice: APP_STATE.globalNotice
+            };
+          });
         });
       }
 
@@ -17982,7 +18061,28 @@
           if (!config.silent && APP_STATE.currentView === 'materials') {
             renderMaterials();
           }
-          APP_STATE.materialLoadPromise = apiRequest('getMaterials', { token: APP_STATE.token })
+          APP_STATE.materialLoadPromise = loadMaterialsViaFirebaseDirect_()
+            .catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase direct materials fallback:', error);
+              }
+              return null;
+            })
+            .then(function(directData) {
+              return apiRequest('getMaterials', { token: APP_STATE.token })
+                .then(function(apiData) {
+                  if (directData && directData.materials && directData.materials.length) {
+                    apiData.materials = mergeMaterialRowsClient_(directData.materials, apiData.materials || []);
+                  }
+                  return apiData;
+                })
+                .catch(function(error) {
+                  if (directData) {
+                    return directData;
+                  }
+                  throw error;
+                });
+            })
             .then(function(materialData) {
               APP_STATE.materials = materialData && materialData.materials ? materialData.materials : [];
               APP_STATE.materialSettings = materialData && materialData.settings ? materialData.settings : APP_STATE.materialSettings;
