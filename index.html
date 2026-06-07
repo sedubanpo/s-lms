@@ -15993,6 +15993,9 @@
           if (user.status === 'DISABLED' || user.role === 'DISABLED') {
             throw new Error('비활성화된 계정입니다. 관리자에게 문의하세요.');
           }
+          var userMatchesInstructorIdentifier = function(identifier) {
+            return isInstructorIdentifierInCandidates_(identifier, user);
+          };
           var safeCollectionGet = function(collectionName, label) {
             var collection = db.collection(collectionName);
             return collection.get({ source: 'server' }).catch(function(error) {
@@ -16104,7 +16107,7 @@
           });
           if (user.role !== 'ADMIN') {
             permissionRequests = permissionRequests.filter(function(item) {
-              return currentUserMatchesInstructorIdentifier_(item.instructorId);
+              return userMatchesInstructorIdentifier(item.instructorId);
             });
           }
           var homeroomAssignments = [];
@@ -16154,7 +16157,7 @@
           if (user.role !== 'ADMIN') {
             scopedStudents = activeStudents.filter(function(student) {
               return (permissionMap[student.studentId] || []).some(function(instructorId) {
-                return currentUserMatchesInstructorIdentifier_(instructorId);
+                return userMatchesInstructorIdentifier(instructorId);
               });
             });
             var scopedMap = {};
