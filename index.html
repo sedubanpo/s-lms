@@ -14491,7 +14491,9 @@
         gradeWrite: false,
         gradeDelete: false,
         materialRead: false,
-        materialOpenLogRead: false
+        materialWrite: false,
+        materialOpenLogRead: false,
+        materialOpenLogWrite: false
       };
       const LOG_TAG_OPTIONS = [
         '수업현황',
@@ -15684,7 +15686,9 @@
             gradeWrite: true,
             gradeDelete: true,
             materialRead: true,
-            materialOpenLogRead: true
+            materialWrite: true,
+            materialOpenLogRead: true,
+            materialOpenLogWrite: true
           });
           state.collections = Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, state.collections || {});
           state.app = app;
@@ -16775,7 +16779,9 @@
             gradeWrite: true,
             gradeDelete: true,
             materialRead: true,
-            materialOpenLogRead: true
+            materialWrite: true,
+            materialOpenLogRead: true,
+            materialOpenLogWrite: true
           });
           nextState.collections = Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, nextState.collections || {});
           nextState.dashboardSnapshotDocId = nextState.dashboardSnapshotDocId || buildFirebaseDashboardSnapshotDocId_();
@@ -17092,6 +17098,169 @@
               globalNotice: APP_STATE.globalNotice
             };
           });
+        });
+      }
+
+      function buildMaterialFirebaseDocId_(rowNumber) {
+        return 'MAT-' + String(rowNumber || '').trim().replace(/\//g, '_');
+      }
+
+      function buildMaterialOpenLogFirebaseDocId_(rowNumber, openedAtMs, userId) {
+        return ['MLOG', rowNumber || '0', openedAtMs || Date.now(), userId || 'user'].map(function(value) {
+          return String(value || '').trim().replace(/\//g, '_');
+        }).join('-');
+      }
+
+      function normalizeMaterialOpenLogFirebaseData_(data, docId) {
+        data = data || {};
+        return {
+          logId: data.logId || docId || '',
+          materialRowNumber: String(data.materialRowNumber || data.rowNumber || ''),
+          school: String(data.school || ''),
+          year: String(data.year || ''),
+          subject: String(data.subject || ''),
+          examType: String(data.examType || ''),
+          materialType: String(data.materialType || ''),
+          fileType: String(data.fileType || ''),
+          link: String(data.link || ''),
+          openedById: String(data.openedById || data.userId || ''),
+          openedByName: String(data.openedByName || data.userName || ''),
+          openedByRole: String(data.openedByRole || data.userRole || ''),
+          openedAt: String(data.openedAt || data.createdAt || ''),
+          openedAtMs: Number(data.openedAtMs || data.createdAtMs || 0)
+        };
+      }
+
+      function loadMaterialOpenLogsViaFirebaseDirect_() {
+        if (!APP_STATE.token || !APP_STATE.user || !APP_STATE.user.userId || !APP_STATE.isAdmin) {
+          return Promise.resolve(null);
+        }
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('materialOpenLogRead')) {
+            return null;
+          }
+          var collectionName = (state.collections && state.collections.materialOpenLogs) || 'materialOpenLogs';
+          return state.firestore.collection(collectionName).get({ source: 'server' }).catch(function(error) {
+            if (window.console && console.warn) {
+              console.warn('Firebase material open logs server read failed; retrying default source:', error);
+            }
+            return state.firestore.collection(collectionName).get();
+          }).then(function(snapshot) {
+            var rows = [];
+            snapshot.forEach(function(doc) {
+              rows.push(normalizeMaterialOpenLogFirebaseData_(doc.data() || {}, doc.id));
+            });
+            rows.sort(compareMaterialOpenLogsByRecent_);
+            return { ok: true, openLogs: rows };
+          });
+        });
+      }
+
+      function buildMaterialPayloadFromForm_(isEditing) {
+        var now = new Date();
+        var rowNumber = Number(APP_STATE.editingMaterialRowNumber || 0) || Date.now();
+        var materialScope = APP_STATE.materialCreateScope === 'student' ? 'student' : 'shared';
+        var studentNameInput = document.getElementById('materialStudentNameInput');
+        return {
+          rowNumber: rowNumber,
+          materialScope: materialScope,
+          studentName: studentNameInput ? studentNameInput.value.trim() : '',
+          school: document.getElementById('materialSchoolInput').value.trim(),
+          grade: normalizeMaterialGradeInput_(document.getElementById('materialGradeInput').value),
+          term: document.getElementById('materialTermInput').value.trim(),
+          year: document.getElementById('materialYearInput').value.trim(),
+          subject: document.getElementById('materialSubjectInput').value.trim(),
+          examType: document.getElementById('materialExamTypeInput').value.trim(),
+          materialType: document.getElementById('materialTypeInput').value.trim(),
+          fileType: document.getElementById('materialFileTypeInput').value.trim(),
+          link: document.getElementById('materialLinkInput').value.trim(),
+          note: document.getElementById('materialNoteInput').value.trim(),
+          createdBy: APP_STATE.user && APP_STATE.user.name || '',
+          createdAt: isEditing ? ((APP_STATE.materials || []).find(function(item) {
+            return String(item.rowNumber || '') === String(rowNumber);
+          }) || {}).createdAt || now.toISOString() : now.toISOString(),
+          updatedById: APP_STATE.user && APP_STATE.user.userId || '',
+          updatedByName: APP_STATE.user && APP_STATE.user.name || '',
+          updatedAt: now.toISOString(),
+          updatedAtMs: now.getTime()
+        };
+      }
+
+      function saveMaterialViaFirebaseDirect_(isEditing) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('materialWrite')) {
+            throw new Error('Firebase 직접 자료 저장 경로가 준비되지 않았습니다.');
+          }
+          var payload = buildMaterialPayloadFromForm_(isEditing);
+          if (!payload.school || !payload.link) {
+            throw new Error('학교와 링크를 입력해 주세요.');
+          }
+          var collectionName = (state.collections && state.collections.materials) || 'materials';
+          return state.firestore.collection(collectionName).doc(buildMaterialFirebaseDocId_(payload.rowNumber)).set(payload, { merge: true })
+            .then(function() {
+              return loadMaterialsViaFirebaseDirect_();
+            }).then(function(result) {
+              return Object.assign({}, result || {}, {
+                message: isEditing ? '자료가 Firebase에 수정되었습니다.' : '자료가 Firebase에 저장되었습니다.'
+              });
+            });
+        });
+      }
+
+      function deleteMaterialViaFirebaseDirect_(rowNumber) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('materialWrite')) {
+            throw new Error('Firebase 직접 자료 삭제 경로가 준비되지 않았습니다.');
+          }
+          var collectionName = (state.collections && state.collections.materials) || 'materials';
+          return state.firestore.collection(collectionName).doc(buildMaterialFirebaseDocId_(rowNumber)).delete()
+            .then(function() {
+              return loadMaterialsViaFirebaseDirect_();
+            }).then(function(result) {
+              return Object.assign({}, result || {}, { message: '자료가 Firebase에서 삭제되었습니다.' });
+            });
+        });
+      }
+
+      function recordMaterialOpenViaFirebaseDirect_(rowNumber) {
+        var row = String(rowNumber || '');
+        var material = (APP_STATE.materials || []).find(function(item) {
+          return String(item.rowNumber || '') === row;
+        });
+        if (!material) {
+          return Promise.resolve(null);
+        }
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('materialOpenLogWrite')) {
+            return null;
+          }
+          var now = new Date();
+          var user = APP_STATE.user || {};
+          var payload = {
+            materialRowNumber: row,
+            school: material.school || '',
+            year: material.year || '',
+            subject: material.subject || '',
+            examType: material.examType || '',
+            materialType: material.materialType || '',
+            fileType: material.fileType || '',
+            link: material.link || '',
+            openedById: user.userId || user.loginId || '',
+            openedByName: user.name || user.loginId || '',
+            openedByRole: user.role || '',
+            openedAt: now.toISOString(),
+            openedAtMs: now.getTime()
+          };
+          var collectionName = (state.collections && state.collections.materialOpenLogs) || 'materialOpenLogs';
+          var docId = buildMaterialOpenLogFirebaseDocId_(row, payload.openedAtMs, payload.openedById);
+          return state.firestore.collection(collectionName).doc(docId).set(Object.assign({ logId: docId }, payload), { merge: true })
+            .then(function() {
+              return { ok: true, savedLog: normalizeMaterialOpenLogFirebaseData_(payload, docId) };
+            });
         });
       }
 
@@ -25048,30 +25217,29 @@
         }
 
         var isEditing = Boolean(APP_STATE.editingMaterialRowNumber);
-        var action = isEditing ? 'updateMaterial' : 'addMaterial';
-        var materialScope = APP_STATE.materialCreateScope === 'student' ? 'student' : 'shared';
-        var studentNameInput = document.getElementById('materialStudentNameInput');
-        var studentName = studentNameInput ? studentNameInput.value.trim() : '';
+        var savePromise = isFirebaseSessionToken_(APP_STATE.token)
+          ? saveMaterialViaFirebaseDirect_(isEditing)
+          : apiRequest(isEditing ? 'updateMaterial' : 'addMaterial', {
+              token: APP_STATE.token,
+              materialRowNumber: APP_STATE.editingMaterialRowNumber,
+              materialScope: APP_STATE.materialCreateScope === 'student' ? 'student' : 'shared',
+              studentName: (document.getElementById('materialStudentNameInput') || {}).value || '',
+              school: document.getElementById('materialSchoolInput').value.trim(),
+              grade: normalizeMaterialGradeInput_(document.getElementById('materialGradeInput').value),
+              term: document.getElementById('materialTermInput').value.trim(),
+              year: document.getElementById('materialYearInput').value.trim(),
+              subject: document.getElementById('materialSubjectInput').value.trim(),
+              examType: document.getElementById('materialExamTypeInput').value.trim(),
+              materialType: document.getElementById('materialTypeInput').value.trim(),
+              fileType: document.getElementById('materialFileTypeInput').value.trim(),
+              link: document.getElementById('materialLinkInput').value.trim(),
+              note: document.getElementById('materialNoteInput').value.trim()
+            });
 
         APP_STATE.isSavingMaterial = true;
         setMaterialUploadProgress_(true, isEditing);
         setLoading(isEditing ? '자료를 수정하는 중입니다.' : '자료를 저장하는 중입니다.');
-        apiRequest(action, {
-          token: APP_STATE.token,
-          materialRowNumber: APP_STATE.editingMaterialRowNumber,
-          materialScope: materialScope,
-          studentName: studentName,
-          school: document.getElementById('materialSchoolInput').value.trim(),
-          grade: normalizeMaterialGradeInput_(document.getElementById('materialGradeInput').value),
-          term: document.getElementById('materialTermInput').value.trim(),
-          year: document.getElementById('materialYearInput').value.trim(),
-          subject: document.getElementById('materialSubjectInput').value.trim(),
-          examType: document.getElementById('materialExamTypeInput').value.trim(),
-          materialType: document.getElementById('materialTypeInput').value.trim(),
-          fileType: document.getElementById('materialFileTypeInput').value.trim(),
-          link: document.getElementById('materialLinkInput').value.trim(),
-          note: document.getElementById('materialNoteInput').value.trim()
-        })
+        savePromise
           .then(function(result) {
             APP_STATE.materials = result.materials || [];
             if (result.settings) {
@@ -25203,10 +25371,12 @@
         }
 
         setLoading('자료를 삭제하는 중입니다.');
-        apiRequest('deleteMaterial', {
-          token: APP_STATE.token,
-          materialRowNumber: row
-        })
+        (isFirebaseSessionToken_(APP_STATE.token)
+          ? deleteMaterialViaFirebaseDirect_(row)
+          : apiRequest('deleteMaterial', {
+              token: APP_STATE.token,
+              materialRowNumber: row
+            }))
           .then(function(result) {
             APP_STATE.materials = result.materials || [];
             if (result.openLogs) {
@@ -29719,7 +29889,10 @@
 
         APP_STATE.materialOpenLogsLoading = true;
         renderMaterialsOpenLogs_();
-        return apiRequest('getMaterialOpenLogs', { token: APP_STATE.token })
+        var loadPromise = isFirebaseSessionToken_(APP_STATE.token)
+          ? loadMaterialOpenLogsViaFirebaseDirect_()
+          : apiRequest('getMaterialOpenLogs', { token: APP_STATE.token });
+        return loadPromise
           .then(function(result) {
             APP_STATE.materialOpenLogs = result && result.openLogs ? result.openLogs : [];
             APP_STATE.materialOpenLogsLoaded = true;
@@ -29817,13 +29990,19 @@
           return;
         }
 
-        apiRequest('recordMaterialOpen', {
-          token: APP_STATE.token,
-          materialRowNumber: materialRowNumber
-        }).then(function(result) {
+        var recordPromise = isFirebaseSessionToken_(APP_STATE.token)
+          ? recordMaterialOpenViaFirebaseDirect_(materialRowNumber)
+          : apiRequest('recordMaterialOpen', {
+              token: APP_STATE.token,
+              materialRowNumber: materialRowNumber
+            });
+        recordPromise.then(function(result) {
           if (APP_STATE.isAdmin && result && result.openLogs) {
             APP_STATE.materialOpenLogs = result.openLogs;
             APP_STATE.materialOpenLogsLoaded = true;
+            renderMaterialsOpenLogs_();
+          } else if (result && result.savedLog && APP_STATE.isAdmin) {
+            APP_STATE.materialOpenLogs = [result.savedLog].concat(APP_STATE.materialOpenLogs || []);
             renderMaterialsOpenLogs_();
           }
         }).catch(function() {});
