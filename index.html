@@ -16586,8 +16586,13 @@
           enabled: Boolean(authData && authData.enabled),
           config: authData && authData.config ? authData.config : null,
           customToken: authData && authData.customToken ? authData.customToken : '',
-          featureFlags: Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, authData && authData.featureFlags ? authData.featureFlags : {}),
-          collections: authData && authData.collections ? authData.collections : {},
+          featureFlags: Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, authData && authData.featureFlags ? authData.featureFlags : {}, {
+            materialRead: true,
+            materialWrite: true,
+            materialOpenLogRead: true,
+            materialOpenLogWrite: true
+          }),
+          collections: Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, authData && authData.collections ? authData.collections : {}),
           dashboardSnapshotDocId: authData && authData.dashboardSnapshotDocId ? authData.dashboardSnapshotDocId : '',
           app: previous.app || null,
           auth: previous.auth || null,
@@ -17074,6 +17079,9 @@
           state = state || APP_STATE.firebaseDirect || {};
           if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('materialRead')) {
             return null;
+          }
+          if (!isFirebaseDirectAuthReusable_(state)) {
+            throw new Error('Firebase 자료실 인증이 준비되지 않았습니다. 로그인을 새로고침한 뒤 다시 시도해 주세요.');
           }
           var collectionName = (state.collections && state.collections.materials) || 'materials';
           return state.firestore.collection(collectionName).get({ source: 'server' }).catch(function(error) {
@@ -18240,26 +18248,16 @@
             renderMaterials();
           }
           APP_STATE.materialLoadPromise = loadMaterialsViaFirebaseDirect_()
-            .catch(function(error) {
-              if (window.console && console.warn) {
-                console.warn('Firebase direct materials fallback:', error);
-              }
-              return null;
-            })
             .then(function(directData) {
-              return apiRequest('getMaterials', { token: APP_STATE.token })
-                .then(function(apiData) {
-                  if (directData && directData.materials && directData.materials.length) {
-                    apiData.materials = mergeMaterialRowsClient_(directData.materials, apiData.materials || []);
-                  }
+              if (directData) {
+                return directData;
+              }
+              return apiRequest('getMaterials', { token: APP_STATE.token }).then(function(apiData) {
+                if (apiData && apiData.materials && apiData.materials.length) {
                   return apiData;
-                })
-                .catch(function(error) {
-                  if (directData) {
-                    return directData;
-                  }
-                  throw error;
-                });
+                }
+                throw new Error('문제 자료실 Firestore 직접 읽기가 시작되지 않았고, 서버 API도 0건을 반환했습니다.');
+              });
             })
             .then(function(materialData) {
               APP_STATE.materials = materialData && materialData.materials ? materialData.materials : [];
@@ -18274,6 +18272,13 @@
               if (!config.silent && APP_STATE.currentView === 'materials') {
                 renderMaterials();
               }
+            })
+            .catch(function(error) {
+              APP_STATE.materialsLoaded = false;
+              if (APP_STATE.currentView === 'materials') {
+                setNotice('문제 자료실을 Firebase에서 읽지 못했습니다: ' + getErrorMessage(error), 'error');
+              }
+              throw error;
             })
             .finally(function() {
               APP_STATE.materialsLoading = false;
