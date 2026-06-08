@@ -14708,6 +14708,8 @@
         materialWrite: false,
         materialOpenLogRead: false,
         materialOpenLogWrite: false,
+        homeroomRead: false,
+        homeroomWrite: false,
         jikboRead: false,
         jikboWrite: false
       };
@@ -15900,6 +15902,8 @@
             permissionRead: true,
             permissionWrite: true,
             permissionRequestWrite: true,
+            homeroomRead: true,
+            homeroomWrite: true,
             gradeRead: true,
             gradeWrite: true,
             gradeDelete: true,
@@ -16748,6 +16752,195 @@
         syncBranding();
       }
 
+      function getHomeroomFirebaseCollectionName_() {
+        var collections = (APP_STATE.firebaseDirect && APP_STATE.firebaseDirect.collections) || {};
+        return collections.homerooms || 'studentHomerooms';
+      }
+
+      function buildHomeroomStudentMap_() {
+        var map = {};
+        (APP_STATE.homeroomAssignments || []).forEach(function(item) {
+          if (!item || !item.studentId || !item.instructorId) {
+            return;
+          }
+          if (!map[item.studentId]) {
+            map[item.studentId] = [];
+          }
+          map[item.studentId].push(Object.assign({}, item));
+        });
+        return map;
+      }
+
+      function findStudentForHomeroom_(studentId) {
+        var target = String(studentId || '');
+        return ((APP_STATE.allStudents && APP_STATE.allStudents.length ? APP_STATE.allStudents : APP_STATE.activeStudents) || []).find(function(student) {
+          return String(student.studentId || '') === target;
+        }) || null;
+      }
+
+      function findInstructorForHomeroom_(instructorId) {
+        var target = String(instructorId || '');
+        return (APP_STATE.instructors || []).find(function(instructor) {
+          return String(instructor.userId || '') === target ||
+            String(instructor.loginId || '') === target ||
+            String(instructor.teacherId || '') === target;
+        }) || null;
+      }
+
+      function buildHomeroomAssignmentForFirestore_(student, instructorId, subject, now) {
+        var instructor = findInstructorForHomeroom_(instructorId) || {};
+        var user = APP_STATE.user || {};
+        return {
+          studentId: String(student && student.studentId || ''),
+          studentName: String(student && student.studentName || ''),
+          instructorId: String(instructorId || ''),
+          instructorName: String(instructor.name || instructor.displayName || instructorId || ''),
+          subject: String(subject || instructor.subject || ''),
+          updatedAt: now.toISOString(),
+          updatedAtMs: now.getTime(),
+          updatedBy: String(user.userId || ''),
+          updatedByName: String(user.name || user.userId || '')
+        };
+      }
+
+      function buildHomeroomStudentDocPayload_(studentId, assignments, now) {
+        var student = findStudentForHomeroom_(studentId) || {};
+        var user = APP_STATE.user || {};
+        assignments = (assignments || []).filter(function(item) {
+          return item && item.studentId && item.instructorId;
+        });
+        return {
+          studentId: String(studentId || ''),
+          studentName: String(student.studentName || assignments[0] && assignments[0].studentName || ''),
+          school: String(student.school || ''),
+          grade: String(student.grade || ''),
+          assignments: assignments,
+          instructorIds: assignments.map(function(item) { return item.instructorId; }),
+          instructorNames: assignments.map(function(item) { return item.instructorName; }),
+          assignmentsJson: JSON.stringify(assignments),
+          updatedAt: now.toISOString(),
+          updatedAtMs: now.getTime(),
+          updatedBy: String(user.userId || ''),
+          updatedByName: String(user.name || user.userId || ''),
+          source: 'firestore'
+        };
+      }
+
+      function flattenHomeroomStudentMap_(map) {
+        var rows = [];
+        Object.keys(map || {}).sort(function(a, b) {
+          return String(a).localeCompare(String(b));
+        }).forEach(function(studentId) {
+          (map[studentId] || []).forEach(function(item) {
+            if (item && item.studentId && item.instructorId) {
+              rows.push(item);
+            }
+          });
+        });
+        return rows;
+      }
+
+      function buildHomeroomSaveResult_(homeroomAssignments, message) {
+        return {
+          ok: true,
+          directFirebase: true,
+          user: APP_STATE.user,
+          isAdmin: APP_STATE.isAdmin,
+          visibleStudents: APP_STATE.visibleStudents,
+          searchableStudents: APP_STATE.searchableStudents,
+          activeStudents: APP_STATE.activeStudents,
+          allStudents: APP_STATE.allStudents,
+          totalActiveStudentCount: APP_STATE.totalActiveStudentCount,
+          instructors: APP_STATE.instructors,
+          permissions: APP_STATE.permissions,
+          permissionRequests: APP_STATE.permissionRequests,
+          homeroomAssignments: homeroomAssignments || [],
+          appName: APP_STATE.appName,
+          logoUrl: APP_STATE.logoUrl,
+          globalNotice: APP_STATE.globalNotice,
+          message: message || '담임 학생 배정이 Firebase에 저장되었습니다.'
+        };
+      }
+
+      function saveHomeroomStudentMapViaFirebaseDirect_(studentMap) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('homeroomWrite')) {
+            throw new Error('Firebase 직접 담임 저장 경로가 준비되지 않았습니다.');
+          }
+          if (!isFirebaseDirectAuthReusable_(state)) {
+            throw new Error('Firebase 담임 인증이 준비되지 않았습니다. 로그인을 새로고침한 뒤 다시 시도해 주세요.');
+          }
+          var collection = state.firestore.collection(getHomeroomFirebaseCollectionName_());
+          var now = new Date();
+          var studentIds = Object.keys(studentMap || {});
+          var batch = state.firestore.batch();
+          studentIds.forEach(function(studentId) {
+            var assignments = (studentMap[studentId] || []).filter(function(item) {
+              return item && item.studentId && item.instructorId;
+            });
+            var ref = collection.doc(String(studentId || ''));
+            if (assignments.length) {
+              batch.set(ref, buildHomeroomStudentDocPayload_(studentId, assignments, now), { merge: true });
+            } else {
+              batch.delete(ref);
+            }
+          });
+          return batch.commit().then(function() {
+            return flattenHomeroomStudentMap_(studentMap);
+          });
+        });
+      }
+
+      function saveHomeroomAssignmentsViaFirebaseDirect_(studentId, instructorIds, subject) {
+        var student = findStudentForHomeroom_(studentId);
+        if (!student) {
+          throw new Error('담임 배정할 학생을 찾을 수 없습니다.');
+        }
+        var now = new Date();
+        var uniqueInstructorIds = uniqueList_((instructorIds || []).map(function(item) {
+          return String(item || '').trim();
+        }).filter(Boolean));
+        var map = buildHomeroomStudentMap_();
+        map[student.studentId] = uniqueInstructorIds.map(function(instructorId) {
+          return buildHomeroomAssignmentForFirestore_(student, instructorId, subject || '', now);
+        });
+        return saveHomeroomStudentMapViaFirebaseDirect_(map).then(function(rows) {
+          return buildHomeroomSaveResult_(rows, '담임 권한을 Firebase에 배정했습니다.');
+        });
+      }
+
+      function saveHomeroomAssignmentsByInstructorViaFirebaseDirect_(instructorId, studentIds, subject) {
+        var instructor = findInstructorForHomeroom_(instructorId);
+        if (!instructor) {
+          throw new Error('담임 강사를 찾을 수 없습니다.');
+        }
+        var selectedMap = {};
+        (studentIds || []).forEach(function(studentId) {
+          if (studentId) {
+            selectedMap[String(studentId)] = true;
+          }
+        });
+        var now = new Date();
+        var map = buildHomeroomStudentMap_();
+        ((APP_STATE.allStudents && APP_STATE.allStudents.length ? APP_STATE.allStudents : APP_STATE.activeStudents) || []).forEach(function(student) {
+          if (!student || !student.studentId) {
+            return;
+          }
+          var studentId = String(student.studentId);
+          var existing = (map[studentId] || []).filter(function(item) {
+            return String(item.instructorId || '') !== String(instructorId || '');
+          });
+          if (selectedMap[studentId]) {
+            existing.push(buildHomeroomAssignmentForFirestore_(student, instructorId, subject || instructor.subject || '', now));
+          }
+          map[studentId] = existing;
+        });
+        return saveHomeroomStudentMapViaFirebaseDirect_(map).then(function(rows) {
+          return buildHomeroomSaveResult_(rows, '담임 학생 배정이 Firebase에 저장되었습니다.');
+        });
+      }
+
       function readFirebaseStudentLogsForLegacySession_() {
         if (!APP_STATE.token || !APP_STATE.user || !APP_STATE.user.userId || isFirebaseSessionToken_(APP_STATE.token)) {
           return Promise.resolve([]);
@@ -16851,6 +17044,8 @@
             materialWrite: true,
             materialOpenLogRead: true,
             materialOpenLogWrite: true,
+            homeroomRead: true,
+            homeroomWrite: true,
             jikboRead: true,
             jikboWrite: true
           }),
@@ -17042,6 +17237,8 @@
             permissionRead: true,
             permissionWrite: true,
             permissionRequestWrite: true,
+            homeroomRead: true,
+            homeroomWrite: true,
             gradeRead: true,
             gradeWrite: true,
             gradeDelete: true,
@@ -22798,13 +22995,25 @@
         var latestResult = null;
         assignments.reduce(function(chain, item) {
           return chain.then(function() {
-            return apiRequest('saveHomeroomAssignments', {
-              token: APP_STATE.token,
-              studentId: item.studentId,
-              homeroomInstructorIds: JSON.stringify([item.instructorId])
-            }).then(function(result) {
-              latestResult = result;
-            });
+            var savePromise = isFirebaseDirectFeatureEnabled_('homeroomWrite')
+              ? saveHomeroomAssignmentsViaFirebaseDirect_(item.studentId, [item.instructorId]).catch(function(error) {
+                  if (window.console && console.warn) {
+                    console.warn('Firebase homeroom quick assign fallback:', error);
+                  }
+                  return apiRequest('saveHomeroomAssignments', {
+                    token: APP_STATE.token,
+                    studentId: item.studentId,
+                    homeroomInstructorIds: JSON.stringify([item.instructorId])
+                  });
+                })
+              : apiRequest('saveHomeroomAssignments', {
+                  token: APP_STATE.token,
+                  studentId: item.studentId,
+                  homeroomInstructorIds: JSON.stringify([item.instructorId])
+                });
+            return savePromise.then(function(result) {
+                latestResult = result;
+              });
           });
         }, Promise.resolve())
           .then(function() {
@@ -23658,12 +23867,25 @@
         var studentIds = (APP_STATE.homeroomSelectedStudentIds || []).slice();
 
         setLoading('담임 학생 배정을 저장하는 중입니다.');
-        apiRequest('saveHomeroomAssignmentsByInstructor', {
-          token: APP_STATE.token,
-          instructorId: instructorId,
-          studentIds: JSON.stringify(studentIds),
-          homeroomSubject: APP_STATE.homeroomSubjectDraft || ''
-        })
+        var savePromise = isFirebaseDirectFeatureEnabled_('homeroomWrite')
+          ? saveHomeroomAssignmentsByInstructorViaFirebaseDirect_(instructorId, studentIds, APP_STATE.homeroomSubjectDraft || '').catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase homeroom save fallback:', error);
+              }
+              return apiRequest('saveHomeroomAssignmentsByInstructor', {
+                token: APP_STATE.token,
+                instructorId: instructorId,
+                studentIds: JSON.stringify(studentIds),
+                homeroomSubject: APP_STATE.homeroomSubjectDraft || ''
+              });
+            })
+          : apiRequest('saveHomeroomAssignmentsByInstructor', {
+              token: APP_STATE.token,
+              instructorId: instructorId,
+              studentIds: JSON.stringify(studentIds),
+              homeroomSubject: APP_STATE.homeroomSubjectDraft || ''
+            });
+        savePromise
           .then(function(result) {
             hydrateStudentDataOnly(result);
             renderAll();
