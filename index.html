@@ -2695,6 +2695,159 @@
         min-height: 420px;
       }
 
+      .permission-dashboard {
+        display: grid;
+        gap: 12px;
+        margin: 0 0 12px;
+      }
+
+      .permission-dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .permission-dashboard-card {
+        min-height: 86px;
+        padding: 12px;
+        border: 1px solid #dbe5f3;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.78);
+        text-align: left;
+        color: #0f172a;
+        transition: 0.16s ease;
+      }
+
+      .permission-dashboard-card:hover,
+      .permission-dashboard-card.active {
+        border-color: #2563eb;
+        background: #eff6ff;
+        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
+      }
+
+      .permission-dashboard-card span {
+        display: block;
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 900;
+      }
+
+      .permission-dashboard-card strong {
+        display: block;
+        margin-top: 7px;
+        font-size: 1.42rem;
+        font-weight: 950;
+      }
+
+      .permission-dashboard-card small {
+        display: block;
+        margin-top: 5px;
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 800;
+      }
+
+      .permission-priority-board {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+        gap: 10px;
+      }
+
+      .permission-priority-panel {
+        padding: 12px;
+        border: 1px solid #dbeafe;
+        border-radius: 12px;
+        background: linear-gradient(180deg, #f8fbff 0%, #f4f8ff 100%);
+      }
+
+      .permission-priority-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .permission-priority-head strong {
+        color: #0f172a;
+        font-size: 0.82rem;
+        font-weight: 950;
+      }
+
+      .permission-priority-head span {
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .permission-priority-list {
+        display: grid;
+        gap: 7px;
+        max-height: 170px;
+        overflow: auto;
+      }
+
+      .permission-priority-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        padding: 9px 10px;
+        border: 1px solid #dbe5f3;
+        border-radius: 10px;
+        background: #fff;
+      }
+
+      .permission-priority-item strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.76rem;
+        font-weight: 950;
+      }
+
+      .permission-priority-item span {
+        display: block;
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 800;
+      }
+
+      .permission-risk-list {
+        display: grid;
+        gap: 7px;
+      }
+
+      .permission-risk-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid #e5edf7;
+        color: #334155;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      @media (max-width: 1180px) {
+        .permission-dashboard-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .permission-priority-board {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .permission-dashboard-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
       .permission-fast-panel {
         display: grid;
         gap: 10px;
@@ -2986,11 +3139,20 @@
       }
 
       .table-row-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         width: 100%;
         text-align: left;
         background: transparent;
-        color: inherit;
-        padding: 0;
+        color: #0f172a;
+        padding: 2px 0;
+        font-weight: 950;
+      }
+
+      .table-row-button:hover {
+        color: #1d4ed8;
+        text-decoration: underline;
       }
 
       .events-shell {
@@ -13884,6 +14046,7 @@
             </div>
             <div id="permissionPanelTabs" class="permission-panel-tabs"></div>
             <div id="permissionInstructorPanel">
+              <div id="permissionDashboard" class="permission-dashboard"></div>
               <div id="permissionAssignmentModeBar" class="permission-mode-bar"></div>
               <div class="compact-control-bar">
                 <input id="permissionSearchInput" class="field-input" type="text" placeholder="학생명 검색">
@@ -14627,6 +14790,7 @@
         permissionTab: 'instructors',
         permissionAssignmentMode: 'student',
         permissionInstructorKeyword: '',
+        permissionDashboardFilter: '',
         permissionBulkInstructorKeyword: '',
         permissionBulkInstructorId: '',
         permissionBulkSelectedStudentIds: {},
@@ -15009,6 +15173,7 @@
         bindDeferredTextRender_('permissionSearchInput', renderPermissionView, 180);
         document.getElementById('permissionSchoolFilter').addEventListener('change', renderPermissionView);
         document.getElementById('permissionGradeFilter').addEventListener('change', renderPermissionView);
+        document.getElementById('permissionDashboard').addEventListener('click', handlePermissionDashboardClick_);
         document.getElementById('permissionStudentTableWrap').addEventListener('click', handlePermissionListClick);
         document.getElementById('permissionStudentTableWrap').addEventListener('change', handlePermissionStudentTableChange_);
         document.getElementById('permissionAssignmentModeBar').addEventListener('click', handlePermissionAssignmentModeClick_);
@@ -15822,15 +15987,25 @@
         };
       }
 
+      function normalizeStudentStatusText_(value, activeValue) {
+        var status = String(value || '').trim().toUpperCase();
+        if (activeValue === false || ['INACTIVE', 'STOPPED', 'SUSPENDED', 'DISABLED', '중지', '휴원', '퇴원'].indexOf(status) !== -1) {
+          return 'INACTIVE';
+        }
+        return status || 'ACTIVE';
+      }
+
       function normalizeFirebaseStudentForApp_(doc) {
         var data = doc.data ? (doc.data() || {}) : (doc || {});
+        var status = normalizeStudentStatusText_(data.status || data.studentStatus || data.state || '', data.active);
         return {
           studentId: data.id || (doc.id || ''),
           studentName: data.studentName || data.name || '',
           school: data.school || '',
           grade: data.grade || '',
-          status: data.status || (data.active === false ? 'INACTIVE' : 'ACTIVE'),
-          active: data.active !== false,
+          status: status,
+          active: status !== 'INACTIVE',
+          isActive: status !== 'INACTIVE',
           logs: [],
           subject: data.subject || '',
           baseSubject: data.baseSubject || '',
@@ -22950,6 +23125,7 @@
           return;
         }
 
+        renderPermissionDashboard_();
         renderPermissionStudentTable();
         renderPermissionDetailPanel();
       }
@@ -22997,6 +23173,8 @@
         var keyword = normalizeSearchText(document.getElementById('permissionSearchInput').value);
         var school = document.getElementById('permissionSchoolFilter').value;
         var grade = document.getElementById('permissionGradeFilter').value;
+        var dashboardFilter = APP_STATE.permissionDashboardFilter || '';
+        var permissionMap = getPermissionMap();
 
         return APP_STATE.activeStudents.filter(function(student) {
           var searchText = normalizeSearchText([
@@ -23009,8 +23187,97 @@
           var matchesKeyword = !keyword || searchText.indexOf(keyword) !== -1;
           var matchesSchool = !school || student.school === school;
           var matchesGrade = !grade || String(student.grade || '') === grade;
-          return matchesKeyword && matchesSchool && matchesGrade;
+          var permissionCount = (permissionMap[student.studentId] || []).length;
+          var matchesDashboard = !dashboardFilter ||
+            (dashboardFilter === 'unassigned' && permissionCount === 0) ||
+            (dashboardFilter === 'single' && permissionCount === 1) ||
+            (dashboardFilter === 'assigned' && permissionCount > 0);
+          return matchesKeyword && matchesSchool && matchesGrade && matchesDashboard;
+        }).sort(function(a, b) {
+          var aCount = (permissionMap[a.studentId] || []).length;
+          var bCount = (permissionMap[b.studentId] || []).length;
+          if (aCount !== bCount) {
+            return aCount - bCount;
+          }
+          return String(a.school || '').localeCompare(String(b.school || ''), 'ko') ||
+            String(a.grade || '').localeCompare(String(b.grade || ''), 'ko') ||
+            String(a.studentName || '').localeCompare(String(b.studentName || ''), 'ko');
         });
+      }
+
+      function getPermissionDashboardStats_() {
+        var permissionMap = getPermissionMap();
+        var students = (APP_STATE.activeStudents || []).filter(function(student) {
+          return student.active !== false && student.status !== 'INACTIVE';
+        });
+        var unassigned = students.filter(function(student) {
+          return !(permissionMap[student.studentId] || []).length;
+        });
+        var single = students.filter(function(student) {
+          return (permissionMap[student.studentId] || []).length === 1;
+        });
+        var assigned = students.filter(function(student) {
+          return (permissionMap[student.studentId] || []).length > 0;
+        });
+        var pending = getPendingPermissionRequests_();
+        var instructorLoad = (APP_STATE.instructors || []).map(function(instructor) {
+          return {
+            instructor: instructor,
+            count: getInstructorPermissionStudentCount_(instructor.userId)
+          };
+        }).sort(function(a, b) {
+          return a.count - b.count || compareInstructorsByName_(a.instructor, b.instructor);
+        });
+        return {
+          students: students,
+          unassigned: unassigned,
+          single: single,
+          assigned: assigned,
+          pending: pending,
+          instructorLoad: instructorLoad
+        };
+      }
+
+      function renderPermissionDashboardCard_(key, label, value, helper) {
+        var active = (APP_STATE.permissionDashboardFilter || '') === key ? ' active' : '';
+        return '<button type="button" class="permission-dashboard-card' + active + '" data-permission-dashboard-filter="' + escapeAttribute(key) + '"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(String(value)) + '</strong><small>' + escapeHtml(helper || '') + '</small></button>';
+      }
+
+      function renderPermissionDashboard_() {
+        var wrap = document.getElementById('permissionDashboard');
+        if (!wrap) {
+          return;
+        }
+        var stats = getPermissionDashboardStats_();
+        var queue = stats.unassigned.slice(0, 6);
+        var lowLoad = stats.instructorLoad.slice(0, 5);
+        wrap.innerHTML = [
+          '<div class="permission-dashboard-grid">',
+             renderPermissionDashboardCard_('', '활성 학생', stats.students.length + '명', '중지 학생 제외'),
+             renderPermissionDashboardCard_('unassigned', '권한 없음', stats.unassigned.length + '명', '우선 권한 부여 대상'),
+             renderPermissionDashboardCard_('single', '단일 강사', stats.single.length + '명', '보조 열람 확인 필요'),
+             renderPermissionDashboardCard_('assigned', '권한 연결', stats.assigned.length + '명', '1명 이상 연결됨'),
+             renderPermissionDashboardCard_('requests', '요청 대기', stats.pending.length + '건', '강사 요청 승인'),
+          '</div>',
+          '<div class="permission-priority-board">',
+          '  <section class="permission-priority-panel">',
+          '    <div class="permission-priority-head"><strong>권한 없는 학생 우선 처리</strong><span>' + escapeHtml(String(stats.unassigned.length)) + '명</span></div>',
+          '    <div class="permission-priority-list">',
+                 queue.length ? queue.map(function(student) {
+                   return '<div class="permission-priority-item"><div><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + renderSchoolNameWithLogo_(student.school || '-') + ' · ' + escapeHtml(student.grade ? String(student.grade) + '학년' : '학년 미지정') + '</span></div><button type="button" class="mini-button" data-permission-jump-student="' + escapeAttribute(student.studentId) + '">권한 부여</button></div>';
+                 }).join('') : '<div class="empty-state">권한이 없는 활성 학생이 없습니다.</div>',
+          '    </div>',
+          '  </section>',
+          '  <section class="permission-priority-panel">',
+          '    <div class="permission-priority-head"><strong>강사 권한 분포</strong><span>적은 순</span></div>',
+          '    <div class="permission-risk-list">',
+                 lowLoad.length ? lowLoad.map(function(item) {
+                   return '<div class="permission-risk-row"><span>' + escapeHtml(item.instructor.name || item.instructor.userId || '-') + '</span><strong>' + escapeHtml(String(item.count)) + '명</strong></div>';
+                 }).join('') : '<div class="empty-state">강사 계정이 없습니다.</div>',
+          '    </div>',
+          '  </section>',
+          '</div>'
+        ].join('');
       }
 
       function syncSelectedPermissionStudent_() {
@@ -23043,18 +23310,23 @@
         wrap.innerHTML = [
           '<div class="data-table-wrap">',
           '  <table class="data-table">',
-          '    <thead><tr>' + (isBulkMode ? '<th style="width:44px;">선택</th>' : '') + '<th>학생명</th><th>원</th><th>학년</th><th>연결 강사</th></tr></thead>',
+          '    <thead><tr>' + (isBulkMode ? '<th style="width:44px;">선택</th>' : '') + '<th>학생명</th><th>권한 상태</th><th>원</th><th>학년</th><th>연결 강사</th></tr></thead>',
           '    <tbody>',
           students.map(function(student) {
             var selectedClass = student.studentId === APP_STATE.selectedPermissionStudentId ? ' class="selected"' : '';
             var checked = APP_STATE.permissionBulkSelectedStudentIds && APP_STATE.permissionBulkSelectedStudentIds[student.studentId] ? ' checked' : '';
+            var instructorIds = permissionMap[student.studentId] || [];
+            var statusChip = instructorIds.length
+              ? '<span class="teacher-chip primary">' + escapeHtml(String(instructorIds.length)) + '명 연결</span>'
+              : '<span class="teacher-chip unassigned">권한 없음</span>';
             return [
               '<tr' + (isBulkMode ? '' : selectedClass) + '>',
               isBulkMode ? '  <td><input class="permission-bulk-check" type="checkbox" data-permission-bulk-student-id="' + escapeAttribute(student.studentId) + '"' + checked + '></td>' : '',
-              '  <td>' + (isBulkMode ? '<strong>' + escapeHtml(student.studentName) + '</strong>' : '<button type="button" class="table-row-button" data-student-id="' + escapeAttribute(student.studentId) + '">' + escapeHtml(student.studentName) + '</button>') + '</td>',
+              '  <td>' + (isBulkMode ? '<strong>' + escapeHtml(student.studentName) + '</strong>' : '<button type="button" class="table-row-button" data-student-id="' + escapeAttribute(student.studentId) + '" aria-label="' + escapeAttribute((student.studentName || '학생') + ' 권한 관리 열기') + '"><span>' + escapeHtml(student.studentName) + '</span></button>') + '</td>',
+              '  <td>' + statusChip + '</td>',
               '  <td>' + renderSchoolNameWithLogo_(student.school || '-') + '</td>',
               '  <td>' + escapeHtml(student.grade ? String(student.grade) : '-') + '</td>',
-              '  <td>' + renderPermissionInstructorList_(permissionMap[student.studentId] || []) + '</td>',
+              '  <td>' + renderPermissionInstructorList_(instructorIds) + '</td>',
               '</tr>'
             ].join('');
           }).join(''),
@@ -23453,6 +23725,33 @@
           return;
         }
         APP_STATE.permissionTab = button.getAttribute('data-permission-tab') || 'instructors';
+        if (APP_STATE.permissionTab !== 'instructors') {
+          APP_STATE.permissionDashboardFilter = '';
+        }
+        renderPermissionView();
+      }
+
+      function handlePermissionDashboardClick_(event) {
+        var filterButton = event.target.closest('[data-permission-dashboard-filter]');
+        var jumpButton = event.target.closest('[data-permission-jump-student]');
+        if (jumpButton) {
+          APP_STATE.permissionDashboardFilter = 'unassigned';
+          APP_STATE.selectedPermissionStudentId = jumpButton.getAttribute('data-permission-jump-student') || '';
+          APP_STATE.permissionInstructorKeyword = '';
+          renderPermissionView();
+          return;
+        }
+        if (!filterButton) {
+          return;
+        }
+        var filter = filterButton.getAttribute('data-permission-dashboard-filter') || '';
+        if (filter === 'requests') {
+          APP_STATE.permissionTab = 'requests';
+          APP_STATE.permissionDashboardFilter = '';
+          renderPermissionView();
+          return;
+        }
+        APP_STATE.permissionDashboardFilter = filter;
         renderPermissionView();
       }
 
