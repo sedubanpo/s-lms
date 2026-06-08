@@ -14683,7 +14683,10 @@
         homerooms: 'studentHomerooms',
         events: 'events',
         materials: 'materials',
-        materialOpenLogs: 'materialOpenLogs'
+        materialOpenLogs: 'materialOpenLogs',
+        jikboSubjects: 'jikboSubjects',
+        jikboStudentOverrides: 'jikboStudentOverrides',
+        jikboStatuses: 'jikboStatuses'
       };
       const FIREBASE_DIRECT_DEFAULT_FLAGS = {
         logRead: false,
@@ -14704,7 +14707,9 @@
         materialRead: false,
         materialWrite: false,
         materialOpenLogRead: false,
-        materialOpenLogWrite: false
+        materialOpenLogWrite: false,
+        jikboRead: false,
+        jikboWrite: false
       };
       const LOG_TAG_OPTIONS = [
         '수업현황',
@@ -15903,7 +15908,9 @@
             materialRead: true,
             materialWrite: true,
             materialOpenLogRead: true,
-            materialOpenLogWrite: true
+            materialOpenLogWrite: true,
+            jikboRead: true,
+            jikboWrite: true
           });
           state.collections = Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, state.collections || {});
           state.app = app;
@@ -16843,7 +16850,9 @@
             materialRead: true,
             materialWrite: true,
             materialOpenLogRead: true,
-            materialOpenLogWrite: true
+            materialOpenLogWrite: true,
+            jikboRead: true,
+            jikboWrite: true
           }),
           collections: Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, authData && authData.collections ? authData.collections : {}),
           dashboardSnapshotDocId: authData && authData.dashboardSnapshotDocId ? authData.dashboardSnapshotDocId : '',
@@ -17416,6 +17425,403 @@
               return Object.assign({}, result || {}, {
                 message: isEditing ? '주요일정이 Firebase에 수정되었습니다.' : '주요일정이 Firebase에 저장되었습니다.'
               });
+            });
+        });
+      }
+
+      function getJikboFirebaseCollectionName_(key) {
+        var collections = (APP_STATE.firebaseDirect && APP_STATE.firebaseDirect.collections) || {};
+        if (key === 'subjects') {
+          return collections.jikboSubjects || 'jikboSubjects';
+        }
+        if (key === 'overrides') {
+          return collections.jikboStudentOverrides || 'jikboStudentOverrides';
+        }
+        return collections.jikboStatuses || 'jikboStatuses';
+      }
+
+      function buildJikboFirebaseDocId_(prefix, parts) {
+        var raw = (Array.isArray(parts) ? parts : [parts]).map(function(part) {
+          return String(part || '').trim();
+        }).filter(Boolean).join('|') || (String(Date.now()) + '-' + Math.random().toString(36).slice(2, 10));
+        return prefix + '-' + firebaseDirectBase64UrlEncode_(raw).slice(0, 90);
+      }
+
+      function normalizeJikboSubjectFirebaseData_(data, docId) {
+        data = data || {};
+        var category = String(data.instructorSubjectCategory || data.subjectName || '');
+        var categories = Array.isArray(data.instructorSubjectCategories)
+          ? data.instructorSubjectCategories
+          : splitCsvClient_(category);
+        var keywords = Array.isArray(data.studentSubjectKeywords)
+          ? data.studentSubjectKeywords
+          : splitCsvClient_(data.studentSubjectKeywords);
+        return {
+          subjectId: String(data.subjectId || docId || ''),
+          rowNumber: String(data.rowNumber || docId || ''),
+          subjectName: String(data.subjectName || ''),
+          instructorSubjectCategory: category,
+          instructorSubjectCategories: categories,
+          studentSubjectKeywords: keywords,
+          isEnabled: data.isEnabled !== false,
+          updatedAt: String(data.updatedAt || ''),
+          updatedAtMs: Number(data.updatedAtMs || 0),
+          updatedBy: String(data.updatedBy || ''),
+          source: String(data.source || 'firestore')
+        };
+      }
+
+      function normalizeJikboOverrideFirebaseData_(data, docId) {
+        data = data || {};
+        return {
+          overrideId: String(data.overrideId || docId || ''),
+          rowNumber: String(data.rowNumber || docId || ''),
+          studentId: String(data.studentId || ''),
+          studentName: String(data.studentName || ''),
+          subjectName: String(data.subjectName || ''),
+          applyMode: String(data.applyMode || 'INCLUDE'),
+          instructorId: String(data.instructorId || ''),
+          instructorName: String(data.instructorName || ''),
+          overrideDate: formatDateInputValue_(data.overrideDate || ''),
+          updatedAt: String(data.updatedAt || ''),
+          updatedAtMs: Number(data.updatedAtMs || 0),
+          updatedBy: String(data.updatedBy || ''),
+          source: String(data.source || 'firestore')
+        };
+      }
+
+      function normalizeJikboStatusFirebaseData_(data, docId) {
+        data = data || {};
+        return {
+          statusId: String(data.statusId || docId || ''),
+          rowNumber: String(data.rowNumber || docId || ''),
+          studentId: String(data.studentId || ''),
+          studentName: String(data.studentName || ''),
+          school: String(data.school || ''),
+          grade: String(data.grade || ''),
+          subjectName: String(data.subjectName || ''),
+          examDate: formatDateInputValue_(data.examDate || ''),
+          jikboDate: formatDateInputValue_(data.jikboDate || ''),
+          instructorId: String(data.instructorId || ''),
+          instructorName: String(data.instructorName || ''),
+          progressStatus: String(data.progressStatus || data.status || '미정'),
+          confirmedTime: String(data.confirmedTime || ''),
+          substituteDate: formatDateInputValue_(data.substituteDate || ''),
+          note: String(data.note || ''),
+          updatedAt: String(data.updatedAt || ''),
+          updatedAtMs: Number(data.updatedAtMs || 0),
+          updatedBy: String(data.updatedBy || ''),
+          source: String(data.source || 'firestore')
+        };
+      }
+
+      function splitCsvClient_(value) {
+        if (Array.isArray(value)) {
+          return value.map(function(item) { return String(item || '').trim(); }).filter(Boolean);
+        }
+        return String(value || '').split(/[,，]/).map(function(item) {
+          return item.trim();
+        }).filter(Boolean);
+      }
+
+      function getJikboCurrentUserId_() {
+        return (APP_STATE.user && (APP_STATE.user.userId || APP_STATE.user.uid || APP_STATE.user.id)) || '';
+      }
+
+      function getJikboCurrentUserName_() {
+        return (APP_STATE.user && APP_STATE.user.name) || '';
+      }
+
+      function buildJikboExamEventsFromEvents_(events) {
+        return (events || []).map(function(eventItem) {
+          var target = parseEventTargetForStudentConsole_(eventItem);
+          var subjectName = String(eventItem.subjectName || eventItem.title || '').trim();
+          var examType = String(eventItem.examType || eventItem.note || '').trim();
+          var title = String(eventItem.title || '').trim();
+          var note = String(eventItem.note || '').trim();
+          if (!target.school || !target.grade || !subjectName) {
+            return null;
+          }
+          if (!isJikboExamEventText_(title + ' ' + note + ' ' + examType)) {
+            return null;
+          }
+          return {
+            rowNumber: eventItem.rowNumber || eventItem.eventId || '',
+            eventId: eventItem.eventId || '',
+            school: target.school,
+            grade: normalizeJikboGradeForClient_(target.grade),
+            subjectName: subjectName,
+            examType: examType || title,
+            date: eventItem.date || eventItem.isoDate || '',
+            isoDate: eventItem.isoDate || formatDateInputValue_(eventItem.date),
+            title: title,
+            note: note
+          };
+        }).filter(function(item) {
+          return item && item.isoDate && item.subjectName;
+        }).sort(function(a, b) {
+          return String(a.isoDate || '').localeCompare(String(b.isoDate || '')) ||
+            String(a.school || '').localeCompare(String(b.school || ''), 'ko') ||
+            String(a.subjectName || '').localeCompare(String(b.subjectName || ''), 'ko');
+        });
+      }
+
+      function isJikboExamEventText_(value) {
+        var text = normalizeSearchText(value);
+        if (!text) {
+          return false;
+        }
+        return ['중간고사', '기말고사', '시험', '내신', '고사'].some(function(keyword) {
+          return text.indexOf(normalizeSearchText(keyword)) !== -1;
+        });
+      }
+
+      function readJikboCollectionViaFirebaseDirect_(state, key, normalizer) {
+        return state.firestore.collection(getJikboFirebaseCollectionName_(key)).get({ source: 'server' }).catch(function(error) {
+          if (window.console && console.warn) {
+            console.warn('Firebase jikbo server read failed; retrying default source:', key, error);
+          }
+          return state.firestore.collection(getJikboFirebaseCollectionName_(key)).get();
+        }).then(function(snapshot) {
+          var rows = [];
+          snapshot.forEach(function(doc) {
+            var row = normalizer(doc.data() || {}, doc.id);
+            if (row) {
+              rows.push(row);
+            }
+          });
+          return rows;
+        });
+      }
+
+      function loadJikboViaFirebaseDirect_() {
+        if (!APP_STATE.token || !APP_STATE.user || !APP_STATE.user.userId) {
+          return Promise.resolve(null);
+        }
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('jikboRead')) {
+            return null;
+          }
+          if (!isFirebaseDirectAuthReusable_(state)) {
+            throw new Error('Firebase 직보 인증이 준비되지 않았습니다. 로그인을 새로고침한 뒤 다시 시도해 주세요.');
+          }
+          return Promise.all([
+            readJikboCollectionViaFirebaseDirect_(state, 'subjects', normalizeJikboSubjectFirebaseData_),
+            readJikboCollectionViaFirebaseDirect_(state, 'overrides', normalizeJikboOverrideFirebaseData_),
+            readJikboCollectionViaFirebaseDirect_(state, 'statuses', normalizeJikboStatusFirebaseData_),
+            loadEventsViaFirebaseDirect_().catch(function() { return null; })
+          ]).then(function(results) {
+            var subjectDefinitions = results[0].filter(function(item) { return item.subjectName; });
+            var studentOverrides = results[1].filter(function(item) { return item.studentId && item.subjectName; });
+            var scheduleStatuses = results[2].filter(function(item) {
+              return item.studentId && item.subjectName && item.examDate && item.jikboDate;
+            });
+            var eventData = results[3] || null;
+            var events = eventData && eventData.events ? eventData.events : (APP_STATE.events || []);
+            if (eventData && eventData.events) {
+              APP_STATE.events = eventData.events;
+              APP_STATE.eventsLoaded = true;
+            }
+            if (!subjectDefinitions.length && !studentOverrides.length && !scheduleStatuses.length) {
+              return null;
+            }
+            return {
+              ok: true,
+              directFirebase: true,
+              subjectDefinitions: subjectDefinitions,
+              studentOverrides: studentOverrides,
+              scheduleStatuses: scheduleStatuses,
+              examEvents: buildJikboExamEventsFromEvents_(events)
+            };
+          });
+        });
+      }
+
+      function loadJikboManagerData_(silent) {
+        APP_STATE.jikboLoaded = false;
+        APP_STATE.jikboLoading = false;
+        return ensureViewDataLoaded_('jikbo', { silent: Boolean(silent) });
+      }
+
+      function buildJikboSubjectPayloadFromForm_() {
+        var now = new Date();
+        var subjectName = document.getElementById('jikboSubjectNameInput').value.trim();
+        var rowNumber = String(APP_STATE.editingJikboSubjectRowNumber || '').trim();
+        if (!rowNumber) {
+          rowNumber = String(Date.now());
+        }
+        var existing = findJikboSubjectByRow_(rowNumber) || {};
+        var instructorSubjectCategory = document.getElementById('jikboInstructorCategoryInput').value.trim();
+        var payload = {
+          subjectId: existing.subjectId || buildJikboFirebaseDocId_('JIKBO_SUBJECT', subjectName || rowNumber),
+          rowNumber: rowNumber,
+          subjectName: subjectName,
+          instructorSubjectCategory: instructorSubjectCategory,
+          instructorSubjectCategories: splitCsvClient_(instructorSubjectCategory || subjectName),
+          studentSubjectKeywords: splitCsvClient_(document.getElementById('jikboStudentKeywordsInput').value.trim()),
+          isEnabled: document.getElementById('jikboSubjectEnabledInput').checked,
+          updatedAt: now.toISOString(),
+          updatedAtMs: now.getTime(),
+          updatedBy: getJikboCurrentUserId_(),
+          updatedByName: getJikboCurrentUserName_(),
+          source: 'firestore'
+        };
+        return payload;
+      }
+
+      function saveJikboSubjectViaFirebaseDirect_() {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('jikboWrite')) {
+            throw new Error('Firebase 직접 직보 과목 저장 경로가 준비되지 않았습니다.');
+          }
+          var payload = buildJikboSubjectPayloadFromForm_();
+          if (!payload.subjectName) {
+            throw new Error('과목명을 입력해 주세요.');
+          }
+          return state.firestore.collection(getJikboFirebaseCollectionName_('subjects')).doc(payload.subjectId).set(payload, { merge: true })
+            .then(loadJikboViaFirebaseDirect_)
+            .then(function(result) {
+              return Object.assign({}, result || {}, { message: '직보 과목이 Firebase에 저장되었습니다.' });
+            });
+        });
+      }
+
+      function deleteJikboSubjectViaFirebaseDirect_(rowNumber) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('jikboWrite')) {
+            throw new Error('Firebase 직접 직보 과목 삭제 경로가 준비되지 않았습니다.');
+          }
+          var item = findJikboSubjectByRow_(rowNumber);
+          var docId = item && item.subjectId ? item.subjectId : buildJikboFirebaseDocId_('JIKBO_SUBJECT', rowNumber);
+          return state.firestore.collection(getJikboFirebaseCollectionName_('subjects')).doc(docId).delete()
+            .then(loadJikboViaFirebaseDirect_)
+            .then(function(result) {
+              return Object.assign({}, result || {}, { message: '직보 과목이 Firebase에서 삭제되었습니다.' });
+            });
+        });
+      }
+
+      function buildJikboOverridePayload_(params) {
+        var now = new Date();
+        var payloadSource = params || {};
+        var rowNumber = String(payloadSource.overrideRowNumber || APP_STATE.editingJikboOverrideRowNumber || '').trim();
+        if (!rowNumber) {
+          rowNumber = String(Date.now());
+        }
+        var studentId = String(payloadSource.studentId || '').trim();
+        var student = findStudentById_(studentId) || {};
+        var subjectName = String(payloadSource.subjectName || '').trim();
+        var instructorId = String(payloadSource.instructorId || '').trim();
+        var existing = findJikboOverrideByRow_(rowNumber) || findJikboOverrideForStudentSubject_(studentId, subjectName) || {};
+        return {
+          overrideId: existing.overrideId || buildJikboFirebaseDocId_('JIKBO_OVERRIDE', [studentId, subjectName]),
+          rowNumber: rowNumber,
+          studentId: studentId,
+          studentName: student.studentName || existing.studentName || '',
+          subjectName: subjectName,
+          applyMode: String(payloadSource.applyMode || 'INCLUDE'),
+          instructorId: instructorId,
+          instructorName: instructorId ? (resolveInstructorNameById_(instructorId) || existing.instructorName || instructorId) : '',
+          overrideDate: formatDateInputValue_(payloadSource.overrideDate || ''),
+          updatedAt: now.toISOString(),
+          updatedAtMs: now.getTime(),
+          updatedBy: getJikboCurrentUserId_(),
+          updatedByName: getJikboCurrentUserName_(),
+          source: 'firestore'
+        };
+      }
+
+      function saveJikboOverrideViaFirebaseDirect_(params) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('jikboWrite')) {
+            throw new Error('Firebase 직접 학생별 직보 예외 저장 경로가 준비되지 않았습니다.');
+          }
+          var payload = buildJikboOverridePayload_(params);
+          if (!payload.studentId || !payload.subjectName) {
+            throw new Error('학생과 과목을 선택해 주세요.');
+          }
+          return state.firestore.collection(getJikboFirebaseCollectionName_('overrides')).doc(payload.overrideId).set(payload, { merge: true })
+            .then(loadJikboViaFirebaseDirect_)
+            .then(function(result) {
+              return Object.assign({}, result || {}, { message: '학생별 직보 예외가 Firebase에 저장되었습니다.' });
+            });
+        });
+      }
+
+      function deleteJikboOverrideViaFirebaseDirect_(rowNumber) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('jikboWrite')) {
+            throw new Error('Firebase 직접 학생별 직보 예외 삭제 경로가 준비되지 않았습니다.');
+          }
+          var item = findJikboOverrideByRow_(rowNumber);
+          var docId = item && item.overrideId ? item.overrideId : buildJikboFirebaseDocId_('JIKBO_OVERRIDE', rowNumber);
+          return state.firestore.collection(getJikboFirebaseCollectionName_('overrides')).doc(docId).delete()
+            .then(loadJikboViaFirebaseDirect_)
+            .then(function(result) {
+              return Object.assign({}, result || {}, { message: '학생별 직보 예외가 Firebase에서 삭제되었습니다.' });
+            });
+        });
+      }
+
+      function buildJikboStatusPayload_(draft, values) {
+        var now = new Date();
+        var sourceDraft = draft || {};
+        var sourceValues = values || {};
+        var statusId = buildJikboFirebaseDocId_('JIKBO_STATUS', [
+          sourceDraft.studentId,
+          sourceDraft.subjectName,
+          sourceDraft.examDate,
+          sourceDraft.jikboDate,
+          sourceDraft.instructorId,
+          sourceDraft.instructorName
+        ]);
+        return {
+          statusId: statusId,
+          rowNumber: statusId,
+          studentId: sourceDraft.studentId || '',
+          studentName: sourceDraft.studentName || '',
+          school: sourceDraft.school || '',
+          grade: sourceDraft.grade || '',
+          subjectName: sourceDraft.subjectName || '',
+          examDate: formatDateInputValue_(sourceDraft.examDate || ''),
+          jikboDate: formatDateInputValue_(sourceDraft.jikboDate || ''),
+          instructorId: sourceDraft.instructorId || '',
+          instructorName: sourceDraft.instructorName || '',
+          progressStatus: sourceValues.progressStatus || '미정',
+          confirmedTime: sourceValues.confirmedTime || '',
+          substituteDate: formatDateInputValue_(sourceValues.substituteDate || ''),
+          note: sourceValues.note || '',
+          updatedAt: now.toISOString(),
+          updatedAtMs: now.getTime(),
+          updatedBy: getJikboCurrentUserId_(),
+          updatedByName: getJikboCurrentUserName_(),
+          source: 'firestore'
+        };
+      }
+
+      function saveJikboStatusViaFirebaseDirect_(draft, values) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('jikboWrite')) {
+            throw new Error('Firebase 직접 직보 상태 저장 경로가 준비되지 않았습니다.');
+          }
+          var payload = buildJikboStatusPayload_(draft, values);
+          if (!payload.studentId || !payload.subjectName || !payload.examDate || !payload.jikboDate) {
+            throw new Error('직보 상태 저장에 필요한 학생/과목/일자 정보가 부족합니다.');
+          }
+          return state.firestore.collection(getJikboFirebaseCollectionName_('statuses')).doc(payload.statusId).set(payload, { merge: true })
+            .then(function() {
+              return {
+                ok: true,
+                directFirebase: true,
+                savedStatus: payload,
+                message: '직보 상태가 Firebase에 저장되었습니다.'
+              };
             });
         });
       }
@@ -18737,7 +19143,19 @@
           if (!config.silent && APP_STATE.currentView === 'jikbo') {
             renderJikboView();
           }
-          return apiRequest('getJikboManagerData', { token: APP_STATE.token })
+          return loadJikboViaFirebaseDirect_()
+            .catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase jikbo load fallback:', error);
+              }
+              return null;
+            })
+            .then(function(directJikboData) {
+              if (directJikboData) {
+                return directJikboData;
+              }
+              return apiRequest('getJikboManagerData', { token: APP_STATE.token });
+            })
             .then(function(jikboData) {
               hydrateJikboData_(jikboData);
               APP_STATE.jikboLoaded = true;
@@ -26180,7 +26598,32 @@
         }
 
         setLoading('직보 상태를 저장하는 중입니다.');
-        apiRequest('saveJikboStatus', {
+        var values = {
+          progressStatus: document.getElementById('jikboStatusProgressInput').value,
+          confirmedTime: document.getElementById('jikboStatusTimeInput').value,
+          substituteDate: document.getElementById('jikboStatusSubstituteDateInput').value,
+          note: document.getElementById('jikboStatusNoteInput').value.trim()
+        };
+        var savePromise = isFirebaseDirectFeatureEnabled_('jikboWrite')
+          ? saveJikboStatusViaFirebaseDirect_(draft, values).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase jikbo status save fallback:', error);
+              }
+              return apiRequest('saveJikboStatus', {
+                token: APP_STATE.token,
+                studentId: draft.studentId,
+                subjectName: draft.subjectName,
+                examDate: draft.examDate,
+                jikboDate: draft.jikboDate,
+                instructorId: draft.instructorId,
+                instructorName: draft.instructorName,
+                progressStatus: values.progressStatus,
+                confirmedTime: values.confirmedTime,
+                substituteDate: values.substituteDate,
+                note: values.note
+              });
+            })
+          : apiRequest('saveJikboStatus', {
           token: APP_STATE.token,
           studentId: draft.studentId,
           subjectName: draft.subjectName,
@@ -26188,11 +26631,12 @@
           jikboDate: draft.jikboDate,
           instructorId: draft.instructorId,
           instructorName: draft.instructorName,
-          progressStatus: document.getElementById('jikboStatusProgressInput').value,
-          confirmedTime: document.getElementById('jikboStatusTimeInput').value,
-          substituteDate: document.getElementById('jikboStatusSubstituteDateInput').value,
-          note: document.getElementById('jikboStatusNoteInput').value.trim()
-        })
+          progressStatus: values.progressStatus,
+          confirmedTime: values.confirmedTime,
+          substituteDate: values.substituteDate,
+          note: values.note
+        });
+        savePromise
           .then(function(result) {
             if (result.savedStatus) {
               upsertJikboScheduleStatusLocal_(result.savedStatus);
@@ -26294,7 +26738,7 @@
         }
         var existingOverride = findJikboOverrideForStudentSubject_(studentId, subjectName);
         setLoading('직보 매칭을 저장하는 중입니다.');
-        apiRequest('saveJikboStudentOverride', {
+        var payload = {
           token: APP_STATE.token,
           overrideRowNumber: existingOverride ? existingOverride.rowNumber : '',
           studentId: studentId,
@@ -26302,7 +26746,16 @@
           applyMode: 'INCLUDE',
           instructorId: instructorId,
           overrideDate: overrideDate
-        })
+        };
+        var savePromise = isFirebaseDirectFeatureEnabled_('jikboWrite')
+          ? saveJikboOverrideViaFirebaseDirect_(payload).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase assignment jikbo override save fallback:', error);
+              }
+              return apiRequest('saveJikboStudentOverride', payload);
+            })
+          : apiRequest('saveJikboStudentOverride', payload);
+        savePromise
           .then(function(result) {
             APP_STATE.jikboStudentOverrides = result.studentOverrides || APP_STATE.jikboStudentOverrides;
             var model = buildJikboBoardModel_();
@@ -26396,7 +26849,31 @@
         renderJikboBoard_();
         setNotice('직보 상태 저장 중...', 'info');
 
-        apiRequest('saveJikboStatus', {
+        var savePromise = isFirebaseDirectFeatureEnabled_('jikboWrite')
+          ? saveJikboStatusViaFirebaseDirect_(draft, {
+              progressStatus: optimisticStatus.progressStatus,
+              confirmedTime: optimisticStatus.confirmedTime,
+              substituteDate: optimisticStatus.substituteDate,
+              note: optimisticStatus.note
+            }).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase inline jikbo status save fallback:', error);
+              }
+              return apiRequest('saveJikboStatus', {
+                token: APP_STATE.token,
+                studentId: optimisticStatus.studentId,
+                subjectName: optimisticStatus.subjectName,
+                examDate: optimisticStatus.examDate,
+                jikboDate: optimisticStatus.jikboDate,
+                instructorId: optimisticStatus.instructorId,
+                instructorName: optimisticStatus.instructorName,
+                progressStatus: optimisticStatus.progressStatus,
+                confirmedTime: optimisticStatus.confirmedTime,
+                substituteDate: optimisticStatus.substituteDate,
+                note: optimisticStatus.note
+              });
+            })
+          : apiRequest('saveJikboStatus', {
           token: APP_STATE.token,
           studentId: optimisticStatus.studentId,
           subjectName: optimisticStatus.subjectName,
@@ -26408,7 +26885,8 @@
           confirmedTime: optimisticStatus.confirmedTime,
           substituteDate: optimisticStatus.substituteDate,
           note: optimisticStatus.note
-        })
+        });
+        savePromise
           .then(function(result) {
             if (result.savedStatus) {
               upsertJikboScheduleStatusLocal_(result.savedStatus);
@@ -27664,14 +28142,29 @@
       function handleJikboSubjectSave_(event) {
         event.preventDefault();
         setLoading(APP_STATE.editingJikboSubjectRowNumber ? '직보 과목을 수정하는 중입니다.' : '직보 과목을 저장하는 중입니다.');
-        apiRequest('saveJikboSubject', {
-          token: APP_STATE.token,
-          subjectRowNumber: APP_STATE.editingJikboSubjectRowNumber,
-          subjectName: document.getElementById('jikboSubjectNameInput').value.trim(),
-          instructorSubjectCategory: document.getElementById('jikboInstructorCategoryInput').value.trim(),
-          studentSubjectKeywords: document.getElementById('jikboStudentKeywordsInput').value.trim(),
-          enabled: document.getElementById('jikboSubjectEnabledInput').checked ? 'TRUE' : 'FALSE'
-        })
+        var savePromise = isFirebaseDirectFeatureEnabled_('jikboWrite')
+          ? saveJikboSubjectViaFirebaseDirect_().catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase jikbo subject save fallback:', error);
+              }
+              return apiRequest('saveJikboSubject', {
+                token: APP_STATE.token,
+                subjectRowNumber: APP_STATE.editingJikboSubjectRowNumber,
+                subjectName: document.getElementById('jikboSubjectNameInput').value.trim(),
+                instructorSubjectCategory: document.getElementById('jikboInstructorCategoryInput').value.trim(),
+                studentSubjectKeywords: document.getElementById('jikboStudentKeywordsInput').value.trim(),
+                enabled: document.getElementById('jikboSubjectEnabledInput').checked ? 'TRUE' : 'FALSE'
+              });
+            })
+          : apiRequest('saveJikboSubject', {
+              token: APP_STATE.token,
+              subjectRowNumber: APP_STATE.editingJikboSubjectRowNumber,
+              subjectName: document.getElementById('jikboSubjectNameInput').value.trim(),
+              instructorSubjectCategory: document.getElementById('jikboInstructorCategoryInput').value.trim(),
+              studentSubjectKeywords: document.getElementById('jikboStudentKeywordsInput').value.trim(),
+              enabled: document.getElementById('jikboSubjectEnabledInput').checked ? 'TRUE' : 'FALSE'
+            });
+        savePromise
           .then(function(result) {
             APP_STATE.jikboSubjectDefinitions = result.subjectDefinitions || APP_STATE.jikboSubjectDefinitions;
             clearJikboSubjectEditMode_();
@@ -27687,10 +28180,21 @@
           return;
         }
         setLoading('직보 과목을 삭제하는 중입니다.');
-        apiRequest('deleteJikboSubject', {
-          token: APP_STATE.token,
-          subjectRowNumber: rowNumber
-        })
+        var deletePromise = isFirebaseDirectFeatureEnabled_('jikboWrite')
+          ? deleteJikboSubjectViaFirebaseDirect_(rowNumber).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase jikbo subject delete fallback:', error);
+              }
+              return apiRequest('deleteJikboSubject', {
+                token: APP_STATE.token,
+                subjectRowNumber: rowNumber
+              });
+            })
+          : apiRequest('deleteJikboSubject', {
+              token: APP_STATE.token,
+              subjectRowNumber: rowNumber
+            });
+        deletePromise
           .then(function(result) {
             APP_STATE.jikboSubjectDefinitions = result.subjectDefinitions || [];
             if (String(APP_STATE.editingJikboSubjectRowNumber || '') === String(rowNumber || '')) {
@@ -27886,7 +28390,7 @@
           return buildJikboOverrideKey_(item.studentId, item.subjectName) === buildJikboOverrideKey_(studentId, subjectName);
         }) || null;
         setLoading('미배정 직보 강사를 저장하는 중입니다.');
-        apiRequest('saveJikboStudentOverride', {
+        var payload = {
           token: APP_STATE.token,
           overrideRowNumber: existingOverride ? existingOverride.rowNumber : '',
           studentId: studentId,
@@ -27894,7 +28398,16 @@
           applyMode: 'INCLUDE',
           instructorId: instructorId,
           overrideDate: existingOverride ? (existingOverride.overrideDate || '') : ''
-        })
+        };
+        var savePromise = isFirebaseDirectFeatureEnabled_('jikboWrite')
+          ? saveJikboOverrideViaFirebaseDirect_(payload).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase quick jikbo override save fallback:', error);
+              }
+              return apiRequest('saveJikboStudentOverride', payload);
+            })
+          : apiRequest('saveJikboStudentOverride', payload);
+        savePromise
           .then(function(result) {
             APP_STATE.jikboStudentOverrides = result.studentOverrides || APP_STATE.jikboStudentOverrides;
             renderJikboView();
@@ -27907,7 +28420,7 @@
       function handleJikboOverrideSave_(event) {
         event.preventDefault();
         setLoading(APP_STATE.editingJikboOverrideRowNumber ? '학생별 직보 예외를 수정하는 중입니다.' : '학생별 직보 예외를 저장하는 중입니다.');
-        apiRequest('saveJikboStudentOverride', {
+        var payload = {
           token: APP_STATE.token,
           overrideRowNumber: APP_STATE.editingJikboOverrideRowNumber,
           studentId: document.getElementById('jikboOverrideStudentSelect').value,
@@ -27915,7 +28428,16 @@
           applyMode: document.getElementById('jikboOverrideApplyModeInput').value,
           instructorId: document.getElementById('jikboOverrideInstructorSelect').value,
           overrideDate: document.getElementById('jikboOverrideDateInput').value
-        })
+        };
+        var savePromise = isFirebaseDirectFeatureEnabled_('jikboWrite')
+          ? saveJikboOverrideViaFirebaseDirect_(payload).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase jikbo override save fallback:', error);
+              }
+              return apiRequest('saveJikboStudentOverride', payload);
+            })
+          : apiRequest('saveJikboStudentOverride', payload);
+        savePromise
           .then(function(result) {
             APP_STATE.jikboStudentOverrides = result.studentOverrides || APP_STATE.jikboStudentOverrides;
             clearJikboOverrideEditMode_();
@@ -27931,10 +28453,21 @@
           return;
         }
         setLoading('학생별 직보 예외를 삭제하는 중입니다.');
-        apiRequest('deleteJikboStudentOverride', {
-          token: APP_STATE.token,
-          overrideRowNumber: rowNumber
-        })
+        var deletePromise = isFirebaseDirectFeatureEnabled_('jikboWrite')
+          ? deleteJikboOverrideViaFirebaseDirect_(rowNumber).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase jikbo override delete fallback:', error);
+              }
+              return apiRequest('deleteJikboStudentOverride', {
+                token: APP_STATE.token,
+                overrideRowNumber: rowNumber
+              });
+            })
+          : apiRequest('deleteJikboStudentOverride', {
+              token: APP_STATE.token,
+              overrideRowNumber: rowNumber
+            });
+        deletePromise
           .then(function(result) {
             APP_STATE.jikboStudentOverrides = result.studentOverrides || [];
             if (String(APP_STATE.editingJikboOverrideRowNumber || '') === String(rowNumber || '')) {
