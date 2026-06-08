@@ -17045,10 +17045,14 @@
             gradeRead: true,
             gradeWrite: true,
             gradeDelete: true,
+            eventRead: true,
+            eventWrite: true,
             materialRead: true,
             materialWrite: true,
             materialOpenLogRead: true,
-            materialOpenLogWrite: true
+            materialOpenLogWrite: true,
+            jikboRead: true,
+            jikboWrite: true
           });
           nextState.collections = Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, nextState.collections || {});
           nextState.dashboardSnapshotDocId = nextState.dashboardSnapshotDocId || buildFirebaseDashboardSnapshotDocId_();
