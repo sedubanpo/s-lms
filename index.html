@@ -18685,7 +18685,8 @@
         }
 
         if (viewName === 'events') {
-          if (APP_STATE.eventsLoaded || APP_STATE.eventsLoading) {
+          var hasCachedEvents = APP_STATE.eventsLoaded && Array.isArray(APP_STATE.events) && APP_STATE.events.length > 0;
+          if (hasCachedEvents || APP_STATE.eventsLoading) {
             if (!config.silent && APP_STATE.currentView === 'events') {
               renderEvents();
             }
