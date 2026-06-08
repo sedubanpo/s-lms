@@ -16181,7 +16181,8 @@
           createdByName: data.createdByName || data.authorName || data.writer || '',
           createdByRole: data.createdByRole || '',
           createdAt: data.createdAt || data.timestamp || data.updatedAt || '',
-          reactions: Array.isArray(data.reactions) ? data.reactions : parseFirebaseJsonArray_(data.reactionsJson)
+          reactions: mergeFirebaseDirectReactionFields_(data),
+          reactionsUpdatedAt: data.reactionsUpdatedAt || ''
         });
       }
 
@@ -18757,6 +18758,34 @@
         }
       }
 
+      function mergeFirebaseDirectReactionFields_(data) {
+        data = data || {};
+        var byArray = parseFirebaseDirectReactions_(data.reactions);
+        var byJson = parseFirebaseDirectReactions_(data.reactionsJson);
+        var merged = [];
+        var seen = {};
+        byArray.concat(byJson).forEach(function(item) {
+          item = item || {};
+          var userId = String(item.userId || '').trim();
+          var reaction = String(item.reaction || '').trim();
+          if (!userId || !reaction) {
+            return;
+          }
+          var key = userId + '|' + reaction;
+          if (seen[key]) {
+            return;
+          }
+          seen[key] = true;
+          merged.push({
+            userId: userId,
+            userName: item.userName || userId,
+            reaction: reaction,
+            reactedAt: item.reactedAt || ''
+          });
+        });
+        return merged;
+      }
+
       function findStudentLogByRowKey_(rowKey) {
         var key = String(rowKey || '');
         var found = null;
@@ -18889,9 +18918,6 @@
       }
 
       function saveStudentLogReactionViaFirebaseDirect_(rowKey, reaction) {
-        if (!isFirebaseStudentLogId_(rowKey)) {
-          return Promise.reject(new Error('Firestore 기록 ID가 아닙니다.'));
-        }
         return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
           state = state || APP_STATE.firebaseDirect || {};
           if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('logReactionWrite')) {
@@ -18903,15 +18929,21 @@
             throw new Error('로그인 사용자 정보를 확인할 수 없습니다.');
           }
           var collectionName = (state.collections && state.collections.studentLogs) || 'studentLogs';
-          var logRef = state.firestore.collection(collectionName).doc(String(rowKey));
+          var sourceRowKey = String(rowKey || '');
+          var localLog = findStudentLogByRowKey_(sourceRowKey) || {};
+          var logDocId = isFirebaseStudentLogId_(sourceRowKey)
+            ? sourceRowKey
+            : ('RESTORED-LOG-ROW-' + firebaseDirectBase64UrlEncode_(sourceRowKey || [
+                localLog.studentId || '',
+                localLog.createdAt || '',
+                localLog.content || ''
+              ].join('|')).slice(0, 120));
+          var logRef = state.firestore.collection(collectionName).doc(logDocId);
           var timestamp = new Date().toISOString();
           return state.firestore.runTransaction(function(transaction) {
             return transaction.get(logRef).then(function(doc) {
-              if (!doc.exists) {
-                throw new Error('존재하지 않는 기록입니다.');
-              }
-              var data = doc.data() || {};
-              var reactions = parseFirebaseDirectReactions_(data.reactionsJson).filter(function(item) {
+              var data = doc.exists ? (doc.data() || {}) : {};
+              var reactions = mergeFirebaseDirectReactionFields_(data).filter(function(item) {
                 return String(item && item.userId || '') !== userId;
               });
               reactions.push({
@@ -18920,14 +18952,38 @@
                 reaction: reaction,
                 reactedAt: timestamp
               });
-              transaction.update(logRef, {
+              var reactionPayload = {
+                reactions: reactions,
                 reactionsJson: JSON.stringify(reactions),
                 reactionsUpdatedAt: timestamp
-              });
+              };
+              if (doc.exists) {
+                transaction.update(logRef, reactionPayload);
+              } else {
+                if (!localLog || !localLog.studentId || !localLog.content) {
+                  throw new Error('반응을 저장할 상담 기록을 찾을 수 없습니다.');
+                }
+                transaction.set(logRef, Object.assign({
+                  logId: logDocId,
+                  rowNumber: logDocId,
+                  legacyRowNumber: sourceRowKey,
+                  studentId: String(localLog.studentId || ''),
+                  studentName: localLog.studentName || '',
+                  content: localLog.content || '',
+                  tagsText: Array.isArray(localLog.tags) ? localLog.tags.join(', ') : '',
+                  createdById: userId,
+                  createdByName: localLog.createdByName || user.name || userId,
+                  createdByRole: localLog.createdByRole || '',
+                  createdAt: localLog.createdAt || timestamp,
+                  createdAtMs: dateValueForSort_(localLog.createdAt || '') || Date.now(),
+                  restoredFromRowNumber: sourceRowKey
+                }, reactionPayload), { merge: true });
+              }
               return {
                 ok: true,
                 updatedLog: Object.assign({}, findStudentLogByRowKey_(rowKey) || {}, {
-                  rowNumber: String(rowKey),
+                  rowNumber: sourceRowKey,
+                  firebaseLogId: logDocId,
                   reactions: reactions,
                   reactionsUpdatedAt: timestamp
                 }),
@@ -26474,6 +26530,53 @@
         }).pop() || null;
       }
 
+      function createFirebaseStudentId_() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return 'STU-' + window.crypto.randomUUID();
+        }
+        return 'STU-' + Date.now() + '-' + Math.random().toString(36).slice(2, 12);
+      }
+
+      function appendAddedStudentToState_(payload) {
+        var student = normalizeFirebaseStudentForApp_(Object.assign({}, payload, {
+          id: payload.studentId || payload.id || '',
+          logs: []
+        }));
+        var studentId = String(student.studentId || '');
+        if (!studentId) {
+          return null;
+        }
+        function upsert(list) {
+          var found = false;
+          var next = (list || []).map(function(item) {
+            if (String(item && item.studentId || '') !== studentId) {
+              return item;
+            }
+            found = true;
+            return Object.assign({}, item, student);
+          });
+          if (!found) {
+            next.unshift(student);
+          }
+          return next;
+        }
+        APP_STATE.allStudents = upsert(APP_STATE.allStudents);
+        APP_STATE.activeStudents = (APP_STATE.allStudents || []).filter(function(item) {
+          return item && item.active !== false && item.status !== 'INACTIVE' && item.isActive !== false;
+        });
+        if (APP_STATE.isAdmin) {
+          APP_STATE.visibleStudents = APP_STATE.activeStudents.slice();
+          APP_STATE.searchableStudents = APP_STATE.allStudents.slice();
+        } else {
+          APP_STATE.visibleStudents = upsert(APP_STATE.visibleStudents);
+          APP_STATE.searchableStudents = upsert(APP_STATE.searchableStudents);
+        }
+        APP_STATE.totalActiveStudentCount = APP_STATE.activeStudents.length;
+        APP_STATE.selectedPermissionStudentId = studentId;
+        APP_STATE.selectedStudentId = studentId;
+        return student;
+      }
+
       function saveAddedStudentViaFirebaseDirect_(student) {
         return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
           state = state || APP_STATE.firebaseDirect || {};
@@ -26483,13 +26586,14 @@
           if (!APP_STATE.isAdmin) {
             throw new Error('관리자만 학생 정보를 Firebase에 저장할 수 있습니다.');
           }
-          if (!student || !student.studentId) {
-            throw new Error('Firebase에 저장할 학생 ID를 찾을 수 없습니다.');
+          if (!student || !String(student.studentName || student.name || '').trim()) {
+            throw new Error('학생명을 입력해주세요.');
           }
           var now = new Date();
+          var studentId = String(student.studentId || student.id || '').trim() || createFirebaseStudentId_();
           var payload = {
-            id: String(student.studentId || ''),
-            studentId: String(student.studentId || ''),
+            id: studentId,
+            studentId: studentId,
             studentName: String(student.studentName || student.name || ''),
             name: String(student.studentName || student.name || ''),
             school: String(student.school || ''),
@@ -26643,9 +26747,52 @@
             previousStudentIds[String(student.studentId || '')] = true;
           }
         });
+        var duplicateStudent = (APP_STATE.allStudents || []).some(function(student) {
+          return normalizeSearchText(student && student.studentName || '') === normalizeSearchText(draft.studentName) &&
+            normalizeSearchText(student && student.school || '') === normalizeSearchText(draft.school) &&
+            normalizeSearchText(student && student.grade || '') === normalizeSearchText(draft.grade);
+        });
+        if (!draft.studentName) {
+          setStudentAddFeedback_('학생명을 입력해주세요.', '');
+          return;
+        }
+        if (duplicateStudent) {
+          setStudentAddFeedback_('이미 같은 이름/학교/학년의 학생이 있습니다.', '');
+          return;
+        }
 
         APP_STATE.isAddingStudent = true;
         setStudentAddFeedback_('학생 정보를 등록하는 중입니다. 잠시만 기다려 주세요.', 'pending');
+
+        if (isFirebaseSessionToken_(APP_STATE.token)) {
+          saveAddedStudentViaFirebaseDirect_(draft)
+            .then(function(payload) {
+              var addedStudent = appendAddedStudentToState_(payload);
+              APP_STATE.permissionTab = 'students';
+              document.getElementById('studentManageNameInput').value = '';
+              document.getElementById('studentManageSchoolInput').value = '';
+              document.getElementById('studentManageGradeInput').value = '';
+              renderAll();
+              switchView('permissions');
+              setStudentAddFeedback_((addedStudent && addedStudent.studentName ? addedStudent.studentName + ' ' : '') + '학생이 Firebase에 등록되었습니다.', 'success');
+              APP_STATE.studentAddSuccessTimer = setTimeout(function() {
+                APP_STATE.studentAddSuccessTimer = null;
+                setStudentAddFeedback_('', '');
+              }, 1800);
+              setNotice('학생이 Firebase에 등록되었습니다.', 'success');
+              writeDashboardSnapshot_();
+            })
+            .catch(function(error) {
+              setStudentAddFeedback_('학생 등록에 실패했습니다. 입력값과 권한을 확인한 뒤 다시 시도해 주세요.', '');
+              setNotice(getErrorMessage(error), 'error');
+            })
+            .finally(function() {
+              APP_STATE.isAddingStudent = false;
+              renderStudentManageFormState_();
+            });
+          return;
+        }
+
         apiRequest('addStudent', {
           token: APP_STATE.token,
           studentName: draft.studentName,
