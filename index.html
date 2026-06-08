@@ -14681,6 +14681,7 @@
         students: 'students',
         permissionRequests: 'permissionRequests',
         homerooms: 'studentHomerooms',
+        events: 'events',
         materials: 'materials',
         materialOpenLogs: 'materialOpenLogs'
       };
@@ -14698,6 +14699,8 @@
         gradeRead: false,
         gradeWrite: false,
         gradeDelete: false,
+        eventRead: false,
+        eventWrite: false,
         materialRead: false,
         materialWrite: false,
         materialOpenLogRead: false,
@@ -15895,6 +15898,8 @@
             gradeRead: true,
             gradeWrite: true,
             gradeDelete: true,
+            eventRead: true,
+            eventWrite: true,
             materialRead: true,
             materialWrite: true,
             materialOpenLogRead: true,
@@ -16833,6 +16838,8 @@
           config: authData && authData.config ? authData.config : null,
           customToken: authData && authData.customToken ? authData.customToken : '',
           featureFlags: Object.assign({}, FIREBASE_DIRECT_DEFAULT_FLAGS, authData && authData.featureFlags ? authData.featureFlags : {}, {
+            eventRead: true,
+            eventWrite: true,
             materialRead: true,
             materialWrite: true,
             materialOpenLogRead: true,
@@ -17273,6 +17280,143 @@
             console.warn('Global notice Firebase load fallback:', error);
           }
           return false;
+        });
+      }
+
+      function getEventsFirebaseCollectionName_() {
+        var collections = (APP_STATE.firebaseDirect && APP_STATE.firebaseDirect.collections) || {};
+        return collections.events || 'events';
+      }
+
+      function buildEventFirebaseDocId_(rowNumber) {
+        var key = String(rowNumber || '').trim();
+        if (!key) {
+          key = String(Date.now()) + '-' + Math.random().toString(36).slice(2, 10);
+        }
+        return 'EVT-' + key.replace(/[\/#?\[\]]/g, '_');
+      }
+
+      function normalizeEventFirebaseData_(data, docId) {
+        data = data || {};
+        var rowNumber = data.rowNumber || String(docId || '').replace(/^EVT-/i, '');
+        var date = String(data.date || data.isoDate || data.eventDate || '');
+        var parsedDate = parseEventDateForClient_(date);
+        return {
+          eventId: String(data.eventId || docId || ''),
+          rowNumber: rowNumber,
+          date: date,
+          isoDate: String(data.isoDate || (parsedDate ? formatDateKey_(parsedDate) : '')),
+          target: String(data.target || data.targetSchool || data.school || ''),
+          title: String(data.title || data.subjectName || data.eventName || ''),
+          note: String(data.note || data.examType || ''),
+          submitter: String(data.submitter || data.createdByName || data.createdBy || ''),
+          createdById: String(data.createdById || ''),
+          createdByName: String(data.createdByName || data.createdBy || data.submitter || ''),
+          createdAt: String(data.createdAt || ''),
+          createdAtMs: Number(data.createdAtMs || 0),
+          updatedById: String(data.updatedById || ''),
+          updatedByName: String(data.updatedByName || ''),
+          updatedAt: String(data.updatedAt || ''),
+          updatedAtMs: Number(data.updatedAtMs || 0),
+          source: String(data.source || 'firestore')
+        };
+      }
+
+      function compareEventsForClient_(a, b) {
+        return String(a.isoDate || a.date || '').localeCompare(String(b.isoDate || b.date || '')) ||
+          String(a.target || '').localeCompare(String(b.target || ''), 'ko') ||
+          String(a.title || '').localeCompare(String(b.title || ''), 'ko');
+      }
+
+      function loadEventsViaFirebaseDirect_() {
+        if (!APP_STATE.token || !APP_STATE.user || !APP_STATE.user.userId) {
+          return Promise.resolve(null);
+        }
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('eventRead')) {
+            return null;
+          }
+          if (!isFirebaseDirectAuthReusable_(state)) {
+            throw new Error('Firebase 일정 인증이 준비되지 않았습니다. 로그인을 새로고침한 뒤 다시 시도해 주세요.');
+          }
+          return state.firestore.collection(getEventsFirebaseCollectionName_()).get({ source: 'server' }).catch(function(error) {
+            if (window.console && console.warn) {
+              console.warn('Firebase events server read failed; retrying default source:', error);
+            }
+            return state.firestore.collection(getEventsFirebaseCollectionName_()).get();
+          }).then(function(snapshot) {
+            var rows = [];
+            snapshot.forEach(function(doc) {
+              var eventRow = normalizeEventFirebaseData_(doc.data() || {}, doc.id);
+              if (eventRow.date && eventRow.title) {
+                rows.push(eventRow);
+              }
+            });
+            if (!rows.length) {
+              return null;
+            }
+            rows.sort(compareEventsForClient_);
+            return {
+              ok: true,
+              directFirebase: true,
+              events: rows,
+              globalNotice: APP_STATE.globalNotice
+            };
+          });
+        });
+      }
+
+      function buildEventPayloadFromForm_(isEditing) {
+        var now = new Date();
+        var rowNumber = String(APP_STATE.editingEventRowNumber || '').trim();
+        if (!rowNumber) {
+          rowNumber = String(Date.now());
+        }
+        var existing = (APP_STATE.events || []).find(function(item) {
+          return String(item.rowNumber || '') === rowNumber;
+        }) || {};
+        return {
+          eventId: existing.eventId || buildEventFirebaseDocId_(rowNumber),
+          rowNumber: rowNumber,
+          date: document.getElementById('eventDateInput').value,
+          isoDate: document.getElementById('eventDateInput').value,
+          target: document.getElementById('eventTargetInput').value.trim(),
+          title: document.getElementById('eventTitleInput').value.trim(),
+          note: document.getElementById('eventNoteInput').value.trim(),
+          submitter: existing.submitter || (APP_STATE.user && APP_STATE.user.name) || '',
+          createdById: existing.createdById || (APP_STATE.user && APP_STATE.user.userId) || '',
+          createdByName: existing.createdByName || existing.submitter || (APP_STATE.user && APP_STATE.user.name) || '',
+          createdAt: existing.createdAt || now.toISOString(),
+          createdAtMs: existing.createdAtMs || now.getTime(),
+          updatedById: (APP_STATE.user && APP_STATE.user.userId) || '',
+          updatedByName: (APP_STATE.user && APP_STATE.user.name) || '',
+          updatedAt: now.toISOString(),
+          updatedAtMs: now.getTime(),
+          source: 'firestore'
+        };
+      }
+
+      function saveEventViaFirebaseDirect_(isEditing) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('eventWrite')) {
+            throw new Error('Firebase 직접 일정 저장 경로가 준비되지 않았습니다.');
+          }
+          var payload = buildEventPayloadFromForm_(isEditing);
+          if (!payload.date || !payload.target || !payload.title) {
+            throw new Error('날짜, 대상, 일정명을 입력해 주세요.');
+          }
+          var docId = payload.eventId || buildEventFirebaseDocId_(payload.rowNumber);
+          payload.eventId = docId;
+          return state.firestore.collection(getEventsFirebaseCollectionName_()).doc(docId).set(payload, { merge: true })
+            .then(function() {
+              return loadEventsViaFirebaseDirect_();
+            }).then(function(result) {
+              return Object.assign({}, result || {}, {
+                message: isEditing ? '주요일정이 Firebase에 수정되었습니다.' : '주요일정이 Firebase에 저장되었습니다.'
+              });
+            });
         });
       }
 
@@ -18551,7 +18695,19 @@
           if (!config.silent && APP_STATE.currentView === 'events') {
             renderEvents();
           }
-          return apiRequest('getEvents', { token: APP_STATE.token })
+          return loadEventsViaFirebaseDirect_()
+            .catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase events load fallback:', error);
+              }
+              return null;
+            })
+            .then(function(directEventData) {
+              if (directEventData && directEventData.events) {
+                return directEventData;
+              }
+              return apiRequest('getEvents', { token: APP_STATE.token });
+            })
             .then(function(eventData) {
               APP_STATE.events = eventData && eventData.events ? eventData.events : [];
               hydrateGlobalNotice_(eventData && eventData.globalNotice);
@@ -27795,14 +27951,29 @@
 
         var isEditing = Boolean(APP_STATE.editingEventRowNumber);
         setLoading(isEditing ? '주요일정을 수정하는 중입니다.' : '주요일정을 저장하는 중입니다.');
-        apiRequest(isEditing ? 'updateEvent' : 'addEvent', {
-          token: APP_STATE.token,
-          eventRowNumber: APP_STATE.editingEventRowNumber,
-          date: document.getElementById('eventDateInput').value,
-          target: document.getElementById('eventTargetInput').value.trim(),
-          title: document.getElementById('eventTitleInput').value.trim(),
-          note: document.getElementById('eventNoteInput').value.trim()
-        })
+        var savePromise = isFirebaseDirectFeatureEnabled_('eventWrite')
+          ? saveEventViaFirebaseDirect_(isEditing).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase events save fallback:', error);
+              }
+              return apiRequest(isEditing ? 'updateEvent' : 'addEvent', {
+                token: APP_STATE.token,
+                eventRowNumber: APP_STATE.editingEventRowNumber,
+                date: document.getElementById('eventDateInput').value,
+                target: document.getElementById('eventTargetInput').value.trim(),
+                title: document.getElementById('eventTitleInput').value.trim(),
+                note: document.getElementById('eventNoteInput').value.trim()
+              });
+            })
+          : apiRequest(isEditing ? 'updateEvent' : 'addEvent', {
+              token: APP_STATE.token,
+              eventRowNumber: APP_STATE.editingEventRowNumber,
+              date: document.getElementById('eventDateInput').value,
+              target: document.getElementById('eventTargetInput').value.trim(),
+              title: document.getElementById('eventTitleInput').value.trim(),
+              note: document.getElementById('eventNoteInput').value.trim()
+            });
+        savePromise
           .then(function(result) {
             APP_STATE.events = result.events || [];
             APP_STATE.jikboLoaded = false;
