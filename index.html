@@ -14684,9 +14684,11 @@
         events: 'events',
         materials: 'materials',
         materialOpenLogs: 'materialOpenLogs',
+        materialSettings: 'materialSettings',
         jikboSubjects: 'jikboSubjects',
         jikboStudentOverrides: 'jikboStudentOverrides',
-        jikboStatuses: 'jikboStatuses'
+        jikboStatuses: 'jikboStatuses',
+        gradeSettings: 'gradeSettings'
       };
       const FIREBASE_DIRECT_DEFAULT_FLAGS = {
         logRead: false,
@@ -14708,10 +14710,14 @@
         materialWrite: false,
         materialOpenLogRead: false,
         materialOpenLogWrite: false,
+        materialSettingRead: false,
+        materialSettingWrite: false,
         homeroomRead: false,
         homeroomWrite: false,
         jikboRead: false,
-        jikboWrite: false
+        jikboWrite: false,
+        gradeSettingRead: false,
+        gradeSettingWrite: false
       };
       const LOG_TAG_OPTIONS = [
         '수업현황',
@@ -15913,8 +15919,12 @@
             materialWrite: true,
             materialOpenLogRead: true,
             materialOpenLogWrite: true,
+            materialSettingRead: true,
+            materialSettingWrite: true,
             jikboRead: true,
-            jikboWrite: true
+            jikboWrite: true,
+            gradeSettingRead: true,
+            gradeSettingWrite: true
           });
           state.collections = Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, state.collections || {});
           state.app = app;
@@ -17044,10 +17054,14 @@
             materialWrite: true,
             materialOpenLogRead: true,
             materialOpenLogWrite: true,
+            materialSettingRead: true,
+            materialSettingWrite: true,
             homeroomRead: true,
             homeroomWrite: true,
             jikboRead: true,
-            jikboWrite: true
+            jikboWrite: true,
+            gradeSettingRead: true,
+            gradeSettingWrite: true
           }),
           collections: Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, authData && authData.collections ? authData.collections : {}),
           dashboardSnapshotDocId: authData && authData.dashboardSnapshotDocId ? authData.dashboardSnapshotDocId : '',
@@ -17248,8 +17262,12 @@
             materialWrite: true,
             materialOpenLogRead: true,
             materialOpenLogWrite: true,
+            materialSettingRead: true,
+            materialSettingWrite: true,
             jikboRead: true,
-            jikboWrite: true
+            jikboWrite: true,
+            gradeSettingRead: true,
+            gradeSettingWrite: true
           });
           nextState.collections = Object.assign({}, FIREBASE_DIRECT_BOOTSTRAP_COLLECTIONS, nextState.collections || {});
           nextState.dashboardSnapshotDocId = nextState.dashboardSnapshotDocId || buildFirebaseDashboardSnapshotDocId_();
@@ -18099,13 +18117,23 @@
               }
             });
             rows.sort(compareMaterialRows_);
-            return {
-              ok: true,
-              directFirebase: true,
-              materials: rows,
-              settings: APP_STATE.materialSettings,
-              globalNotice: APP_STATE.globalNotice
-            };
+            return loadMaterialSettingsViaFirebaseDirect_().catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase material settings read skipped:', error);
+              }
+              return null;
+            }).then(function(settings) {
+              if (settings) {
+                APP_STATE.materialSettings = settings;
+              }
+              return {
+                ok: true,
+                directFirebase: true,
+                materials: rows,
+                settings: APP_STATE.materialSettings,
+                globalNotice: APP_STATE.globalNotice
+              };
+            });
           });
         });
       }
@@ -18164,6 +18192,75 @@
             return { ok: true, openLogs: rows };
           });
         });
+      }
+
+      function normalizeMaterialSettings_(settings) {
+        settings = settings || {};
+        return {
+          examTypes: uniqueList_((settings.examTypes || []).concat(MATERIAL_EXAM_OPTIONS).map(function(item) {
+            return String(item || '').trim();
+          }).filter(Boolean)),
+          materialTypes: uniqueList_((settings.materialTypes || []).concat(MATERIAL_TYPE_OPTIONS).map(function(item) {
+            return String(item || '').trim();
+          }).filter(Boolean)),
+          fileTypes: uniqueList_((settings.fileTypes || []).concat(MATERIAL_FILE_TYPE_OPTIONS).map(function(item) {
+            return String(item || '').trim();
+          }).filter(Boolean))
+        };
+      }
+
+      function getMaterialSettingsCollectionName_() {
+        var collections = (APP_STATE.firebaseDirect && APP_STATE.firebaseDirect.collections) || {};
+        return collections.materialSettings || 'materialSettings';
+      }
+
+      function loadMaterialSettingsViaFirebaseDirect_() {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('materialSettingRead')) {
+            return null;
+          }
+          return state.firestore.collection(getMaterialSettingsCollectionName_()).doc('default').get().then(function(doc) {
+            if (!doc.exists) {
+              return null;
+            }
+            return normalizeMaterialSettings_(doc.data() || {});
+          });
+        });
+      }
+
+      function saveMaterialSettingsViaFirebaseDirect_(settings) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('materialSettingWrite')) {
+            throw new Error('자료실 설정 Firebase 저장 경로가 준비되지 않았습니다.');
+          }
+          var now = new Date();
+          var user = APP_STATE.user || {};
+          var payload = Object.assign({}, normalizeMaterialSettings_(settings), {
+            settingId: 'default',
+            updatedAt: now.toISOString(),
+            updatedAtMs: now.getTime(),
+            updatedById: user.userId || '',
+            updatedByName: user.name || user.userId || '',
+            source: 'firestore'
+          });
+          return state.firestore.collection(getMaterialSettingsCollectionName_()).doc('default').set(payload, { merge: true }).then(function() {
+            return {
+              ok: true,
+              directFirebase: true,
+              settings: normalizeMaterialSettings_(payload),
+              message: '자료실 옵션이 Firebase에 저장되었습니다.'
+            };
+          });
+        });
+      }
+
+      function saveMaterialSettingOptionViaFirebaseDirect_(settingType, value) {
+        var current = normalizeMaterialSettings_(APP_STATE.materialSettings);
+        var key = settingType === 'examType' ? 'examTypes' : (settingType === 'materialType' ? 'materialTypes' : 'fileTypes');
+        current[key] = uniqueList_((current[key] || []).concat([String(value || '').trim()]).filter(Boolean));
+        return saveMaterialSettingsViaFirebaseDirect_(current);
       }
 
       function buildMaterialPayloadFromForm_(isEditing) {
@@ -18317,7 +18414,67 @@
         if (name === 'history') {
           return collections.gradeHistories || 'studentGradeHistories';
         }
+        if (name === 'settings') {
+          return collections.gradeSettings || 'gradeSettings';
+        }
         return collections.grades || 'studentGrades';
+      }
+
+      function normalizeGradeSettingsDoc_(data) {
+        data = data || {};
+        return {
+          examOptions: normalizeGradeExamOptions_(data.examOptions || {
+            categories: data.categories || [],
+            testExams: data.testExams || [],
+            internalExams: data.internalExams || [],
+            mockExams: data.mockExams || []
+          }),
+          gradeScaleSettings: normalizeGradeScaleSettings_(data.gradeScaleSettings || data.scaleSettings || [])
+        };
+      }
+
+      function loadGradeSettingsViaFirebaseDirect_() {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!isGradeFirebaseDirectReady_(state, 'gradeSettingRead')) {
+            return null;
+          }
+          return state.firestore.collection(getGradeFirebaseCollectionName_('settings')).doc('default').get().then(function(doc) {
+            return doc.exists ? normalizeGradeSettingsDoc_(doc.data() || {}) : null;
+          });
+        });
+      }
+
+      function saveGradeSettingsViaFirebaseDirect_(examOptions, gradeScaleSettings) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !isGradeFirebaseDirectReady_(state, 'gradeSettingWrite')) {
+            throw new Error('성적 설정 Firebase 저장 경로가 준비되지 않았습니다.');
+          }
+          var now = new Date();
+          var user = APP_STATE.user || {};
+          var normalized = normalizeGradeSettingsDoc_({
+            examOptions: examOptions,
+            gradeScaleSettings: gradeScaleSettings
+          });
+          var payload = Object.assign({}, normalized, {
+            settingId: 'default',
+            updatedAt: now.toISOString(),
+            updatedAtMs: now.getTime(),
+            updatedById: user.userId || '',
+            updatedByName: user.name || user.userId || '',
+            source: 'firestore'
+          });
+          return state.firestore.collection(getGradeFirebaseCollectionName_('settings')).doc('default').set(payload, { merge: true }).then(function() {
+            return {
+              ok: true,
+              directFirebase: true,
+              examOptions: normalized.examOptions,
+              gradeScaleSettings: normalized.gradeScaleSettings,
+              message: '시험 종류가 Firebase에 저장되었습니다.'
+            };
+          });
+        });
       }
 
       function normalizeGradeFirebaseDoc_(doc, changeType) {
@@ -18337,7 +18494,17 @@
           if (!isGradeFirebaseDirectReady_(state, 'gradeRead')) {
             throw new Error('성적 Firestore 직접 조회가 아직 활성화되지 않았습니다.');
           }
-          return state.firestore.collection(getGradeFirebaseCollectionName_('grades')).get().then(function(snapshot) {
+          return Promise.all([
+            state.firestore.collection(getGradeFirebaseCollectionName_('grades')).get(),
+            loadGradeSettingsViaFirebaseDirect_().catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase grade settings read skipped:', error);
+              }
+              return null;
+            })
+          ]).then(function(results) {
+            var snapshot = results[0];
+            var settings = results[1];
             var grades = [];
             snapshot.forEach(function(doc) {
               var grade = normalizeGradeFirebaseDoc_(doc);
@@ -18349,7 +18516,9 @@
             return {
               ok: true,
               directFirebase: true,
-              grades: grades
+              grades: grades,
+              examOptions: settings && settings.examOptions ? settings.examOptions : APP_STATE.gradeExamOptions,
+              gradeScaleSettings: settings && settings.gradeScaleSettings ? settings.gradeScaleSettings : APP_STATE.gradeScaleSettings
             };
           });
         });
@@ -26346,6 +26515,111 @@
         });
       }
 
+      function replaceStudentInState_(studentId, updater) {
+        var targetId = String(studentId || '');
+        ['allStudents', 'activeStudents', 'visibleStudents', 'searchableStudents', 'gradeStudents'].forEach(function(key) {
+          APP_STATE[key] = (APP_STATE[key] || []).map(function(student) {
+            if (String(student && student.studentId || '') !== targetId) {
+              return student;
+            }
+            return updater(Object.assign({}, student));
+          }).filter(function(student) {
+            return student && student.studentId;
+          });
+        });
+        APP_STATE.activeStudents = (APP_STATE.allStudents || []).filter(function(student) {
+          return student.active !== false && student.status !== 'INACTIVE' && student.isActive !== false;
+        });
+        APP_STATE.totalActiveStudentCount = APP_STATE.activeStudents.length;
+        if (APP_STATE.isAdmin) {
+          APP_STATE.visibleStudents = APP_STATE.activeStudents.slice();
+          APP_STATE.searchableStudents = APP_STATE.allStudents.slice();
+        }
+      }
+
+      function buildStudentDataResultFromState_(message) {
+        return {
+          ok: true,
+          directFirebase: true,
+          message: message || '',
+          user: APP_STATE.user,
+          isAdmin: APP_STATE.isAdmin,
+          visibleStudents: APP_STATE.visibleStudents || [],
+          searchableStudents: APP_STATE.searchableStudents || [],
+          activeStudents: APP_STATE.activeStudents || [],
+          allStudents: APP_STATE.allStudents || [],
+          totalActiveStudentCount: APP_STATE.totalActiveStudentCount || 0,
+          instructors: APP_STATE.instructors || [],
+          permissions: APP_STATE.permissions || [],
+          permissionRequests: APP_STATE.permissionRequests || [],
+          homeroomAssignments: APP_STATE.homeroomAssignments || [],
+          appName: APP_STATE.appName,
+          logoUrl: APP_STATE.logoUrl,
+          globalNotice: APP_STATE.globalNotice
+        };
+      }
+
+      function saveStudentSubjectViaFirebaseDirect_(studentId, subject) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('studentWrite')) {
+            throw new Error('학생 과목 Firebase 저장 경로가 준비되지 않았습니다.');
+          }
+          var now = new Date();
+          var user = APP_STATE.user || {};
+          var collectionName = (state.collections && state.collections.students) || 'students';
+          var payload = {
+            subject: String(subject || '').trim(),
+            updatedAt: now.toISOString(),
+            updatedAtMs: now.getTime(),
+            updatedById: user.userId || '',
+            updatedByName: user.name || user.userId || ''
+          };
+          return state.firestore.collection(collectionName).doc(String(studentId || '')).set(payload, { merge: true }).then(function() {
+            replaceStudentInState_(studentId, function(student) {
+              student.subject = payload.subject;
+              student.updatedAt = payload.updatedAt;
+              student.updatedAtMs = payload.updatedAtMs;
+              return student;
+            });
+            return buildStudentDataResultFromState_(payload.subject ? '학생 과목이 Firebase에 저장되었습니다.' : '학생 과목 보완값이 Firebase에서 삭제되었습니다.');
+          });
+        });
+      }
+
+      function updateStudentStatusViaFirebaseDirect_(studentId, isActive) {
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('studentWrite')) {
+            throw new Error('학생 상태 Firebase 저장 경로가 준비되지 않았습니다.');
+          }
+          var now = new Date();
+          var user = APP_STATE.user || {};
+          var active = Boolean(isActive);
+          var collectionName = (state.collections && state.collections.students) || 'students';
+          var payload = {
+            status: active ? 'ACTIVE' : 'INACTIVE',
+            active: active,
+            isActive: active,
+            updatedAt: now.toISOString(),
+            updatedAtMs: now.getTime(),
+            updatedById: user.userId || '',
+            updatedByName: user.name || user.userId || ''
+          };
+          return state.firestore.collection(collectionName).doc(String(studentId || '')).set(payload, { merge: true }).then(function() {
+            replaceStudentInState_(studentId, function(student) {
+              student.status = payload.status;
+              student.active = payload.active;
+              student.isActive = payload.isActive;
+              student.updatedAt = payload.updatedAt;
+              student.updatedAtMs = payload.updatedAtMs;
+              return student;
+            });
+            return buildStudentDataResultFromState_('학생 상태가 Firebase에 저장되었습니다.');
+          });
+        });
+      }
+
       function handleStudentAdd() {
         if (!APP_STATE.isAdmin) {
           setNotice('관리자만 학생을 등록할 수 있습니다.', 'warning');
@@ -26428,12 +26702,23 @@
           var subjectInput = document.querySelector('[data-student-subject-input="' + subjectStudentId + '"]');
           var subjectValue = subjectInput ? subjectInput.value.trim() : '';
 
-          setLoading(subjectValue ? '학생 과목을 저장하는 중입니다.' : '학생 과목 보완값을 삭제하는 중입니다.');
-          apiRequest('saveStudentSubject', {
-            token: APP_STATE.token,
-            studentId: subjectStudentId,
-            subject: subjectValue
-          })
+          setLoading(subjectValue ? '학생 과목을 Firebase에 저장하는 중입니다.' : '학생 과목 보완값을 Firebase에서 삭제하는 중입니다.');
+          (isFirebaseSessionToken_(APP_STATE.token)
+            ? saveStudentSubjectViaFirebaseDirect_(subjectStudentId, subjectValue).catch(function(error) {
+                if (window.console && console.warn) {
+                  console.warn('Firebase student subject save fallback:', error);
+                }
+                return apiRequest('saveStudentSubject', {
+                  token: APP_STATE.token,
+                  studentId: subjectStudentId,
+                  subject: subjectValue
+                });
+              })
+            : apiRequest('saveStudentSubject', {
+                token: APP_STATE.token,
+                studentId: subjectStudentId,
+                subject: subjectValue
+              }))
             .then(function(result) {
               hydrateStudentDataOnly(result);
               renderAll();
@@ -26452,12 +26737,23 @@
 
         var studentId = button.getAttribute('data-student-status-toggle') || '';
         var nextStatus = button.getAttribute('data-next-status') || '';
-        setLoading(nextStatus === 'active' ? '학생을 다시 등록하는 중입니다.' : '학생을 중지하는 중입니다.');
-        apiRequest('updateStudentStatus', {
-          token: APP_STATE.token,
-          studentId: studentId,
-          isActive: String(nextStatus === 'active')
-        })
+        setLoading(nextStatus === 'active' ? '학생을 Firebase에 다시 등록하는 중입니다.' : '학생을 Firebase에서 중지 처리하는 중입니다.');
+        (isFirebaseSessionToken_(APP_STATE.token)
+          ? updateStudentStatusViaFirebaseDirect_(studentId, nextStatus === 'active').catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase student status save fallback:', error);
+              }
+              return apiRequest('updateStudentStatus', {
+                token: APP_STATE.token,
+                studentId: studentId,
+                isActive: String(nextStatus === 'active')
+              });
+            })
+          : apiRequest('updateStudentStatus', {
+              token: APP_STATE.token,
+              studentId: studentId,
+              isActive: String(nextStatus === 'active')
+            }))
           .then(function(result) {
             hydrateStudentDataOnly(result);
             renderAll();
@@ -26711,12 +27007,23 @@
           return;
         }
 
-        setLoading('자료실 옵션을 추가하는 중입니다.');
-        apiRequest('saveMaterialSettingOption', {
-          token: APP_STATE.token,
-          settingType: settingType,
-          value: value
-        })
+        setLoading('자료실 옵션을 Firebase에 추가하는 중입니다.');
+        (isFirebaseSessionToken_(APP_STATE.token)
+          ? saveMaterialSettingOptionViaFirebaseDirect_(settingType, value).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase material setting save fallback:', error);
+              }
+              return apiRequest('saveMaterialSettingOption', {
+                token: APP_STATE.token,
+                settingType: settingType,
+                value: value
+              });
+            })
+          : apiRequest('saveMaterialSettingOption', {
+              token: APP_STATE.token,
+              settingType: settingType,
+              value: value
+            }))
           .then(function(result) {
             APP_STATE.materialSettings = result.settings || APP_STATE.materialSettings;
             input.value = '';
@@ -34696,13 +35003,26 @@
           mockExams: mockExams
         });
         APP_STATE.gradeScaleSettings = normalizeGradeScaleSettings_(gradeScaleSettings);
-        apiRequest('saveGradeExamOptions', {
-          token: APP_STATE.token,
-          testExamsJson: JSON.stringify(testExams),
-          internalExamsJson: JSON.stringify(internalExams),
-          mockExamsJson: JSON.stringify(mockExams),
-          gradeScaleSettingsJson: JSON.stringify(APP_STATE.gradeScaleSettings)
-        }).then(function(data) {
+        (isFirebaseSessionToken_(APP_STATE.token)
+          ? saveGradeSettingsViaFirebaseDirect_(APP_STATE.gradeExamOptions, APP_STATE.gradeScaleSettings).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase grade settings save fallback:', error);
+              }
+              return apiRequest('saveGradeExamOptions', {
+                token: APP_STATE.token,
+                testExamsJson: JSON.stringify(testExams),
+                internalExamsJson: JSON.stringify(internalExams),
+                mockExamsJson: JSON.stringify(mockExams),
+                gradeScaleSettingsJson: JSON.stringify(APP_STATE.gradeScaleSettings)
+              });
+            })
+          : apiRequest('saveGradeExamOptions', {
+              token: APP_STATE.token,
+              testExamsJson: JSON.stringify(testExams),
+              internalExamsJson: JSON.stringify(internalExams),
+              mockExamsJson: JSON.stringify(mockExams),
+              gradeScaleSettingsJson: JSON.stringify(APP_STATE.gradeScaleSettings)
+            })).then(function(data) {
           APP_STATE.gradeExamOptions = normalizeGradeExamOptions_(data.examOptions || APP_STATE.gradeExamOptions);
           APP_STATE.gradeScaleSettings = normalizeGradeScaleSettings_(data.gradeScaleSettings || APP_STATE.gradeScaleSettings);
           var currentOptions = getGradeExamOptions_();
