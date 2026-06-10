@@ -35486,6 +35486,51 @@
         });
       }
 
+      function getGradeEntrySubjects_() {
+        return compactGradeSubjectsForEntry_(getGradeVisibleSubjects_());
+      }
+
+      function compactGradeSubjectsForEntry_(subjects) {
+        var compactCategories = { '과학': true, '사회': true };
+        var byCategory = {};
+        var output = [];
+        var seen = {};
+        (subjects || []).forEach(function(subject) {
+          var category = subject.subjectCategory || '기타';
+          if (compactCategories[category]) {
+            if (!byCategory[category]) {
+              byCategory[category] = { category: category, subjects: [] };
+            }
+            byCategory[category].subjects.push(subject);
+            return;
+          }
+          if (!seen[subject.subjectId]) {
+            seen[subject.subjectId] = true;
+            output.push(subject);
+          }
+        });
+        Object.keys(byCategory).forEach(function(category) {
+          var subjectsInCategory = byCategory[category].subjects;
+          var broad = subjectsInCategory.find(isGradeBroadSubjectV3_) || null;
+          var entrySubject = broad || {
+            subjectId: buildGradeSubjectIdClient_(category, category),
+            subjectCategory: category,
+            subjectName: category
+          };
+          if (!seen[entrySubject.subjectId]) {
+            seen[entrySubject.subjectId] = true;
+            output.push(entrySubject);
+          }
+        });
+        return output.sort(sortGradeEntrySubjects_);
+      }
+
+      function sortGradeEntrySubjects_(a, b) {
+        return getGradeSubjectOrderIndex_(a) - getGradeSubjectOrderIndex_(b) ||
+          String(a.subjectCategory || '').localeCompare(String(b.subjectCategory || ''), 'ko') ||
+          String(a.subjectName || '').localeCompare(String(b.subjectName || ''), 'ko');
+      }
+
       function getGradeSubjectDefinitionsV2_() {
         initGradeV2State_();
         var definitions = normalizeGradeSubjectDefinitions_(APP_STATE.gradeSubjects || []);
@@ -35595,8 +35640,12 @@
           }
           map[category].push(subject);
         });
-        return Object.keys(map).sort().map(function(category) {
-          return { category: category, subjects: map[category] };
+        return Object.keys(map).sort(function(a, b) {
+          return getGradeSubjectOrderIndex_({ subjectCategory: a, subjectName: a }) -
+            getGradeSubjectOrderIndex_({ subjectCategory: b, subjectName: b }) ||
+            String(a).localeCompare(String(b), 'ko');
+        }).map(function(category) {
+          return { category: category, subjects: map[category].slice().sort(sortGradeEntrySubjects_) };
         });
       }
 
@@ -36666,7 +36715,7 @@
 
       function renderGradeMobileInputTab_() {
         var students = getGradeFilteredStudents_();
-        var subjects = getGradeVisibleSubjects_();
+        var subjects = getGradeEntrySubjects_();
         return [
           renderGradeFilters_(),
           renderGradeV3Metrics_(students, subjects),
@@ -37357,7 +37406,7 @@
       }
 
       function renderGradeMobileSubjectRow_(student, subject, records) {
-        var recordList = Array.isArray(records) ? records.slice().sort(sortGradesByUpdatedDesc_) : [];
+        var recordList = sortGradeEntryRecordList_(records, subject);
         var record = recordList[0] || null;
         var key = getGradeDraftKey_(student.studentId, subject.subjectId);
         var draft = APP_STATE.gradeDrafts[key] || {};
@@ -37427,7 +37476,7 @@
 
       function renderGradeInputTab_() {
         var students = getGradeFilteredStudents_();
-        var subjects = getGradeVisibleSubjects_();
+        var subjects = getGradeEntrySubjects_();
         return [
           renderGradeFilters_(),
           renderGradeV3Metrics_(students, subjects),
@@ -37523,8 +37572,7 @@
 
       function renderGradeSubjectCellV3_(student, subject, records) {
         var key = getGradeDraftKey_(student.studentId, subject.subjectId);
-        var recordList = Array.isArray(records) ? records : (records ? [records] : []);
-        recordList.sort(sortGradesByUpdatedDesc_);
+        var recordList = sortGradeEntryRecordList_(records, subject);
         var record = recordList[0] || null;
         var draft = APP_STATE.gradeDrafts[key] || {};
         var finalScore = getDraftOrRecordValue_(draft, record, 'finalScore');
@@ -37563,6 +37611,18 @@
           expected ? '  <span class="grades-v3-score-sub">' + escapeHtml(expected) + '</span>' : (finalScore && provisionalScore ? '  <span class="grades-v3-score-sub">가 ' + escapeHtml(provisionalScore) + '</span>' : ''),
           '</button>'
         ].join('');
+      }
+
+      function sortGradeEntryRecordList_(records, subject) {
+        var recordList = Array.isArray(records) ? records.slice() : (records ? [records] : []);
+        if (isGradeBroadSubjectV3_(subject)) {
+          return recordList.sort(function(a, b) {
+            return getGradeSubjectOrderIndex_(a) - getGradeSubjectOrderIndex_(b) ||
+              String(a.subjectName || a.detailSubject || '').localeCompare(String(b.subjectName || b.detailSubject || ''), 'ko') ||
+              sortGradesByUpdatedDesc_(a, b);
+          });
+        }
+        return recordList.sort(sortGradesByUpdatedDesc_);
       }
 
       function getGradeRecordScoreText_(record) {
