@@ -13386,23 +13386,36 @@
         gap: 8px;
         padding: 8px;
         border-color: var(--grade-subject-border, var(--grade-accent-border));
-        background:
-          linear-gradient(90deg, var(--grade-subject-soft, #ffffff) 0, #ffffff 64%);
-        box-shadow: inset 4px 0 0 var(--grade-subject-color, var(--grade-accent));
+        background: var(--grade-subject-color, var(--grade-accent));
       }
 
       .grade-overview-score.active {
         border-color: var(--grade-subject-color, #2563eb);
-        background: var(--grade-subject-soft, #eff6ff);
+        background: var(--grade-subject-color, #2563eb);
         box-shadow:
-          inset 4px 0 0 var(--grade-subject-color, #2563eb),
           0 0 0 2px var(--grade-subject-ring, rgba(37, 99, 235, 0.14));
       }
 
+      .grade-subject-icon {
+        display: inline-grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.24);
+        color: #ffffff;
+        font-size: 0.68rem;
+        font-weight: 950;
+      }
+
       .grade-overview-score strong {
-        color: var(--grade-subject-strong, #0f172a);
+        color: #ffffff;
         font-size: 0.73rem;
         font-weight: 950;
+      }
+
+      .grade-overview-score span {
+        color: rgba(255, 255, 255, 0.86);
       }
 
       .grade-trend-delta {
@@ -36849,7 +36862,7 @@
         return Object.keys(map).map(function(label) {
           return map[label];
         }).sort(function(a, b) {
-          return sortGradesByUpdatedDesc_(a.latest, b.latest) ||
+          return getGradeExamChronoValue_(a.latest) - getGradeExamChronoValue_(b.latest) ||
             String(a.label || '').localeCompare(String(b.label || ''), 'ko');
         });
       }
@@ -36873,7 +36886,9 @@
       }
 
       function sortGradeOverviewSubjects_(a, b) {
-        return String((a.subjectCategory || '') + (a.subjectName || '')).localeCompare(String((b.subjectCategory || '') + (b.subjectName || '')), 'ko') || sortGradesByUpdatedDesc_(a, b);
+        return getGradeSubjectOrderIndex_(a) - getGradeSubjectOrderIndex_(b) ||
+          String((a.subjectCategory || '') + (a.subjectName || '')).localeCompare(String((b.subjectCategory || '') + (b.subjectName || '')), 'ko') ||
+          sortGradesByUpdatedDesc_(a, b);
       }
 
       function renderGradeOverviewScoreChip_(record, contextRows) {
@@ -36884,7 +36899,7 @@
         var highlight = APP_STATE.gradeOverviewHighlight || {};
         var active = highlight.studentId === record.studentId && highlight.subjectKey === subjectKey;
         var color = getGradeSubjectColor_(subjectKey, record.subjectCategory || record.subjectName || '');
-        return '<button type="button" class="grade-overview-score ' + (active ? 'active' : '') + '" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '" data-grade-action="highlight-grade-overview-subject" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-key="' + escapeAttribute(subjectKey) + '"><strong>' + escapeHtml(record.subjectName || '-') + ' ' + escapeHtml(score) + '</strong><span>' + escapeHtml(record.subjectCategory || '-') + (expected ? ' · ' + escapeHtml(expected) : '') + '</span>' + renderGradeTrendDeltaBadge_(delta) + '</button>';
+        return '<button type="button" class="grade-overview-score ' + (active ? 'active' : '') + '" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '" data-grade-action="highlight-grade-overview-subject" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-key="' + escapeAttribute(subjectKey) + '"><i class="grade-subject-icon">' + escapeHtml(getGradeSubjectIconText_(subjectKey, record.subjectCategory || record.subjectName || '')) + '</i><strong>' + escapeHtml(record.subjectName || '-') + ' ' + escapeHtml(score) + '</strong><span>' + escapeHtml(record.subjectCategory || '-') + (expected ? ' · ' + escapeHtml(expected) : '') + '</span>' + renderGradeTrendDeltaBadge_(delta) + '</button>';
       }
 
       function renderGradeStudentTrendChart_(student, records) {
@@ -36954,6 +36969,9 @@
             var pointActive = subjectActive || examPointActive || !highlightActive;
             svg.push('<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (pointActive ? 5 : 3) + '" fill="' + color + '" stroke="#ffffff" stroke-width="' + (pointActive ? 3 : 2) + '" opacity="' + (pointActive ? 1 : 0.18) + '"></circle>');
             svg.push('<text x="' + x.toFixed(1) + '" y="' + (y - 8).toFixed(1) + '" text-anchor="middle" fill="' + color + '" font-size="' + (pointActive ? 11 : 9) + '" font-weight="900" opacity="' + (pointActive ? 1 : 0.18) + '">' + escapeHtml(String(point.score)) + '</text>');
+            if (point.detailLabel) {
+              svg.push('<text x="' + x.toFixed(1) + '" y="' + (y + 17).toFixed(1) + '" text-anchor="middle" fill="' + color + '" font-size="9" font-weight="850" opacity="' + (pointActive ? 0.82 : 0.18) + '">' + escapeHtml(point.detailLabel) + '</text>');
+            }
           });
         });
         svg.push('</svg>');
@@ -37009,7 +37027,11 @@
           var subjectKey = buildGradeTrendSubjectKey_(record);
           var examKey = buildGradeTrendExamKey_(record);
           if (!subjectMap[subjectKey]) {
-            subjectMap[subjectKey] = { key: subjectKey, label: record.subjectName || record.subjectCategory || '과목', byExam: {} };
+            subjectMap[subjectKey] = {
+              key: subjectKey,
+              label: getGradeSubjectFamily_(record.subjectCategory || record.subjectArea || '', record.subjectName || record.detailSubject || '') || record.subjectName || record.subjectCategory || '과목',
+              byExam: {}
+            };
           }
           var existing = subjectMap[subjectKey].byExam[examKey];
           if (!existing || sortGradesByUpdatedDesc_(record, existing) < 0) {
@@ -37025,14 +37047,16 @@
             if (!isNaN(score)) {
               allScores.push(score);
             }
-            return { examIndex: index, examKey: exam.key, score: isNaN(score) ? null : score };
+            return { examIndex: index, examKey: exam.key, score: isNaN(score) ? null : score, detailLabel: record ? getGradeSubjectDetailLabel_(record, item.label) : '' };
           });
           var count = points.filter(function(point) { return point.score !== null; }).length;
           return { key: item.key, label: item.label, points: points, count: count };
         }).filter(function(item) {
           return item.count >= 2;
         }).sort(function(a, b) {
-          return b.count - a.count || String(a.label).localeCompare(String(b.label), 'ko');
+          return getGradeSubjectOrderIndex_(a.key, a.label) - getGradeSubjectOrderIndex_(b.key, b.label) ||
+            b.count - a.count ||
+            String(a.label).localeCompare(String(b.label), 'ko');
         }).slice(0, 5);
         if (!series.length) {
           series = Object.keys(subjectMap).map(function(key) {
@@ -37040,11 +37064,14 @@
             var points = exams.map(function(exam, index) {
               var record = item.byExam[exam.key] || null;
               var score = record ? getGradeRecordScoreNumber_(record) : NaN;
-              return { examIndex: index, examKey: exam.key, score: isNaN(score) ? null : score };
+              return { examIndex: index, examKey: exam.key, score: isNaN(score) ? null : score, detailLabel: record ? getGradeSubjectDetailLabel_(record, item.label) : '' };
             });
             var count = points.filter(function(point) { return point.score !== null; }).length;
             return { key: item.key, label: item.label, points: points, count: count };
-          }).filter(function(item) { return item.count; }).slice(0, 5);
+          }).filter(function(item) { return item.count; }).sort(function(a, b) {
+            return getGradeSubjectOrderIndex_(a.key, a.label) - getGradeSubjectOrderIndex_(b.key, b.label) ||
+              String(a.label).localeCompare(String(b.label), 'ko');
+          }).slice(0, 5);
         }
         var yMin = allScores.length ? Math.max(0, Math.floor((Math.min.apply(null, allScores) - 8) / 10) * 10) : 0;
         var yMax = allScores.length ? Math.min(100, Math.ceil((Math.max.apply(null, allScores) + 8) / 10) * 10) : 100;
@@ -37070,12 +37097,24 @@
 
       function getGradeSubjectColor_(subjectKey, label, fallbackIndex) {
         var text = normalizeSearchText([subjectKey, label].filter(Boolean).join(' '));
+        var family = getGradeSubjectFamily_('', text);
+        var familyColors = {
+          '국어': '#2563eb',
+          '영어': '#7c3aed',
+          '수학': '#be123c',
+          '과학': '#0f766e',
+          '사회': '#ea580c',
+          '한국사': '#b45309'
+        };
+        if (familyColors[family]) {
+          return familyColors[family];
+        }
         var categoryColors = [
           { pattern: /화학/, color: '#0f766e' },
           { pattern: /물리/, color: '#0891b2' },
-          { pattern: /생명|생윤/, color: '#16a34a' },
+          { pattern: /생명/, color: '#16a34a' },
           { pattern: /지구|세지/, color: '#0e7490' },
-          { pattern: /사문|사회문화/, color: '#ea580c' },
+          { pattern: /사문|사회문화|생윤|생활과윤리/, color: '#ea580c' },
           { pattern: /정법|정치와법/, color: '#c2410c' },
           { pattern: /화작|화법과작문/, color: '#2563eb' },
           { pattern: /언매|언어와매체/, color: '#4f46e5' },
@@ -37142,7 +37181,59 @@
       }
 
       function buildGradeTrendSubjectKey_(record) {
-        return [record.subjectCategory || '', record.subjectName || record.detailSubject || ''].join('|');
+        var family = getGradeSubjectFamily_(record && (record.subjectCategory || record.subjectArea || ''), record && (record.subjectName || record.detailSubject || ''));
+        return [family || record.subjectCategory || '', family || record.subjectName || record.detailSubject || ''].join('|');
+      }
+
+      function getGradeSubjectFamily_(category, subjectName) {
+        var text = normalizeSearchText([category, subjectName].filter(Boolean).join(' '));
+        if (/국어|화작|화법과작문|언매|언어와매체|문학|독서/.test(text)) {
+          return '국어';
+        }
+        if (/영어/.test(text)) {
+          return '영어';
+        }
+        if (/수학|미적|미적분|확통|확률과통계|기하/.test(text)) {
+          return '수학';
+        }
+        if (/과학|화학|물리|생명|지구|통합과학/.test(text)) {
+          return '과학';
+        }
+        if (/사회|사문|사회문화|생윤|생활과윤리|세지|세계지리|정법|정치와법|통합사회|윤리/.test(text)) {
+          return '사회';
+        }
+        if (/한국사/.test(text)) {
+          return '한국사';
+        }
+        return category || subjectName || '';
+      }
+
+      function getGradeSubjectOrderIndex_(recordOrKey, label) {
+        var family = typeof recordOrKey === 'string'
+          ? getGradeSubjectFamily_('', [recordOrKey, label].filter(Boolean).join(' '))
+          : getGradeSubjectFamily_(recordOrKey && (recordOrKey.subjectCategory || recordOrKey.subjectArea || ''), recordOrKey && (recordOrKey.subjectName || recordOrKey.detailSubject || ''));
+        var order = ['국어', '영어', '수학', '과학', '사회', '한국사', '기타'];
+        var index = order.indexOf(family);
+        return index === -1 ? order.length : index;
+      }
+
+      function getGradeSubjectIconText_(subjectKey, label) {
+        var family = getGradeSubjectFamily_('', [subjectKey, label].filter(Boolean).join(' '));
+        var icons = {
+          '국어': '국',
+          '영어': '영',
+          '수학': '수',
+          '과학': '과',
+          '사회': '사',
+          '한국사': '한'
+        };
+        return icons[family] || '기';
+      }
+
+      function getGradeSubjectDetailLabel_(record, familyLabel) {
+        var subjectName = String(record && (record.subjectName || record.detailSubject || '') || '').trim();
+        var family = String(familyLabel || getGradeSubjectFamily_(record && record.subjectCategory, subjectName) || '').trim();
+        return subjectName && family && normalizeSearchText(subjectName) !== normalizeSearchText(family) ? subjectName : '';
       }
 
       function getGradeExamChronoValue_(record) {
