@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>에스에듀 계정 관리</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0b2f5f;
+      --blue: #2563eb;
+      --cyan: #0891b2;
+      --green: #059669;
+      --amber: #d97706;
+      --red: #dc2626;
+      --ink: #102033;
+      --muted: #64748b;
+      --line: #dbe5f3;
+      --panel: #ffffff;
+      --soft: #f4f7fb;
+      --shadow: 0 16px 42px rgba(15, 35, 66, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Noto Sans KR", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(rgba(225, 233, 244, 0.62) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(225, 233, 244, 0.62) 1px, transparent 1px),
+        linear-gradient(145deg, #f7faff 0%, #eef5f7 52%, #fbf7f2 100%);
+      background-size: 28px 28px, 28px 28px, auto;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app-shell {
+      min-width: 1180px;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 252px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 18px;
+      background: linear-gradient(180deg, #082b57 0%, #0d3c74 100%);
+      color: #eaf3ff;
+      box-shadow: 10px 0 30px rgba(8, 43, 87, 0.2);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: #ffffff;
+      color: var(--navy);
+      font-family: "Sora", sans-serif;
+      font-weight: 800;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 8px 18px rgba(0,0,0,0.14);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .brand span {
+      display: block;
+      margin-top: 3px;
+      color: #b8c9de;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .nav-group {
+      margin-top: 18px;
+    }
+
+    .nav-label {
+      margin: 0 0 8px;
+      color: #9fb4cc;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .nav-button {
+      width: 100%;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 7px;
+      padding: 9px 10px;
+      border: 1px solid rgba(213, 228, 246, 0.16);
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #eaf3ff;
+      text-align: left;
+      font-size: 0.82rem;
+      font-weight: 850;
+    }
+
+    .nav-button.active {
+      border-color: rgba(255,255,255,0.54);
+      background: #ffffff;
+      color: var(--navy);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.16);
+    }
+
+    .nav-button small {
+      color: inherit;
+      opacity: 0.74;
+      font-size: 0.68rem;
+      font-weight: 900;
+    }
+
+    .sidebar-note {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.08);
+      color: #d6e6f9;
+      font-size: 0.72rem;
+      line-height: 1.5;
+      font-weight: 700;
+    }
+
+    .main {
+      padding: 18px 22px 28px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .title-block h2 {
+      margin: 0;
+      font-family: "Sora", "Noto Sans KR", sans-serif;
+      font-size: 1.36rem;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .title-block p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 750;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .button {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: #27405f;
+      font-size: 0.78rem;
+      font-weight: 900;
+      box-shadow: 0 2px 7px rgba(22, 42, 74, 0.05);
+    }
+
+    .button.primary {
+      border-color: #1d4ed8;
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .button.danger {
+      border-color: #fecaca;
+      background: #fff7f7;
+      color: #b91c1c;
+    }
+
+    .button:disabled {
+      cursor: not-allowed;
+      opacity: 0.52;
+    }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 8px 22px rgba(19, 40, 72, 0.07);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfdff;
+    }
+
+    .panel-head h3 {
+      margin: 0;
+      font-size: 0.92rem;
+      font-weight: 950;
+    }
+
+    .panel-head span,
+    .panel-head p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .panel-body {
+      padding: 14px;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      min-height: 88px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 0.7rem;
+      font-weight: 850;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--navy);
+      font-family: "Sora", sans-serif;
+      font-size: 1.34rem;
+      font-weight: 800;
+    }
+
+    .metric small {
+      display: block;
+      margin-top: 4px;
+      color: #7a8ca3;
+      font-size: 0.68rem;
+      font-weight: 750;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) 160px 160px 160px;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .field,
+    .select,
+    .textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--ink);
+      font-size: 0.8rem;
+      font-weight: 750;
+      outline: none;
+    }
+
+    .field,
+    .select {
+      height: 38px;
+      padding: 0 10px;
+    }
+
+    .textarea {
+      min-height: 84px;
+      padding: 10px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .form-grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .form-field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .form-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .form-field label {
+      color: #36506f;
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+
+    .help {
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 750;
+      line-height: 1.45;
+    }
+
+    .table-wrap {
+      max-height: 520px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      background: #ffffff;
+      font-size: 0.78rem;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      background: #f8fbff;
+      color: #4b6381;
+      text-align: left;
+      font-size: 0.68rem;
+      font-weight: 950;
+    }
+
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #edf2f7;
+      color: #263a53;
+      font-weight: 760;
+      vertical-align: middle;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    tr.selected td {
+      background: #eff6ff;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 56px;
+      min-height: 24px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 0.66rem;
+      font-weight: 950;
+    }
+
+    .status.active { background: #dcfce7; color: #047857; }
+    .status.paused { background: #fff7ed; color: #c2410c; }
+    .status.stopped { background: #fee2e2; color: #b91c1c; }
+    .status.pending { background: #eff6ff; color: #1d4ed8; }
+    .status.draft { background: #f1f5f9; color: #475569; }
+
+    .sync-lanes {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .lane {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .lane strong {
+      display: block;
+      font-size: 0.76rem;
+      font-weight: 950;
+    }
+
+    .lane span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .audit-list {
+      display: grid;
+      gap: 8px;
+      max-height: 360px;
+      overflow: auto;
+    }
+
+    .audit-item {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .audit-item strong {
+      display: block;
+      color: #17365d;
+      font-size: 0.76rem;
+      font-weight: 950;
+    }
+
+    .audit-item span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 760;
+      line-height: 1.45;
+    }
+
+    .split-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      max-width: 420px;
+      padding: 12px 14px;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      box-shadow: var(--shadow);
+      font-size: 0.8rem;
+      font-weight: 850;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .drawer {
+      display: grid;
+      gap: 12px;
+    }
+
+    .selected-card {
+      padding: 12px;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      background: #eff6ff;
+    }
+
+    .selected-card strong {
+      display: block;
+      color: #12386b;
+      font-size: 0.9rem;
+      font-weight: 950;
+    }
+
+    .selected-card span {
+      display: block;
+      margin-top: 5px;
+      color: #45617f;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .danger-note {
+      padding: 10px;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      background: #fff7ed;
+      color: #9a3412;
+      font-size: 0.72rem;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">S</div>
+        <div>
+          <h1>계정 관리</h1>
+          <span>Firebase + Sheets 운영 콘솔</span>
+        </div>
+      </div>
+
+      <nav class="nav-group" aria-label="계정 관리 메뉴">
+        <p class="nav-label">WORKSPACE</p>
+        <button class="nav-button active" data-view="dashboard">운영 대시보드 <small>동기화</small></button>
+        <button class="nav-button" data-view="students">학생 상태 관리 <small>등록/중지</small></button>
+        <button class="nav-button" data-view="teachers">강사 계정 관리 <small>계정/권한</small></button>
+        <button class="nav-button" data-view="queue">반영 대기열 <small>감사</small></button>
+        <button class="nav-button" data-view="settings">연동 설정 <small>API</small></button>
+      </nav>
+
+      <div class="sidebar-note">
+        모든 생성/변경 요청은 Firebase 서버 API로 보내 Firebase를 먼저 갱신하고, 스프레드시트는 legacy 미러링 작업으로 반영합니다. 브라우저에는 서비스 계정 키를 두지 않습니다.
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="title-block">
+          <h2 id="viewTitle">운영 대시보드</h2>
+          <p id="viewSubtitle">학생 상태와 강사 계정 변경을 한 화면에서 접수하고 동시 반영 상태를 확인합니다.</p>
+        </div>
+        <div class="top-actions">
+          <button class="button" id="loadSampleButton">샘플 데이터</button>
+          <button class="button" id="exportQueueButton">대기열 내보내기</button>
+          <button class="button primary" id="submitQueueButton">선택 요청 반영</button>
+        </div>
+      </header>
+
+      <section id="dashboardView">
+        <div class="metric-grid">
+          <article class="metric"><span>활성 학생</span><strong id="metricActiveStudents">0</strong><small>Firestore students + sheet student</small></article>
+          <article class="metric"><span>중지/휴원</span><strong id="metricPausedStudents">0</strong><small>상태 변경 검토 대상</small></article>
+          <article class="metric"><span>강사 계정</span><strong id="metricTeachers">0</strong><small>users / userProfiles</small></article>
+          <article class="metric"><span>반영 대기</span><strong id="metricQueue">0</strong><small>동시 저장 요청</small></article>
+          <article class="metric"><span>검증 필요</span><strong id="metricReview">0</strong><small>중복/누락 확인</small></article>
+        </div>
+
+        <div class="layout-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <div><h3>오늘 처리할 작업</h3><p>학생 추가, 상태 변경, 강사 계정 변경을 단일 대기열로 관리합니다.</p></div>
+              <button class="button" data-view-shortcut="queue">대기열 보기</button>
+            </div>
+            <div class="panel-body">
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th style="width:110px;">유형</th><th>대상</th><th style="width:150px;">요청자</th><th style="width:130px;">상태</th><th style="width:120px;">작업</th></tr></thead>
+                  <tbody id="dashboardQueueRows"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <aside class="drawer">
+            <section class="panel">
+              <div class="panel-head"><div><h3>동시 반영 경로</h3><p>서버 API가 Firebase 원본 저장 후 스프레드시트 미러링 상태를 추적합니다.</p></div></div>
+              <div class="panel-body">
+                <div class="sync-lanes">
+                  <div class="lane"><strong>Firebase</strong><span>students, users, userProfiles, userAppAccess, loginAliases, studentPermissions</span></div>
+                  <div class="lane"><strong>Sheets</strong><span>student, Teachers, HomeroomStudents 등 legacy 서비스용 시트</span></div>
+                </div>
+                <div class="danger-note" style="margin-top:10px;">하나라도 실패하면 요청은 partial 상태로 남기고 재시도/롤백 대상을 감사 로그에 남겨야 합니다.</div>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><h3>최근 감사 로그</h3><p>로컬 화면용 예시 로그입니다.</p></div></div>
+              <div class="panel-body"><div class="audit-list" id="auditList"></div></div>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section id="studentsView" class="hidden">
+        <div class="layout-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <div><h3>학생 목록</h3><p>등록, 중지, 복귀 상태를 관리합니다.</p></div>
+              <button class="button primary" id="newStudentButton">학생 등록 요청</button>
+            </div>
+            <div class="panel-body">
+              <div class="toolbar">
+                <input class="field" id="studentSearch" placeholder="학생명, 학교, 학년 검색">
+                <select class="select" id="studentStatusFilter"><option value="">전체 상태</option><option value="ACTIVE">등록</option><option value="PAUSED">중지</option><option value="RETURNING">복귀 예정</option></select>
+                <select class="select" id="studentSchoolFilter"><option value="">전체 학교</option></select>
+                <button class="button" id="clearStudentFilters">필터 초기화</button>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th style="width:120px;">학생명</th><th style="width:120px;">학교</th><th style="width:80px;">학년</th><th style="width:90px;">상태</th><th>메모</th><th style="width:120px;">변경</th></tr></thead>
+                  <tbody id="studentRows"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+          <aside class="panel">
+            <div class="panel-head"><div><h3>학생 변경 요청</h3><p>Firebase와 스프레드시트에 함께 반영될 payload를 만듭니다.</p></div></div>
+            <div class="panel-body">
+              <form id="studentForm" class="form-grid" onsubmit="return false;">
+                <div class="form-field"><label>학생명</label><input class="field" id="studentNameInput" autocomplete="off"></div>
+                <div class="form-field"><label>학교</label><input class="field" id="studentSchoolInput" autocomplete="off"></div>
+                <div class="form-field"><label>학년</label><input class="field" id="studentGradeInput" autocomplete="off"></div>
+                <div class="form-field"><label>상태</label><select class="select" id="studentStatusInput"><option value="ACTIVE">등록</option><option value="PAUSED">중지</option><option value="RETURNING">복귀 예정</option><option value="STOPPED">퇴원</option></select></div>
+                <div class="form-field full"><label>메모</label><textarea class="textarea" id="studentMemoInput" placeholder="상태 변경 사유, 복귀 예정일, 중복 확인 메모"></textarea></div>
+                <div class="form-field full">
+                  <button class="button primary" id="queueStudentButton">학생 변경 대기열 추가</button>
+                  <p class="help">학생 생성은 Firestore `students`와 Sheets `student`에 함께 반영되어야 합니다. 상태 변경은 양쪽 status 필드를 같은 migrationRunId로 기록합니다.</p>
+                </div>
+              </form>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="teachersView" class="hidden">
+        <div class="layout-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <div><h3>강사 계정</h3><p>아이디, 직급, 앱 권한, 비밀번호 초기화를 관리합니다.</p></div>
+              <button class="button primary" id="newTeacherButton">강사 계정 요청</button>
+            </div>
+            <div class="panel-body">
+              <div class="toolbar">
+                <input class="field" id="teacherSearch" placeholder="강사명, 로그인 ID, 과목 검색">
+                <select class="select" id="teacherRoleFilter"><option value="">전체 직급</option><option value="ADMIN">관리자</option><option value="STAFF">실무자</option><option value="INSTRUCTOR">강사</option><option value="DISABLED">비활성</option></select>
+                <select class="select" id="teacherAppFilter"><option value="">전체 앱 권한</option><option value="teacherPortal">강사 포털</option><option value="sLms">S-LMS</option><option value="deskPortal">데스크</option><option value="liveTimetable">라이브</option></select>
+                <button class="button" id="clearTeacherFilters">필터 초기화</button>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th style="width:120px;">강사명</th><th style="width:130px;">로그인 ID</th><th style="width:95px;">직급</th><th style="width:90px;">상태</th><th>앱 권한</th><th style="width:120px;">작업</th></tr></thead>
+                  <tbody id="teacherRows"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+          <aside class="panel">
+            <div class="panel-head"><div><h3>강사 계정 요청</h3><p>Auth, Firestore 계정 문서, Teachers 시트를 함께 갱신합니다.</p></div></div>
+            <div class="panel-body">
+              <form id="teacherForm" class="form-grid" onsubmit="return false;">
+                <div class="form-field"><label>이름</label><input class="field" id="teacherNameInput" autocomplete="off"></div>
+                <div class="form-field"><label>로그인 ID</label><input class="field" id="teacherLoginInput" inputmode="numeric" autocomplete="off"></div>
+                <div class="form-field"><label>과목/부서</label><input class="field" id="teacherSubjectInput" autocomplete="off"></div>
+                <div class="form-field"><label>직급</label><select class="select" id="teacherRoleInput"><option value="INSTRUCTOR">강사</option><option value="STAFF">실무자</option><option value="ADMIN">관리자</option><option value="DISABLED">비활성</option></select></div>
+                <div class="form-field"><label>상태</label><select class="select" id="teacherStatusInput"><option value="ACTIVE">활성</option><option value="DISABLED">비활성</option></select></div>
+                <div class="form-field"><label>초기/새 비밀번호</label><input class="field" id="teacherPasswordInput" autocomplete="off" placeholder="6자 이상"></div>
+                <div class="form-field full"><label>앱 권한</label><div class="sync-lanes"><label><input type="checkbox" id="appSLms" checked> S-LMS</label><label><input type="checkbox" id="appTeacher" checked> 강사 포털</label><label><input type="checkbox" id="appDesk"> 데스크</label><label><input type="checkbox" id="appLive" checked> 라이브 시간표</label></div></div>
+                <div class="form-field full"><label>메모</label><textarea class="textarea" id="teacherMemoInput" placeholder="계정 생성 사유, 권한 변경 사유, 비밀번호 전달 메모"></textarea></div>
+                <div class="form-field full">
+                  <button class="button primary" id="queueTeacherButton">강사 변경 대기열 추가</button>
+                  <p class="help">계정 생성은 Firebase Auth, `users`, `userProfiles`, `userAppAccess`, `loginAliases`, Sheets `Teachers`가 같은 요청 ID로 처리되어야 합니다.</p>
+                </div>
+              </form>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="queueView" class="hidden">
+        <section class="panel">
+          <div class="panel-head">
+            <div><h3>반영 대기열</h3><p>Firebase 서버 API로 보내기 전 검증할 요청 목록입니다.</p></div>
+            <div class="top-actions"><button class="button danger" id="clearQueueButton">대기열 비우기</button><button class="button primary" id="submitQueueButton2">선택 요청 반영</button></div>
+          </div>
+          <div class="panel-body">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th style="width:42px;"></th><th style="width:120px;">유형</th><th>요청 내용</th><th style="width:180px;">대상 저장소</th><th style="width:140px;">검증 상태</th><th style="width:110px;">제거</th></tr></thead>
+                <tbody id="queueRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="settingsView" class="hidden">
+        <div class="layout-grid">
+          <section class="panel">
+            <div class="panel-head"><div><h3>연동 설정</h3><p>운영 배포 전 Firebase Cloud Functions 또는 Cloud Run 엔드포인트를 연결합니다.</p></div></div>
+            <div class="panel-body">
+              <div class="form-grid">
+                <div class="form-field full"><label>계정 관리 API 엔드포인트</label><input class="field" id="endpointInput" placeholder="https://...cloudfunctions.net/accountManagementBatch"></div>
+                <div class="form-field"><label>운영자 이름</label><input class="field" id="operatorInput" placeholder="에스에듀"></div>
+                <div class="form-field"><label>요청 모드</label><select class="select" id="modeInput"><option value="dry-run">dry-run</option><option value="apply">apply</option></select></div>
+                <div class="form-field full"><button class="button primary" id="saveSettingsButton">설정 저장</button></div>
+              </div>
+              <div class="danger-note" style="margin-top:12px;">API가 설정되지 않은 상태에서는 실제 저장소에 반영하지 않고 요청 payload만 로컬 대기열에 쌓습니다. 운영 저장은 Firebase 서버 API에서만 처리합니다.</div>
+            </div>
+          </section>
+          <aside class="panel">
+            <div class="panel-head"><div><h3>서버 API 계약</h3><p>구현해야 하는 단일 엔드포인트입니다.</p></div></div>
+            <div class="panel-body">
+              <div class="audit-item"><strong>action: accountManagementBatch</strong><span>요청 배열을 받아 Firebase 원본을 저장하고, Sheets 미러링 작업 상태와 rollbackHint를 반환합니다.</span></div>
+              <div class="audit-item" style="margin-top:8px;"><strong>필수 응답 필드</strong><span>ok, requestId, committedTargets, failedTargets, auditLogId, rollbackPlan, dataVersion</span></div>
+              <div class="audit-item" style="margin-top:8px;"><strong>보안</strong><span>관리자 세션 검증, CSRF성 토큰, 운영자 uid 기록, 서버측 중복 검사를 수행해야 합니다.</span></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = "seduAccountManagementStateV1";
+    const SETTINGS_KEY = "seduAccountManagementSettingsV1";
+
+    const state = {
+      view: "dashboard",
+      selectedQueueIds: {},
+      students: [],
+      teachers: [],
+      queue: [],
+      audits: []
+    };
+
+    const sampleStudents = [
+      { studentId: "ROW-157", name: "김나린", school: "세화여고", grade: "3", status: "ACTIVE", memo: "수능반" },
+      { studentId: "ROW-198", name: "김나현", school: "서문여고", grade: "3", status: "ACTIVE", memo: "국영수 권한 연결" },
+      { studentId: "ROW-222", name: "박태민", school: "경원중", grade: "1", status: "RETURNING", memo: "복귀 예정 확인" },
+      { studentId: "ROW-41", name: "손견아", school: "세화여고", grade: "1", status: "PAUSED", memo: "상담 후 복귀 검토" },
+      { studentId: "ROW-180", name: "정승원", school: "서초고", grade: "2", status: "ACTIVE", memo: "내신/모의고사 관리" }
+    ];
+
+    const sampleTeachers = [
+      { uid: "teacher_01086021065", name: "남종언", loginId: "01086021065", subject: "국어", role: "INSTRUCTOR", status: "ACTIVE", apps: ["sLms", "teacherPortal", "liveTimetable"] },
+      { uid: "teacher_01020837308", name: "박은채", loginId: "01020837308", subject: "수학", role: "INSTRUCTOR", status: "ACTIVE", apps: ["sLms", "teacherPortal", "liveTimetable"] },
+      { uid: "teacher_01071311416", name: "송경석", loginId: "01071311416", subject: "영어", role: "INSTRUCTOR", status: "ACTIVE", apps: ["sLms", "teacherPortal"] },
+      { uid: "teacher_01042327428", name: "에스에듀", loginId: "01042327428", subject: "운영", role: "ADMIN", status: "ACTIVE", apps: ["sLms", "teacherPortal", "deskPortal", "liveTimetable"] }
+    ];
+
+    function $(id) { return document.getElementById(id); }
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        Object.assign(state, saved);
+      } catch (error) {}
+      if (!state.students.length) state.students = sampleStudents.slice();
+      if (!state.teachers.length) state.teachers = sampleTeachers.slice();
+      if (!state.audits.length) {
+        state.audits = [
+          { title: "초기 점검", body: "계정 관리 콘솔이 로컬 대기열 모드로 시작되었습니다." },
+          { title: "동시 반영 정책", body: "Firebase와 Sheets 중 하나라도 실패하면 partial 상태로 남겨야 합니다." }
+        ];
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        students: state.students,
+        teachers: state.teachers,
+        queue: state.queue,
+        audits: state.audits.slice(0, 30)
+      }));
+    }
+
+    function settings() {
+      try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}"); } catch (error) { return {}; }
+    }
+
+    function setSettings(value) {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(value));
+    }
+
+    function toast(message) {
+      const el = $("toast");
+      el.textContent = message;
+      el.classList.add("show");
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => el.classList.remove("show"), 2800);
+    }
+
+    function statusLabel(status) {
+      if (status === "ACTIVE") return "등록";
+      if (status === "PAUSED") return "중지";
+      if (status === "RETURNING") return "복귀";
+      if (status === "STOPPED") return "퇴원";
+      if (status === "DISABLED") return "비활성";
+      return status || "대기";
+    }
+
+    function statusClass(status) {
+      if (status === "ACTIVE") return "active";
+      if (status === "PAUSED" || status === "RETURNING") return "paused";
+      if (status === "STOPPED" || status === "DISABLED") return "stopped";
+      if (status === "DRAFT") return "draft";
+      return "pending";
+    }
+
+    function roleLabel(role) {
+      if (role === "ADMIN") return "관리자";
+      if (role === "STAFF") return "실무자";
+      if (role === "DISABLED") return "비활성";
+      return "강사";
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[ch]));
+    }
+
+    function requestId(prefix) {
+      return prefix + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
+    }
+
+    function normalizePhone(value) {
+      const digits = String(value || "").replace(/\D+/g, "");
+      if (digits.length === 8) return "010" + digits;
+      if (digits.length === 10 && digits[0] !== "0") return "0" + digits;
+      return digits;
+    }
+
+    function buildTargets() {
+      return ["firestore", "spreadsheet"];
+    }
+
+    function addAudit(title, body) {
+      state.audits.unshift({ title, body, at: new Date().toISOString() });
+      state.audits = state.audits.slice(0, 40);
+      saveState();
+      render();
+    }
+
+    function queueRequest(type, summary, payload) {
+      const item = {
+        id: requestId(type),
+        type,
+        summary,
+        payload,
+        targets: buildTargets(),
+        status: "DRAFT",
+        createdAt: new Date().toISOString()
+      };
+      state.queue.unshift(item);
+      state.selectedQueueIds[item.id] = true;
+      saveState();
+      render();
+      toast("대기열에 추가했습니다.");
+    }
+
+    function queueStudentFromForm() {
+      const name = $("studentNameInput").value.trim();
+      const school = $("studentSchoolInput").value.trim();
+      const grade = $("studentGradeInput").value.trim();
+      const status = $("studentStatusInput").value;
+      const memo = $("studentMemoInput").value.trim();
+      if (!name || !school || !grade) {
+        toast("학생명, 학교, 학년을 입력해 주세요.");
+        return;
+      }
+      queueRequest("student", `${name} · ${school} ${grade} · ${statusLabel(status)}`, {
+        action: "upsertStudentStatus",
+        student: { name, school, grade, status, memo },
+        syncPolicy: "firestore-and-spreadsheet",
+        requiredCollections: ["students"],
+        requiredSheets: ["student"]
+      });
+      $("studentForm").reset();
+    }
+
+    function queueTeacherFromForm() {
+      const name = $("teacherNameInput").value.trim();
+      const loginId = normalizePhone($("teacherLoginInput").value);
+      const subject = $("teacherSubjectInput").value.trim();
+      const role = $("teacherRoleInput").value;
+      const status = $("teacherStatusInput").value;
+      const password = $("teacherPasswordInput").value.trim();
+      const memo = $("teacherMemoInput").value.trim();
+      if (!name || !loginId || loginId.length < 8) {
+        toast("강사명과 로그인 ID를 확인해 주세요.");
+        return;
+      }
+      if (password && password.length < 6) {
+        toast("비밀번호는 6자 이상이어야 합니다.");
+        return;
+      }
+      const apps = {
+        sLms: $("appSLms").checked,
+        teacherPortal: $("appTeacher").checked,
+        deskPortal: $("appDesk").checked,
+        liveTimetable: $("appLive").checked
+      };
+      queueRequest("teacher", `${name} · ${roleLabel(role)} · ${loginId}`, {
+        action: "upsertTeacherAccount",
+        teacher: { name, loginId, subject, role, status, password, apps, memo },
+        syncPolicy: "firebase-auth-firestore-and-spreadsheet",
+        requiredCollections: ["users", "userProfiles", "userAppAccess", "loginAliases"],
+        requiredSheets: ["Teachers"]
+      });
+      $("teacherForm").reset();
+      $("appSLms").checked = true;
+      $("appTeacher").checked = true;
+      $("appLive").checked = true;
+    }
+
+    function renderMetrics() {
+      $("metricActiveStudents").textContent = state.students.filter(s => s.status === "ACTIVE").length;
+      $("metricPausedStudents").textContent = state.students.filter(s => s.status !== "ACTIVE").length;
+      $("metricTeachers").textContent = state.teachers.length;
+      $("metricQueue").textContent = state.queue.length;
+      $("metricReview").textContent = state.queue.filter(q => q.status !== "COMMITTED").length;
+    }
+
+    function renderDashboardQueue() {
+      const rows = state.queue.slice(0, 8).map(item => `
+        <tr>
+          <td>${item.type === "teacher" ? "강사" : "학생"}</td>
+          <td>${escapeHtml(item.summary)}</td>
+          <td>${escapeHtml(settings().operator || "운영자")}</td>
+          <td><span class="status ${statusClass(item.status)}">${item.status === "DRAFT" ? "검토 대기" : item.status}</span></td>
+          <td><button class="button" data-view-shortcut="queue">확인</button></td>
+        </tr>
+      `).join("");
+      $("dashboardQueueRows").innerHTML = rows || `<tr><td colspan="5">대기 중인 요청이 없습니다.</td></tr>`;
+    }
+
+    function renderStudents() {
+      const keyword = ($("studentSearch")?.value || "").trim().toLowerCase();
+      const status = $("studentStatusFilter")?.value || "";
+      const school = $("studentSchoolFilter")?.value || "";
+      const schools = [...new Set(state.students.map(s => s.school).filter(Boolean))].sort();
+      const currentSchool = $("studentSchoolFilter")?.value || "";
+      if ($("studentSchoolFilter")) {
+        $("studentSchoolFilter").innerHTML = `<option value="">전체 학교</option>` + schools.map(item => `<option value="${escapeHtml(item)}"${item === currentSchool ? " selected" : ""}>${escapeHtml(item)}</option>`).join("");
+      }
+      const rows = state.students.filter(student => {
+        const text = [student.name, student.school, student.grade, student.memo].join(" ").toLowerCase();
+        return (!keyword || text.includes(keyword)) && (!status || student.status === status) && (!school || student.school === school);
+      }).map(student => `
+        <tr>
+          <td>${escapeHtml(student.name)}</td>
+          <td>${escapeHtml(student.school)}</td>
+          <td>${escapeHtml(student.grade)}</td>
+          <td><span class="status ${statusClass(student.status)}">${statusLabel(student.status)}</span></td>
+          <td>${escapeHtml(student.memo || "-")}</td>
+          <td><button class="button" data-student-edit="${escapeHtml(student.studentId)}">상태 변경</button></td>
+        </tr>
+      `).join("");
+      $("studentRows").innerHTML = rows || `<tr><td colspan="6">조건에 맞는 학생이 없습니다.</td></tr>`;
+    }
+
+    function renderTeachers() {
+      const keyword = ($("teacherSearch")?.value || "").trim().toLowerCase();
+      const role = $("teacherRoleFilter")?.value || "";
+      const app = $("teacherAppFilter")?.value || "";
+      const rows = state.teachers.filter(teacher => {
+        const text = [teacher.name, teacher.loginId, teacher.subject, teacher.role].join(" ").toLowerCase();
+        return (!keyword || text.includes(keyword)) && (!role || teacher.role === role) && (!app || (teacher.apps || []).includes(app));
+      }).map(teacher => `
+        <tr>
+          <td>${escapeHtml(teacher.name)}</td>
+          <td>${escapeHtml(teacher.loginId)}</td>
+          <td>${roleLabel(teacher.role)}</td>
+          <td><span class="status ${statusClass(teacher.status)}">${statusLabel(teacher.status)}</span></td>
+          <td>${escapeHtml((teacher.apps || []).join(", ") || "-")}</td>
+          <td><button class="button" data-teacher-edit="${escapeHtml(teacher.uid)}">편집</button></td>
+        </tr>
+      `).join("");
+      $("teacherRows").innerHTML = rows || `<tr><td colspan="6">조건에 맞는 강사 계정이 없습니다.</td></tr>`;
+    }
+
+    function renderQueue() {
+      const rows = state.queue.map(item => `
+        <tr>
+          <td><input type="checkbox" data-queue-check="${escapeHtml(item.id)}" ${state.selectedQueueIds[item.id] ? "checked" : ""}></td>
+          <td>${item.type === "teacher" ? "강사" : "학생"}</td>
+          <td>${escapeHtml(item.summary)}<br><span class="help">${escapeHtml(item.id)}</span></td>
+          <td>${item.targets.map(target => `<span class="status pending">${target}</span>`).join(" ")}</td>
+          <td><span class="status ${statusClass(item.status)}">${item.status === "DRAFT" ? "검토 대기" : item.status}</span></td>
+          <td><button class="button danger" data-remove-queue="${escapeHtml(item.id)}">제거</button></td>
+        </tr>
+      `).join("");
+      $("queueRows").innerHTML = rows || `<tr><td colspan="6">대기열이 비어 있습니다.</td></tr>`;
+    }
+
+    function renderAudits() {
+      $("auditList").innerHTML = state.audits.map(item => `
+        <div class="audit-item"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.body)}${item.at ? " · " + new Date(item.at).toLocaleString("ko-KR") : ""}</span></div>
+      `).join("");
+    }
+
+    function renderSettings() {
+      const saved = settings();
+      if ($("endpointInput")) $("endpointInput").value = saved.endpoint || "";
+      if ($("operatorInput")) $("operatorInput").value = saved.operator || "";
+      if ($("modeInput")) $("modeInput").value = saved.mode || "dry-run";
+    }
+
+    function setView(view) {
+      state.view = view;
+      document.querySelectorAll(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === view));
+      ["dashboard", "students", "teachers", "queue", "settings"].forEach(name => {
+        $(`${name}View`).classList.toggle("hidden", name !== view);
+      });
+      const titles = {
+        dashboard: ["운영 대시보드", "학생 상태와 강사 계정 변경을 한 화면에서 접수하고 동시 반영 상태를 확인합니다."],
+        students: ["학생 상태 관리", "등록, 중지, 복귀, 퇴원 상태 변경 요청을 Firebase 원본에 반영하고 스프레드시트 미러링을 예약합니다."],
+        teachers: ["강사 계정 관리", "아이디, 직급, 앱 권한, 비밀번호 변경 요청을 관리합니다."],
+        queue: ["반영 대기열", "운영자가 검증한 요청만 동시 반영 API로 전송합니다."],
+        settings: ["연동 설정", "배포 환경의 Firebase server endpoint와 운영자 정보를 설정합니다."]
+      };
+      $("viewTitle").textContent = titles[view][0];
+      $("viewSubtitle").textContent = titles[view][1];
+      render();
+    }
+
+    function render() {
+      renderMetrics();
+      renderDashboardQueue();
+      renderStudents();
+      renderTeachers();
+      renderQueue();
+      renderAudits();
+      if (state.view === "settings") renderSettings();
+    }
+
+    function loadSample() {
+      state.students = sampleStudents.slice();
+      state.teachers = sampleTeachers.slice();
+      saveState();
+      render();
+      toast("샘플 데이터를 다시 불러왔습니다.");
+    }
+
+    function exportQueue() {
+      const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), settings: settings(), queue: state.queue }, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "account-management-queue.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function submitQueue() {
+      const selected = state.queue.filter(item => state.selectedQueueIds[item.id]);
+      if (!selected.length) {
+        toast("반영할 요청을 선택해 주세요.");
+        return;
+      }
+      const config = settings();
+      const payload = {
+        action: "accountManagementBatch",
+        mode: config.mode || "dry-run",
+        operator: config.operator || "운영자",
+        requestedAt: new Date().toISOString(),
+        requests: selected
+      };
+      if (!config.endpoint) {
+        console.log("Account management payload", payload);
+        selected.forEach(item => item.status = "DRAFT");
+        addAudit("payload 생성", "API 엔드포인트가 없어 콘솔에 요청 payload를 출력했습니다.");
+        toast("API 설정 전입니다. 콘솔에 payload를 출력했습니다.");
+        return;
+      }
+      try {
+        const response = await fetch(config.endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!result.ok) throw new Error(result.message || "API 요청 실패");
+        selected.forEach(item => item.status = config.mode === "apply" ? "COMMITTED" : "DRY_RUN_OK");
+        addAudit("동시 반영 요청", `${selected.length}건을 ${config.mode} 모드로 전송했습니다.`);
+        saveState();
+        render();
+        toast("요청을 전송했습니다.");
+      } catch (error) {
+        addAudit("전송 실패", error.message || String(error));
+        toast("전송 실패: " + (error.message || error));
+      }
+    }
+
+    function bindEvents() {
+      document.querySelectorAll(".nav-button").forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
+      document.body.addEventListener("click", event => {
+        const shortcut = event.target.closest("[data-view-shortcut]");
+        if (shortcut) setView(shortcut.dataset.viewShortcut);
+        const remove = event.target.closest("[data-remove-queue]");
+        if (remove) {
+          state.queue = state.queue.filter(item => item.id !== remove.dataset.removeQueue);
+          delete state.selectedQueueIds[remove.dataset.removeQueue];
+          saveState();
+          render();
+        }
+        const studentEdit = event.target.closest("[data-student-edit]");
+        if (studentEdit) {
+          const student = state.students.find(item => item.studentId === studentEdit.dataset.studentEdit);
+          if (student) {
+            $("studentNameInput").value = student.name;
+            $("studentSchoolInput").value = student.school;
+            $("studentGradeInput").value = student.grade;
+            $("studentStatusInput").value = student.status;
+            $("studentMemoInput").value = student.memo || "";
+            setView("students");
+          }
+        }
+        const teacherEdit = event.target.closest("[data-teacher-edit]");
+        if (teacherEdit) {
+          const teacher = state.teachers.find(item => item.uid === teacherEdit.dataset.teacherEdit);
+          if (teacher) {
+            $("teacherNameInput").value = teacher.name;
+            $("teacherLoginInput").value = teacher.loginId;
+            $("teacherSubjectInput").value = teacher.subject || "";
+            $("teacherRoleInput").value = teacher.role;
+            $("teacherStatusInput").value = teacher.status;
+            $("appSLms").checked = (teacher.apps || []).includes("sLms");
+            $("appTeacher").checked = (teacher.apps || []).includes("teacherPortal");
+            $("appDesk").checked = (teacher.apps || []).includes("deskPortal");
+            $("appLive").checked = (teacher.apps || []).includes("liveTimetable");
+            setView("teachers");
+          }
+        }
+      });
+      document.body.addEventListener("change", event => {
+        if (event.target.matches("[data-queue-check]")) {
+          state.selectedQueueIds[event.target.dataset.queueCheck] = event.target.checked;
+          saveState();
+        }
+      });
+      ["studentSearch", "studentStatusFilter", "studentSchoolFilter"].forEach(id => $(id).addEventListener("input", renderStudents));
+      ["teacherSearch", "teacherRoleFilter", "teacherAppFilter"].forEach(id => $(id).addEventListener("input", renderTeachers));
+      $("queueStudentButton").addEventListener("click", queueStudentFromForm);
+      $("queueTeacherButton").addEventListener("click", queueTeacherFromForm);
+      $("loadSampleButton").addEventListener("click", loadSample);
+      $("exportQueueButton").addEventListener("click", exportQueue);
+      $("submitQueueButton").addEventListener("click", submitQueue);
+      $("submitQueueButton2").addEventListener("click", submitQueue);
+      $("clearQueueButton").addEventListener("click", () => {
+        state.queue = [];
+        state.selectedQueueIds = {};
+        saveState();
+        render();
+        toast("대기열을 비웠습니다.");
+      });
+      $("clearStudentFilters").addEventListener("click", () => {
+        $("studentSearch").value = "";
+        $("studentStatusFilter").value = "";
+        $("studentSchoolFilter").value = "";
+        renderStudents();
+      });
+      $("clearTeacherFilters").addEventListener("click", () => {
+        $("teacherSearch").value = "";
+        $("teacherRoleFilter").value = "";
+        $("teacherAppFilter").value = "";
+        renderTeachers();
+      });
+      $("newStudentButton").addEventListener("click", () => {
+        $("studentForm").reset();
+        $("studentNameInput").focus();
+      });
+      $("newTeacherButton").addEventListener("click", () => {
+        $("teacherForm").reset();
+        $("teacherNameInput").focus();
+      });
+      $("saveSettingsButton").addEventListener("click", () => {
+        setSettings({
+          endpoint: $("endpointInput").value.trim(),
+          operator: $("operatorInput").value.trim(),
+          mode: $("modeInput").value
+        });
+        toast("연동 설정을 저장했습니다.");
+      });
+    }
+
+    loadState();
+    bindEvents();
+    setView("dashboard");
+  </script>
+</body>
+</html>
