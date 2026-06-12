@@ -13300,8 +13300,8 @@
       }
 
       .grade-overview-scores {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
         gap: 7px;
       }
 
@@ -13383,10 +13383,13 @@
       .grade-overview-score {
         display: inline-flex;
         align-items: center;
+        justify-content: flex-start;
         gap: 8px;
         padding: 8px;
         border-color: var(--grade-subject-border, var(--grade-accent-border));
         background: var(--grade-subject-color, var(--grade-accent));
+        min-width: 0;
+        min-height: 48px;
       }
 
       .grade-overview-score.active {
@@ -13397,32 +13400,97 @@
       }
 
       .grade-overview-score.placeholder {
-        border-color: var(--grade-subject-border, #dbe5f3);
-        background: var(--grade-subject-soft, #f8fbff);
+        border-color: rgba(148, 163, 184, 0.22);
+        background:
+          linear-gradient(135deg, rgba(248, 250, 252, 0.72), rgba(226, 232, 240, 0.42)),
+          rgba(241, 245, 249, 0.48);
+        color: rgba(71, 85, 105, 0.64);
+        opacity: 0.72;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.74),
+          inset 0 -1px 0 rgba(148, 163, 184, 0.12);
       }
 
-      .grade-overview-score.placeholder .grade-subject-icon {
-        background: var(--grade-subject-color, #94a3b8);
+      .grade-overview-score.placeholder .grade-level-badge {
+        background: rgba(148, 163, 184, 0.24);
+        border-color: rgba(148, 163, 184, 0.2);
+        color: rgba(71, 85, 105, 0.62);
+        box-shadow: none;
       }
 
       .grade-overview-score.placeholder strong {
-        color: var(--grade-subject-strong, #475569);
+        color: rgba(51, 65, 85, 0.62);
       }
 
       .grade-overview-score.placeholder span {
-        color: #64748b;
+        color: rgba(100, 116, 139, 0.54);
       }
 
-      .grade-subject-icon {
+      .grade-level-badge {
         display: inline-grid;
         place-items: center;
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
+        flex: 0 0 24px;
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.24);
+        border: 1px solid rgba(255, 255, 255, 0.34);
         color: #ffffff;
-        font-size: 0.68rem;
+        font-size: 0.62rem;
         font-weight: 950;
+        letter-spacing: 0;
+      }
+
+      .grade-level-badge.grade-level-1 {
+        background: linear-gradient(135deg, #fef08a, #f59e0b 58%, #b45309);
+        color: #78350f;
+        box-shadow:
+          0 0 0 2px rgba(253, 224, 71, 0.28),
+          0 0 14px rgba(250, 204, 21, 0.74);
+      }
+
+      .grade-level-badge.grade-level-2 {
+        background: linear-gradient(135deg, #f8fafc, #cbd5e1 58%, #64748b);
+        color: #334155;
+      }
+
+      .grade-level-badge.grade-level-3 {
+        background: linear-gradient(135deg, #fed7aa, #c2410c 62%, #7c2d12);
+        color: #fff7ed;
+      }
+
+      .grade-level-badge.grade-level-4,
+      .grade-level-badge.grade-level-5 {
+        background: rgba(219, 234, 254, 0.24);
+      }
+
+      .grade-level-badge.grade-level-6 {
+        background: rgba(199, 210, 254, 0.22);
+      }
+
+      .grade-level-badge.grade-level-7 {
+        background: rgba(148, 163, 184, 0.28);
+      }
+
+      .grade-level-badge.grade-level-8 {
+        background: rgba(100, 116, 139, 0.28);
+      }
+
+      .grade-level-badge.grade-level-9 {
+        background: rgba(15, 23, 42, 0.18);
+      }
+
+      .grade-overview-score-text {
+        min-width: 0;
+        display: grid;
+        gap: 2px;
+      }
+
+      .grade-overview-score-text strong,
+      .grade-overview-score-text span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .grade-overview-score strong {
@@ -13439,11 +13507,17 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 44px;
+        min-width: 48px;
+        margin-left: auto;
         padding: 3px 5px;
         border-radius: 6px;
         font-size: 0.66rem;
         font-weight: 950;
+      }
+
+      .grade-trend-delta.empty {
+        background: rgba(255, 255, 255, 0.16);
+        color: rgba(255, 255, 255, 0.72);
       }
 
       .grade-trend-delta.up {
@@ -33442,7 +33516,12 @@
         return (items || []).map(function(item) {
           return {
             examCategory: String(item && item.examCategory || '').trim(),
+            examYear: String(item && item.examYear || '').trim(),
+            school: String(item && item.school || item && item.schoolName || '').trim(),
+            grade: String(item && (item.grade || item.studentGrade) || '').trim(),
+            term: String(item && item.term || '').trim(),
             examName: String(item && item.examName || '').trim(),
+            examMonth: String(item && item.examMonth || '').trim(),
             subjectCategory: String(item && item.subjectCategory || '').trim(),
             subjectName: String(item && (item.subjectName || item.subject) || '').trim(),
             gradeLevel: String(item && (item.gradeLevel || item.grade || item.level) || '').trim(),
@@ -35842,8 +35921,8 @@
           '<label class="field-label">테스트<textarea class="field-input" data-grade-exams="test" style="min-height:120px;resize:vertical;">' + escapeHtml((options.testExams || []).join('\n')) + '</textarea></label>',
           '<label class="field-label">모의고사/수능<textarea class="field-input" data-grade-exams="mock" style="min-height:170px;resize:vertical;">' + escapeHtml((options.mockExams || []).join('\n')) + '</textarea></label>',
           '</div>',
-          '<label class="field-label" style="margin-top:12px;">예상 등급 기준<textarea class="field-input" data-grade-scale-settings style="min-height:180px;resize:vertical;" placeholder="내신 | 1학기 중간고사 | 국어 | 1 | 90">' + escapeHtml(scaleText) + '</textarea></label>',
-          '<div class="grade-empty" style="margin-top:12px;">예상 등급 기준은 `시험유형 | 시험명 | 과목 | 등급 | 기준점수` 형식입니다. 시험명이나 과목을 비워 두면 해당 유형 전체에 적용됩니다.</div>',
+          '<label class="field-label" style="margin-top:12px;">등급컷 기준<textarea class="field-input" data-grade-scale-settings style="min-height:180px;resize:vertical;" placeholder="모의고사 | 2026 |  | 3 |  | 6월 모의고사 | 6월 | 수학 | 1 | 92">' + escapeHtml(scaleText) + '</textarea></label>',
+          '<div class="grade-empty" style="margin-top:12px;">등급컷은 `시험유형 | 연도 | 학교 | 학년 | 학기 | 시험명 | 월 | 과목 | 등급 | 기준점수` 형식입니다. 기존 `시험유형 | 시험명 | 과목 | 등급 | 기준점수` 형식도 계속 사용할 수 있습니다. 비워 둔 조건은 전체에 적용됩니다.</div>',
           '<div class="grade-modal-actions"><button type="button" class="mini-button" data-grade-action="close-grade-modal">취소</button><button type="button" class="button-primary" data-grade-action="save-exam-options"><i data-lucide="save"></i> 시험 종류 저장</button></div>',
           '</div></div></div>'
         ].join('');
@@ -36130,6 +36209,20 @@
           if (parts.length < 5) {
             parts = text.split(',').map(function(part) { return part.trim(); });
           }
+          if (parts.length >= 10) {
+            return {
+              examCategory: parts[0] || '',
+              examYear: parts[1] || '',
+              school: parts[2] || '',
+              grade: parts[3] || '',
+              term: parts[4] || '',
+              examName: parts[5] || '',
+              examMonth: parts[6] || '',
+              subjectName: parts[7] || '',
+              gradeLevel: parts[8] || '',
+              minScore: parts[9] || ''
+            };
+          }
           return {
             examCategory: parts[0] || '',
             examName: parts[1] || '',
@@ -36144,6 +36237,9 @@
 
       function formatGradeScaleSettingsForTextarea_(items) {
         return normalizeGradeScaleSettings_(items || []).map(function(item) {
+          if (item.examYear || item.school || item.grade || item.term || item.examMonth) {
+            return [item.examCategory, item.examYear, item.school, item.grade, item.term, item.examName, item.examMonth, item.subjectName || item.subjectCategory, item.gradeLevel, item.minScore].join(' | ');
+          }
           return [item.examCategory, item.examName, item.subjectName || item.subjectCategory, item.gradeLevel, item.minScore].join(' | ');
         }).join('\n');
       }
@@ -36929,7 +37025,7 @@
         if (!rows.length) {
           return rows;
         }
-        var subjects = getGradeEntrySubjects_();
+        var subjects = buildGradeOverviewDisplaySubjectSlots_(getGradeEntrySubjects_(), rows[0]);
         var used = {};
         var output = [];
         subjects.forEach(function(subject) {
@@ -36959,9 +37055,39 @@
         return output;
       }
 
+      function buildGradeOverviewDisplaySubjectSlots_(subjects, sampleRecord) {
+        var slots = [];
+        var familyCounts = {};
+        (subjects || []).forEach(function(subject) {
+          var family = getGradeSubjectFamily_(subject.subjectCategory || '', subject.subjectName || '');
+          var copy = Object.assign({}, subject, {
+            __slotFamily: family,
+            __slotIndex: (familyCounts[family] || 0) + 1
+          });
+          familyCounts[family] = copy.__slotIndex;
+          slots.push(copy);
+          if (family === '과학' || family === '사회') {
+            slots.push(Object.assign({}, copy, {
+              subjectId: String(copy.subjectId || family) + '__slot2',
+              subjectName: family + ' 선택2',
+              detailSubject: family + ' 선택2',
+              __slotIndex: copy.__slotIndex + 1,
+              __slotPlaceholder: true
+            }));
+            familyCounts[family] = copy.__slotIndex + 1;
+          }
+        });
+        return slots.sort(function(a, b) {
+          return getGradeSubjectOrderIndex_(a) - getGradeSubjectOrderIndex_(b) ||
+            Number(a.__slotIndex || 0) - Number(b.__slotIndex || 0) ||
+            String(a.subjectName || '').localeCompare(String(b.subjectName || ''), 'ko');
+        });
+      }
+
       function buildGradeOverviewPlaceholderRecord_(sample, subject) {
         return Object.assign({}, sample || {}, {
           __placeholder: true,
+          __slotIndex: subject.__slotIndex || '',
           subjectId: subject.subjectId,
           subjectCategory: subject.subjectCategory,
           subjectArea: subject.subjectCategory,
@@ -37026,11 +37152,14 @@
         var highlight = APP_STATE.gradeOverviewHighlight || {};
         var active = highlight.studentId === record.studentId && highlight.subjectKey === subjectKey;
         var color = getGradeSubjectColor_(subjectKey, record.subjectCategory || record.subjectName || '');
-        var gradeText = record.gradeLevel ? record.gradeLevel + '등급' : expected;
+        var gradeLevel = getGradeDisplayLevelForRecord_(record, score);
+        var gradeText = gradeLevel ? gradeLevel + '등급' : '';
+        var gradeBadge = renderGradeLevelBadge_(gradeLevel);
+        var deltaBadge = renderGradeTrendDeltaBadge_(delta);
         if (record.__placeholder) {
-          return '<button type="button" class="grade-overview-score placeholder" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '"><i class="grade-subject-icon">' + escapeHtml(getGradeSubjectIconText_(subjectKey, record.subjectCategory || record.subjectName || '')) + '</i><strong>' + escapeHtml(record.subjectName || '-') + ' 미입력</strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></button>';
+          return '<button type="button" class="grade-overview-score placeholder">' + renderGradeLevelBadge_('') + '<span class="grade-overview-score-text"><strong>' + escapeHtml(record.subjectName || '-') + ' 미입력</strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></span>' + renderGradeTrendDeltaBadge_(null) + '</button>';
         }
-        return '<button type="button" class="grade-overview-score ' + (active ? 'active' : '') + '" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '" data-grade-action="highlight-grade-overview-subject" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-key="' + escapeAttribute(subjectKey) + '"><i class="grade-subject-icon">' + escapeHtml(getGradeSubjectIconText_(subjectKey, record.subjectCategory || record.subjectName || '')) + '</i><strong>' + escapeHtml(record.subjectName || '-') + ' ' + escapeHtml(score) + '</strong><span>' + escapeHtml(record.subjectCategory || '-') + (gradeText ? ' · ' + escapeHtml(gradeText) : '') + '</span>' + renderGradeTrendDeltaBadge_(delta) + '</button>';
+        return '<button type="button" class="grade-overview-score ' + (active ? 'active' : '') + '" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '" data-grade-action="highlight-grade-overview-subject" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-key="' + escapeAttribute(subjectKey) + '">' + gradeBadge + '<span class="grade-overview-score-text"><strong>' + escapeHtml(record.subjectName || '-') + ' ' + escapeHtml(score) + '</strong><span>' + escapeHtml(record.subjectCategory || '-') + (gradeText ? ' · ' + escapeHtml(gradeText) : '') + '</span></span>' + deltaBadge + '</button>';
       }
 
       function renderGradeStudentTrendChart_(student, records) {
@@ -37436,7 +37565,7 @@
 
       function renderGradeTrendDeltaBadge_(delta) {
         if (!delta || isNaN(delta.percent)) {
-          return '';
+          return '<span class="grade-trend-delta empty">-</span>';
         }
         var rounded = Math.round(delta.percent * 10) / 10;
         var className = rounded > 0 ? 'up' : (rounded < 0 ? 'down' : 'flat');
@@ -37722,13 +37851,10 @@
           return '';
         }
         var candidates = (APP_STATE.gradeScaleSettings || []).filter(function(setting) {
-          return (!setting.examCategory || setting.examCategory === getGradeExamTypeGroup_(record) || setting.examCategory === record.examCategory) &&
-            (!setting.examName || setting.examName === record.examName) &&
-            (!setting.subjectCategory || setting.subjectCategory === record.subjectCategory) &&
-            (!setting.subjectName || setting.subjectName === record.subjectName || setting.subjectName === record.subjectCategory);
+          return gradeScaleSettingMatchesRecord_(setting, record);
         }).sort(function(a, b) {
-          var aSpecific = [a.examCategory, a.examName, a.subjectCategory, a.subjectName].filter(Boolean).length;
-          var bSpecific = [b.examCategory, b.examName, b.subjectCategory, b.subjectName].filter(Boolean).length;
+          var aSpecific = getGradeScaleSpecificity_(a);
+          var bSpecific = getGradeScaleSpecificity_(b);
           return bSpecific - aSpecific || Number(b.minScore) - Number(a.minScore);
         });
         var matched = candidates.filter(function(setting) {
@@ -37737,6 +37863,46 @@
           return Number(b.minScore) - Number(a.minScore);
         })[0];
         return matched ? matched.gradeLevel + '등급 예상' : '';
+      }
+
+      function getGradeDisplayLevelForRecord_(record, scoreValue) {
+        var explicit = String(record && record.gradeLevel || '').match(/[1-9]/);
+        if (explicit) {
+          return explicit[0];
+        }
+        var expected = getExpectedGradeForRecord_(record, scoreValue || getGradeRecordScoreText_(record));
+        var match = String(expected || '').match(/[1-9]/);
+        return match ? match[0] : '';
+      }
+
+      function renderGradeLevelBadge_(gradeLevel) {
+        var level = String(gradeLevel || '').match(/[1-9]/);
+        if (!level) {
+          return '<i class="grade-level-badge grade-level-empty">-</i>';
+        }
+        return '<i class="grade-level-badge grade-level-' + escapeAttribute(level[0]) + '">' + escapeHtml(level[0]) + '</i>';
+      }
+
+      function gradeScaleSettingMatchesRecord_(setting, record) {
+        var type = getGradeExamTypeGroup_(record);
+        var subjectFamily = getGradeSubjectFamily_(record.subjectCategory || record.subjectArea || '', record.subjectName || record.detailSubject || '');
+        var settingSubjectFamily = getGradeSubjectFamily_(setting.subjectCategory || '', setting.subjectName || setting.subjectFamily || '');
+        return (!setting.examCategory || setting.examCategory === type || setting.examCategory === record.examCategory) &&
+          (!setting.examYear || String(setting.examYear) === String(record.examYear || record.schoolYear || '')) &&
+          (!setting.school || normalizeSearchText(setting.school) === normalizeSearchText(record.school || record.schoolName || '')) &&
+          (!setting.grade || String(setting.grade) === String(record.grade || record.studentGrade || '')) &&
+          (!setting.term || setting.term === record.term) &&
+          (!setting.examName || setting.examName === record.examName) &&
+          (!setting.examMonth || normalizeSearchText(setting.examMonth) === normalizeSearchText(record.examMonth || getGradeExamMonth_(record.examName || ''))) &&
+          (!setting.subjectCategory || setting.subjectCategory === record.subjectCategory || setting.subjectCategory === subjectFamily) &&
+          (!setting.subjectName || setting.subjectName === record.subjectName || setting.subjectName === record.subjectCategory || normalizeSearchText(setting.subjectName) === normalizeSearchText(subjectFamily)) &&
+          (!settingSubjectFamily || !subjectFamily || settingSubjectFamily === subjectFamily || normalizeSearchText(setting.subjectName) === normalizeSearchText(record.subjectName || ''));
+      }
+
+      function getGradeScaleSpecificity_(setting) {
+        return ['examCategory', 'examYear', 'school', 'grade', 'term', 'examName', 'examMonth', 'subjectCategory', 'subjectName'].filter(function(key) {
+          return Boolean(setting && setting[key]);
+        }).length;
       }
 
       function renderGradeV3Pager_(total, page, totalPages, pageSize) {
