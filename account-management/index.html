@@ -560,6 +560,40 @@
       font-weight: 800;
       line-height: 1.5;
     }
+
+    .auth-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.9);
+    }
+
+    .auth-strip .field {
+      width: 180px;
+    }
+
+    .auth-strip .field.password {
+      width: 150px;
+    }
+
+    .auth-state {
+      max-width: 230px;
+      color: var(--muted);
+      font-size: 0.7rem;
+      font-weight: 850;
+      line-height: 1.35;
+    }
+
+    .auth-state.admin {
+      color: var(--green);
+    }
+
+    .auth-state.blocked {
+      color: var(--red);
+    }
   </style>
 </head>
 <body>
@@ -569,7 +603,7 @@
         <div class="brand-mark">S</div>
         <div>
           <h1>계정 관리</h1>
-          <span>Firebase + Sheets 운영 콘솔</span>
+          <span>Firebase 직접 저장 콘솔</span>
         </div>
       </div>
 
@@ -579,11 +613,11 @@
         <button class="nav-button" data-view="students">학생 상태 관리 <small>등록/중지</small></button>
         <button class="nav-button" data-view="teachers">강사 계정 관리 <small>계정/권한</small></button>
         <button class="nav-button" data-view="queue">반영 대기열 <small>감사</small></button>
-        <button class="nav-button" data-view="settings">연동 설정 <small>API</small></button>
+        <button class="nav-button" data-view="settings">연동 상태 <small>Firebase</small></button>
       </nav>
 
       <div class="sidebar-note">
-        모든 생성/변경 요청은 Firebase 서버 API로 보내 Firebase를 먼저 갱신하고, 스프레드시트는 legacy 미러링 작업으로 반영합니다. 브라우저에는 서비스 계정 키를 두지 않습니다.
+        Firebase Web SDK로 Firestore에 직접 저장합니다. Auth 사용자 생성/삭제/강제 비밀번호 변경은 이번 범위에서 제외하고, 필요한 후속 조치는 pending 문서로 남깁니다.
       </div>
     </aside>
 
@@ -591,28 +625,35 @@
       <header class="topbar">
         <div class="title-block">
           <h2 id="viewTitle">운영 대시보드</h2>
-          <p id="viewSubtitle">학생 상태와 강사 계정 변경을 한 화면에서 접수하고 동시 반영 상태를 확인합니다.</p>
+          <p id="viewSubtitle">학생 상태와 강사 계정 메타데이터를 Firestore rules 기반으로 직접 관리합니다.</p>
         </div>
         <div class="top-actions">
-          <button class="button" id="loadSampleButton">샘플 데이터</button>
+          <div class="auth-strip">
+            <input class="field" id="authEmailInput" autocomplete="username" placeholder="Firebase 이메일">
+            <input class="field password" id="authPasswordInput" type="password" autocomplete="current-password" placeholder="비밀번호">
+            <button class="button primary" id="loginButton">로그인</button>
+            <button class="button" id="logoutButton">로그아웃</button>
+            <span class="auth-state" id="authStateText">로그인이 필요합니다.</span>
+          </div>
+          <button class="button" id="refreshFirebaseButton">Firestore 새로고침</button>
           <button class="button" id="exportQueueButton">대기열 내보내기</button>
-          <button class="button primary" id="submitQueueButton">선택 요청 반영</button>
+          <button class="button primary" id="submitQueueButton">선택 요청 저장</button>
         </div>
       </header>
 
       <section id="dashboardView">
         <div class="metric-grid">
-          <article class="metric"><span>활성 학생</span><strong id="metricActiveStudents">0</strong><small>Firestore students + sheet student</small></article>
+          <article class="metric"><span>활성 학생</span><strong id="metricActiveStudents">0</strong><small>Firestore students</small></article>
           <article class="metric"><span>중지/휴원</span><strong id="metricPausedStudents">0</strong><small>상태 변경 검토 대상</small></article>
           <article class="metric"><span>강사 계정</span><strong id="metricTeachers">0</strong><small>users / userProfiles</small></article>
-          <article class="metric"><span>반영 대기</span><strong id="metricQueue">0</strong><small>동시 저장 요청</small></article>
+          <article class="metric"><span>저장 대기</span><strong id="metricQueue">0</strong><small>Firestore 직접 저장 요청</small></article>
           <article class="metric"><span>검증 필요</span><strong id="metricReview">0</strong><small>중복/누락 확인</small></article>
         </div>
 
         <div class="layout-grid">
           <section class="panel">
             <div class="panel-head">
-              <div><h3>오늘 처리할 작업</h3><p>학생 추가, 상태 변경, 강사 계정 변경을 단일 대기열로 관리합니다.</p></div>
+              <div><h3>오늘 처리할 작업</h3><p>학생 추가, 상태 변경, 강사 계정 메타데이터 변경을 단일 대기열로 관리합니다.</p></div>
               <button class="button" data-view-shortcut="queue">대기열 보기</button>
             </div>
             <div class="panel-body">
@@ -627,13 +668,13 @@
 
           <aside class="drawer">
             <section class="panel">
-              <div class="panel-head"><div><h3>동시 반영 경로</h3><p>서버 API가 Firebase 원본 저장 후 스프레드시트 미러링 상태를 추적합니다.</p></div></div>
+              <div class="panel-head"><div><h3>저장 경로</h3><p>정적 웹앱에서 Firebase Web SDK로 Firestore에 직접 저장합니다.</p></div></div>
               <div class="panel-body">
                 <div class="sync-lanes">
-                  <div class="lane"><strong>Firebase</strong><span>students, users, userProfiles, userAppAccess, loginAliases, studentPermissions</span></div>
-                  <div class="lane"><strong>Sheets</strong><span>student, Teachers, HomeroomStudents 등 legacy 서비스용 시트</span></div>
+                  <div class="lane"><strong>Primary Firestore</strong><span>students, users, userProfiles, userAppAccess, loginAliases</span></div>
+                  <div class="lane"><strong>Pending actions</strong><span>accountManagementRequests, accountManagementAuditLogs. Auth/Sheets 후속 작업은 상태로 남깁니다.</span></div>
                 </div>
-                <div class="danger-note" style="margin-top:10px;">하나라도 실패하면 요청은 partial 상태로 남기고 재시도/롤백 대상을 감사 로그에 남겨야 합니다.</div>
+                <div class="danger-note" style="margin-top:10px;">브라우저에는 Admin SDK, service account key, Google Sheets key를 넣지 않습니다.</div>
               </div>
             </section>
             <section class="panel">
@@ -667,17 +708,17 @@
             </div>
           </section>
           <aside class="panel">
-            <div class="panel-head"><div><h3>학생 변경 요청</h3><p>Firebase와 스프레드시트에 함께 반영될 payload를 만듭니다.</p></div></div>
+              <div class="panel-head"><div><h3>학생 변경 요청</h3><p>Firestore students 문서에 직접 저장할 payload를 만듭니다.</p></div></div>
             <div class="panel-body">
               <form id="studentForm" class="form-grid" onsubmit="return false;">
                 <div class="form-field"><label>학생명</label><input class="field" id="studentNameInput" autocomplete="off"></div>
                 <div class="form-field"><label>학교</label><input class="field" id="studentSchoolInput" autocomplete="off"></div>
                 <div class="form-field"><label>학년</label><input class="field" id="studentGradeInput" autocomplete="off"></div>
-                <div class="form-field"><label>상태</label><select class="select" id="studentStatusInput"><option value="ACTIVE">등록</option><option value="PAUSED">중지</option><option value="RETURNING">복귀 예정</option><option value="STOPPED">퇴원</option></select></div>
+                <div class="form-field"><label>상태</label><select class="select" id="studentStatusInput"><option value="ACTIVE">등록</option><option value="PAUSED">중지</option><option value="RETURNING">복귀 예정</option><option value="HOLD">보류</option><option value="STOPPED">퇴원</option></select></div>
                 <div class="form-field full"><label>메모</label><textarea class="textarea" id="studentMemoInput" placeholder="상태 변경 사유, 복귀 예정일, 중복 확인 메모"></textarea></div>
                 <div class="form-field full">
                   <button class="button primary" id="queueStudentButton">학생 변경 대기열 추가</button>
-                  <p class="help">학생 생성은 Firestore `students`와 Sheets `student`에 함께 반영되어야 합니다. 상태 변경은 양쪽 status 필드를 같은 migrationRunId로 기록합니다.</p>
+                  <p class="help">학생 생성/상태 변경은 Firestore `students`에 저장합니다. Sheets 미러링이 필요하면 pending action으로 남깁니다.</p>
                 </div>
               </form>
             </div>
@@ -689,7 +730,7 @@
         <div class="layout-grid">
           <section class="panel">
             <div class="panel-head">
-              <div><h3>강사 계정</h3><p>아이디, 직급, 앱 권한, 비밀번호 초기화를 관리합니다.</p></div>
+              <div><h3>강사 계정</h3><p>아이디, 직급, 앱 권한, 세부 권한 메타데이터를 관리합니다.</p></div>
               <button class="button primary" id="newTeacherButton">강사 계정 요청</button>
             </div>
             <div class="panel-body">
@@ -708,7 +749,7 @@
             </div>
           </section>
           <aside class="panel">
-            <div class="panel-head"><div><h3>강사 계정 요청</h3><p>Auth, Firestore 계정 문서, Teachers 시트를 함께 갱신합니다.</p></div></div>
+            <div class="panel-head"><div><h3>강사 계정 요청</h3><p>Firestore 계정 문서와 로그인 alias 메타데이터를 갱신합니다.</p></div></div>
             <div class="panel-body">
               <form id="teacherForm" class="form-grid" onsubmit="return false;">
                 <div class="form-field"><label>이름</label><input class="field" id="teacherNameInput" autocomplete="off"></div>
@@ -716,12 +757,13 @@
                 <div class="form-field"><label>과목/부서</label><input class="field" id="teacherSubjectInput" autocomplete="off"></div>
                 <div class="form-field"><label>직급</label><select class="select" id="teacherRoleInput"><option value="INSTRUCTOR">강사</option><option value="STAFF">실무자</option><option value="ADMIN">관리자</option><option value="DISABLED">비활성</option></select></div>
                 <div class="form-field"><label>상태</label><select class="select" id="teacherStatusInput"><option value="ACTIVE">활성</option><option value="DISABLED">비활성</option></select></div>
-                <div class="form-field"><label>초기/새 비밀번호</label><input class="field" id="teacherPasswordInput" autocomplete="off" placeholder="6자 이상"></div>
+                <div class="form-field"><label>Auth 후속 작업</label><select class="select" id="teacherAuthActionInput"><option value="">없음</option><option value="CREATE_AUTH_USER">Auth 사용자 생성 필요</option><option value="RESET_PASSWORD">비밀번호 변경 필요</option><option value="DISABLE_AUTH_USER">Auth 사용자 비활성 필요</option></select></div>
                 <div class="form-field full"><label>앱 권한</label><div class="sync-lanes"><label><input type="checkbox" id="appSLms" checked> S-LMS</label><label><input type="checkbox" id="appTeacher" checked> 강사 포털</label><label><input type="checkbox" id="appDesk"> 데스크</label><label><input type="checkbox" id="appLive" checked> 라이브 시간표</label></div></div>
+                <div class="form-field full"><label>세부 권한</label><div class="sync-lanes"><label><input type="checkbox" id="permManageAccounts"> 계정 관리</label><label><input type="checkbox" id="permEditGrades"> 성적 입력</label><label><input type="checkbox" id="permDeleteGrades"> 성적 삭제</label><label><input type="checkbox" id="permManageMaterials"> 자료 관리</label></div></div>
                 <div class="form-field full"><label>메모</label><textarea class="textarea" id="teacherMemoInput" placeholder="계정 생성 사유, 권한 변경 사유, 비밀번호 전달 메모"></textarea></div>
                 <div class="form-field full">
                   <button class="button primary" id="queueTeacherButton">강사 변경 대기열 추가</button>
-                  <p class="help">계정 생성은 Firebase Auth, `users`, `userProfiles`, `userAppAccess`, `loginAliases`, Sheets `Teachers`가 같은 요청 ID로 처리되어야 합니다.</p>
+                  <p class="help">Auth 사용자 생성/삭제/강제 비밀번호 변경은 저장하지 않고 pending action으로 기록합니다.</p>
                 </div>
               </form>
             </div>
@@ -732,8 +774,8 @@
       <section id="queueView" class="hidden">
         <section class="panel">
           <div class="panel-head">
-            <div><h3>반영 대기열</h3><p>Firebase 서버 API로 보내기 전 검증할 요청 목록입니다.</p></div>
-            <div class="top-actions"><button class="button danger" id="clearQueueButton">대기열 비우기</button><button class="button primary" id="submitQueueButton2">선택 요청 반영</button></div>
+            <div><h3>반영 대기열</h3><p>Firestore에 직접 저장하기 전 검증할 요청 목록입니다.</p></div>
+            <div class="top-actions"><button class="button danger" id="clearQueueButton">대기열 비우기</button><button class="button primary" id="submitQueueButton2">선택 요청 저장</button></div>
           </div>
           <div class="panel-body">
             <div class="table-wrap">
@@ -749,23 +791,22 @@
       <section id="settingsView" class="hidden">
         <div class="layout-grid">
           <section class="panel">
-            <div class="panel-head"><div><h3>연동 설정</h3><p>운영 배포 전 Firebase Cloud Functions 또는 Cloud Run 엔드포인트를 연결합니다.</p></div></div>
+            <div class="panel-head"><div><h3>연동 상태</h3><p>S-LMS와 동일한 Firebase 프로젝트에 Web SDK로 연결합니다.</p></div></div>
             <div class="panel-body">
               <div class="form-grid">
-                <div class="form-field full"><label>계정 관리 API 엔드포인트</label><input class="field" id="endpointInput" placeholder="https://...cloudfunctions.net/accountManagementBatch"></div>
                 <div class="form-field"><label>운영자 이름</label><input class="field" id="operatorInput" placeholder="에스에듀"></div>
-                <div class="form-field"><label>요청 모드</label><select class="select" id="modeInput"><option value="dry-run">dry-run</option><option value="apply">apply</option></select></div>
+                <div class="form-field"><label>저장 모드</label><select class="select" id="modeInput"><option value="apply">Firestore 직접 저장</option><option value="dry-run">dry-run</option></select></div>
                 <div class="form-field full"><button class="button primary" id="saveSettingsButton">설정 저장</button></div>
               </div>
-              <div class="danger-note" style="margin-top:12px;">API가 설정되지 않은 상태에서는 실제 저장소에 반영하지 않고 요청 payload만 로컬 대기열에 쌓습니다. 운영 저장은 Firebase 서버 API에서만 처리합니다.</div>
+              <div class="danger-note" style="margin-top:12px;" id="firebaseStatusBox">Firebase 연결 상태를 확인 중입니다.</div>
             </div>
           </section>
           <aside class="panel">
-            <div class="panel-head"><div><h3>서버 API 계약</h3><p>구현해야 하는 단일 엔드포인트입니다.</p></div></div>
+            <div class="panel-head"><div><h3>No-Blaze 원칙</h3><p>Functions와 Admin SDK 없이 릴리스합니다.</p></div></div>
             <div class="panel-body">
-              <div class="audit-item"><strong>action: accountManagementBatch</strong><span>요청 배열을 받아 Firebase 원본을 저장하고, Sheets 미러링 작업 상태와 rollbackHint를 반환합니다.</span></div>
-              <div class="audit-item" style="margin-top:8px;"><strong>필수 응답 필드</strong><span>ok, requestId, committedTargets, failedTargets, auditLogId, rollbackPlan, dataVersion</span></div>
-              <div class="audit-item" style="margin-top:8px;"><strong>보안</strong><span>관리자 세션 검증, CSRF성 토큰, 운영자 uid 기록, 서버측 중복 검사를 수행해야 합니다.</span></div>
+              <div class="audit-item"><strong>직접 저장</strong><span>관리자 로그인 후 Firestore rules가 허용하는 문서만 저장합니다.</span></div>
+              <div class="audit-item" style="margin-top:8px;"><strong>후속 작업</strong><span>Auth/Sheets 작업은 accountManagementRequests에 pending 상태로 남깁니다.</span></div>
+              <div class="audit-item" style="margin-top:8px;"><strong>보안</strong><span>관리자 권한은 users/userAppAccess 문서와 Firestore rules로 확인합니다.</span></div>
             </div>
           </aside>
         </div>
@@ -776,8 +817,22 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const STORAGE_KEY = "seduAccountManagementStateV1";
-    const SETTINGS_KEY = "seduAccountManagementSettingsV1";
+    const STORAGE_KEY = "seduAccountManagementStateV2";
+    const SETTINGS_KEY = "seduAccountManagementSettingsV2";
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyCFM21ZxgwIYwmjRPaAOp5bL9Kprqiyppg",
+      authDomain: "fir-lms-prod.firebaseapp.com",
+      projectId: "fir-lms-prod"
+    };
+    const COLLECTIONS = {
+      students: "students",
+      users: "users",
+      userProfiles: "userProfiles",
+      userAppAccess: "userAppAccess",
+      loginAliases: "loginAliases",
+      requests: "accountManagementRequests",
+      audits: "accountManagementAuditLogs"
+    };
 
     const state = {
       view: "dashboard",
@@ -785,47 +840,37 @@
       students: [],
       teachers: [],
       queue: [],
-      audits: []
+      audits: [],
+      authUser: null,
+      operator: null,
+      isAdmin: false,
+      firebaseReady: false,
+      loading: false,
+      editingStudentId: "",
+      editingTeacherUid: ""
     };
-
-    const sampleStudents = [
-      { studentId: "ROW-157", name: "김나린", school: "세화여고", grade: "3", status: "ACTIVE", memo: "수능반" },
-      { studentId: "ROW-198", name: "김나현", school: "서문여고", grade: "3", status: "ACTIVE", memo: "국영수 권한 연결" },
-      { studentId: "ROW-222", name: "박태민", school: "경원중", grade: "1", status: "RETURNING", memo: "복귀 예정 확인" },
-      { studentId: "ROW-41", name: "손견아", school: "세화여고", grade: "1", status: "PAUSED", memo: "상담 후 복귀 검토" },
-      { studentId: "ROW-180", name: "정승원", school: "서초고", grade: "2", status: "ACTIVE", memo: "내신/모의고사 관리" }
-    ];
-
-    const sampleTeachers = [
-      { uid: "teacher_01086021065", name: "남종언", loginId: "01086021065", subject: "국어", role: "INSTRUCTOR", status: "ACTIVE", apps: ["sLms", "teacherPortal", "liveTimetable"] },
-      { uid: "teacher_01020837308", name: "박은채", loginId: "01020837308", subject: "수학", role: "INSTRUCTOR", status: "ACTIVE", apps: ["sLms", "teacherPortal", "liveTimetable"] },
-      { uid: "teacher_01071311416", name: "송경석", loginId: "01071311416", subject: "영어", role: "INSTRUCTOR", status: "ACTIVE", apps: ["sLms", "teacherPortal"] },
-      { uid: "teacher_01042327428", name: "에스에듀", loginId: "01042327428", subject: "운영", role: "ADMIN", status: "ACTIVE", apps: ["sLms", "teacherPortal", "deskPortal", "liveTimetable"] }
-    ];
 
     function $(id) { return document.getElementById(id); }
 
     function loadState() {
       try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-        Object.assign(state, saved);
+        state.queue = Array.isArray(saved.queue) ? saved.queue : [];
+        state.audits = Array.isArray(saved.audits) ? saved.audits : [];
+        state.selectedQueueIds = saved.selectedQueueIds || {};
       } catch (error) {}
-      if (!state.students.length) state.students = sampleStudents.slice();
-      if (!state.teachers.length) state.teachers = sampleTeachers.slice();
       if (!state.audits.length) {
         state.audits = [
-          { title: "초기 점검", body: "계정 관리 콘솔이 로컬 대기열 모드로 시작되었습니다." },
-          { title: "동시 반영 정책", body: "Firebase와 Sheets 중 하나라도 실패하면 partial 상태로 남겨야 합니다." }
+          { title: "No-Blaze 모드", body: "Firebase Web SDK + Firestore rules 기반으로 시작되었습니다." }
         ];
       }
     }
 
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        students: state.students,
-        teachers: state.teachers,
         queue: state.queue,
-        audits: state.audits.slice(0, 30)
+        audits: state.audits.slice(0, 40),
+        selectedQueueIds: state.selectedQueueIds
       }));
     }
 
@@ -845,19 +890,68 @@
       toast.timer = setTimeout(() => el.classList.remove("show"), 2800);
     }
 
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[ch]));
+    }
+
+    function requestId(prefix) {
+      return prefix + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
+    }
+
+    function base64Url(value) {
+      const bytes = new TextEncoder().encode(String(value || ""));
+      let binary = "";
+      bytes.forEach(byte => binary += String.fromCharCode(byte));
+      return btoa(binary).replace(/=+$/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+    }
+
+    async function sha256Hex(value) {
+      const buffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(value || "")));
+      return Array.from(new Uint8Array(buffer)).map(byte => byte.toString(16).padStart(2, "0")).join("");
+    }
+
+    function normalizePhone(value) {
+      const digits = String(value || "").replace(/\D+/g, "");
+      if (digits.length === 8) return "010" + digits;
+      if (digits.length === 10 && digits[0] !== "0") return "0" + digits;
+      return digits;
+    }
+
+    function canonicalLoginId(value) {
+      return normalizePhone(value) || String(value || "").trim().toLowerCase();
+    }
+
+    function authEmailForLoginId(loginId) {
+      return canonicalLoginId(loginId) + "@sedu-auth.local";
+    }
+
+    function uidForLoginId(loginId) {
+      return "teacher_" + canonicalLoginId(loginId);
+    }
+
+    function buildAliasCandidates(loginId) {
+      const raw = String(loginId || "").trim();
+      const canonical = canonicalLoginId(raw);
+      return Array.from(new Set([raw, canonical, authEmailForLoginId(canonical)].filter(Boolean).map(item => item.toLowerCase())));
+    }
+
     function statusLabel(status) {
       if (status === "ACTIVE") return "등록";
       if (status === "PAUSED") return "중지";
       if (status === "RETURNING") return "복귀";
+      if (status === "HOLD") return "보류";
       if (status === "STOPPED") return "퇴원";
       if (status === "DISABLED") return "비활성";
+      if (status === "COMMITTED") return "저장 완료";
+      if (status === "DRY_RUN_OK") return "검증 완료";
+      if (status === "FAILED") return "실패";
       return status || "대기";
     }
 
     function statusClass(status) {
-      if (status === "ACTIVE") return "active";
-      if (status === "PAUSED" || status === "RETURNING") return "paused";
-      if (status === "STOPPED" || status === "DISABLED") return "stopped";
+      if (status === "ACTIVE" || status === "COMMITTED") return "active";
+      if (status === "PAUSED" || status === "RETURNING" || status === "HOLD") return "paused";
+      if (status === "STOPPED" || status === "DISABLED" || status === "FAILED") return "stopped";
       if (status === "DRAFT") return "draft";
       return "pending";
     }
@@ -869,30 +963,253 @@
       return "강사";
     }
 
-    function escapeHtml(value) {
-      return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[ch]));
+    function appsToArray(apps) {
+      if (Array.isArray(apps)) return apps;
+      return Object.keys(apps || {}).filter(key => apps[key]);
     }
 
-    function requestId(prefix) {
-      return prefix + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
-    }
-
-    function normalizePhone(value) {
-      const digits = String(value || "").replace(/\D+/g, "");
-      if (digits.length === 8) return "010" + digits;
-      if (digits.length === 10 && digits[0] !== "0") return "0" + digits;
-      return digits;
-    }
-
-    function buildTargets() {
-      return ["firestore", "spreadsheet"];
-    }
-
-    function addAudit(title, body) {
+    function addLocalAudit(title, body) {
       state.audits.unshift({ title, body, at: new Date().toISOString() });
       state.audits = state.audits.slice(0, 40);
       saveState();
       render();
+    }
+
+    function defaultApps(role) {
+      return {
+        sLms: true,
+        teacherPortal: role !== "STAFF",
+        deskPortal: role === "ADMIN" || role === "STAFF",
+        liveTimetable: role !== "STAFF"
+      };
+    }
+
+    function defaultPermissions(role) {
+      return {
+        canManageAccounts: role === "ADMIN",
+        canEditGrades: role === "ADMIN" || role === "STAFF",
+        canDeleteGrades: role === "ADMIN",
+        canManageMaterials: role === "ADMIN" || role === "STAFF",
+        canManageSchedules: role === "ADMIN" || role === "STAFF"
+      };
+    }
+
+    function loadScriptOnce(src, test) {
+      if (test()) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const existing = document.querySelector(`script[src="${src}"]`);
+        if (existing) {
+          existing.addEventListener("load", resolve, { once: true });
+          existing.addEventListener("error", () => reject(new Error("Firebase SDK를 불러오지 못했습니다.")), { once: true });
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = src;
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("Firebase SDK를 불러오지 못했습니다."));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function initFirebase() {
+      if (state.firebaseReady) return firebase.app("account-management");
+      await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js", () => !!(window.firebase && firebase.initializeApp));
+      await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js", () => !!(window.firebase && firebase.auth));
+      await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js", () => !!(window.firebase && firebase.firestore));
+      let app;
+      try { app = firebase.app("account-management"); } catch (error) { app = firebase.initializeApp(FIREBASE_CONFIG, "account-management"); }
+      state.firebaseReady = true;
+      return app;
+    }
+
+    async function getDb() {
+      const app = await initFirebase();
+      return app.firestore();
+    }
+
+    async function getAuth() {
+      const app = await initFirebase();
+      return app.auth();
+    }
+
+    async function resolveLoginEmail(identifier) {
+      const raw = String(identifier || "").trim();
+      if (raw.includes("@")) return raw;
+      try {
+        const db = await getDb();
+        for (const alias of buildAliasCandidates(raw)) {
+          const aliasId = await sha256Hex(alias);
+          const doc = await db.collection(COLLECTIONS.loginAliases).doc(aliasId).get();
+          if (doc.exists) {
+            const data = doc.data() || {};
+            if (data.active === false) throw new Error("비활성화된 계정입니다.");
+            if (data.email) return data.email;
+          }
+        }
+      } catch (error) {
+        if (!/permission|권한/i.test(error.message || "")) throw error;
+      }
+      return authEmailForLoginId(raw);
+    }
+
+    async function readOperatorProfile(uid) {
+      const db = await getDb();
+      const [userDoc, profileDoc, accessDoc] = await Promise.all([
+        db.collection(COLLECTIONS.users).doc(uid).get(),
+        db.collection(COLLECTIONS.userProfiles).doc(uid).get(),
+        db.collection(COLLECTIONS.userAppAccess).doc(uid).get()
+      ]);
+      const user = userDoc.data() || {};
+      const profile = profileDoc.data() || {};
+      const access = accessDoc.data() || {};
+      const permissions = access.permissions || {};
+      const role = String(user.role || access.role || "").toUpperCase();
+      return {
+        uid,
+        name: user.name || profile.displayName || uid,
+        loginId: user.loginId || profile.instructorId || "",
+        role,
+        permissions,
+        apps: access.apps || {},
+        isAdmin: role === "ADMIN" || permissions.canManageAccounts === true
+      };
+    }
+
+    async function refreshAuthState() {
+      try {
+        const auth = await getAuth();
+        state.authUser = auth.currentUser || null;
+        if (!state.authUser) {
+          state.operator = null;
+          state.isAdmin = false;
+          renderAuthState();
+          return;
+        }
+        state.operator = await readOperatorProfile(state.authUser.uid);
+        state.isAdmin = Boolean(state.operator.isAdmin);
+        renderAuthState();
+        if (state.isAdmin) await loadFirestoreData();
+      } catch (error) {
+        state.isAdmin = false;
+        renderAuthState(error.message || String(error));
+      }
+    }
+
+    async function login() {
+      const identifier = $("authEmailInput").value.trim();
+      const password = $("authPasswordInput").value;
+      if (!identifier || !password) {
+        toast("이메일 또는 로그인 ID와 비밀번호를 입력해 주세요.");
+        return;
+      }
+      try {
+        state.loading = true;
+        renderAuthState("로그인 중입니다.");
+        const auth = await getAuth();
+        const email = await resolveLoginEmail(identifier);
+        await auth.signInWithEmailAndPassword(email, password);
+        $("authPasswordInput").value = "";
+        await refreshAuthState();
+        toast(state.isAdmin ? "관리자 권한으로 로그인했습니다." : "로그인했지만 계정 관리 권한이 없습니다.");
+      } catch (error) {
+        toast("로그인 실패: " + (error.message || error));
+        renderAuthState(error.message || String(error));
+      } finally {
+        state.loading = false;
+      }
+    }
+
+    async function logout() {
+      const auth = await getAuth();
+      await auth.signOut();
+      state.authUser = null;
+      state.operator = null;
+      state.isAdmin = false;
+      state.students = [];
+      state.teachers = [];
+      render();
+      renderAuthState();
+    }
+
+    function renderAuthState(message) {
+      const el = $("authStateText");
+      if (!el) return;
+      el.classList.remove("admin", "blocked");
+      if (message) {
+        el.textContent = message;
+        el.classList.add("blocked");
+      } else if (state.isAdmin && state.operator) {
+        el.textContent = `${state.operator.name} · 관리자`;
+        el.classList.add("admin");
+      } else if (state.authUser) {
+        el.textContent = "로그인됨 · 계정 관리 권한 없음";
+        el.classList.add("blocked");
+      } else {
+        el.textContent = "로그인이 필요합니다.";
+      }
+      if ($("firebaseStatusBox")) {
+        $("firebaseStatusBox").textContent = state.isAdmin
+          ? "Firebase 연결 완료. Firestore rules가 허용하는 관리자 직접 저장 모드입니다."
+          : "Firebase 로그인 후 관리자 권한을 확인해야 저장할 수 있습니다.";
+      }
+    }
+
+    function normalizeStudent(doc) {
+      const data = doc.data ? (doc.data() || {}) : doc;
+      const status = String(data.status || (data.active === false || data.isActive === false ? "PAUSED" : "ACTIVE")).toUpperCase();
+      return {
+        studentId: data.studentId || data.id || doc.id || "",
+        name: data.name || data.studentName || "",
+        school: data.school || "",
+        grade: data.grade || "",
+        status: ["INACTIVE", "SUSPENDED"].includes(status) ? "PAUSED" : status,
+        active: data.active !== false && data.isActive !== false && !["PAUSED", "STOPPED", "DISABLED", "INACTIVE"].includes(status),
+        memo: data.memo || data.note || data.statusMemo || "",
+        updatedAt: data.updatedAt || ""
+      };
+    }
+
+    async function loadFirestoreData() {
+      if (!state.isAdmin) return;
+      try {
+        state.loading = true;
+        const db = await getDb();
+        const [studentsSnap, usersSnap, profilesSnap, accessSnap] = await Promise.all([
+          db.collection(COLLECTIONS.students).get(),
+          db.collection(COLLECTIONS.users).get(),
+          db.collection(COLLECTIONS.userProfiles).get(),
+          db.collection(COLLECTIONS.userAppAccess).get()
+        ]);
+        state.students = studentsSnap.docs.map(normalizeStudent).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+        const profiles = {};
+        const access = {};
+        profilesSnap.docs.forEach(doc => profiles[doc.id] = doc.data() || {});
+        accessSnap.docs.forEach(doc => access[doc.id] = doc.data() || {});
+        state.teachers = usersSnap.docs.map(doc => {
+          const user = doc.data() || {};
+          const profile = profiles[doc.id] || {};
+          const accessDoc = access[doc.id] || {};
+          return {
+            uid: doc.id,
+            name: user.name || profile.displayName || doc.id,
+            loginId: user.loginId || profile.instructorId || "",
+            subject: profile.department || (profile.subjects || []).join(", ") || "",
+            role: String(user.role || "INSTRUCTOR").toUpperCase(),
+            status: user.status || "ACTIVE",
+            apps: appsToArray(accessDoc.apps || {}),
+            appMap: accessDoc.apps || {},
+            permissions: accessDoc.permissions || {}
+          };
+        }).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+        addLocalAudit("Firestore 로드", `학생 ${state.students.length}명, 계정 ${state.teachers.length}건을 불러왔습니다.`);
+      } catch (error) {
+        addLocalAudit("Firestore 로드 실패", error.message || String(error));
+        toast("Firestore 로드 실패: " + (error.message || error));
+      } finally {
+        state.loading = false;
+        render();
+      }
     }
 
     function queueRequest(type, summary, payload) {
@@ -901,7 +1218,7 @@
         type,
         summary,
         payload,
-        targets: buildTargets(),
+        targets: ["firestore", "pendingAction"],
         status: "DRAFT",
         createdAt: new Date().toISOString()
       };
@@ -922,30 +1239,30 @@
         toast("학생명, 학교, 학년을 입력해 주세요.");
         return;
       }
+      const duplicate = !state.editingStudentId && state.students.find(item => item.name === name && item.school === school && item.grade === grade);
+      if (duplicate) {
+        toast("동일 이름/학교/학년 학생이 있습니다. 기존 행에서 상태 변경을 눌러 주세요.");
+        return;
+      }
       queueRequest("student", `${name} · ${school} ${grade} · ${statusLabel(status)}`, {
         action: "upsertStudentStatus",
-        student: { name, school, grade, status, memo },
-        syncPolicy: "firestore-and-spreadsheet",
-        requiredCollections: ["students"],
-        requiredSheets: ["student"]
+        student: { studentId: state.editingStudentId, name, school, grade, status, memo },
+        requiredCollections: ["students"]
       });
+      state.editingStudentId = "";
       $("studentForm").reset();
     }
 
     function queueTeacherFromForm() {
       const name = $("teacherNameInput").value.trim();
-      const loginId = normalizePhone($("teacherLoginInput").value);
+      const loginId = canonicalLoginId($("teacherLoginInput").value);
       const subject = $("teacherSubjectInput").value.trim();
       const role = $("teacherRoleInput").value;
       const status = $("teacherStatusInput").value;
-      const password = $("teacherPasswordInput").value.trim();
+      const authAction = $("teacherAuthActionInput").value;
       const memo = $("teacherMemoInput").value.trim();
       if (!name || !loginId || loginId.length < 8) {
         toast("강사명과 로그인 ID를 확인해 주세요.");
-        return;
-      }
-      if (password && password.length < 6) {
-        toast("비밀번호는 6자 이상이어야 합니다.");
         return;
       }
       const apps = {
@@ -954,21 +1271,195 @@
         deskPortal: $("appDesk").checked,
         liveTimetable: $("appLive").checked
       };
+      const permissions = {
+        canManageAccounts: $("permManageAccounts").checked,
+        canEditGrades: $("permEditGrades").checked,
+        canDeleteGrades: $("permDeleteGrades").checked,
+        canManageMaterials: $("permManageMaterials").checked,
+        canManageSchedules: $("permManageMaterials").checked
+      };
+      const existing = state.editingTeacherUid || (state.teachers.find(item => item.loginId === loginId) || {}).uid || "";
       queueRequest("teacher", `${name} · ${roleLabel(role)} · ${loginId}`, {
-        action: "upsertTeacherAccount",
-        teacher: { name, loginId, subject, role, status, password, apps, memo },
-        syncPolicy: "firebase-auth-firestore-and-spreadsheet",
-        requiredCollections: ["users", "userProfiles", "userAppAccess", "loginAliases"],
-        requiredSheets: ["Teachers"]
+        action: "upsertTeacherMetadata",
+        teacher: { uid: existing, name, loginId, subject, role, status, apps, permissions, authAction, memo },
+        requiredCollections: ["users", "userProfiles", "userAppAccess", "loginAliases"]
       });
+      state.editingTeacherUid = "";
       $("teacherForm").reset();
       $("appSLms").checked = true;
       $("appTeacher").checked = true;
       $("appLive").checked = true;
     }
 
+    async function writeStudent(db, item, now) {
+      const user = state.operator || {};
+      const draft = item.payload.student || {};
+      const studentId = String(draft.studentId || "").trim() || ("STU-" + base64Url([draft.name, draft.school, draft.grade, Date.now()].join("|")).slice(0, 90));
+      const active = draft.status === "ACTIVE" || draft.status === "RETURNING";
+      const payload = {
+        id: studentId,
+        studentId,
+        studentName: draft.name,
+        name: draft.name,
+        school: draft.school,
+        grade: draft.grade,
+        status: draft.status,
+        active,
+        isActive: active,
+        memo: draft.memo || "",
+        updatedAt: now,
+        updatedAtMs: Date.now(),
+        updatedBy: user.uid || "",
+        updatedById: user.uid || "",
+        updatedByName: user.name || ""
+      };
+      if (!draft.studentId) {
+        payload.createdAt = now;
+        payload.createdAtMs = Date.now();
+        payload.registeredAt = now;
+        payload.registeredAtMs = Date.now();
+      }
+      await db.collection(COLLECTIONS.students).doc(studentId).set(payload, { merge: true });
+      return studentId;
+    }
+
+    async function writeTeacher(db, item, now) {
+      const user = state.operator || {};
+      const draft = item.payload.teacher || {};
+      const uid = String(draft.uid || "").trim() || uidForLoginId(draft.loginId);
+      const email = authEmailForLoginId(draft.loginId);
+      const apps = Object.assign(defaultApps(draft.role), draft.apps || {});
+      const permissions = Object.assign(defaultPermissions(draft.role), draft.permissions || {});
+      await Promise.all([
+        db.collection(COLLECTIONS.users).doc(uid).set({
+          uid,
+          loginId: draft.loginId,
+          email,
+          name: draft.name,
+          role: draft.role,
+          status: draft.status,
+          phoneLast4: String(draft.loginId || "").slice(-4),
+          updatedAt: now,
+          updatedBy: user.uid || ""
+        }, { merge: true }),
+        db.collection(COLLECTIONS.userProfiles).doc(uid).set({
+          uid,
+          displayName: draft.name,
+          instructorId: draft.loginId,
+          department: draft.subject,
+          subjects: draft.subject ? [draft.subject] : [],
+          updatedAt: now,
+          updatedBy: user.uid || ""
+        }, { merge: true }),
+        db.collection(COLLECTIONS.userAppAccess).doc(uid).set({
+          uid,
+          apps,
+          permissions,
+          updatedAt: now,
+          updatedBy: user.uid || ""
+        }, { merge: true })
+      ]);
+      await Promise.all(buildAliasCandidates(draft.loginId).map(async alias => {
+        const aliasId = await sha256Hex(alias);
+        return db.collection(COLLECTIONS.loginAliases).doc(aliasId).set({
+          uid,
+          email,
+          active: draft.status === "ACTIVE",
+          role: draft.role,
+          provider: "password",
+          updatedAt: now
+        }, { merge: true });
+      }));
+      return uid;
+    }
+
+    async function writeRequestAndAudit(db, item, result, now) {
+      const operator = state.operator || {};
+      const requestPayload = {
+        id: item.id,
+        type: item.type,
+        summary: item.summary,
+        status: result.status,
+        payload: item.payload,
+        result,
+        operatorUid: operator.uid || "",
+        operatorName: operator.name || "",
+        createdAt: item.createdAt,
+        updatedAt: now
+      };
+      if (item.type === "teacher" && item.payload.teacher && item.payload.teacher.authAction) {
+        requestPayload.pendingAdminAction = {
+          type: item.payload.teacher.authAction,
+          status: "PENDING",
+          reason: "Auth Admin SDK 작업은 no-Blaze 정적 릴리스 범위에서 제외됨"
+        };
+      }
+      await Promise.all([
+        db.collection(COLLECTIONS.requests).doc(item.id).set(requestPayload, { merge: true }),
+        db.collection(COLLECTIONS.audits).doc(requestId("audit")).set({
+          requestId: item.id,
+          type: item.type,
+          summary: item.summary,
+          status: result.status,
+          result,
+          operatorUid: operator.uid || "",
+          operatorName: operator.name || "",
+          createdAt: now
+        })
+      ]);
+    }
+
+    async function submitQueue() {
+      const selected = state.queue.filter(item => state.selectedQueueIds[item.id]);
+      if (!selected.length) {
+        toast("저장할 요청을 선택해 주세요.");
+        return;
+      }
+      const config = settings();
+      if ((config.mode || "apply") === "dry-run") {
+        selected.forEach(item => item.status = "DRY_RUN_OK");
+        addLocalAudit("dry-run 완료", `${selected.length}건의 payload를 로컬에서 검증했습니다.`);
+        saveState();
+        render();
+        return;
+      }
+      if (!state.isAdmin) {
+        toast("관리자 권한으로 로그인해야 저장할 수 있습니다.");
+        return;
+      }
+      try {
+        state.loading = true;
+        const db = await getDb();
+        const now = new Date().toISOString();
+        for (const item of selected) {
+          const result = { status: "COMMITTED", committedTargets: ["firestore"], pendingTargets: [] };
+          if (item.type === "student") result.documentId = await writeStudent(db, item, now);
+          if (item.type === "teacher") {
+            result.documentId = await writeTeacher(db, item, now);
+            if (item.payload.teacher && item.payload.teacher.authAction) result.pendingTargets.push(item.payload.teacher.authAction);
+          }
+          await writeRequestAndAudit(db, item, result, now);
+          item.status = "COMMITTED";
+        }
+        addLocalAudit("Firestore 저장", `${selected.length}건을 Firestore에 저장했습니다.`);
+        saveState();
+        await loadFirestoreData();
+        toast("선택 요청을 저장했습니다.");
+      } catch (error) {
+        selected.forEach(item => {
+          if (item.status !== "COMMITTED") item.status = "FAILED";
+        });
+        addLocalAudit("Firestore 저장 실패", error.message || String(error));
+        saveState();
+        render();
+        toast("저장 실패: " + (error.message || error));
+      } finally {
+        state.loading = false;
+      }
+    }
+
     function renderMetrics() {
-      $("metricActiveStudents").textContent = state.students.filter(s => s.status === "ACTIVE").length;
+      $("metricActiveStudents").textContent = state.students.filter(s => s.active !== false && s.status === "ACTIVE").length;
       $("metricPausedStudents").textContent = state.students.filter(s => s.status !== "ACTIVE").length;
       $("metricTeachers").textContent = state.teachers.length;
       $("metricQueue").textContent = state.queue.length;
@@ -980,8 +1471,8 @@
         <tr>
           <td>${item.type === "teacher" ? "강사" : "학생"}</td>
           <td>${escapeHtml(item.summary)}</td>
-          <td>${escapeHtml(settings().operator || "운영자")}</td>
-          <td><span class="status ${statusClass(item.status)}">${item.status === "DRAFT" ? "검토 대기" : item.status}</span></td>
+          <td>${escapeHtml((state.operator && state.operator.name) || settings().operator || "운영자")}</td>
+          <td><span class="status ${statusClass(item.status)}">${item.status === "DRAFT" ? "검토 대기" : statusLabel(item.status)}</span></td>
           <td><button class="button" data-view-shortcut="queue">확인</button></td>
         </tr>
       `).join("");
@@ -998,7 +1489,7 @@
         $("studentSchoolFilter").innerHTML = `<option value="">전체 학교</option>` + schools.map(item => `<option value="${escapeHtml(item)}"${item === currentSchool ? " selected" : ""}>${escapeHtml(item)}</option>`).join("");
       }
       const rows = state.students.filter(student => {
-        const text = [student.name, student.school, student.grade, student.memo].join(" ").toLowerCase();
+        const text = [student.name, student.school, student.grade, student.memo, student.studentId].join(" ").toLowerCase();
         return (!keyword || text.includes(keyword)) && (!status || student.status === status) && (!school || student.school === school);
       }).map(student => `
         <tr>
@@ -1010,7 +1501,7 @@
           <td><button class="button" data-student-edit="${escapeHtml(student.studentId)}">상태 변경</button></td>
         </tr>
       `).join("");
-      $("studentRows").innerHTML = rows || `<tr><td colspan="6">조건에 맞는 학생이 없습니다.</td></tr>`;
+      $("studentRows").innerHTML = rows || `<tr><td colspan="6">${state.isAdmin ? "조건에 맞는 학생이 없습니다." : "관리자 로그인 후 Firestore 학생 목록을 불러옵니다."}</td></tr>`;
     }
 
     function renderTeachers() {
@@ -1018,7 +1509,7 @@
       const role = $("teacherRoleFilter")?.value || "";
       const app = $("teacherAppFilter")?.value || "";
       const rows = state.teachers.filter(teacher => {
-        const text = [teacher.name, teacher.loginId, teacher.subject, teacher.role].join(" ").toLowerCase();
+        const text = [teacher.name, teacher.loginId, teacher.subject, teacher.role, teacher.uid].join(" ").toLowerCase();
         return (!keyword || text.includes(keyword)) && (!role || teacher.role === role) && (!app || (teacher.apps || []).includes(app));
       }).map(teacher => `
         <tr>
@@ -1030,7 +1521,7 @@
           <td><button class="button" data-teacher-edit="${escapeHtml(teacher.uid)}">편집</button></td>
         </tr>
       `).join("");
-      $("teacherRows").innerHTML = rows || `<tr><td colspan="6">조건에 맞는 강사 계정이 없습니다.</td></tr>`;
+      $("teacherRows").innerHTML = rows || `<tr><td colspan="6">${state.isAdmin ? "조건에 맞는 강사 계정이 없습니다." : "관리자 로그인 후 Firestore 계정 목록을 불러옵니다."}</td></tr>`;
     }
 
     function renderQueue() {
@@ -1040,7 +1531,7 @@
           <td>${item.type === "teacher" ? "강사" : "학생"}</td>
           <td>${escapeHtml(item.summary)}<br><span class="help">${escapeHtml(item.id)}</span></td>
           <td>${item.targets.map(target => `<span class="status pending">${target}</span>`).join(" ")}</td>
-          <td><span class="status ${statusClass(item.status)}">${item.status === "DRAFT" ? "검토 대기" : item.status}</span></td>
+          <td><span class="status ${statusClass(item.status)}">${item.status === "DRAFT" ? "검토 대기" : statusLabel(item.status)}</span></td>
           <td><button class="button danger" data-remove-queue="${escapeHtml(item.id)}">제거</button></td>
         </tr>
       `).join("");
@@ -1055,9 +1546,9 @@
 
     function renderSettings() {
       const saved = settings();
-      if ($("endpointInput")) $("endpointInput").value = saved.endpoint || "";
       if ($("operatorInput")) $("operatorInput").value = saved.operator || "";
-      if ($("modeInput")) $("modeInput").value = saved.mode || "dry-run";
+      if ($("modeInput")) $("modeInput").value = saved.mode || "apply";
+      renderAuthState();
     }
 
     function setView(view) {
@@ -1067,11 +1558,11 @@
         $(`${name}View`).classList.toggle("hidden", name !== view);
       });
       const titles = {
-        dashboard: ["운영 대시보드", "학생 상태와 강사 계정 변경을 한 화면에서 접수하고 동시 반영 상태를 확인합니다."],
-        students: ["학생 상태 관리", "등록, 중지, 복귀, 퇴원 상태 변경 요청을 Firebase 원본에 반영하고 스프레드시트 미러링을 예약합니다."],
-        teachers: ["강사 계정 관리", "아이디, 직급, 앱 권한, 비밀번호 변경 요청을 관리합니다."],
-        queue: ["반영 대기열", "운영자가 검증한 요청만 동시 반영 API로 전송합니다."],
-        settings: ["연동 설정", "배포 환경의 Firebase server endpoint와 운영자 정보를 설정합니다."]
+        dashboard: ["운영 대시보드", "학생 상태와 강사 계정 메타데이터를 Firestore에서 직접 관리합니다."],
+        students: ["학생 상태 관리", "등록, 중지, 복귀, 보류, 퇴원 상태를 students 문서에 저장합니다."],
+        teachers: ["강사 계정 관리", "users, userProfiles, userAppAccess, loginAliases 문서를 업데이트합니다."],
+        queue: ["반영 대기열", "운영자가 검증한 요청만 Firestore에 직접 저장합니다."],
+        settings: ["연동 상태", "S-LMS와 동일한 Firebase 프로젝트와 관리자 세션을 사용합니다."]
       };
       $("viewTitle").textContent = titles[view][0];
       $("viewSubtitle").textContent = titles[view][1];
@@ -1086,14 +1577,7 @@
       renderQueue();
       renderAudits();
       if (state.view === "settings") renderSettings();
-    }
-
-    function loadSample() {
-      state.students = sampleStudents.slice();
-      state.teachers = sampleTeachers.slice();
-      saveState();
-      render();
-      toast("샘플 데이터를 다시 불러왔습니다.");
+      renderAuthState();
     }
 
     function exportQueue() {
@@ -1104,46 +1588,6 @@
       a.download = "account-management-queue.json";
       a.click();
       URL.revokeObjectURL(url);
-    }
-
-    async function submitQueue() {
-      const selected = state.queue.filter(item => state.selectedQueueIds[item.id]);
-      if (!selected.length) {
-        toast("반영할 요청을 선택해 주세요.");
-        return;
-      }
-      const config = settings();
-      const payload = {
-        action: "accountManagementBatch",
-        mode: config.mode || "dry-run",
-        operator: config.operator || "운영자",
-        requestedAt: new Date().toISOString(),
-        requests: selected
-      };
-      if (!config.endpoint) {
-        console.log("Account management payload", payload);
-        selected.forEach(item => item.status = "DRAFT");
-        addAudit("payload 생성", "API 엔드포인트가 없어 콘솔에 요청 payload를 출력했습니다.");
-        toast("API 설정 전입니다. 콘솔에 payload를 출력했습니다.");
-        return;
-      }
-      try {
-        const response = await fetch(config.endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
-        });
-        const result = await response.json();
-        if (!result.ok) throw new Error(result.message || "API 요청 실패");
-        selected.forEach(item => item.status = config.mode === "apply" ? "COMMITTED" : "DRY_RUN_OK");
-        addAudit("동시 반영 요청", `${selected.length}건을 ${config.mode} 모드로 전송했습니다.`);
-        saveState();
-        render();
-        toast("요청을 전송했습니다.");
-      } catch (error) {
-        addAudit("전송 실패", error.message || String(error));
-        toast("전송 실패: " + (error.message || error));
-      }
     }
 
     function bindEvents() {
@@ -1162,6 +1606,7 @@
         if (studentEdit) {
           const student = state.students.find(item => item.studentId === studentEdit.dataset.studentEdit);
           if (student) {
+            state.editingStudentId = student.studentId;
             $("studentNameInput").value = student.name;
             $("studentSchoolInput").value = student.school;
             $("studentGradeInput").value = student.grade;
@@ -1174,15 +1619,22 @@
         if (teacherEdit) {
           const teacher = state.teachers.find(item => item.uid === teacherEdit.dataset.teacherEdit);
           if (teacher) {
+            const permissions = teacher.permissions || {};
+            state.editingTeacherUid = teacher.uid;
             $("teacherNameInput").value = teacher.name;
             $("teacherLoginInput").value = teacher.loginId;
             $("teacherSubjectInput").value = teacher.subject || "";
             $("teacherRoleInput").value = teacher.role;
             $("teacherStatusInput").value = teacher.status;
+            $("teacherAuthActionInput").value = "";
             $("appSLms").checked = (teacher.apps || []).includes("sLms");
             $("appTeacher").checked = (teacher.apps || []).includes("teacherPortal");
             $("appDesk").checked = (teacher.apps || []).includes("deskPortal");
             $("appLive").checked = (teacher.apps || []).includes("liveTimetable");
+            $("permManageAccounts").checked = Boolean(permissions.canManageAccounts);
+            $("permEditGrades").checked = Boolean(permissions.canEditGrades);
+            $("permDeleteGrades").checked = Boolean(permissions.canDeleteGrades);
+            $("permManageMaterials").checked = Boolean(permissions.canManageMaterials);
             setView("teachers");
           }
         }
@@ -1195,9 +1647,12 @@
       });
       ["studentSearch", "studentStatusFilter", "studentSchoolFilter"].forEach(id => $(id).addEventListener("input", renderStudents));
       ["teacherSearch", "teacherRoleFilter", "teacherAppFilter"].forEach(id => $(id).addEventListener("input", renderTeachers));
+      $("authPasswordInput").addEventListener("keydown", event => { if (event.key === "Enter") login(); });
+      $("loginButton").addEventListener("click", login);
+      $("logoutButton").addEventListener("click", logout);
+      $("refreshFirebaseButton").addEventListener("click", loadFirestoreData);
       $("queueStudentButton").addEventListener("click", queueStudentFromForm);
       $("queueTeacherButton").addEventListener("click", queueTeacherFromForm);
-      $("loadSampleButton").addEventListener("click", loadSample);
       $("exportQueueButton").addEventListener("click", exportQueue);
       $("submitQueueButton").addEventListener("click", submitQueue);
       $("submitQueueButton2").addEventListener("click", submitQueue);
@@ -1221,26 +1676,33 @@
         renderTeachers();
       });
       $("newStudentButton").addEventListener("click", () => {
+        state.editingStudentId = "";
         $("studentForm").reset();
         $("studentNameInput").focus();
       });
       $("newTeacherButton").addEventListener("click", () => {
+        state.editingTeacherUid = "";
         $("teacherForm").reset();
         $("teacherNameInput").focus();
       });
       $("saveSettingsButton").addEventListener("click", () => {
         setSettings({
-          endpoint: $("endpointInput").value.trim(),
           operator: $("operatorInput").value.trim(),
           mode: $("modeInput").value
         });
         toast("연동 설정을 저장했습니다.");
+        renderSettings();
       });
     }
 
     loadState();
     bindEvents();
     setView("dashboard");
+    initFirebase().then(async () => {
+      const auth = await getAuth();
+      auth.onAuthStateChanged(() => refreshAuthState());
+      renderAuthState();
+    }).catch(error => renderAuthState(error.message || String(error)));
   </script>
 </body>
 </html>

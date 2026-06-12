@@ -1,4 +1,4 @@
-# Account Management API Contract
+# Account Management Direct Firestore Contract
 
 Date: 2026-06-10
 
@@ -18,43 +18,92 @@ Every operator change must use Firebase as the primary source of truth and keep 
 
 The browser must not contain Firebase Admin SDK credentials or service account keys.
 
-## Recommended Server
+## Recommended Runtime
 
-Use Firebase Cloud Functions or Cloud Run. Do not use Apps Script as the main runtime for this app.
+Default production should be a static web app that uses the Firebase Web SDK directly, the same way S-LMS already writes admin-only student/account documents under Firestore security rules.
 
-Recommended first endpoint:
+This avoids requiring the Blaze plan for simple account/status management.
+
+Cloud Functions or Cloud Run should be treated as an optional later step, only for operations that cannot safely be done from a browser.
+
+Optional future endpoint, not used by the current release:
 
 ```text
-POST /accountManagementBatch
+POST /api/accountManagementBatch
 ```
 
-The current static app sends:
+If a later paid server path is approved, the direct Cloud Functions URL before Firebase Hosting rewrites would be:
+
+```text
+https://asia-northeast3-fir-lms-prod.cloudfunctions.net/accountManagementBatch
+```
+
+The current static app does not send this HTTP payload. It signs in with Firebase Auth and writes Firestore documents directly from the browser after admin permission is confirmed.
+
+Current direct-write queue items use this shape locally before commit:
 
 ```json
 {
-  "action": "accountManagementBatch",
-  "mode": "dry-run",
-  "operator": "에스에듀",
-  "requestedAt": "2026-06-10T00:00:00.000Z",
-  "requests": []
+  "id": "teacher-...",
+  "type": "teacher",
+  "summary": "남종언 · 강사 · 01086021065",
+  "targets": ["firestore", "pendingAction"],
+  "status": "DRAFT",
+  "payload": {}
 }
 ```
 
-`mode` must be either:
+The static app has two local modes:
 
-- `dry-run`
-- `apply`
+- `apply`: direct Firestore commit
+- `dry-run`: local payload validation only
 
-Default production behavior should remain `dry-run` until the endpoint is verified.
+Default production behavior should use direct Firestore writes only after the logged-in user is confirmed as an admin by Firestore rules.
 
-In `apply` mode, the server should:
+The initial Firebase Functions scaffold is intentionally not required for the first release.
+
+If a future server endpoint is introduced, its `apply` mode should:
 
 1. Validate operator permissions.
-2. Save primary data to Firebase Auth / Firestore.
+2. Save primary data to Firestore and use Admin SDK only for Auth operations that cannot be done safely in the browser.
 3. Create a `legacySheetSyncJobs` document for Google Sheets mirroring.
 4. Return the Firebase commit result and the sheet sync job status.
 
 The browser must not wait for a slow Sheets write before showing the Firebase commit result.
+
+## No-Blaze First Release
+
+The first production release should avoid Cloud Functions and the Blaze plan.
+
+Use the browser Firebase SDK for:
+
+- `students` create/update/status changes
+- `users` metadata updates
+- `userProfiles` display name/subject updates
+- `userAppAccess` role/app permission updates
+- `loginAliases` updates when the current Firestore rules allow admin writes
+
+This is possible because S-LMS already uses admin-only Firestore rules:
+
+- `students`: admin create/update/delete
+- `users`: admin create/update/delete
+- `userProfiles`: admin create/update/delete
+- `userAppAccess`: admin create/update/delete
+- `loginAliases`: admin create/update/delete
+
+Do not put Firebase Admin SDK or service account keys in the browser.
+
+Operations that still need a separate privileged path:
+
+- Creating/deleting Firebase Auth users directly
+- Force-changing another user's Auth password
+- Writing to Google Sheets after leaving Apps Script
+
+For the no-Blaze release, handle those as one of:
+
+- existing S-LMS-compatible Firestore metadata updates only
+- manual/admin migration script
+- later paid server endpoint if the workflow truly requires it
 
 ## Request Types
 
@@ -75,20 +124,18 @@ The browser must not wait for a slow Sheets write before showing the Firebase co
       "status": "ACTIVE",
       "memo": "상태 변경 사유"
     },
-    "syncPolicy": "firestore-and-spreadsheet",
-    "requiredCollections": ["students"],
-    "requiredSheets": ["student"]
+    "requiredCollections": ["students"]
   }
 }
 ```
 
-Expected primary server writes:
+Expected primary writes:
 
 - Firestore `students`
 - Audit log
-- Firestore `legacySheetSyncJobs` for Google Sheets `student` mirroring
+- Optional pending marker for later Google Sheets sync
 
-The server must check duplicates before creating a student. Name-only matching is not enough.
+The browser should block obvious same name + school + grade duplicates, but name-only matching is not enough for identity. Existing students should be edited by `studentId`.
 
 ### Teacher Account Upsert
 
@@ -97,63 +144,61 @@ The server must check duplicates before creating a student. Name-only matching i
   "id": "teacher-...",
   "type": "teacher",
   "summary": "남종언 · 강사 · 01086021065",
-  "targets": ["firestore", "spreadsheet"],
+  "targets": ["firestore", "pendingAction"],
   "payload": {
-    "action": "upsertTeacherAccount",
+    "action": "upsertTeacherMetadata",
     "teacher": {
       "name": "남종언",
       "loginId": "01086021065",
       "subject": "국어",
       "role": "INSTRUCTOR",
       "status": "ACTIVE",
-      "password": "optional",
       "apps": {
         "sLms": true,
         "teacherPortal": true,
         "deskPortal": false,
         "liveTimetable": true
       },
+      "authAction": "CREATE_AUTH_USER",
       "memo": "계정 생성 사유"
     },
-    "syncPolicy": "firebase-auth-firestore-and-spreadsheet",
-    "requiredCollections": ["users", "userProfiles", "userAppAccess", "loginAliases"],
-    "requiredSheets": ["Teachers"]
+    "requiredCollections": ["users", "userProfiles", "userAppAccess", "loginAliases"]
   }
 }
 ```
 
-Expected primary server writes:
+Expected primary writes:
 
-- Firebase Auth user create/update
 - Firestore `users`
 - Firestore `userProfiles`
 - Firestore `userAppAccess`
 - Firestore `loginAliases`
 - Audit log
-- Firestore `legacySheetSyncJobs` for Google Sheets `Teachers` mirroring
+- Optional pending admin action when Auth or Sheets work is needed
 
-Password updates must be handled server-side. The static app should only submit a request.
+Auth password updates must not be force-applied from the browser. The static app can update account metadata and produce a pending password/admin action for a separate privileged script if needed.
 
-## Required Response
+## Direct Commit Result
 
 ```json
 {
   "ok": true,
-  "requestId": "batch-...",
-  "mode": "dry-run",
+  "requestId": "teacher-...",
   "committedTargets": ["firebase"],
-  "mirrorTargets": ["spreadsheet"],
-  "sheetSyncStatus": "QUEUED",
-  "sheetSyncJobIds": [],
-  "failedTargets": [],
+  "pendingTargets": ["CREATE_AUTH_USER"],
   "auditLogId": "audit-...",
-  "dataVersion": "2026-06-10T00:00:00.000Z",
-  "rollbackPlan": [],
-  "results": []
+  "dataVersion": "2026-06-12T00:00:00.000Z"
 }
 ```
 
-If Firebase succeeds but the legacy mirror cannot be queued, return:
+The static app writes commit metadata to:
+
+- `accountManagementRequests`
+- `accountManagementAuditLogs`
+
+If Firebase succeeds but Auth or Sheets work remains, leave the request with a pending admin action rather than trying to use Admin SDK credentials in the browser.
+
+Future server-only mirror failures can use:
 
 ```json
 {
@@ -179,8 +224,8 @@ If Firebase succeeds and sheet sync is queued but later fails, the worker must m
 
 ## Safety Rules
 
-- Validate admin/operator session before processing.
-- Never trust browser-provided role or app permissions without server-side authorization.
+- Validate admin/operator session before processing direct writes.
+- Never expose privileged role escalation outside Firestore rules. The browser UI is not the security boundary.
 - Write the same `requestId` / `migrationRunId` to Firestore and legacy Sheets.
 - Save previous field values before update.
 - Keep Sheets mirror until teacher portal and live timetable are verified on Firebase.
@@ -198,13 +243,13 @@ Recommended collections:
 
 ## Deployment Notes
 
-Temporary GitHub Pages deployment can serve the static app at:
+GitHub Pages can serve the no-Blaze static app at:
 
 ```text
 https://sedubanpo.github.io/s-lms/account-management/
 ```
 
-Final production deployment should move to Firebase Hosting on the same Firebase project as the server API.
+Firebase Hosting is optional. It is not required unless we later decide to consolidate hosting under Firebase.
 
 If hosted elsewhere, update the link in:
 
