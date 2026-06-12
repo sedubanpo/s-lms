@@ -12403,10 +12403,32 @@
 
       .grade-modal-panel {
         width: min(780px, calc(100vw - 28px));
+        max-height: min(86vh, 920px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
       }
 
       .grade-modal-panel.wide {
         width: min(1080px, calc(100vw - 28px));
+      }
+
+      .grade-modal-panel .modal-top {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        margin: -24px -24px 14px;
+        padding: 22px 24px 14px;
+        background: rgba(255, 255, 255, 0.96);
+        border-bottom: 1px solid rgba(219, 229, 243, 0.8);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      .grade-modal-panel .modal-body {
+        min-height: 0;
+        overflow: auto;
+        padding-right: 4px;
       }
 
       .grade-modal-grid {
@@ -12420,6 +12442,11 @@
         justify-content: flex-end;
         gap: 8px;
         margin-top: 14px;
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        padding: 12px 0 0;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0), #ffffff 24%);
       }
 
       .grade-upload-preview {
@@ -36525,6 +36552,8 @@
       function renderGradeCutoffDashboardV2_(scaleText) {
         var settings = parseGradeScaleTextareaValue_(scaleText);
         var institutionMap = {};
+        var currentType = getGradeCurrentTypeGroup_();
+        var isMockLike = currentType === '모의고사' || currentType === '수능';
         settings.forEach(function(item) {
           institutionMap[item.institution || '기관 미지정'] = true;
         });
@@ -36539,13 +36568,13 @@
           '    <div class="grade-cutoff-builder-head"><div><strong>등급컷 빠른 입력</strong><span>기관과 시험 조건을 고른 뒤 1~9등급 기준점수를 한 번에 추가합니다.</span></div><button type="button" class="mini-button" data-grade-action="append-grade-cutoffs"><i data-lucide="plus"></i> 기준 추가</button></div>',
           '    <div class="grade-cutoff-fields">',
           renderGradeCutoffFieldV2_('입시기관', 'institution', 'select', ['EBSi', '유웨이', '이투스', '메가스터디', '진학사', '대성', '종로', '학원 자체'], 'EBSi'),
-          renderGradeCutoffFieldV2_('시험유형', 'examCategory', 'select', ['모의고사', '수능', '내신', '테스트'], getGradeCurrentTypeGroup_()),
+          renderGradeCutoffFieldV2_('시험유형', 'examCategory', 'select', ['모의고사', '수능', '내신', '테스트'], currentType),
           renderGradeCutoffFieldV2_('연도', 'examYear', 'input', [], getGradeYear_()),
-          renderGradeCutoffFieldV2_('학교', 'school', 'input', [], ''),
           renderGradeCutoffFieldV2_('학년', 'grade', 'input', [], APP_STATE.gradeFilters.grade || ''),
-          renderGradeCutoffFieldV2_('학기', 'term', 'input', [], APP_STATE.gradeFilters.term || ''),
+          isMockLike ? '' : renderGradeCutoffFieldV2_('학교', 'school', 'input', [], ''),
+          isMockLike ? '' : renderGradeCutoffFieldV2_('학기', 'term', 'input', [], APP_STATE.gradeFilters.term || ''),
           renderGradeCutoffFieldV2_('시험명', 'examName', 'input', [], APP_STATE.gradeFilters.examName || ''),
-          renderGradeCutoffFieldV2_('월', 'examMonth', 'input', [], getGradeExamMonth_(APP_STATE.gradeFilters.examName || '')),
+          isMockLike ? renderGradeCutoffFieldV2_('월', 'examMonth', 'input', [], getGradeExamMonth_(APP_STATE.gradeFilters.examName || '')) : '',
           renderGradeCutoffFieldV2_('과목', 'subjectName', 'input', [], APP_STATE.gradeFilters.subjectCategory || APP_STATE.gradeFilters.subject || ''),
           '    </div>',
           '    <div class="grade-cutoff-grade-grid">' + [1,2,3,4,5,6,7,8,9].map(function(level) { return '<label>' + level + '등급<input type="number" step="0.1" data-grade-cutoff-score="' + level + '" placeholder="기준"></label>'; }).join('') + '</div>',
@@ -37859,9 +37888,9 @@
         if (!chart || chart.exams.length < 2 || !chart.series.length) {
           return '<section class="grade-trend-chart"><div class="grade-trend-chart-head"><strong>성적 그래프</strong><span>비교할 이전 시험이 더 필요합니다.</span></div></section>';
         }
-        var width = 720;
+        var width = 760;
         var height = 220;
-        var padLeft = 42;
+        var padLeft = 82;
         var padRight = 20;
         var padTop = 22;
         var padBottom = 36;
@@ -37886,7 +37915,7 @@
         gridValues.forEach(function(value) {
           var y = yFor(value);
           svg.push('<line x1="' + padLeft + '" y1="' + y.toFixed(1) + '" x2="' + (width - padRight) + '" y2="' + y.toFixed(1) + '" stroke="#e5edf7" stroke-width="1"></line>');
-          svg.push('<text x="' + (padLeft - 10) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="end" fill="#64748b" font-size="11" font-weight="800">' + escapeHtml(String(value)) + '</text>');
+          svg.push('<text x="' + (padLeft - 46) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="end" fill="#64748b" font-size="11" font-weight="800">' + escapeHtml(String(value)) + '</text>');
         });
         chart.exams.forEach(function(exam, index) {
           var x = xFor(index);
@@ -37902,12 +37931,19 @@
           var lineOpacity = highlightActive ? (highlight.subjectKey ? (subjectActive ? 1 : 0.16) : 0.34) : 1;
           var lineWidth = subjectActive ? 5 : 3;
           var pointText = [];
+          var validPoints = [];
           series.points.forEach(function(point) {
             if (point.score === null || isNaN(Number(point.score))) {
               return;
             }
+            validPoints.push(point);
             pointText.push(xFor(point.examIndex).toFixed(1) + ',' + yFor(point.score).toFixed(1));
           });
+          if (validPoints.length) {
+            var labelPoint = validPoints[Math.max(0, Math.floor(validPoints.length / 2) - 1)];
+            var labelY = yFor(labelPoint.score);
+            svg.push('<text x="' + (padLeft - 8) + '" y="' + (labelY + 4).toFixed(1) + '" text-anchor="end" fill="' + color + '" font-size="9" font-weight="900" opacity="' + lineOpacity + '">' + escapeHtml(series.label) + '</text>');
+          }
           if (pointText.length >= 2) {
             svg.push('<polyline points="' + pointText.join(' ') + '" fill="none" stroke="' + color + '" stroke-width="' + lineWidth + '" stroke-linecap="round" stroke-linejoin="round" opacity="' + lineOpacity + '"></polyline>');
           }
@@ -37981,7 +38017,7 @@
           if (!subjectMap[subjectKey]) {
             subjectMap[subjectKey] = {
               key: subjectKey,
-              label: getGradeSubjectFamily_(record.subjectCategory || record.subjectArea || '', record.subjectName || record.detailSubject || '') || record.subjectName || record.subjectCategory || '과목',
+              label: getGradeTrendSubjectLabel_(record),
               byExam: {}
             };
           }
@@ -38050,23 +38086,13 @@
       function getGradeSubjectColor_(subjectKey, label, fallbackIndex) {
         var text = normalizeSearchText([subjectKey, label].filter(Boolean).join(' '));
         var family = getGradeSubjectFamily_('', text);
-        var familyColors = {
-          '국어': '#2563eb',
-          '영어': '#7c3aed',
-          '수학': '#be123c',
-          '과학': '#0f766e',
-          '사회': '#ea580c',
-          '한국사': '#b45309'
-        };
-        if (familyColors[family]) {
-          return familyColors[family];
-        }
         var categoryColors = [
           { pattern: /화학/, color: '#0f766e' },
           { pattern: /물리/, color: '#0891b2' },
           { pattern: /생명/, color: '#16a34a' },
-          { pattern: /지구|세지/, color: '#0e7490' },
-          { pattern: /사문|사회문화|생윤|생활과윤리/, color: '#ea580c' },
+          { pattern: /지구|세지|세계지리/, color: '#0e7490' },
+          { pattern: /사문|사회문화/, color: '#ea580c' },
+          { pattern: /생윤|생활과윤리/, color: '#f97316' },
           { pattern: /정법|정치와법/, color: '#c2410c' },
           { pattern: /화작|화법과작문/, color: '#2563eb' },
           { pattern: /언매|언어와매체/, color: '#4f46e5' },
@@ -38080,6 +38106,24 @@
           { pattern: /사회|통합사회|윤리/, color: '#ea580c' },
           { pattern: /한국사/, color: '#b45309' }
         ];
+        if (family === '사회' || family === '과학') {
+          for (var detailIndex = 0; detailIndex < categoryColors.length; detailIndex += 1) {
+            if (categoryColors[detailIndex].pattern.test(text)) {
+              return categoryColors[detailIndex].color;
+            }
+          }
+        }
+        var familyColors = {
+          '국어': '#2563eb',
+          '영어': '#7c3aed',
+          '수학': '#be123c',
+          '과학': '#0f766e',
+          '사회': '#ea580c',
+          '한국사': '#b45309'
+        };
+        if (familyColors[family]) {
+          return familyColors[family];
+        }
         for (var i = 0; i < categoryColors.length; i += 1) {
           if (categoryColors[i].pattern.test(text)) {
             return categoryColors[i].color;
@@ -38134,7 +38178,28 @@
 
       function buildGradeTrendSubjectKey_(record) {
         var family = getGradeSubjectFamily_(record && (record.subjectCategory || record.subjectArea || ''), record && (record.subjectName || record.detailSubject || ''));
-        return [family || record.subjectCategory || '', family || record.subjectName || record.detailSubject || ''].join('|');
+        var detail = getGradeComparableSubjectDetail_(record, family);
+        return [family || record.subjectCategory || '', detail || family || record.subjectName || record.detailSubject || ''].join('|');
+      }
+
+      function getGradeComparableSubjectDetail_(record, family) {
+        var subjectName = String(record && (record.subjectName || record.detailSubject || '') || '').trim();
+        var normalized = normalizeSearchText(subjectName);
+        var familyText = normalizeSearchText(family || '');
+        if ((family === '사회' || family === '과학') && subjectName && normalized && normalized !== familyText) {
+          return normalized;
+        }
+        return family || subjectName || '';
+      }
+
+      function getGradeTrendSubjectLabel_(record) {
+        var family = getGradeSubjectFamily_(record && (record.subjectCategory || record.subjectArea || ''), record && (record.subjectName || record.detailSubject || ''));
+        var subjectName = String(record && (record.subjectName || record.detailSubject || '') || '').trim();
+        var detail = getGradeComparableSubjectDetail_(record, family);
+        if ((family === '사회' || family === '과학') && detail && normalizeSearchText(detail) !== normalizeSearchText(family || '')) {
+          return subjectName || detail;
+        }
+        return family || subjectName || record.subjectCategory || '과목';
       }
 
       function getGradeSubjectFamily_(category, subjectName) {
