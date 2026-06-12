@@ -19953,7 +19953,7 @@
 
       function saveStudentLogReaction_(rowKey, reaction) {
         var shouldUseDirect = isFirebaseSessionToken_(APP_STATE.token) || isFirebaseDirectFeatureEnabled_('logReactionWrite');
-        if (shouldUseDirect && isFirebaseStudentLogId_(rowKey)) {
+        if (shouldUseDirect) {
           return saveStudentLogReactionViaFirebaseDirect_(rowKey, reaction).catch(function(error) {
             if (isFirebaseSessionToken_(APP_STATE.token)) {
               throw error;
