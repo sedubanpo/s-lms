@@ -13486,10 +13486,31 @@
         gap: 2px;
       }
 
-      .grade-overview-score-text strong,
       .grade-overview-score-text span {
         overflow: hidden;
         text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .grade-overview-score-title {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        min-width: 0;
+        color: #ffffff;
+        font-size: 0.73rem;
+        font-weight: 950;
+      }
+
+      .grade-overview-score-title .subject-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .grade-overview-score-title .score-value {
+        flex: 0 0 auto;
         white-space: nowrap;
       }
 
@@ -37157,9 +37178,9 @@
         var gradeBadge = renderGradeLevelBadge_(gradeLevel);
         var deltaBadge = renderGradeTrendDeltaBadge_(delta);
         if (record.__placeholder) {
-          return '<button type="button" class="grade-overview-score placeholder">' + renderGradeLevelBadge_('') + '<span class="grade-overview-score-text"><strong>' + escapeHtml(record.subjectName || '-') + ' 미입력</strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></span>' + renderGradeTrendDeltaBadge_(null) + '</button>';
+          return '<button type="button" class="grade-overview-score placeholder">' + renderGradeLevelBadge_('') + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span><span class="score-value">미입력</span></strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></span>' + renderGradeTrendDeltaBadge_(null) + '</button>';
         }
-        return '<button type="button" class="grade-overview-score ' + (active ? 'active' : '') + '" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '" data-grade-action="highlight-grade-overview-subject" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-key="' + escapeAttribute(subjectKey) + '">' + gradeBadge + '<span class="grade-overview-score-text"><strong>' + escapeHtml(record.subjectName || '-') + ' ' + escapeHtml(score) + '</strong><span>' + escapeHtml(record.subjectCategory || '-') + (gradeText ? ' · ' + escapeHtml(gradeText) : '') + '</span></span>' + deltaBadge + '</button>';
+        return '<button type="button" class="grade-overview-score ' + (active ? 'active' : '') + '" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '" data-grade-action="highlight-grade-overview-subject" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-key="' + escapeAttribute(subjectKey) + '">' + gradeBadge + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span><span class="score-value">' + escapeHtml(score) + '</span></strong><span>' + escapeHtml(record.subjectCategory || '-') + (gradeText ? ' · ' + escapeHtml(gradeText) : '') + '</span></span>' + deltaBadge + '</button>';
       }
 
       function renderGradeStudentTrendChart_(student, records) {
@@ -37998,6 +38019,7 @@
           renderGradeV3ExamTypeButton_('테스트', 'flask-conical', examType),
           renderGradeV3ExamTypeButton_('모의고사', 'file-text', examType),
           renderGradeV3ExamTypeButton_('수능', 'graduation-cap', examType),
+          APP_STATE.isAdmin ? '<button type="button" class="grades-v3-nav-button" data-grade-action="exam-settings"><i data-lucide="sliders-horizontal"></i><span>등급컷 설정</span></button>' : '',
           '  </div></div>',
           '  <div class="grades-v3-side-section"><h3 class="grades-v3-side-title">학교 선택</h3><div class="grades-v3-nav">',
           renderGradeV3FilterButton_('set-school-filter', '', '전체 학교', getGradeFilteredCountV3_('school', ''), !APP_STATE.gradeFilters.school, '#2563eb'),
