@@ -18258,10 +18258,20 @@
         if (currentState.authPromise) {
           return currentState.authPromise;
         }
-        currentState.authPromise = apiRequest('getFirebaseClientAuth', { token: APP_STATE.token })
+        currentState.authPromise = initializeFirebaseDirectBootstrapState_().then(function(bootstrapState) {
+          if (isFirebaseDirectAuthReusable_(bootstrapState)) {
+            bootstrapState.user = bootstrapState.auth.currentUser || bootstrapState.user;
+            bootstrapState.customToken = '';
+            return bootstrapState;
+          }
+          return apiRequest('getFirebaseClientAuth', { token: APP_STATE.token });
+        })
           .then(function(authData) {
             if (!APP_STATE.token || APP_STATE.token !== requestedToken) {
               throw new Error('Firebase 직접 연결 준비가 취소되었습니다.');
+            }
+            if (isFirebaseDirectAuthReusable_(authData)) {
+              return authData;
             }
             var state = hydrateFirebaseDirectState_(authData);
             if (!state.enabled || !state.config || !state.customToken) {
@@ -19959,13 +19969,9 @@
               throw error;
             }
             if (window.console && console.warn) {
-              console.warn('Firebase direct reaction fallback:', error);
+              console.warn('Firebase direct reaction failed:', error);
             }
-            return apiRequest('reactStudentLog', {
-              token: APP_STATE.token,
-              logRowNumber: rowKey,
-              reaction: reaction
-            });
+            throw new Error('Firebase 직접 연결이 준비되지 않아 반응을 저장하지 못했습니다. 오른쪽 상단 로그아웃 후 다시 로그인해 주세요. 계속 반복되면 관리자 계정의 Firebase 로그인 연결을 확인해야 합니다.');
           });
         }
         if (isFirebaseSessionToken_(APP_STATE.token)) {
