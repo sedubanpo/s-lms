@@ -7462,16 +7462,24 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        height: 18px;
-        padding: 0 6px;
-        border: 1px solid #fecaca;
+        gap: 3px;
+        height: 20px;
+        padding: 0 7px 0 6px;
+        border: 1px solid #facc15;
         border-radius: 999px;
-        background: #fff1f2;
-        color: #dc2626;
+        background: linear-gradient(135deg, #fef08a, #f59e0b 62%, #b45309);
+        color: #78350f;
         font-size: 0.62rem;
         font-weight: 950;
         line-height: 1;
         white-space: nowrap;
+        box-shadow: 0 0 0 2px rgba(253, 224, 71, 0.16), 0 8px 16px rgba(245, 158, 11, 0.18);
+      }
+
+      .student-new-badge svg {
+        width: 11px;
+        height: 11px;
+        stroke-width: 2.7;
       }
 
       .student-name-main span {
@@ -7484,7 +7492,6 @@
       .student-name-line .student-new-badge {
         display: inline-flex;
         margin-top: 0;
-        color: #dc2626;
         font-size: 0.62rem;
       }
 
@@ -11699,6 +11706,35 @@
         vertical-align: middle;
       }
 
+      .grade-history-editor-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        max-width: 100%;
+        min-height: 28px;
+        border: 1px solid var(--teacher-border, #bfdbfe);
+        border-radius: 8px;
+        padding: 0 9px;
+        background: var(--teacher-bg, #eaf2ff);
+        color: var(--teacher-color, #174ea6);
+        font-size: 0.74rem;
+        font-weight: 950;
+        white-space: nowrap;
+      }
+
+      .grade-history-editor-badge svg {
+        width: 14px;
+        height: 14px;
+        flex: 0 0 auto;
+      }
+
+      .grade-history-editor-meta {
+        margin-top: 4px;
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 850;
+      }
+
       .grade-ranking-dashboard {
         display: grid;
         gap: 14px;
@@ -13509,8 +13545,16 @@
       }
 
       .grade-overview-body {
-        display: grid;
-        gap: 12px;
+        display: contents;
+        min-width: 0;
+      }
+
+      .grade-overview-body > .grade-trend-chart {
+        grid-column: 2;
+      }
+
+      .grade-overview-body > .grade-overview-types {
+        grid-column: 1 / -1;
         min-width: 0;
       }
 
@@ -13626,7 +13670,7 @@
       .grade-overview-scores {
         display: grid;
         grid-auto-flow: column;
-        grid-auto-columns: minmax(152px, 1fr);
+        grid-auto-columns: minmax(188px, 1fr);
         gap: 7px;
         overflow-x: auto;
         padding-bottom: 2px;
@@ -13711,12 +13755,12 @@
         display: inline-flex;
         align-items: center;
         justify-content: flex-start;
-        gap: 8px;
-        padding: 8px;
+        gap: 10px;
+        padding: 9px 10px;
         border-color: var(--grade-subject-border, var(--grade-accent-border));
         background: var(--grade-subject-color, var(--grade-accent));
         min-width: 0;
-        min-height: 54px;
+        min-height: 60px;
       }
 
       .grade-overview-score.active {
@@ -13832,9 +13876,10 @@
 
       .grade-overview-score-title .subject-name {
         min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+        line-height: 1.15;
       }
 
       .grade-overview-score-title .score-value {
@@ -14001,6 +14046,11 @@
 
         .grade-overview-card {
           grid-template-columns: 1fr;
+        }
+
+        .grade-overview-body > .grade-trend-chart,
+        .grade-overview-body > .grade-overview-types {
+          grid-column: 1;
         }
 
         .grade-overview-score {
@@ -15632,6 +15682,8 @@
         studentLogPages: {},
         studentLogReactionSaving: {},
         studentDataLoading: false,
+        lastDashboardSyncAt: 0,
+        autoSyncInFlight: false,
         selectedStudentId: '',
         selectedStudentDetailId: '',
         studentDetailTab: 'logs',
@@ -15932,6 +15984,8 @@
         document.getElementById('topLogoutButton').addEventListener('click', handleLogout);
         document.getElementById('refreshButton').addEventListener('click', refreshDashboard);
         document.getElementById('topRefreshButton').addEventListener('click', refreshDashboard);
+        document.addEventListener('visibilitychange', handleDashboardVisibilitySync_);
+        window.addEventListener('focus', handleDashboardVisibilitySync_);
         document.getElementById('settingsButton').addEventListener('click', openSystemSettingsModal_);
         document.getElementById('quickAddStudentButton').addEventListener('click', handleQuickAddStudentOpen);
         document.getElementById('materialOpenLogsButton').addEventListener('click', handleMaterialOpenLogButtonClick_);
@@ -17087,10 +17141,10 @@
         var collections = state.collections || {};
         var db = state.firestore;
         return Promise.all([
-          db.collection(collections.users || 'users').doc(uid).get(),
-          db.collection(collections.userProfiles || 'userProfiles').doc(uid).get(),
-          db.collection(collections.userAppAccess || 'userAppAccess').doc(uid).get(),
-          db.collection(collections.students || 'students').get()
+          db.collection(collections.users || 'users').doc(uid).get({ source: 'server' }),
+          db.collection(collections.userProfiles || 'userProfiles').doc(uid).get({ source: 'server' }),
+          db.collection(collections.userAppAccess || 'userAppAccess').doc(uid).get({ source: 'server' }),
+          db.collection(collections.students || 'students').get({ source: 'server' })
         ]).then(function(results) {
           var userDoc = results[0].exists ? (results[0].data() || {}) : {};
           var profileDoc = results[1].exists ? (results[1].data() || {}) : {};
@@ -17425,7 +17479,46 @@
         APP_STATE.materialsLoaded = false;
         APP_STATE.eventsLoaded = false;
         APP_STATE.jikboLoaded = false;
-        loadDashboard({ useStagedLoading: true, forceOverlay: true, preloadCurrentView: true });
+        APP_STATE.gradesLoaded = false;
+        APP_STATE.gradesRemoteLoaded = false;
+        APP_STATE.gradeHistoryLoaded = false;
+        APP_STATE.gradeHistory = [];
+        APP_STATE.gradeSyncIssue = '';
+        loadDashboard({ useStagedLoading: true, forceOverlay: true, preloadCurrentView: true }).then(function() {
+          APP_STATE.lastDashboardSyncAt = Date.now();
+          setNotice('최신 데이터를 동기화했습니다.', 'success');
+        }).catch(function(error) {
+          if (window.console && console.warn) {
+            console.warn('Dashboard refresh failed:', error);
+          }
+          setNotice('동기화 중 문제가 발생했습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.', 'warning');
+        });
+      }
+
+      function handleDashboardVisibilitySync_() {
+        if (!APP_STATE.token || document.hidden || APP_STATE.autoSyncInFlight) {
+          return;
+        }
+        var lastSyncAt = Number(APP_STATE.lastDashboardSyncAt || 0);
+        if (lastSyncAt && Date.now() - lastSyncAt < 60000) {
+          return;
+        }
+        APP_STATE.autoSyncInFlight = true;
+        APP_STATE.gradesLoaded = false;
+        APP_STATE.gradesRemoteLoaded = false;
+        APP_STATE.gradeHistoryLoaded = false;
+        loadDashboard({ useStagedLoading: true, silent: true, preloadCurrentView: true })
+          .then(function() {
+            APP_STATE.lastDashboardSyncAt = Date.now();
+          })
+          .catch(function(error) {
+            if (window.console && console.warn) {
+              console.warn('Dashboard visibility sync failed:', error);
+            }
+          })
+          .finally(function() {
+            APP_STATE.autoSyncInFlight = false;
+          });
       }
 
       function loadDashboard(options) {
@@ -17482,6 +17575,7 @@
             loadGlobalNoticeViaFirebaseDirect_();
             return null;
           }).then(function() {
+            APP_STATE.lastDashboardSyncAt = Date.now();
             showAppOnly();
           }).catch(function(error) {
             APP_STATE.studentDataLoading = false;
@@ -17539,6 +17633,7 @@
             return null;
           })
           .then(function() {
+            APP_STATE.lastDashboardSyncAt = Date.now();
             showAppOnly();
           })
           .catch(function(error) {
@@ -19344,7 +19439,7 @@
             throw new Error('성적 Firestore 직접 조회가 아직 활성화되지 않았습니다.');
           }
           return Promise.all([
-            state.firestore.collection(getGradeFirebaseCollectionName_('grades')).get(),
+            state.firestore.collection(getGradeFirebaseCollectionName_('grades')).get({ source: 'server' }),
             loadGradeSettingsViaFirebaseDirect_().catch(function(error) {
               if (window.console && console.warn) {
                 console.warn('Firebase grade settings read skipped:', error);
@@ -19382,7 +19477,7 @@
           return state.firestore.collection(getGradeFirebaseCollectionName_('history'))
             .orderBy('updatedAtMs', 'desc')
             .limit(Math.max(1, Math.min(500, Number(limit || 300))))
-            .get()
+            .get({ source: 'server' })
             .then(function(snapshot) {
               var rows = [];
               snapshot.forEach(function(doc) {
@@ -20726,7 +20821,7 @@
       }
 
       function renderStudentNewBadge_(student) {
-        return isRecentStudentDisplayItem_(student) ? '<span class="student-new-badge">NEW</span>' : '';
+        return isRecentStudentDisplayItem_(student) ? '<span class="student-new-badge"><i data-lucide="crown"></i>NEW</span>' : '';
       }
 
       function renderStudentNameWithNewBadge_(student) {
@@ -34922,11 +35017,30 @@
         }
         html.push('<div class="grades-table-wrap"><table class="grades-table grade-history-table"><thead><tr><th>연도</th><th>학생</th><th>시험</th><th>과목별 성적</th><th>입력/수정</th><th>변경</th></tr></thead><tbody>');
         rows.forEach(function(row) {
-          html.push('<tr><td>' + escapeHtml(row.year || '-') + '</td><td><strong>' + escapeHtml(row.studentName || '-') + '</strong><div class="grades-v3-meta">' + renderGradeStudentMetaFromRecordHtml_(row.latest) + '</div></td><td>' + renderGradeExamBadgeV2_(row.latest) + '</td><td><div class="grade-history-subjects">' + row.records.map(renderGradeHistorySubjectChip_).join('') + '</div></td><td>' + escapeHtml([(row.latest.updatedByName || row.latest.createdByName || '-'), formatGradeDateTime_(row.latest.updatedAt || row.latest.createdAt || '')].join(' · ')) + '</td>');
+          html.push('<tr><td>' + escapeHtml(row.year || '-') + '</td><td><strong>' + escapeHtml(row.studentName || '-') + '</strong><div class="grades-v3-meta">' + renderGradeStudentMetaFromRecordHtml_(row.latest) + '</div></td><td>' + renderGradeExamBadgeV2_(row.latest) + '</td><td><div class="grade-history-subjects">' + row.records.map(renderGradeHistorySubjectChip_).join('') + '</div></td><td>' + renderGradeHistoryEditorBadge_(row.latest) + '</td>');
           html.push('<td>' + renderGradeChangeBadgeV2_(row.latest.changeType) + '</td></tr>');
         });
         html.push('</tbody></table></div></section>');
         return html.join('');
+      }
+
+      function renderGradeHistoryEditorBadge_(record) {
+        record = record || {};
+        var name = record.updatedByName || record.createdByName || '-';
+        var when = formatGradeDateTime_(record.updatedAt || record.createdAt || '');
+        var visual = {
+          icon: 'user-round',
+          color: '#174ea6',
+          bg: '#eaf2ff',
+          border: '#bfdbfe'
+        };
+        var style = buildTeacherVisualStyle_(visual);
+        return [
+          '<div>',
+          '  <span class="grade-history-editor-badge" style="' + escapeAttribute(style) + '"><i data-lucide="' + escapeAttribute(visual.icon) + '"></i>' + escapeHtml(name) + '</span>',
+          '  <div class="grade-history-editor-meta">' + escapeHtml(when || '-') + '</div>',
+          '</div>'
+        ].join('');
       }
 
       function filterGradeHistoryRecords_(records) {
@@ -37790,7 +37904,7 @@
         return [
           '<section class="grade-overview-exam">',
           '  <div class="grade-overview-exam-head"><button type="button" class="grade-overview-exam-head-button ' + (isActive ? 'active' : '') + '" data-grade-action="highlight-grade-overview-exam" data-student-id="' + escapeAttribute((actualRows[0] && actualRows[0].studentId) || '') + '" data-exam-key="' + escapeAttribute(exam.key || '') + '">' + escapeHtml(exam.label) + '</button><span>' + actualRows.length + '건</span></div>',
-          '  <div class="grade-overview-scores" style="grid-template-columns:repeat(' + Math.max(1, Math.min(rows.length, 14)) + ', minmax(152px, 1fr));">' + rows.slice(0, 14).map(function(record) { return renderGradeOverviewScoreChip_(record, contextRows || actualRows); }).join('') + (rows.length > 14 ? '<span class="grade-chip blue">+' + (rows.length - 14) + '</span>' : '') + '</div>',
+          '  <div class="grade-overview-scores" style="grid-template-columns:repeat(' + Math.max(1, Math.min(rows.length, 14)) + ', minmax(188px, 1fr));">' + rows.slice(0, 14).map(function(record) { return renderGradeOverviewScoreChip_(record, contextRows || actualRows); }).join('') + (rows.length > 14 ? '<span class="grade-chip blue">+' + (rows.length - 14) + '</span>' : '') + '</div>',
           '</section>'
         ].join('');
       }
