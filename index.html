@@ -11699,6 +11699,164 @@
         vertical-align: middle;
       }
 
+      .grade-ranking-dashboard {
+        display: grid;
+        gap: 14px;
+      }
+
+      .grade-ranking-metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .grade-ranking-metric {
+        border: 1px solid #dbe7f5;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 12px;
+      }
+
+      .grade-ranking-metric span {
+        display: block;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 850;
+      }
+
+      .grade-ranking-metric strong {
+        display: block;
+        margin-top: 5px;
+        color: #0f172a;
+        font-size: 1.28rem;
+        font-weight: 950;
+      }
+
+      .grade-ranking-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 14px;
+      }
+
+      .grade-ranking-card {
+        border: 1px solid #dbe7f5;
+        border-radius: 8px;
+        background: #ffffff;
+        overflow: hidden;
+      }
+
+      .grade-ranking-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 14px;
+        border-bottom: 1px solid #edf2f7;
+        background: #f8fbff;
+      }
+
+      .grade-ranking-card-head strong {
+        color: #0f172a;
+        font-size: 0.86rem;
+        font-weight: 950;
+      }
+
+      .grade-ranking-card-head span {
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 850;
+      }
+
+      .grade-rank-medal {
+        display: inline-grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        color: #1e293b;
+        font-weight: 950;
+        font-size: 0.76rem;
+        background: #e0e7ff;
+      }
+
+      .grade-rank-medal.rank-1 {
+        background: linear-gradient(135deg, #fef08a, #f59e0b 62%, #b45309);
+        color: #78350f;
+        box-shadow: 0 0 14px rgba(250, 204, 21, 0.48);
+      }
+
+      .grade-rank-medal.rank-2 {
+        background: linear-gradient(135deg, #f8fafc, #cbd5e1 62%, #64748b);
+        color: #334155;
+      }
+
+      .grade-rank-medal.rank-3 {
+        background: linear-gradient(135deg, #fed7aa, #c2410c 62%, #7c2d12);
+        color: #fff7ed;
+      }
+
+      .grade-ranking-student strong,
+      .grade-ranking-meta strong {
+        color: #0f172a;
+        font-weight: 950;
+      }
+
+      .grade-ranking-student span,
+      .grade-ranking-meta span {
+        display: block;
+        margin-top: 2px;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .grade-ranking-score {
+        color: #0f172a;
+        font-size: 0.92rem;
+        font-weight: 950;
+      }
+
+      .grade-improvement-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 4px 8px;
+        background: #dcfce7;
+        color: #15803d;
+        font-size: 0.72rem;
+        font-weight: 950;
+      }
+
+      .grade-subject-leaders {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+        padding: 12px;
+      }
+
+      .grade-subject-leader-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fafc;
+        padding: 10px;
+      }
+
+      .grade-subject-leader-card strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.78rem;
+        font-weight: 950;
+      }
+
+      .grade-subject-leader-card span {
+        display: block;
+        margin-top: 4px;
+        color: #475569;
+        font-size: 0.72rem;
+        font-weight: 850;
+      }
+
       .grade-student-cell strong {
         display: block;
         color: #0f172a;
@@ -13482,6 +13640,7 @@
 
       .grade-overview-score-text {
         min-width: 0;
+        flex: 1 1 auto;
         display: grid;
         gap: 2px;
       }
@@ -13514,6 +13673,29 @@
         white-space: nowrap;
       }
 
+      .grade-overview-score-metric {
+        display: grid;
+        gap: 3px;
+        justify-items: end;
+        margin-left: auto;
+        min-width: 54px;
+        flex: 0 0 54px;
+      }
+
+      .grade-overview-score-value {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 48px;
+        padding: 3px 6px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.16);
+        color: #ffffff;
+        font-size: 0.72rem;
+        font-weight: 950;
+        line-height: 1;
+      }
+
       .grade-overview-score strong {
         color: #ffffff;
         font-size: 0.73rem;
@@ -13529,7 +13711,7 @@
         align-items: center;
         justify-content: center;
         min-width: 48px;
-        margin-left: auto;
+        margin-left: 0;
         padding: 3px 5px;
         border-radius: 6px;
         font-size: 0.66rem;
@@ -13629,9 +13811,14 @@
         .grade-overview-types,
         .grade-dashboard-grid,
         .grade-dashboard-panels,
+        .grade-ranking-grid,
         .grade-instructor-row,
         .grade-exam-matrix-row {
           grid-template-columns: 1fr;
+        }
+
+        .grade-ranking-metrics {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .grade-overview-card {
@@ -13671,6 +13858,11 @@
       }
 
       @media (max-width: 767px) {
+        .grade-ranking-metrics,
+        .grade-subject-leaders {
+          grid-template-columns: 1fr;
+        }
+
         html,
         body {
           width: 100%;
@@ -34587,22 +34779,76 @@
       }
 
       function renderGradeRankingTabV2_() {
-        var rows = buildGradeRankingRowsV2_();
+        var dashboard = buildGradeRankingDashboardV2_();
         return [
           renderGradeFilters_(),
-          '<section class="grades-panel" style="margin-top:14px;"><div class="grades-panel-head"><div><h3>시험별 순위</h3><p>' + escapeHtml(getGradeCurrentExamLabel_()) + '</p></div><span class="grade-chip blue">' + rows.length + '명</span></div>',
-          rows.length ? renderGradeRankingTableV2_(rows) : '<div class="grade-empty">순위를 계산할 최종 또는 가채점 점수가 없습니다.</div>',
+          '<section class="grades-panel" style="margin-top:14px;"><div class="grades-panel-head"><div><h3>시험별 순위 대시보드</h3><p>' + escapeHtml(getGradeCurrentExamLabel_()) + ' · ' + escapeHtml(dashboard.scopeLabel) + '</p></div><span class="grade-chip blue">' + dashboard.rows.length + '건</span></div>',
+          renderGradeRankingDashboardV2_(dashboard),
           '</section>'
         ].join('');
       }
 
-      function renderGradeRankingTableV2_(rows) {
-        var html = ['<div class="grades-table-wrap"><table class="grades-table grade-ranking-table"><thead><tr><th>순위</th><th>학생</th><th>학교/학년</th><th>과목</th><th>점수</th><th>상태</th><th>입력자</th><th>수정일시</th></tr></thead><tbody>'];
+      function renderGradeRankingDashboardV2_(dashboard) {
+        if (!dashboard.rows.length) {
+          return '<div class="grade-empty">순위를 계산할 최종 또는 가채점 점수가 없습니다.</div>';
+        }
+        return [
+          '<div class="grade-ranking-dashboard">',
+          '  <div class="grade-ranking-metrics">',
+          renderGradeRankingMetricV2_('순위 대상', dashboard.rows.length + '건', dashboard.scopeLabel),
+          renderGradeRankingMetricV2_('참여 학생', dashboard.studentCount + '명', '중복 제외'),
+          renderGradeRankingMetricV2_('과목 수', dashboard.subjectCount + '개', '입력 과목 기준'),
+          renderGradeRankingMetricV2_('향상 학생', dashboard.improvedRows.length + '명', '이전 시험 점수 보유'),
+          '  </div>',
+          '  <div class="grade-ranking-grid">',
+          renderGradeRankingCardV2_('점수 상위권', '현재 시험 기준 상위 점수', dashboard.topRows.slice(0, 15), 'score'),
+          renderGradeRankingCardV2_('이전 시험 대비 향상', '이전 점수가 있는 학생만 계산', dashboard.improvedRows.slice(0, 15), 'improvement'),
+          '  </div>',
+          renderGradeSubjectLeaderPanelV2_(dashboard.subjectLeaders),
+          '</div>'
+        ].join('');
+      }
+
+      function renderGradeRankingMetricV2_(label, value, hint) {
+        return '<div class="grade-ranking-metric"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong><span>' + escapeHtml(hint || '') + '</span></div>';
+      }
+
+      function renderGradeRankingCardV2_(title, subtitle, rows, mode) {
+        return [
+          '<section class="grade-ranking-card">',
+          '  <div class="grade-ranking-card-head"><div><strong>' + escapeHtml(title) + '</strong><span>' + escapeHtml(subtitle) + '</span></div><span>' + rows.length + '건</span></div>',
+          rows.length ? renderGradeRankingTableV2_(rows, mode) : '<div class="grade-empty">표시할 학생이 없습니다.</div>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderGradeRankingTableV2_(rows, mode) {
+        var isImprovement = mode === 'improvement';
+        var html = ['<div class="grades-table-wrap"><table class="grades-table grade-ranking-table"><thead><tr><th>순위</th><th>학생</th><th>학교/학년</th><th>과목</th><th>' + (isImprovement ? '향상' : '점수') + '</th><th>상태</th><th>입력자</th><th>수정일시</th></tr></thead><tbody>'];
         rows.forEach(function(row) {
-          html.push('<tr><td><span class="grade-rank-number">' + row.rank + '</span></td><td>' + escapeHtml(row.studentName || '-') + '</td><td>' + renderGradeSchoolGradeHtml_(row) + '</td><td>' + renderGradeSubjectBadgeV2_(row.subjectCategory, row.subjectName) + '</td><td><strong>' + escapeHtml(row.score) + '</strong></td><td>' + renderGradeScoreStatusBadgeV2_(row.status) + '</td><td>' + escapeHtml(row.updatedByName || row.createdByName || '-') + '</td><td>' + escapeHtml(formatGradeDateTime_(row.updatedAt || row.createdAt || '')) + '</td></tr>');
+          var rank = isImprovement ? row.improvementRank : row.rank;
+          var value = isImprovement
+            ? '<span class="grade-improvement-badge">+' + escapeHtml(String(row.improvement || 0)) + '점</span><div class="grades-v3-meta">' + escapeHtml(String(row.previousScore)) + ' → ' + escapeHtml(String(row.score)) + '</div>'
+            : '<strong class="grade-ranking-score">' + escapeHtml(String(row.score)) + '</strong>';
+          html.push('<tr><td>' + renderGradeRankMedalV2_(rank) + '</td><td><div class="grade-ranking-student"><strong>' + escapeHtml(row.studentName || '-') + '</strong><span>' + escapeHtml(row.studentId || '') + '</span></div></td><td><div class="grade-ranking-meta"><strong>' + renderGradeSchoolGradeHtml_(row) + '</strong></div></td><td>' + renderGradeSubjectBadgeV2_(row.subjectCategory, row.subjectName) + '</td><td>' + value + '</td><td>' + renderGradeScoreStatusBadgeV2_(row.status) + '</td><td><div class="grade-ranking-meta"><strong>' + escapeHtml(row.updatedByName || row.createdByName || '-') + '</strong></div></td><td><div class="grade-ranking-meta"><strong>' + escapeHtml(formatGradeDateTime_(row.updatedAt || row.createdAt || '')) + '</strong></div></td></tr>');
         });
         html.push('</tbody></table></div>');
         return html.join('');
+      }
+
+      function renderGradeRankMedalV2_(rank) {
+        return '<span class="grade-rank-medal rank-' + escapeAttribute(String(rank || '')) + '">' + escapeHtml(String(rank || '-')) + '</span>';
+      }
+
+      function renderGradeSubjectLeaderPanelV2_(leaders) {
+        return [
+          '<section class="grade-ranking-card">',
+          '  <div class="grade-ranking-card-head"><div><strong>과목별 1위</strong><span>같은 시험 범위에서 과목별 최고점</span></div><span>' + leaders.length + '개</span></div>',
+          leaders.length ? '<div class="grade-subject-leaders">' + leaders.map(function(row) {
+            return '<div class="grade-subject-leader-card">' + renderGradeSubjectBadgeV2_(row.subjectCategory, row.subjectName) + '<strong>' + escapeHtml(row.studentName || '-') + ' · ' + escapeHtml(String(row.score)) + '점</strong><span>' + renderGradeSchoolGradeHtml_(row) + ' · ' + escapeHtml(row.updatedByName || row.createdByName || '-') + '</span></div>';
+          }).join('') + '</div>' : '<div class="grade-empty">과목별 1위를 계산할 성적이 없습니다.</div>',
+          '</section>'
+        ].join('');
       }
 
       function renderGradeSubjectCategoryBadgeV2_(category) {
@@ -35799,25 +36045,143 @@
         });
       }
 
+      function buildGradeRankingDashboardV2_() {
+        var rows = buildGradeRankingRowsV2_();
+        var studentMap = {};
+        var subjectMap = {};
+        rows.forEach(function(row) {
+          studentMap[row.studentId || row.studentName || ''] = true;
+          subjectMap[buildGradeTrendSubjectKey_(row)] = true;
+        });
+        var improvedRows = rows.filter(function(row) {
+          return row.previousScore !== null && !isNaN(Number(row.previousScore)) && Number(row.improvement || 0) > 0;
+        }).sort(function(a, b) {
+          return Number(b.improvement || 0) - Number(a.improvement || 0) ||
+            Number(b.score || 0) - Number(a.score || 0);
+        });
+        var lastImprovement = null;
+        var improvementRank = 0;
+        improvedRows.forEach(function(row, index) {
+          if (lastImprovement === null || Number(row.improvement) !== lastImprovement) {
+            improvementRank = index + 1;
+            lastImprovement = Number(row.improvement);
+          }
+          row.improvementRank = improvementRank;
+        });
+        return {
+          rows: rows,
+          topRows: rows.slice().sort(function(a, b) {
+            return Number(a.rank || 9999) - Number(b.rank || 9999) ||
+              Number(b.score || 0) - Number(a.score || 0);
+          }),
+          improvedRows: improvedRows,
+          subjectLeaders: buildGradeSubjectLeadersV2_(rows),
+          studentCount: Object.keys(studentMap).filter(Boolean).length,
+          subjectCount: Object.keys(subjectMap).filter(Boolean).length,
+          scopeLabel: getGradeRankingScopeLabelV2_()
+        };
+      }
+
       function buildGradeRankingRowsV2_() {
         var rows = filterGradeRecordsByCurrentFilters_(APP_STATE.grades || []).map(function(record) {
           var score = record.finalScore || record.provisionalScore || record.rawScore;
-          return Object.assign({}, record, { score: score });
+          return Object.assign({}, record, {
+            score: score,
+            rankingScopeKey: buildGradeRankingScopeKeyV2_(record),
+            previousRecord: findPreviousGradeRecordForRankingV2_(record)
+          });
         }).filter(function(record) {
           return record.score !== '' && !isNaN(Number(record.score));
-        }).sort(function(a, b) {
-          return Number(b.score) - Number(a.score);
         });
-        var rank = 0;
-        var lastScore = null;
-        rows.forEach(function(row, index) {
-          if (lastScore === null || Number(row.score) !== lastScore) {
-            rank = index + 1;
-            lastScore = Number(row.score);
+        var groups = {};
+        rows.forEach(function(row) {
+          if (!groups[row.rankingScopeKey]) {
+            groups[row.rankingScopeKey] = [];
           }
-          row.rank = rank;
+          groups[row.rankingScopeKey].push(row);
         });
-        return rows;
+        Object.keys(groups).forEach(function(key) {
+          var rank = 0;
+          var lastScore = null;
+          groups[key].sort(function(a, b) {
+            return Number(b.score) - Number(a.score) ||
+              String(a.studentName || '').localeCompare(String(b.studentName || ''), 'ko');
+          }).forEach(function(row, index) {
+            if (lastScore === null || Number(row.score) !== lastScore) {
+              rank = index + 1;
+              lastScore = Number(row.score);
+            }
+            row.rank = rank;
+          });
+        });
+        rows.forEach(function(row) {
+          row.previousScore = row.previousRecord ? getGradeRecordScoreNumber_(row.previousRecord) : null;
+          row.improvement = row.previousScore === null || isNaN(row.previousScore) ? null : Math.round((Number(row.score) - Number(row.previousScore)) * 10) / 10;
+          row.improvementPercent = row.previousScore && !isNaN(row.previousScore) ? Math.round(((Number(row.score) - Number(row.previousScore)) / Math.abs(Number(row.previousScore))) * 1000) / 10 : null;
+        });
+        return rows.sort(function(a, b) {
+          return Number(a.rank || 9999) - Number(b.rank || 9999) ||
+            Number(b.score) - Number(a.score) ||
+            String(a.rankingScopeKey || '').localeCompare(String(b.rankingScopeKey || ''), 'ko');
+        });
+      }
+
+      function buildGradeRankingScopeKeyV2_(record) {
+        var type = getGradeExamTypeGroup_(record);
+        var subjectKey = buildGradeTrendSubjectKey_(record);
+        if (type === '내신') {
+          return ['내신', record.school || '학교 미정', record.grade || '학년 미정', subjectKey].join('|');
+        }
+        if (type === '모의고사' || type === '수능') {
+          return [type, record.grade || '학년 미정', subjectKey].join('|');
+        }
+        return [type, subjectKey].join('|');
+      }
+
+      function getGradeRankingScopeLabelV2_() {
+        var type = getGradeCurrentTypeGroup_();
+        if (type === '내신') {
+          return '학교별 같은 학년 · 과목별 순위';
+        }
+        if (type === '모의고사' || type === '수능') {
+          return '고등학교 학년별 · 과목별 순위';
+        }
+        return '시험 유형별 · 과목별 순위';
+      }
+
+      function findPreviousGradeRecordForRankingV2_(record) {
+        var currentOrder = getGradeExamChronoValue_(record);
+        var currentType = getGradeExamTypeGroup_(record);
+        var subjectKey = buildGradeTrendSubjectKey_(record);
+        return (APP_STATE.grades || []).filter(function(item) {
+          if (item === record || item.studentId !== record.studentId || getGradeExamTypeGroup_(item) !== currentType) {
+            return false;
+          }
+          if (buildGradeTrendSubjectKey_(item) !== subjectKey) {
+            return false;
+          }
+          if (currentType === '내신' && (item.school !== record.school || String(item.grade || '') !== String(record.grade || ''))) {
+            return false;
+          }
+          return getGradeExamChronoValue_(item) < currentOrder && !isNaN(getGradeRecordScoreNumber_(item));
+        }).sort(function(a, b) {
+          return getGradeExamChronoValue_(b) - getGradeExamChronoValue_(a) || sortGradesByUpdatedDesc_(a, b);
+        })[0] || null;
+      }
+
+      function buildGradeSubjectLeadersV2_(rows) {
+        var map = {};
+        (rows || []).forEach(function(row) {
+          var key = row.rankingScopeKey || buildGradeRankingScopeKeyV2_(row);
+          if (!map[key] || Number(row.score) > Number(map[key].score)) {
+            map[key] = row;
+          }
+        });
+        return Object.keys(map).map(function(key) { return map[key]; }).sort(function(a, b) {
+          return getGradeSubjectOrderIndex_(a) - getGradeSubjectOrderIndex_(b) ||
+            Number(a.rank || 9999) - Number(b.rank || 9999) ||
+            String(a.rankingScopeKey || '').localeCompare(String(b.rankingScopeKey || ''), 'ko');
+        }).slice(0, 12);
       }
 
       function buildGradeSchoolGradeStatsV2_() {
@@ -37178,9 +37542,9 @@
         var gradeBadge = renderGradeLevelBadge_(gradeLevel);
         var deltaBadge = renderGradeTrendDeltaBadge_(delta);
         if (record.__placeholder) {
-          return '<button type="button" class="grade-overview-score placeholder">' + renderGradeLevelBadge_('') + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span><span class="score-value">미입력</span></strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></span>' + renderGradeTrendDeltaBadge_(null) + '</button>';
+          return '<button type="button" class="grade-overview-score placeholder">' + renderGradeLevelBadge_('') + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span></strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></span><span class="grade-overview-score-metric"><strong class="grade-overview-score-value">미입력</strong>' + renderGradeTrendDeltaBadge_(null) + '</span></button>';
         }
-        return '<button type="button" class="grade-overview-score ' + (active ? 'active' : '') + '" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '" data-grade-action="highlight-grade-overview-subject" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-key="' + escapeAttribute(subjectKey) + '">' + gradeBadge + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span><span class="score-value">' + escapeHtml(score) + '</span></strong><span>' + escapeHtml(record.subjectCategory || '-') + (gradeText ? ' · ' + escapeHtml(gradeText) : '') + '</span></span>' + deltaBadge + '</button>';
+        return '<button type="button" class="grade-overview-score ' + (active ? 'active' : '') + '" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '" data-grade-action="highlight-grade-overview-subject" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-key="' + escapeAttribute(subjectKey) + '">' + gradeBadge + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span></strong><span>' + escapeHtml(record.subjectCategory || '-') + (gradeText ? ' · ' + escapeHtml(gradeText) : '') + '</span></span><span class="grade-overview-score-metric"><strong class="grade-overview-score-value">' + escapeHtml(score) + '</strong>' + deltaBadge + '</span></button>';
       }
 
       function renderGradeStudentTrendChart_(student, records) {
