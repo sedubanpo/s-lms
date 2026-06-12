@@ -19449,7 +19449,18 @@
         ].map(function(value) {
           return String(value || '').replace(/\s+/g, '');
         }).join('|');
-        return 'GRADE-' + firebaseDirectBase64UrlEncode_(key).slice(0, 80);
+        var encoded = firebaseDirectBase64UrlEncode_(key).slice(0, 48);
+        return 'GRADE-' + encoded + '-' + buildStableHashString_(key);
+      }
+
+      function buildStableHashString_(value) {
+        var text = String(value || '');
+        var hash = 2166136261;
+        for (var i = 0; i < text.length; i += 1) {
+          hash ^= text.charCodeAt(i);
+          hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+        }
+        return (hash >>> 0).toString(36);
       }
 
       function saveGradePayloadsViaFirebaseDirect_(payloads) {
@@ -36039,6 +36050,13 @@
         }) || null;
       }
 
+      function gradeRecordMatchesSubjectId_(record, subjectId) {
+        if (!record || !subjectId) {
+          return true;
+        }
+        return String(record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName)) === String(subjectId || '');
+      }
+
       function findGradeRecordById_(gradeId) {
         var id = String(gradeId || '');
         if (!id) {
@@ -36290,7 +36308,7 @@
         if (matched) {
           return matched;
         }
-        var record = (APP_STATE.grades || []).find(function(item) {
+        var record = (APP_STATE.grades || []).concat(APP_STATE.gradeHistory || []).find(function(item) {
           return String(item.subjectId || '') === String(subjectId || '') || String(item.subjectName || '') === String(subjectId || '');
         });
         return record ? {
@@ -36731,6 +36749,9 @@
       function openGradeScoreEditorV2_(studentId, subjectId, gradeId) {
         var student = findGradeStudentById_(studentId);
         var record = findGradeRecordById_(gradeId || '');
+        if (record && !gradeRecordMatchesSubjectId_(record, subjectId)) {
+          record = null;
+        }
         var subject = record ? {
           subjectId: record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName),
           subjectCategory: normalizeGradeSubjectCategoryClient_(record.subjectCategory || record.subjectArea, record.subjectName || record.detailSubject || record.subjectArea || ''),
@@ -37628,29 +37649,7 @@
         var historyRecords = (APP_STATE.gradeHistoryLoaded ? (APP_STATE.gradeHistory || []) : []).filter(function(record) {
           return matchesFilters(record) && String(record.changeType || '').toLowerCase() !== 'delete';
         });
-        var bestHistoryByExam = buildLatestGradeHistoryDisplayGroups_(historyRecords);
-        var currentByExam = {};
-        currentRecords.forEach(function(record) {
-          var key = buildGradeExamGroupKey_(record);
-          if (!currentByExam[key]) {
-            currentByExam[key] = [];
-          }
-          currentByExam[key].push(record);
-        });
-        var merged = [];
-        var seen = {};
-        Object.keys(currentByExam).forEach(function(key) {
-          var historyGroup = bestHistoryByExam[key] || [];
-          var rows = historyGroup.length > currentByExam[key].length ? historyGroup : currentByExam[key];
-          merged = merged.concat(rows);
-          seen[key] = true;
-        });
-        Object.keys(bestHistoryByExam).forEach(function(key) {
-          if (!seen[key]) {
-            merged = merged.concat(bestHistoryByExam[key]);
-          }
-        });
-        return merged.sort(sortGradesByUpdatedDesc_);
+        return mergeCurrentAndHistoryGradeRecordsForDisplay_(currentRecords, historyRecords);
       }
 
       function buildGradeExamGroupKey_(record) {
@@ -38769,10 +38768,37 @@
         var subjectIds = {};
         (students || []).forEach(function(student) { studentIds[student.studentId] = true; });
         (subjects || []).forEach(function(subject) { subjectIds[subject.subjectId] = true; });
-        return filterGradeRecordsByCurrentFilters_(APP_STATE.grades || []).filter(function(record) {
+        var currentRows = filterGradeRecordsByCurrentFilters_(APP_STATE.grades || []);
+        var historyRows = APP_STATE.gradeHistoryLoaded
+          ? filterGradeRecordsByCurrentFilters_(APP_STATE.gradeHistory || []).filter(function(record) {
+              return String(record.changeType || '').toLowerCase() !== 'delete';
+            })
+          : [];
+        return mergeCurrentAndHistoryGradeRecordsForDisplay_(currentRows, historyRows).filter(function(record) {
           var subjectId = record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName);
           return studentIds[record.studentId] && (subjectIds[subjectId] || Boolean(findVisibleSubjectForGradeRecordV3_(record, subjects)));
         });
+      }
+
+      function mergeCurrentAndHistoryGradeRecordsForDisplay_(currentRows, historyRows) {
+        var map = {};
+        (currentRows || []).forEach(function(record) {
+          var key = buildGradeRecordDisplayKey_(record);
+          if (!map[key] || sortGradesByUpdatedDesc_(record, map[key]) < 0) {
+            map[key] = record;
+          }
+        });
+        (historyRows || []).forEach(function(record) {
+          var key = buildGradeRecordDisplayKey_(record);
+          if (!map[key] || sortGradesByUpdatedDesc_(record, map[key]) < 0) {
+            map[key] = record;
+          }
+        });
+        return Object.keys(map).map(function(key) {
+          return map[key];
+        }).filter(function(record) {
+          return record && String(record.changeType || '').toLowerCase() !== 'delete';
+        }).sort(sortGradesByUpdatedDesc_);
       }
 
       function findVisibleSubjectForGradeRecordV3_(record, subjects) {
