@@ -33678,6 +33678,15 @@
         });
       }
 
+      function scheduleGradeHistoryLoadForDisplay_() {
+        if (!APP_STATE.token || APP_STATE.gradeHistoryLoaded || APP_STATE.gradeHistoryLoading) {
+          return;
+        }
+        setTimeout(function() {
+          ensureGradeHistoryLoaded_(false);
+        }, 0);
+      }
+
       function saveGradeRow_(studentId, subject) {
         var payload = buildGradePayloadForStudent_(studentId, subject);
         if (!payload) {
@@ -36248,23 +36257,23 @@
 
       function classifyGradeSubjectCategoryClient_(subjectName) {
         var text = String(subjectName || '').toLowerCase();
-        if (/생윤|생활윤리|생활과윤리|생활과\s*윤리|윤사|윤리와\s*사상|한국지리|세계지리|사회문화|사회·문화|세계사|동아시아|경제|정치와\s*법|정법|정치|법|사회|통합사회/.test(text)) {
-          return '사회';
-        }
-        if (/물리|화학|생명|생물|지구|과학|통합과학/.test(text)) {
-          return '과학';
-        }
-        if (/수학|미적|확률|통계|기하|대수|해석/.test(text)) {
-          return '수학';
+        if (/국어|문학|독서|언어와\s*매체|화법과\s*작문|화작|언매/.test(text)) {
+          return '국어';
         }
         if (/영어/.test(text)) {
           return '영어';
         }
-        if (/국어|문학|독서|언어와\s*매체|화법과\s*작문|화작|언매/.test(text)) {
-          return '국어';
+        if (/수학|미적|확률|통계|기하|대수|해석/.test(text)) {
+          return '수학';
+        }
+        if (/물리|화학|생명|생물|지구|과학|통합과학/.test(text)) {
+          return '과학';
         }
         if (/한국사/.test(text)) {
           return '한국사';
+        }
+        if (/생윤|생활윤리|생활과윤리|생활과\s*윤리|윤사|윤리와\s*사상|한국지리|세계지리|사회문화|사회·문화|세계사|동아시아|경제|정치와\s*법|정법|정치|사회|통합사회/.test(text)) {
+          return '사회';
         }
         return '기타';
       }
@@ -36274,6 +36283,9 @@
         var inferred = classifyGradeSubjectCategoryClient_(subjectName || current);
         if (inferred && inferred !== '기타') {
           if (!current || current === '기타') {
+            return inferred;
+          }
+          if (['국어', '영어', '수학', '과학', '사회', '한국사'].indexOf(inferred) !== -1 && current !== inferred) {
             return inferred;
           }
           if (inferred === '사회' && /^(과학|과학탐구)$/.test(current)) {
@@ -37633,6 +37645,7 @@
       }
 
       function getGradeOverviewRecords_(students) {
+        scheduleGradeHistoryLoadForDisplay_();
         var filters = APP_STATE.gradeFilters || {};
         var studentIds = {};
         var selectedSubject = filters.subject ? findGradeSubjectById_(filters.subject) : null;
@@ -37956,7 +37969,6 @@
           svg.push('<line x1="' + padLeft + '" y1="' + y.toFixed(1) + '" x2="' + (width - padRight) + '" y2="' + y.toFixed(1) + '" stroke="#e5edf7" stroke-width="1"></line>');
           svg.push('<text x="' + (padLeft - 64) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="end" fill="#64748b" font-size="11" font-weight="800">' + escapeHtml(String(value)) + '</text>');
         });
-        var subjectAxisLabels = [];
         chart.exams.forEach(function(exam, index) {
           var x = xFor(index);
           var examActive = highlightActive && highlight.examKey === exam.key;
@@ -37979,11 +37991,6 @@
             validPoints.push(point);
             pointText.push(xFor(point.examIndex).toFixed(1) + ',' + yFor(point.score).toFixed(1));
           });
-          if (validPoints.length) {
-            var labelPoint = validPoints[Math.max(0, Math.floor(validPoints.length / 2) - 1)];
-            var labelY = yFor(labelPoint.score);
-            subjectAxisLabels.push({ label: series.label, color: color, y: labelY, opacity: lineOpacity });
-          }
           if (pointText.length >= 2) {
             svg.push('<polyline points="' + pointText.join(' ') + '" fill="none" stroke="' + color + '" stroke-width="' + lineWidth + '" stroke-linecap="round" stroke-linejoin="round" opacity="' + lineOpacity + '"></polyline>');
           }
@@ -37997,13 +38004,7 @@
             var pointActive = subjectActive || examPointActive || !highlightActive;
             svg.push('<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (pointActive ? 5 : 3) + '" fill="' + color + '" stroke="#ffffff" stroke-width="' + (pointActive ? 3 : 2) + '" opacity="' + (pointActive ? 1 : 0.18) + '"></circle>');
             svg.push('<text x="' + x.toFixed(1) + '" y="' + (y - 8).toFixed(1) + '" text-anchor="middle" fill="' + color + '" font-size="' + (pointActive ? 11 : 9) + '" font-weight="900" opacity="' + (pointActive ? 1 : 0.18) + '">' + escapeHtml(String(point.score)) + '</text>');
-            if (point.detailLabel) {
-              svg.push('<text x="' + x.toFixed(1) + '" y="' + (y + 17).toFixed(1) + '" text-anchor="middle" fill="' + color + '" font-size="9" font-weight="850" opacity="' + (pointActive ? 0.82 : 0.18) + '">' + escapeHtml(point.detailLabel) + '</text>');
-            }
           });
-        });
-        adjustGradeTrendAxisLabels_(subjectAxisLabels, padTop + 8, height - padBottom - 8).forEach(function(item) {
-          svg.push('<text x="' + (padLeft - 12) + '" y="' + (item.y + 4).toFixed(1) + '" text-anchor="end" fill="' + item.color + '" font-size="9" font-weight="900" opacity="' + item.opacity + '">' + escapeHtml(item.label) + '</text>');
         });
         svg.push('</svg>');
         var legend = '<div class="grade-trend-legend">' + chart.series.map(function(series, index) {
@@ -38015,8 +38016,8 @@
         return [
           '<section class="grade-trend-chart">',
           '  <div class="grade-trend-chart-head"><strong>' + escapeHtml(chart.type) + ' 성적 그래프</strong><span>같은 과목의 시험별 점수 변화</span></div>',
-          svg.join(''),
           legend,
+          svg.join(''),
           '</section>'
         ].join('');
       }
@@ -38764,6 +38765,7 @@
       }
 
       function getGradeCurrentRecordsV3_(students, subjects) {
+        scheduleGradeHistoryLoadForDisplay_();
         var studentIds = {};
         var subjectIds = {};
         (students || []).forEach(function(student) { studentIds[student.studentId] = true; });
