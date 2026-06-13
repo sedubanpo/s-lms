@@ -12556,6 +12556,180 @@
         margin-top: 14px;
       }
 
+      .grade-analytics-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(280px, 0.8fr);
+        gap: 14px;
+        margin-top: 14px;
+      }
+
+      .grade-analytics-card {
+        border: 1px solid #dbe5f3;
+        border-radius: 10px;
+        background: #ffffff;
+        padding: 14px;
+      }
+
+      .grade-analytics-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .grade-analytics-head strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.9rem;
+        font-weight: 950;
+      }
+
+      .grade-analytics-head span {
+        display: block;
+        margin-top: 4px;
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 820;
+      }
+
+      .grade-stats-filter-bar {
+        display: inline-flex;
+        gap: 5px;
+        padding: 4px;
+        border: 1px solid #dbe5f3;
+        border-radius: 9px;
+        background: #f8fbff;
+      }
+
+      .grade-stats-filter-button {
+        min-height: 28px;
+        border: 0;
+        border-radius: 7px;
+        padding: 0 9px;
+        background: transparent;
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .grade-stats-filter-button.active {
+        background: #2563eb;
+        color: #ffffff;
+        box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+      }
+
+      .grade-donut-layout {
+        display: grid;
+        grid-template-columns: 150px minmax(0, 1fr);
+        gap: 14px;
+        align-items: center;
+      }
+
+      .grade-donut {
+        position: relative;
+        width: 148px;
+        height: 148px;
+        border-radius: 999px;
+        background: conic-gradient(#e5edf7 0 360deg);
+        box-shadow: inset 0 0 0 1px #dbe5f3;
+      }
+
+      .grade-donut::after {
+        content: '';
+        position: absolute;
+        inset: 28px;
+        border-radius: inherit;
+        background: #ffffff;
+        box-shadow: inset 0 0 0 1px #edf2f7;
+      }
+
+      .grade-donut-center {
+        position: absolute;
+        inset: 39px;
+        z-index: 1;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        color: #64748b;
+        font-size: 0.66rem;
+        font-weight: 850;
+        line-height: 1.2;
+      }
+
+      .grade-donut-center strong {
+        display: block;
+        color: #0f172a;
+        font-size: 1.15rem;
+        font-weight: 950;
+      }
+
+      .grade-donut-legend {
+        display: grid;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .grade-donut-legend-row {
+        display: grid;
+        grid-template-columns: 10px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        min-width: 0;
+        color: #334155;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .grade-donut-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+      }
+
+      .grade-donut-legend-row span:nth-child(2) {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .grade-weak-instructor-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .grade-weak-instructor-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+        padding: 9px 10px;
+        border: 1px solid #fee2e2;
+        border-radius: 8px;
+        background: #fff7f7;
+      }
+
+      .grade-weak-instructor-row strong {
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #991b1b;
+        font-size: 0.74rem;
+        font-weight: 950;
+      }
+
+      .grade-weak-instructor-row span {
+        display: block;
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 820;
+      }
+
       .grade-dashboard-list {
         display: grid;
         gap: 8px;
@@ -35300,6 +35474,7 @@
         return [
           renderGradeFilters_(),
           renderGradeStatsDashboardCardsV2_(dashboard),
+          renderGradeStatsAnalyticsPanelV2_(dashboard),
           renderGradeInstructorCoveragePanelV2_(dashboard),
           renderGradeInstructorExamMatrixV2_(dashboard),
           '<div class="grade-dashboard-panels">',
@@ -35316,7 +35491,9 @@
       function buildGradeStatsDashboardV2_() {
         var students = getGradeFilteredStudents_();
         var subjects = getGradeVisibleSubjects_();
-        var records = getGradeCurrentRecordsV3_(students, subjects);
+        var allRecords = getGradeCurrentRecordsV3_(students, subjects);
+        var submitterFilter = APP_STATE.gradeStatsSubmitterFilter || 'all';
+        var records = filterGradeStatsRecordsBySubmitterTypeV2_(allRecords, submitterFilter);
         var recordsByStudent = {};
         var subjectStudentMap = {};
         records.forEach(function(record) {
@@ -35364,13 +35541,175 @@
         return {
           students: students,
           subjects: subjects,
+          allRecords: allRecords,
           records: records,
           entered: entered,
           missing: missing,
           subjectRows: subjectRows,
+          submitterFilter: submitterFilter,
+          submitterRows: buildGradeStatsSubmitterRowsV2_(allRecords),
           inputRate: students.length ? Math.round((entered.length / students.length) * 100) : 0,
           cellRate: students.length && subjects.length ? Math.round((records.length / Math.max(1, students.length * subjects.length)) * 100) : 0
         };
+      }
+
+      function filterGradeStatsRecordsBySubmitterTypeV2_(records, filter) {
+        if (!filter || filter === 'all') {
+          return (records || []).slice();
+        }
+        return (records || []).filter(function(record) {
+          return getGradeRecordSubmitterTypeV2_(record) === filter;
+        });
+      }
+
+      function getGradeRecordSubmitterTypeV2_(record) {
+        var creator = normalizeSearchText([record && record.createdByName, record && record.createdById].filter(Boolean).join(' '));
+        var updater = normalizeSearchText([record && record.updatedByName, record && record.updatedById].filter(Boolean).join(' '));
+        var text = [creator, updater].filter(Boolean).join(' ');
+        var instructorLookup = buildGradeInstructorLookupV2_();
+        var candidates = [
+          record && record.createdById,
+          record && record.createdByName,
+          record && record.updatedById,
+          record && record.updatedByName
+        ].map(function(value) { return String(value || '').trim(); }).filter(Boolean);
+        var matchedInstructor = candidates.some(function(value) {
+          return Boolean(instructorLookup[value] || instructorLookup[normalizeSearchText(value)]);
+        });
+        if (matchedInstructor) {
+          return 'instructor';
+        }
+        if (/관리자|에스에듀|admin|desk|데스크|원장|대표/.test(text)) {
+          return 'manager';
+        }
+        return text ? 'manager' : 'unknown';
+      }
+
+      function buildGradeStatsSubmitterRowsV2_(records) {
+        var map = {
+          instructor: { key: 'instructor', label: '강사 입력', count: 0, color: '#16a34a' },
+          manager: { key: 'manager', label: '관리자 입력', count: 0, color: '#2563eb' },
+          unknown: { key: 'unknown', label: '입력자 미확인', count: 0, color: '#94a3b8' }
+        };
+        (records || []).forEach(function(record) {
+          var key = getGradeRecordSubmitterTypeV2_(record);
+          if (!map[key]) {
+            map[key] = { key: key, label: key, count: 0, color: '#94a3b8' };
+          }
+          map[key].count += 1;
+        });
+        return Object.keys(map).map(function(key) { return map[key]; }).filter(function(row) { return row.count > 0; });
+      }
+
+      function renderGradeStatsAnalyticsPanelV2_(dashboard) {
+        var coverageRows = buildGradeInstructorCoverageRowsV2_({
+          students: dashboard.students,
+          subjects: dashboard.subjects,
+          records: dashboard.records,
+          scope: buildCurrentGradeExamScopeV2_()
+        });
+        var subjectRows = (dashboard.subjectRows || []).map(function(row, index) {
+          return {
+            label: row.subject.subjectName || row.subject.subjectCategory || '과목',
+            count: row.count,
+            value: row.count,
+            subtext: row.rate + '%',
+            color: getGradeSubjectColor_(row.subject.subjectId, row.subject.subjectName, index)
+          };
+        }).filter(function(row) { return row.count > 0; });
+        var instructorRows = coverageRows.map(function(row, index) {
+          return {
+            label: formatGradeInstructorDisplayNameV2_(row),
+            count: row.enteredCells,
+            value: row.enteredCells,
+            subtext: row.rate + '%',
+            color: GRADE_SUBJECT_COLOR_PALETTE_[index % GRADE_SUBJECT_COLOR_PALETTE_.length]
+          };
+        }).filter(function(row) { return row.count > 0; });
+        var weakRows = coverageRows.filter(function(row) {
+          return row.targetCells > 0 && row.rate < 70;
+        }).sort(function(a, b) {
+          return a.rate - b.rate || b.targetCells - a.targetCells || String(a.instructorName || '').localeCompare(String(b.instructorName || ''), 'ko');
+        }).slice(0, 8);
+        return [
+          '<section class="grades-panel" style="margin-top:14px;">',
+          '  <div class="grades-panel-head"><div><h3>제출률 통계 대시보드</h3><p>과목별, 강사별, 입력자 유형별 입력 현황을 비교합니다.</p></div>' + renderGradeStatsSubmitterFilterV2_(dashboard.submitterFilter) + '</div>',
+          '  <div class="grade-analytics-grid">',
+          renderGradeDonutCardV2_('과목별 입력 현황', '입력된 과목 셀 기준', subjectRows, dashboard.records.length, '건'),
+          renderGradeDonutCardV2_('강사별 입력 현황', '권한 연결 강사의 담당 셀 기준', instructorRows, coverageRows.reduce(function(sum, row) { return sum + row.enteredCells; }, 0), '건'),
+          renderGradeSubmitterAndWeakPanelV2_(dashboard, weakRows),
+          '  </div>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderGradeStatsSubmitterFilterV2_(active) {
+        var filters = [
+          { key: 'all', label: '전체' },
+          { key: 'instructor', label: '강사 입력' },
+          { key: 'manager', label: '관리자 입력' }
+        ];
+        return '<div class="grade-stats-filter-bar">' + filters.map(function(item) {
+          return '<button type="button" class="grade-stats-filter-button ' + (active === item.key ? 'active' : '') + '" data-grade-action="stats-submitter-filter" data-stats-submitter-filter="' + escapeAttribute(item.key) + '">' + escapeHtml(item.label) + '</button>';
+        }).join('') + '</div>';
+      }
+
+      function renderGradeDonutCardV2_(title, subtitle, rows, total, unit) {
+        return [
+          '<section class="grade-analytics-card">',
+          '  <div class="grade-analytics-head"><div><strong>' + escapeHtml(title) + '</strong><span>' + escapeHtml(subtitle || '') + '</span></div><span class="grade-chip blue">' + escapeHtml(String(total || 0)) + escapeHtml(unit || '') + '</span></div>',
+          renderGradeDonutV2_(rows, total, unit),
+          '</section>'
+        ].join('');
+      }
+
+      function renderGradeDonutV2_(rows, total, unit) {
+        rows = (rows || []).filter(function(row) { return Number(row.value || row.count || 0) > 0; }).slice(0, 8);
+        total = Number(total || rows.reduce(function(sum, row) { return sum + Number(row.value || row.count || 0); }, 0));
+        if (!rows.length || !total) {
+          return '<div class="grade-empty">표시할 입력 데이터가 없습니다.</div>';
+        }
+        var start = 0;
+        var segments = rows.map(function(row) {
+          var value = Number(row.value || row.count || 0);
+          var degrees = Math.max(0, value / total * 360);
+          var segment = escapeAttribute(row.color || '#94a3b8') + ' ' + start.toFixed(1) + 'deg ' + (start + degrees).toFixed(1) + 'deg';
+          start += degrees;
+          return segment;
+        }).join(', ');
+        return [
+          '<div class="grade-donut-layout">',
+          '  <div class="grade-donut" style="background:conic-gradient(' + segments + ', #e5edf7 ' + start.toFixed(1) + 'deg 360deg);"><div class="grade-donut-center"><span><strong>' + escapeHtml(String(total)) + '</strong>' + escapeHtml(unit || '건') + '</span></div></div>',
+          '  <div class="grade-donut-legend">',
+          rows.map(function(row) {
+            var value = Number(row.value || row.count || 0);
+            var percent = total ? Math.round(value / total * 100) : 0;
+            return '<div class="grade-donut-legend-row"><i class="grade-donut-dot" style="background:' + escapeAttribute(row.color || '#94a3b8') + ';"></i><span title="' + escapeAttribute(row.label || '-') + '">' + escapeHtml(row.label || '-') + '</span><strong>' + value + ' · ' + percent + '%</strong></div>';
+          }).join(''),
+          '  </div>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderGradeSubmitterAndWeakPanelV2_(dashboard, weakRows) {
+        var submitterRows = (dashboard.submitterRows || []).map(function(row) {
+          return {
+            label: row.label,
+            count: row.count,
+            value: row.count,
+            color: row.color
+          };
+        });
+        return [
+          '<section class="grade-analytics-card">',
+          '  <div class="grade-analytics-head"><div><strong>입력자 유형</strong><span>강사 입력과 관리자 입력을 분리합니다.</span></div></div>',
+          renderGradeDonutV2_(submitterRows, (dashboard.allRecords || []).length, '건'),
+          '  <div class="grade-analytics-head" style="margin-top:14px;"><div><strong>입력률 미비 강사</strong><span>70% 미만 담당자를 우선 확인합니다.</span></div></div>',
+          weakRows.length ? '<div class="grade-weak-instructor-list">' + weakRows.map(function(row) {
+            return '<div class="grade-weak-instructor-row"><div><strong>' + escapeHtml(formatGradeInstructorDisplayNameV2_(row)) + '</strong><span>' + escapeHtml(row.subjectLabel || '과목 미지정') + ' · 입력 ' + row.enteredCells + '/' + row.targetCells + '칸</span></div><span class="grade-chip warn">' + row.rate + '%</span></div>';
+          }).join('') + '</div>' : '<div class="grade-empty">입력률 미비 강사가 없습니다.</div>',
+          '</section>'
+        ].join('');
       }
 
       function renderGradeInstructorCoveragePanelV2_(dashboard) {
@@ -35873,6 +36212,9 @@
           renderGrades();
         } else if (action === 'toggle-instructor-coverage-list') {
           toggleGradeInstructorCoverageListV2_(button.getAttribute('data-instructor-key') || '', button.getAttribute('data-list-type') || 'missing');
+        } else if (action === 'stats-submitter-filter') {
+          APP_STATE.gradeStatsSubmitterFilter = button.getAttribute('data-stats-submitter-filter') || 'all';
+          renderGrades();
         } else if (action === 'highlight-grade-overview-subject') {
           setGradeOverviewHighlightV2_(button.getAttribute('data-student-id') || '', button.getAttribute('data-subject-key') || '', '');
         } else if (action === 'highlight-grade-overview-exam') {
@@ -38186,6 +38528,10 @@
         var types = getGradeTypeOrder_();
         var type = (APP_STATE.gradeFilters && APP_STATE.gradeFilters.examCategory) ? getGradeCurrentTypeGroup_() : '';
         var filteredTypeRows = type ? (records || []).filter(function(record) { return getGradeExamTypeGroup_(record) === type; }) : [];
+        if (type && uniqueList_(filteredTypeRows.map(buildGradeTrendExamKey_)).length < 2) {
+          type = '';
+          filteredTypeRows = [];
+        }
         if (!type || !filteredTypeRows.length) {
           type = types.map(function(candidate) {
             var rows = (records || []).filter(function(record) { return getGradeExamTypeGroup_(record) === candidate; });
@@ -39276,6 +39622,9 @@
           renderGrades();
         } else if (action === 'toggle-instructor-coverage-list') {
           toggleGradeInstructorCoverageListV2_(button.getAttribute('data-instructor-key') || '', button.getAttribute('data-list-type') || 'missing');
+        } else if (action === 'stats-submitter-filter') {
+          APP_STATE.gradeStatsSubmitterFilter = button.getAttribute('data-stats-submitter-filter') || 'all';
+          renderGrades();
         } else if (action === 'highlight-grade-overview-subject') {
           setGradeOverviewHighlightV2_(button.getAttribute('data-student-id') || '', button.getAttribute('data-subject-key') || '', '');
         } else if (action === 'highlight-grade-overview-exam') {
