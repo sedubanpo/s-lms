@@ -17363,41 +17363,51 @@
         var studentsCollectionName = collections.students || 'students';
         var readActiveStudents = function() {
           var collection = db.collection(studentsCollectionName);
-          return firestoreGet_(collection.where('active', '==', true), 'login:active students', {
-            collection: studentsCollectionName,
-            scope: 'active'
-          }).then(function(snapshot) {
-            if (snapshot.docs && snapshot.docs.length) {
-              return snapshot;
-            }
-            return firestoreGet_(collection.where('isActive', '==', true), 'login:active students by isActive', {
-              collection: studentsCollectionName,
+          var activeQueries = [
+            {
+              query: collection.where('active', '==', true),
+              label: 'login:active students',
+              scope: 'active=true'
+            },
+            {
+              query: collection.where('isActive', '==', true),
+              label: 'login:active students by isActive',
               scope: 'isActive=true'
-            });
-          }).then(function(snapshot) {
-            if (snapshot.docs && snapshot.docs.length) {
-              return snapshot;
-            }
-            return firestoreGet_(collection.where('status', '==', 'ACTIVE'), 'login:active students by status', {
-              collection: studentsCollectionName,
+            },
+            {
+              query: collection.where('status', '==', 'ACTIVE'),
+              label: 'login:active students by status',
               scope: 'status=ACTIVE'
+            }
+          ];
+          return Promise.all(activeQueries.map(function(item) {
+            return firestoreGet_(item.query, item.label, {
+              collection: studentsCollectionName,
+              scope: item.scope
+            }).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase active student query skipped:', item.scope, error);
+              }
+              return { docs: [], failed: true };
             });
-          }).then(function(snapshot) {
-            if (snapshot.docs && snapshot.docs.length) {
-              return snapshot;
+          })).then(function(snapshots) {
+            var seen = {};
+            var docs = [];
+            snapshots.forEach(function(snapshot) {
+              (snapshot.docs || []).forEach(function(doc) {
+                if (doc && doc.id && !seen[doc.id]) {
+                  seen[doc.id] = true;
+                  docs.push(doc);
+                }
+              });
+            });
+            if (docs.length) {
+              return { docs: docs };
             }
             if (window.console && console.warn) {
               console.warn('Firebase active student query returned no rows; falling back to full student list.');
             }
             return firestoreGet_(collection, 'login:students full fallback', {
-              collection: studentsCollectionName,
-              scope: 'fallback-full'
-            });
-          }).catch(function(error) {
-            if (window.console && console.warn) {
-              console.warn('Firebase active student query failed; falling back to full student list:', error);
-            }
-            return firestoreGet_(collection, 'login:students full fallback after error', {
               collection: studentsCollectionName,
               scope: 'fallback-full'
             });
@@ -19761,24 +19771,41 @@
           var collectionName = getGradeFirebaseCollectionName_('grades');
           var year = String(getGradeYear_ ? getGradeYear_() : ((APP_STATE.gradeFilters && (APP_STATE.gradeFilters.examYear || APP_STATE.gradeFilters.schoolYear)) || new Date().getFullYear()));
           var collection = state.firestore.collection(collectionName);
-          var yearlyQuery = collection.where('schoolYear', '==', year);
-          var readExamYearFallback = function(reason) {
-            if (window.console && console.warn && reason) {
-              console.warn('Firebase schoolYear grade query skipped; retrying examYear query:', reason);
-            }
-            return firestoreGet_(collection.where('examYear', '==', year), 'grades:current examYear fallback', {
-              collection: collectionName,
-              scope: 'examYear=' + year
-            });
-          };
-          return Promise.all([
-            firestoreGet_(yearlyQuery, 'grades:current year', {
-              collection: collectionName,
+          var yearQueries = [
+            {
+              query: collection.where('schoolYear', '==', year),
+              label: 'grades:current year',
               scope: 'schoolYear=' + year
-            }).then(function(snapshot) {
-              return snapshot && snapshot.docs && snapshot.docs.length ? snapshot : readExamYearFallback('empty schoolYear result');
-            }).catch(function(error) {
-              return readExamYearFallback(error);
+            },
+            {
+              query: collection.where('examYear', '==', year),
+              label: 'grades:current examYear fallback',
+              scope: 'examYear=' + year
+            }
+          ];
+          return Promise.all([
+            Promise.all(yearQueries.map(function(item) {
+              return firestoreGet_(item.query, item.label, {
+                collection: collectionName,
+                scope: item.scope
+              }).catch(function(error) {
+                if (window.console && console.warn) {
+                  console.warn('Firebase yearly grade query skipped:', item.scope, error);
+                }
+                return { docs: [] };
+              });
+            })).then(function(snapshots) {
+              var seen = {};
+              var docs = [];
+              snapshots.forEach(function(snapshot) {
+                (snapshot.docs || []).forEach(function(doc) {
+                  if (doc && doc.id && !seen[doc.id]) {
+                    seen[doc.id] = true;
+                    docs.push(doc);
+                  }
+                });
+              });
+              return { docs: docs, forEach: function(callback) { docs.forEach(callback); } };
             }),
             loadGradeSettingsViaFirebaseDirect_().catch(function(error) {
               if (window.console && console.warn) {
@@ -34017,6 +34044,7 @@
         }
         if (target.matches('[data-grade-filter]')) {
           var key = target.getAttribute('data-grade-filter');
+          var previousYear = getGradeYear_();
           APP_STATE.gradeFilters[key] = target.value || '';
           if (key === 'examCategory') {
             APP_STATE.gradeFilters.examName = getDefaultGradeExamName_(target.value);
@@ -34024,6 +34052,10 @@
           }
           if (key === 'examName' && APP_STATE.gradeFilters.examCategory === '내신') {
             APP_STATE.gradeFilters.term = String(target.value || '').indexOf('2학기') !== -1 ? '2학기' : '1학기';
+          }
+          if ((key === 'examYear' || key === 'schoolYear') && getGradeYear_() !== previousYear) {
+            refreshGrades_();
+            return;
           }
           renderGrades();
           return;
@@ -35205,7 +35237,12 @@
         if (!key) {
           return;
         }
+        var previousYear = getGradeYear_();
         applyGradeFilterValueV2_(key, value);
+        if ((key === 'examYear' || key === 'schoolYear') && getGradeYear_() !== previousYear) {
+          refreshGrades_();
+          return;
+        }
         renderGrades();
       }
 
@@ -36504,6 +36541,7 @@
         }
         if (target.matches('[data-grade-filter]')) {
           var key = target.getAttribute('data-grade-filter');
+          var previousYear = getGradeYear_();
           APP_STATE.gradeFilters[key] = target.value || '';
           if (key === 'examYear') {
             APP_STATE.gradeFilters.schoolYear = target.value || '';
@@ -36514,6 +36552,10 @@
           }
           if (key === 'examName' && APP_STATE.gradeFilters.examCategory === '내신') {
             APP_STATE.gradeFilters.term = String(target.value || '').indexOf('2학기') !== -1 ? '2학기' : '1학기';
+          }
+          if ((key === 'examYear' || key === 'schoolYear') && getGradeYear_() !== previousYear) {
+            refreshGrades_();
+            return;
           }
           renderGrades();
           return;
