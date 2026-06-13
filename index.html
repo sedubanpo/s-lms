@@ -19803,14 +19803,12 @@
           var targetId = String(gradeId || '');
           var gradeCollection = state.firestore.collection(getGradeFirebaseCollectionName_('grades'));
           var historyCollection = state.firestore.collection(getGradeFirebaseCollectionName_('history'));
-          var deletedDisplayKey = '';
           var deletedHistoryRecord = null;
           return gradeCollection.doc(targetId).get().then(function(gradeDoc) {
             var batch = state.firestore.batch();
             var now = new Date();
             var currentUser = APP_STATE.user || {};
             var existing = findGradeRecordById_(targetId) || (gradeDoc.exists ? normalizeGradeFirebaseDoc_(gradeDoc) : {});
-            deletedDisplayKey = buildGradeRecordDisplayKey_(existing);
             var historyId = 'GRADE-HISTORY-' + now.getTime() + '-' + Math.random().toString(36).slice(2, 10);
             var deleteHistory = Object.assign({}, existing, {
               gradeId: targetId,
@@ -19835,7 +19833,7 @@
             return batch.commit();
           }).then(function() {
             APP_STATE.grades = (APP_STATE.grades || []).filter(function(record) {
-              return String(record.gradeId || '') !== targetId && (!deletedDisplayKey || buildGradeRecordDisplayKey_(record) !== deletedDisplayKey);
+              return String(record.gradeId || '') !== targetId;
             });
             if (deletedHistoryRecord) {
               APP_STATE.gradeHistory = [deletedHistoryRecord].concat(APP_STATE.gradeHistory || []);
@@ -39305,23 +39303,48 @@
 
       function mergeCurrentAndHistoryGradeRecordsForDisplay_(currentRows, historyRows) {
         var map = {};
+        var deletedGradeIds = {};
+        var deletedDisplayKeysWithoutId = {};
+        (historyRows || []).forEach(function(record) {
+          if (String(record.changeType || '').toLowerCase() !== 'delete') {
+            return;
+          }
+          if (record.gradeId) {
+            deletedGradeIds[String(record.gradeId)] = true;
+            return;
+          }
+          deletedDisplayKeysWithoutId[buildGradeRecordDisplayKey_(record)] = true;
+        });
         (currentRows || []).forEach(function(record) {
+          if (record.gradeId && deletedGradeIds[String(record.gradeId)]) {
+            return;
+          }
           var key = buildGradeRecordDisplayKey_(record);
+          if (!record.gradeId && deletedDisplayKeysWithoutId[key]) {
+            return;
+          }
           if (!map[key] || sortGradesByUpdatedDesc_(record, map[key]) < 0) {
             map[key] = record;
           }
         });
         (historyRows || []).forEach(function(record) {
+          if (String(record.changeType || '').toLowerCase() === 'delete') {
+            return;
+          }
+          if (record.gradeId && deletedGradeIds[String(record.gradeId)]) {
+            return;
+          }
           var key = buildGradeRecordDisplayKey_(record);
+          if (!record.gradeId && deletedDisplayKeysWithoutId[key]) {
+            return;
+          }
           if (!map[key] || sortGradesByUpdatedDesc_(record, map[key]) < 0) {
             map[key] = record;
           }
         });
         return Object.keys(map).map(function(key) {
           return map[key];
-        }).filter(function(record) {
-          return record && String(record.changeType || '').toLowerCase() !== 'delete';
-        }).sort(sortGradesByUpdatedDesc_);
+        }).filter(Boolean).sort(sortGradesByUpdatedDesc_);
       }
 
       function findVisibleSubjectForGradeRecordV3_(record, subjects) {
