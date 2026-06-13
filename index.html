@@ -15984,8 +15984,6 @@
         document.getElementById('topLogoutButton').addEventListener('click', handleLogout);
         document.getElementById('refreshButton').addEventListener('click', refreshDashboard);
         document.getElementById('topRefreshButton').addEventListener('click', refreshDashboard);
-        document.addEventListener('visibilitychange', handleDashboardVisibilitySync_);
-        window.addEventListener('focus', handleDashboardVisibilitySync_);
         document.getElementById('settingsButton').addEventListener('click', openSystemSettingsModal_);
         document.getElementById('quickAddStudentButton').addEventListener('click', handleQuickAddStudentOpen);
         document.getElementById('materialOpenLogsButton').addEventListener('click', handleMaterialOpenLogButtonClick_);
@@ -17141,10 +17139,10 @@
         var collections = state.collections || {};
         var db = state.firestore;
         return Promise.all([
-          db.collection(collections.users || 'users').doc(uid).get({ source: 'server' }),
-          db.collection(collections.userProfiles || 'userProfiles').doc(uid).get({ source: 'server' }),
-          db.collection(collections.userAppAccess || 'userAppAccess').doc(uid).get({ source: 'server' }),
-          db.collection(collections.students || 'students').get({ source: 'server' })
+          db.collection(collections.users || 'users').doc(uid).get(),
+          db.collection(collections.userProfiles || 'userProfiles').doc(uid).get(),
+          db.collection(collections.userAppAccess || 'userAppAccess').doc(uid).get(),
+          db.collection(collections.students || 'students').get()
         ]).then(function(results) {
           var userDoc = results[0].exists ? (results[0].data() || {}) : {};
           var profileDoc = results[1].exists ? (results[1].data() || {}) : {};
@@ -17165,13 +17163,25 @@
           };
           var safeCollectionGet = function(collectionName, label) {
             var collection = db.collection(collectionName);
-            return collection.get({ source: 'server' }).catch(function(error) {
+            return collection.get().catch(function(error) {
               if (window.console && console.warn) {
-                console.warn('Firebase ' + label + ' server list skipped; retrying default source:', error);
+                console.warn('Firebase ' + label + ' list skipped:', error);
               }
-              return collection.get().catch(function(fallbackError) {
+              return { docs: [] };
+            });
+          };
+          var safeLimitedCollectionGet = function(collectionName, label, orderField, limitCount) {
+            var collection = db.collection(collectionName);
+            var limitedQuery = orderField
+              ? collection.orderBy(orderField, 'desc').limit(limitCount)
+              : collection.limit(limitCount);
+            return limitedQuery.get().catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase limited ' + label + ' list skipped; retrying without order:', error);
+              }
+              return collection.limit(limitCount).get().catch(function(fallbackError) {
                 if (window.console && console.warn) {
-                  console.warn('Firebase ' + label + ' list skipped:', fallbackError);
+                  console.warn('Firebase limited ' + label + ' fallback skipped:', fallbackError);
                 }
                 return { docs: [] };
               });
@@ -17191,10 +17201,10 @@
               });
             });
             var queries = Object.keys(candidateMap).filter(Boolean).map(function(candidate) {
-              return collection.where('instructorId', '==', candidate).get({ source: 'server' });
+              return collection.where('instructorId', '==', candidate).get();
             });
             if (user.name) {
-              queries.push(collection.where('instructorName', '==', user.name).get({ source: 'server' }));
+              queries.push(collection.where('instructorName', '==', user.name).get());
             }
             if (!queries.length) {
               return safeCollectionGet(collectionName, 'student permission');
@@ -17229,7 +17239,7 @@
             safePermissionGet(collections.permissions || 'studentPermissions'),
             safeCollectionGet(collections.permissionRequests || 'permissionRequests', 'permission request'),
             user.role === 'ADMIN' ? safeCollectionGet(collections.homerooms || 'studentHomerooms', 'homeroom') : Promise.resolve({ docs: [] }),
-            safeCollectionGet(collections.studentLogs || 'studentLogs', 'student log')
+            safeLimitedCollectionGet(collections.studentLogs || 'studentLogs', 'student log', 'createdAtMs', 300)
           ]);
           return contextDataPromise.then(function(adminResults) {
           var userSnapshot = adminResults[0];
@@ -17496,6 +17506,8 @@
       }
 
       function handleDashboardVisibilitySync_() {
+        // Disabled: focus/visibility refreshes repeatedly reloaded broad Firestore collections.
+        return;
         if (!APP_STATE.token || document.hidden || APP_STATE.autoSyncInFlight) {
           return;
         }
@@ -18522,11 +18534,11 @@
           if (!isFirebaseDirectAuthReusable_(state)) {
             throw new Error('Firebase 일정 인증이 준비되지 않았습니다. 로그인을 새로고침한 뒤 다시 시도해 주세요.');
           }
-          return state.firestore.collection(getEventsFirebaseCollectionName_()).get({ source: 'server' }).catch(function(error) {
+          return state.firestore.collection(getEventsFirebaseCollectionName_()).get().catch(function(error) {
             if (window.console && console.warn) {
-              console.warn('Firebase events server read failed; retrying default source:', error);
+              console.warn('Firebase events read failed:', error);
             }
-            return state.firestore.collection(getEventsFirebaseCollectionName_()).get();
+            return { forEach: function() {} };
           }).then(function(snapshot) {
             var rows = [];
             snapshot.forEach(function(doc) {
@@ -18750,11 +18762,11 @@
       }
 
       function readJikboCollectionViaFirebaseDirect_(state, key, normalizer) {
-        return state.firestore.collection(getJikboFirebaseCollectionName_(key)).get({ source: 'server' }).catch(function(error) {
+        return state.firestore.collection(getJikboFirebaseCollectionName_(key)).get().catch(function(error) {
           if (window.console && console.warn) {
-            console.warn('Firebase jikbo server read failed; retrying default source:', key, error);
+            console.warn('Firebase jikbo read failed:', key, error);
           }
-          return state.firestore.collection(getJikboFirebaseCollectionName_(key)).get();
+          return { forEach: function() {} };
         }).then(function(snapshot) {
           var rows = [];
           snapshot.forEach(function(doc) {
@@ -19057,11 +19069,11 @@
             throw new Error('Firebase 자료실 인증이 준비되지 않았습니다. 로그인을 새로고침한 뒤 다시 시도해 주세요.');
           }
           var collectionName = (state.collections && state.collections.materials) || 'materials';
-          return state.firestore.collection(collectionName).get({ source: 'server' }).catch(function(error) {
+          return state.firestore.collection(collectionName).get().catch(function(error) {
             if (window.console && console.warn) {
-              console.warn('Firebase materials server read failed; retrying default source:', error);
+              console.warn('Firebase materials read failed:', error);
             }
-            return state.firestore.collection(collectionName).get();
+            return { forEach: function() {} };
           }).then(function(snapshot) {
             var rows = [];
             snapshot.forEach(function(doc) {
@@ -19132,11 +19144,11 @@
             return null;
           }
           var collectionName = (state.collections && state.collections.materialOpenLogs) || 'materialOpenLogs';
-          return state.firestore.collection(collectionName).get({ source: 'server' }).catch(function(error) {
+          return state.firestore.collection(collectionName).get().catch(function(error) {
             if (window.console && console.warn) {
-              console.warn('Firebase material open logs server read failed; retrying default source:', error);
+              console.warn('Firebase material open logs read failed:', error);
             }
-            return state.firestore.collection(collectionName).get();
+            return { forEach: function() {} };
           }).then(function(snapshot) {
             var rows = [];
             snapshot.forEach(function(doc) {
@@ -19449,7 +19461,7 @@
             throw new Error('성적 Firestore 직접 조회가 아직 활성화되지 않았습니다.');
           }
           return Promise.all([
-            state.firestore.collection(getGradeFirebaseCollectionName_('grades')).get({ source: 'server' }),
+            state.firestore.collection(getGradeFirebaseCollectionName_('grades')).get(),
             loadGradeSettingsViaFirebaseDirect_().catch(function(error) {
               if (window.console && console.warn) {
                 console.warn('Firebase grade settings read skipped:', error);
@@ -19487,7 +19499,7 @@
           return state.firestore.collection(getGradeFirebaseCollectionName_('history'))
             .orderBy('updatedAtMs', 'desc')
             .limit(Math.max(1, Math.min(500, Number(limit || 300))))
-            .get({ source: 'server' })
+            .get()
             .then(function(snapshot) {
               var rows = [];
               snapshot.forEach(function(doc) {
