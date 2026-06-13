@@ -17309,14 +17309,105 @@
         return 0;
       }
 
+      function getFirestoreReadStats_() {
+        APP_STATE.firestoreReadStats = APP_STATE.firestoreReadStats || {
+          total: 0,
+          calls: []
+        };
+        return APP_STATE.firestoreReadStats;
+      }
+
+      function estimateFirestoreReadCount_(snapshot) {
+        if (!snapshot) {
+          return 0;
+        }
+        if (snapshot.docs && typeof snapshot.docs.length === 'number') {
+          return snapshot.docs.length;
+        }
+        if (typeof snapshot.size === 'number') {
+          return snapshot.size;
+        }
+        if (typeof snapshot.exists === 'boolean') {
+          return snapshot.exists ? 1 : 0;
+        }
+        return 0;
+      }
+
+      function trackFirestoreRead_(label, snapshot, meta) {
+        var count = estimateFirestoreReadCount_(snapshot);
+        var stats = getFirestoreReadStats_();
+        stats.total += count;
+        stats.calls.push(Object.assign({
+          label: label || 'firestore get',
+          count: count,
+          at: new Date().toISOString()
+        }, meta || {}));
+        if (stats.calls.length > 80) {
+          stats.calls = stats.calls.slice(-80);
+        }
+        if (window.console && console.info) {
+          console.info('[S-LMS Firestore reads]', label || 'firestore get', count, 'session total:', stats.total, meta || {});
+        }
+        return snapshot;
+      }
+
+      function firestoreGet_(refOrQuery, label, meta) {
+        return refOrQuery.get().then(function(snapshot) {
+          return trackFirestoreRead_(label, snapshot, meta);
+        });
+      }
+
       function loadFirebaseLoginContext_(state, uid) {
         var collections = state.collections || {};
         var db = state.firestore;
+        var studentsCollectionName = collections.students || 'students';
+        var readActiveStudents = function() {
+          var collection = db.collection(studentsCollectionName);
+          return firestoreGet_(collection.where('active', '==', true), 'login:active students', {
+            collection: studentsCollectionName,
+            scope: 'active'
+          }).then(function(snapshot) {
+            if (snapshot.docs && snapshot.docs.length) {
+              return snapshot;
+            }
+            return firestoreGet_(collection.where('isActive', '==', true), 'login:active students by isActive', {
+              collection: studentsCollectionName,
+              scope: 'isActive=true'
+            });
+          }).then(function(snapshot) {
+            if (snapshot.docs && snapshot.docs.length) {
+              return snapshot;
+            }
+            return firestoreGet_(collection.where('status', '==', 'ACTIVE'), 'login:active students by status', {
+              collection: studentsCollectionName,
+              scope: 'status=ACTIVE'
+            });
+          }).then(function(snapshot) {
+            if (snapshot.docs && snapshot.docs.length) {
+              return snapshot;
+            }
+            if (window.console && console.warn) {
+              console.warn('Firebase active student query returned no rows; falling back to full student list.');
+            }
+            return firestoreGet_(collection, 'login:students full fallback', {
+              collection: studentsCollectionName,
+              scope: 'fallback-full'
+            });
+          }).catch(function(error) {
+            if (window.console && console.warn) {
+              console.warn('Firebase active student query failed; falling back to full student list:', error);
+            }
+            return firestoreGet_(collection, 'login:students full fallback after error', {
+              collection: studentsCollectionName,
+              scope: 'fallback-full'
+            });
+          });
+        };
         return Promise.all([
-          db.collection(collections.users || 'users').doc(uid).get(),
-          db.collection(collections.userProfiles || 'userProfiles').doc(uid).get(),
-          db.collection(collections.userAppAccess || 'userAppAccess').doc(uid).get(),
-          db.collection(collections.students || 'students').get()
+          firestoreGet_(db.collection(collections.users || 'users').doc(uid), 'login:user doc', { collection: collections.users || 'users' }),
+          firestoreGet_(db.collection(collections.userProfiles || 'userProfiles').doc(uid), 'login:user profile doc', { collection: collections.userProfiles || 'userProfiles' }),
+          firestoreGet_(db.collection(collections.userAppAccess || 'userAppAccess').doc(uid), 'login:access doc', { collection: collections.userAppAccess || 'userAppAccess' }),
+          readActiveStudents()
         ]).then(function(results) {
           var userDoc = results[0].exists ? (results[0].data() || {}) : {};
           var profileDoc = results[1].exists ? (results[1].data() || {}) : {};
@@ -17337,7 +17428,10 @@
           };
           var safeCollectionGet = function(collectionName, label) {
             var collection = db.collection(collectionName);
-            return collection.get().catch(function(error) {
+            return firestoreGet_(collection, 'login:' + label, {
+              collection: collectionName,
+              scope: 'context'
+            }).catch(function(error) {
               if (window.console && console.warn) {
                 console.warn('Firebase ' + label + ' list skipped:', error);
               }
@@ -17349,16 +17443,37 @@
             var limitedQuery = orderField
               ? collection.orderBy(orderField, 'desc').limit(limitCount)
               : collection.limit(limitCount);
-            return limitedQuery.get().catch(function(error) {
+            return firestoreGet_(limitedQuery, 'login:' + label + ' limited', {
+              collection: collectionName,
+              scope: 'limited',
+              limit: limitCount
+            }).catch(function(error) {
               if (window.console && console.warn) {
                 console.warn('Firebase limited ' + label + ' list skipped; retrying without order:', error);
               }
-              return collection.limit(limitCount).get().catch(function(fallbackError) {
+              return firestoreGet_(collection.limit(limitCount), 'login:' + label + ' limited fallback', {
+                collection: collectionName,
+                scope: 'limited-fallback',
+                limit: limitCount
+              }).catch(function(fallbackError) {
                 if (window.console && console.warn) {
                   console.warn('Firebase limited ' + label + ' fallback skipped:', fallbackError);
                 }
                 return { docs: [] };
               });
+            });
+          };
+          var safePendingPermissionRequestsGet = function(collectionName) {
+            var collection = db.collection(collectionName);
+            return firestoreGet_(collection.where('status', '==', 'PENDING').limit(100), 'login:pending permission requests', {
+              collection: collectionName,
+              scope: 'status=PENDING',
+              limit: 100
+            }).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Firebase pending permission request query skipped; retrying recent requests:', error);
+              }
+              return safeLimitedCollectionGet(collectionName, 'permission request', 'requestedAtMs', 100);
             });
           };
           var safePermissionGet = function(collectionName) {
@@ -17375,10 +17490,16 @@
               });
             });
             var queries = Object.keys(candidateMap).filter(Boolean).map(function(candidate) {
-              return collection.where('instructorId', '==', candidate).get();
+              return firestoreGet_(collection.where('instructorId', '==', candidate), 'login:targeted permission by instructorId', {
+                collection: collectionName,
+                scope: 'instructorId'
+              });
             });
             if (user.name) {
-              queries.push(collection.where('instructorName', '==', user.name).get());
+              queries.push(firestoreGet_(collection.where('instructorName', '==', user.name), 'login:targeted permission by instructorName', {
+                collection: collectionName,
+                scope: 'instructorName'
+              }));
             }
             if (!queries.length) {
               return safeCollectionGet(collectionName, 'student permission');
@@ -17411,9 +17532,9 @@
             user.role === 'ADMIN' ? safeCollectionGet(collections.users || 'users', 'user') : Promise.resolve({ docs: [] }),
             user.role === 'ADMIN' ? safeCollectionGet(collections.userProfiles || 'userProfiles', 'profile') : Promise.resolve({ docs: [] }),
             safePermissionGet(collections.permissions || 'studentPermissions'),
-            safeCollectionGet(collections.permissionRequests || 'permissionRequests', 'permission request'),
+            safePendingPermissionRequestsGet(collections.permissionRequests || 'permissionRequests'),
             user.role === 'ADMIN' ? safeCollectionGet(collections.homerooms || 'studentHomerooms', 'homeroom') : Promise.resolve({ docs: [] }),
-            safeLimitedCollectionGet(collections.studentLogs || 'studentLogs', 'student log', 'createdAtMs', 300)
+            safeLimitedCollectionGet(collections.studentLogs || 'studentLogs', 'student log', 'createdAtMs', 50)
           ]);
           return contextDataPromise.then(function(adminResults) {
           var userSnapshot = adminResults[0];
@@ -19579,7 +19700,10 @@
           if (!isGradeFirebaseDirectReady_(state, 'gradeSettingRead')) {
             return null;
           }
-          return state.firestore.collection(getGradeFirebaseCollectionName_('settings')).doc('default').get().then(function(doc) {
+          var collectionName = getGradeFirebaseCollectionName_('settings');
+          return firestoreGet_(state.firestore.collection(collectionName).doc('default'), 'grades:settings default', {
+            collection: collectionName
+          }).then(function(doc) {
             return doc.exists ? normalizeGradeSettingsDoc_(doc.data() || {}) : null;
           });
         });
@@ -19634,8 +19758,28 @@
           if (!isGradeFirebaseDirectReady_(state, 'gradeRead')) {
             throw new Error('성적 Firestore 직접 조회가 아직 활성화되지 않았습니다.');
           }
+          var collectionName = getGradeFirebaseCollectionName_('grades');
+          var year = String(getGradeYear_ ? getGradeYear_() : ((APP_STATE.gradeFilters && (APP_STATE.gradeFilters.examYear || APP_STATE.gradeFilters.schoolYear)) || new Date().getFullYear()));
+          var collection = state.firestore.collection(collectionName);
+          var yearlyQuery = collection.where('schoolYear', '==', year);
+          var readExamYearFallback = function(reason) {
+            if (window.console && console.warn && reason) {
+              console.warn('Firebase schoolYear grade query skipped; retrying examYear query:', reason);
+            }
+            return firestoreGet_(collection.where('examYear', '==', year), 'grades:current examYear fallback', {
+              collection: collectionName,
+              scope: 'examYear=' + year
+            });
+          };
           return Promise.all([
-            state.firestore.collection(getGradeFirebaseCollectionName_('grades')).get(),
+            firestoreGet_(yearlyQuery, 'grades:current year', {
+              collection: collectionName,
+              scope: 'schoolYear=' + year
+            }).then(function(snapshot) {
+              return snapshot && snapshot.docs && snapshot.docs.length ? snapshot : readExamYearFallback('empty schoolYear result');
+            }).catch(function(error) {
+              return readExamYearFallback(error);
+            }),
             loadGradeSettingsViaFirebaseDirect_().catch(function(error) {
               if (window.console && console.warn) {
                 console.warn('Firebase grade settings read skipped:', error);
@@ -19670,10 +19814,15 @@
           if (!isGradeFirebaseDirectReady_(state, 'gradeRead')) {
             throw new Error('성적 Firestore 직접 조회가 아직 활성화되지 않았습니다.');
           }
-          return state.firestore.collection(getGradeFirebaseCollectionName_('history'))
+          var collectionName = getGradeFirebaseCollectionName_('history');
+          var limitCount = Math.max(1, Math.min(100, Number(limit || 50)));
+          return firestoreGet_(state.firestore.collection(collectionName)
             .orderBy('updatedAtMs', 'desc')
-            .limit(Math.max(1, Math.min(500, Number(limit || 300))))
-            .get()
+            .limit(limitCount), 'grades:history recent', {
+              collection: collectionName,
+              scope: 'recent',
+              limit: limitCount
+            })
             .then(function(snapshot) {
               var rows = [];
               snapshot.forEach(function(doc) {
@@ -33951,7 +34100,7 @@
         }
         APP_STATE.gradeHistoryLoading = true;
         renderGrades();
-        loadGradeHistoryViaFirebaseDirect_(300).then(function(rows) {
+        loadGradeHistoryViaFirebaseDirect_(50).then(function(rows) {
           return { gradeHistory: rows, directFirebase: true };
         }).catch(function(error) {
           if (isFirebaseSessionToken_(APP_STATE.token)) {
@@ -33960,7 +34109,7 @@
           console.warn('Firebase direct grade history fallback:', error);
           return apiRequest('getGradeHistory', {
             token: APP_STATE.token,
-            limit: '300'
+            limit: '50'
           });
         }).then(function(data) {
           APP_STATE.gradeHistory = (data && data.gradeHistory ? data.gradeHistory : []).map(normalizeGradeRecordV2_);
