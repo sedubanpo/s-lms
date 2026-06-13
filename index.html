@@ -19699,7 +19699,7 @@
           createdByName = payload.createdByName;
           createdById = payload.createdById || createdById || currentUser.userId || '';
         }
-        var subjectName = payload.subjectName || payload.detailSubject || payload.subjectArea || '';
+        var subjectName = normalizeGradeSubjectNameAliasClient_(payload.subjectCategory || payload.subjectArea, payload.subjectName || payload.detailSubject || payload.subjectArea || '');
         var subjectCategory = normalizeGradeSubjectCategoryClient_(payload.subjectCategory || payload.subjectArea, subjectName);
         var subjectId = buildGradeSubjectIdClient_(subjectCategory, subjectName) || payload.subjectId || '';
         return Object.assign({}, payload, {
@@ -19725,6 +19725,8 @@
         if (payload.gradeId) {
           return payload.gradeId;
         }
+        var normalizedSubjectName = normalizeGradeSubjectNameAliasClient_(payload.subjectCategory, payload.subjectName);
+        var normalizedSubjectCategory = normalizeGradeSubjectCategoryClient_(payload.subjectCategory, normalizedSubjectName);
         var key = [
           payload.studentId,
           payload.examYear || payload.year || payload.schoolYear,
@@ -19734,9 +19736,9 @@
           payload.examRound,
           payload.examMonth,
           payload.examDate,
-          payload.subjectId || buildGradeSubjectIdClient_(payload.subjectCategory, payload.subjectName),
-          payload.subjectCategory,
-          payload.subjectName
+          buildGradeSubjectIdClient_(normalizedSubjectCategory, normalizedSubjectName),
+          normalizedSubjectCategory,
+          normalizedSubjectName
         ].map(function(value) {
           return String(value || '').replace(/\s+/g, '');
         }).join('|');
@@ -19801,11 +19803,14 @@
           var targetId = String(gradeId || '');
           var gradeCollection = state.firestore.collection(getGradeFirebaseCollectionName_('grades'));
           var historyCollection = state.firestore.collection(getGradeFirebaseCollectionName_('history'));
+          var deletedDisplayKey = '';
+          var deletedHistoryRecord = null;
           return gradeCollection.doc(targetId).get().then(function(gradeDoc) {
             var batch = state.firestore.batch();
             var now = new Date();
             var currentUser = APP_STATE.user || {};
             var existing = findGradeRecordById_(targetId) || (gradeDoc.exists ? normalizeGradeFirebaseDoc_(gradeDoc) : {});
+            deletedDisplayKey = buildGradeRecordDisplayKey_(existing);
             var historyId = 'GRADE-HISTORY-' + now.getTime() + '-' + Math.random().toString(36).slice(2, 10);
             var deleteHistory = Object.assign({}, existing, {
               gradeId: targetId,
@@ -19824,21 +19829,26 @@
               snapshotById: currentUser.userId || '',
               snapshotByName: currentUser.name || currentUser.userId || ''
             });
+            deletedHistoryRecord = normalizeGradeRecordV2_(deleteHistory);
             batch.delete(gradeCollection.doc(targetId));
             batch.set(historyCollection.doc(historyId), deleteHistory, { merge: true });
             return batch.commit();
           }).then(function() {
             APP_STATE.grades = (APP_STATE.grades || []).filter(function(record) {
-              return String(record.gradeId || '') !== targetId;
+              return String(record.gradeId || '') !== targetId && (!deletedDisplayKey || buildGradeRecordDisplayKey_(record) !== deletedDisplayKey);
             });
-            APP_STATE.gradeHistory = [];
-            APP_STATE.gradeHistoryLoaded = false;
+            if (deletedHistoryRecord) {
+              APP_STATE.gradeHistory = [deletedHistoryRecord].concat(APP_STATE.gradeHistory || []);
+              APP_STATE.gradeHistoryLoaded = true;
+            }
             return { ok: true, directFirebase: true };
           });
         });
       }
 
       function findGradeRecordByDedupePayload_(payload) {
+        var normalizedSubjectName = normalizeGradeSubjectNameAliasClient_(payload.subjectCategory, payload.subjectName);
+        var normalizedSubjectCategory = normalizeGradeSubjectCategoryClient_(payload.subjectCategory, normalizedSubjectName);
         var targetKey = [
           payload.studentId,
           payload.examYear || payload.year || payload.schoolYear,
@@ -19848,13 +19858,15 @@
           payload.examRound,
           payload.examMonth,
           payload.examDate,
-          payload.subjectId || buildGradeSubjectIdClient_(payload.subjectCategory, payload.subjectName),
-          payload.subjectCategory,
-          payload.subjectName
+          buildGradeSubjectIdClient_(normalizedSubjectCategory, normalizedSubjectName),
+          normalizedSubjectCategory,
+          normalizedSubjectName
         ].map(function(value) {
           return String(value || '').replace(/\s+/g, '');
         }).join('|');
         return (APP_STATE.grades || []).find(function(record) {
+          var recordSubjectName = normalizeGradeSubjectNameAliasClient_(record.subjectCategory, record.subjectName);
+          var recordSubjectCategory = normalizeGradeSubjectCategoryClient_(record.subjectCategory, recordSubjectName);
           var recordKey = [
             record.studentId,
             record.examYear || record.year || record.schoolYear,
@@ -19864,9 +19876,9 @@
             record.examRound,
             record.examMonth,
             record.examDate,
-            record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName),
-            record.subjectCategory,
-            record.subjectName
+            buildGradeSubjectIdClient_(recordSubjectCategory, recordSubjectName),
+            recordSubjectCategory,
+            recordSubjectName
           ].map(function(value) {
             return String(value || '').replace(/\s+/g, '');
           }).join('|');
@@ -34050,8 +34062,6 @@
           }
           APP_STATE.gradeModal = '';
           APP_STATE.gradeEditor = null;
-          APP_STATE.gradeHistory = [];
-          APP_STATE.gradeHistoryLoaded = false;
           setNotice('성적이 삭제되었습니다.', 'success');
         }).catch(function(error) {
           if (/UrlFetchApp\.fetch|script\.external_request/i.test(getErrorMessage(error))) {
@@ -36717,7 +36727,7 @@
           cloned.grade = cloned.grade || matchedStudent.grade || '';
         }
         cloned.examYear = cloned.examYear || cloned.year || cloned.schoolYear || '';
-        cloned.subjectName = cloned.subjectName || cloned.detailSubject || cloned.subjectArea || '';
+        cloned.subjectName = normalizeGradeSubjectNameAliasClient_(cloned.subjectCategory || cloned.subjectArea, cloned.subjectName || cloned.detailSubject || cloned.subjectArea || '');
         cloned.subjectCategory = normalizeGradeSubjectCategoryClient_(cloned.subjectCategory || cloned.subjectArea, cloned.subjectName);
         cloned.subjectId = buildGradeSubjectIdClient_(cloned.subjectCategory, cloned.subjectName) || cloned.subjectId;
         cloned.provisionalScore = cloned.provisionalScore || '';
@@ -36732,6 +36742,37 @@
         return [category, subjectName].map(function(value) {
           return String(value || '').replace(/\s+/g, '').toLowerCase();
         }).filter(Boolean).join('__') || 'subject';
+      }
+
+      function normalizeGradeSubjectNameAliasClient_(category, subjectName) {
+        var original = String(subjectName || category || '').trim();
+        var text = normalizeSearchText(original);
+        if (!text) {
+          return original;
+        }
+        var aliases = [
+          { pattern: /^(화작|화법과작문|화법과\s*작문)$/, name: '화법과작문' },
+          { pattern: /^(언매|언어와매체|언어와\s*매체)$/, name: '언어와매체' },
+          { pattern: /^(확통|확률과통계|확률과\s*통계)$/, name: '확률과통계' },
+          { pattern: /^(미적|미적분)$/, name: '미적분' },
+          { pattern: /^(사문|사회문화|사회·문화|사회\s*문화)$/, name: '사회문화' },
+          { pattern: /^(생윤|생활윤리|생활과윤리|생활과\s*윤리)$/, name: '생활과윤리' },
+          { pattern: /^(윤사|윤리와사상|윤리와\s*사상)$/, name: '윤리와사상' },
+          { pattern: /^(세지|세계지리|세계\s*지리)$/, name: '세계지리' },
+          { pattern: /^(한지|한국지리|한국\s*지리)$/, name: '한국지리' },
+          { pattern: /^(정법|정치와법|정치와\s*법)$/, name: '정치와법' },
+          { pattern: /^(동사|동아시아사|동아시아\s*사)$/, name: '동아시아사' },
+          { pattern: /^(생명|생명과학|생명과학1|생명과학Ⅰ)$/, name: '생명과학' },
+          { pattern: /^(지구|지구과학|지구과학1|지구과학Ⅰ)$/, name: '지구과학' },
+          { pattern: /^(물리|물리학|물리학1|물리학Ⅰ)$/, name: '물리학' },
+          { pattern: /^(화학|화학1|화학Ⅰ)$/, name: '화학' }
+        ];
+        for (var i = 0; i < aliases.length; i += 1) {
+          if (aliases[i].pattern.test(text)) {
+            return aliases[i].name;
+          }
+        }
+        return original;
       }
 
       function classifyGradeSubjectCategoryClient_(subjectName) {
@@ -38138,9 +38179,7 @@
             (!filters.subject || record.subjectName === filters.subject || (selectedSubject && isGradeBroadSubjectV3_(selectedSubject) && normalizeSearchText(record.subjectCategory || record.subjectArea) === normalizeSearchText(selectedSubject.subjectCategory)));
         };
         var currentRecords = (APP_STATE.grades || []).filter(matchesFilters);
-        var historyRecords = (APP_STATE.gradeHistoryLoaded ? (APP_STATE.gradeHistory || []) : []).filter(function(record) {
-          return matchesFilters(record) && String(record.changeType || '').toLowerCase() !== 'delete';
-        });
+        var historyRecords = (APP_STATE.gradeHistoryLoaded ? (APP_STATE.gradeHistory || []) : []).filter(matchesFilters);
         return mergeCurrentAndHistoryGradeRecordsForDisplay_(currentRecords, historyRecords);
       }
 
@@ -38179,8 +38218,9 @@
       }
 
       function buildGradeRecordDisplayKey_(record) {
+        var subjectName = normalizeGradeSubjectNameAliasClient_(record.subjectCategory || record.subjectArea, record.subjectName || record.detailSubject || '');
+        var subjectCategory = normalizeGradeSubjectCategoryClient_(record.subjectCategory || record.subjectArea, subjectName);
         return [
-          record.gradeId || '',
           record.studentId || record.studentName || '',
           record.examYear || record.schoolYear || '',
           getGradeExamTypeGroup_(record),
@@ -38189,9 +38229,9 @@
           record.examRound || '',
           record.examMonth || '',
           record.examDate || '',
-          record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName),
-          record.subjectCategory || record.subjectArea || '',
-          record.subjectName || record.detailSubject || ''
+          buildGradeSubjectIdClient_(subjectCategory, subjectName),
+          subjectCategory,
+          subjectName
         ].map(function(value) {
           return String(value || '').replace(/\s+/g, '');
         }).join('|');
@@ -39255,9 +39295,7 @@
         (subjects || []).forEach(function(subject) { subjectIds[subject.subjectId] = true; });
         var currentRows = filterGradeRecordsByCurrentFilters_(APP_STATE.grades || []);
         var historyRows = APP_STATE.gradeHistoryLoaded
-          ? filterGradeRecordsByCurrentFilters_(APP_STATE.gradeHistory || []).filter(function(record) {
-              return String(record.changeType || '').toLowerCase() !== 'delete';
-            })
+          ? filterGradeRecordsByCurrentFilters_(APP_STATE.gradeHistory || [])
           : [];
         return mergeCurrentAndHistoryGradeRecordsForDisplay_(currentRows, historyRows).filter(function(record) {
           var subjectId = record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName);
