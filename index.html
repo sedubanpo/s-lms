@@ -7462,24 +7462,23 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 3px;
-        height: 20px;
-        padding: 0 7px 0 6px;
-        border: 1px solid #facc15;
+        gap: 4px;
+        height: 18px;
+        padding: 0 6px;
+        border: 1px solid #c7d2fe;
         border-radius: 999px;
-        background: linear-gradient(135deg, #fef08a, #f59e0b 62%, #b45309);
-        color: #78350f;
-        font-size: 0.62rem;
-        font-weight: 950;
+        background: #eef2ff;
+        color: #3730a3;
+        font-size: 0.58rem;
+        font-weight: 900;
         line-height: 1;
         white-space: nowrap;
-        box-shadow: 0 0 0 2px rgba(253, 224, 71, 0.16), 0 8px 16px rgba(245, 158, 11, 0.18);
       }
 
       .student-new-badge svg {
-        width: 11px;
-        height: 11px;
-        stroke-width: 2.7;
+        width: 10px;
+        height: 10px;
+        stroke-width: 2.4;
       }
 
       .student-name-main span {
@@ -7492,7 +7491,7 @@
       .student-name-line .student-new-badge {
         display: inline-flex;
         margin-top: 0;
-        font-size: 0.62rem;
+        font-size: 0.58rem;
       }
 
       .student-record-count {
@@ -8361,6 +8360,14 @@
         font-size: 0.68rem;
       }
 
+      .student-log-compose-actions .button-row {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+
       .student-log-bubble-list {
         display: grid;
         gap: 9px;
@@ -8455,6 +8462,7 @@
       }
 
       .student-log-author-chip,
+      .student-log-student-chip,
       .student-log-type-chip,
       .student-log-time-chip,
       .student-log-priority-chip {
@@ -8519,6 +8527,27 @@
         border-color: #bfdbfe;
         background: #eff6ff;
         color: #0b55d9;
+      }
+
+      .student-log-student-chip {
+        gap: 4px;
+        border-color: #cbd5e1;
+        background: #f8fafc;
+        color: #0f172a;
+        font-size: 0.7rem;
+        font-weight: 950;
+      }
+
+      .student-log-student-chip.secondary {
+        color: #475569;
+        font-weight: 900;
+      }
+
+      .student-log-student-chip svg {
+        width: 12px;
+        height: 12px;
+        stroke-width: 2.2;
+        flex-shrink: 0;
       }
 
       .student-log-type-chip {
@@ -8654,6 +8683,35 @@
       .student-log-bubble.is-reacting {
         border-color: #93b8ee;
         box-shadow: inset 0 0 0 1px rgba(11, 85, 217, 0.08);
+      }
+
+      .student-log-compose.is-editing {
+        border-color: #93c5fd;
+        background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+        box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+      }
+
+      .student-log-copy-button,
+      .student-log-edit-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-height: 26px;
+        padding: 0 8px;
+        border-radius: 7px;
+        border: 1px solid #d8e3f4;
+        background: rgba(255, 255, 255, 0.9);
+        color: #475569;
+        font-size: 0.72rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .student-log-copy-button:hover,
+      .student-log-edit-button:hover {
+        border-color: #93b8ee;
+        color: #0b55d9;
       }
 
       .student-log-pagination {
@@ -15855,6 +15913,8 @@
         studentPermissionInstructorFilter: '',
         studentLogPages: {},
         studentLogReactionSaving: {},
+        studentLogEditing: null,
+        studentLogSavingRows: {},
         studentDataLoading: false,
         lastDashboardSyncAt: 0,
         autoSyncInFlight: false,
@@ -20402,6 +20462,63 @@
         });
       }
 
+      function updateStudentLogViaFirebaseDirect_(rowKey, content, tags) {
+        if (!isFirebaseStudentLogId_(rowKey)) {
+          return Promise.reject(new Error('Firestore 기록 ID가 아니어서 기록을 수정할 수 없습니다. 새로고침 후 다시 시도해 주세요.'));
+        }
+        return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
+          state = state || APP_STATE.firebaseDirect || {};
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('logCreateWrite')) {
+            throw new Error('Firebase 직접 기록 수정이 비활성화되어 있습니다.');
+          }
+          var user = APP_STATE.user || {};
+          var userId = String(user.userId || '').trim();
+          if (!userId) {
+            throw new Error('로그인 사용자 정보를 확인할 수 없습니다.');
+          }
+          var localLog = findStudentLogByRowKey_(rowKey) || {};
+          if (!APP_STATE.isAdmin && String(localLog.createdById || '') !== userId) {
+            throw new Error('이 상담 기록을 수정할 권한이 없습니다.');
+          }
+          var normalizedTags = Array.isArray(tags) ? tags : [];
+          var timestamp = new Date().toISOString();
+          var collectionName = (state.collections && state.collections.studentLogs) || 'studentLogs';
+          var payload = {
+            content: content,
+            tags: normalizedTags,
+            tagsText: normalizedTags.join(', '),
+            updatedAt: timestamp,
+            updatedAtMs: Date.now(),
+            updatedById: userId,
+            updatedByName: user.name || userId
+          };
+          return state.firestore.collection(collectionName).doc(String(rowKey)).set(payload, { merge: true }).then(function() {
+            notifyStudentLogDirectWrite_('update');
+            return {
+              ok: true,
+              directFirebase: true,
+              updatedLog: Object.assign({}, localLog, {
+                rowNumber: String(rowKey),
+                content: content,
+                tags: normalizedTags,
+                updatedAt: timestamp,
+                updatedById: userId,
+                updatedByName: user.name || userId
+              }),
+              message: '상담/관리 기록이 수정되었습니다.'
+            };
+          });
+        });
+      }
+
+      function updateStudentLog_(rowKey, content, tags) {
+        var shouldUseDirect = isFirebaseSessionToken_(APP_STATE.token) || isFirebaseDirectFeatureEnabled_('logCreateWrite');
+        if (!shouldUseDirect) {
+          return Promise.reject(new Error('현재 연결 방식에서는 상담 기록 수정이 지원되지 않습니다. Firebase 로그인 상태에서 다시 시도해 주세요.'));
+        }
+        return updateStudentLogViaFirebaseDirect_(rowKey, content, tags);
+      }
+
       function mergeSavedStudentLog_(savedLog) {
         if (!savedLog || !savedLog.studentId) {
           return false;
@@ -21196,7 +21313,7 @@
       }
 
       function renderStudentNewBadge_(student) {
-        return isRecentStudentDisplayItem_(student) ? '<span class="student-new-badge"><i data-lucide="crown"></i>NEW</span>' : '';
+        return isRecentStudentDisplayItem_(student) ? '<span class="student-new-badge"><i data-lucide="sparkles"></i>NEW</span>' : '';
       }
 
       function renderStudentNameWithNewBadge_(student) {
@@ -22334,31 +22451,50 @@
         }).join('') + '</div>';
       }
 
+      function getStudentLogEditingRowForStudent_(studentId) {
+        var editing = APP_STATE.studentLogEditing || null;
+        if (!editing || String(editing.studentId || '') !== String(studentId || '')) {
+          return '';
+        }
+        return String(editing.rowNumber || '');
+      }
+
       function renderStudentLogComposer_(student, activeTab) {
         if (!student || !student.studentId) {
           return '';
         }
-        var defaultTag = activeTab && activeTab !== '전체' ? activeTab : '학부모상담';
+        var editingRow = getStudentLogEditingRowForStudent_(student.studentId);
+        var editingLog = editingRow ? findStudentLogByRowKey_(editingRow) : null;
+        var isEditing = Boolean(editingLog && editingLog.rowNumber);
+        var defaultTag = isEditing
+          ? ((editingLog.tags || [])[0] || '학부모상담')
+          : (activeTab && activeTab !== '전체' ? activeTab : '학부모상담');
         var toneClass = getLogTagToneClass(defaultTag);
         var composeToneClass = activeTab && activeTab !== '전체' ? toneClass : 'neutral';
         var options = getStudentLogComposeOptions_().map(function(tag) {
           return '<option value="' + escapeAttribute(tag) + '"' + (tag === defaultTag ? ' selected' : '') + '>' + escapeHtml(tag.replace('학부모상담', '학부모 상담').replace('학생상담', '학생 상담')) + '</option>';
         }).join('');
-        var authorSelect = renderStudentLogAuthorSelect_(student);
+        var authorSelect = isEditing ? '' : renderStudentLogAuthorSelect_(student);
+        var title = isEditing ? '상담 기록 수정' : '특이사항 기록';
+        var guide = isEditing ? '기록 유형과 내용만 수정합니다. 작성자와 최초 입력 시간은 유지됩니다.' : '작성자와 작성 일자는 저장 시 자동으로 남고, 저장 중에는 입력이 잠시 잠깁니다.';
+        var helper = isEditing ? '수정 완료 뒤 목록과 보고용 이미지에 바로 반영됩니다.' : '저장 완료 안내가 뜬 뒤 목록에 반영됩니다.';
+        var contentValue = isEditing ? (editingLog.content || '') : '';
+        var saveLabel = isEditing ? '수정 저장' : '기록 저장';
+        var cancelButton = isEditing ? '<button type="button" class="profile-link-button" data-action="cancel-student-log-edit">취소</button>' : '';
         return [
-          '<form class="student-log-compose ' + escapeAttribute(composeToneClass) + '" data-student-log-form data-student-id="' + escapeAttribute(student.studentId || '') + '" onsubmit="return false;">',
+          '<form class="student-log-compose ' + escapeAttribute(composeToneClass) + (isEditing ? ' is-editing' : '') + '" data-student-log-form data-student-id="' + escapeAttribute(student.studentId || '') + '"' + (isEditing ? ' data-edit-log-row="' + escapeAttribute(editingLog.rowNumber || '') + '"' : '') + ' onsubmit="return false;">',
           '  <div class="student-log-compose-head">',
-          '    <div><strong>특이사항 기록</strong><span>작성자와 작성 일자는 저장 시 자동으로 남고, 저장 중에는 입력이 잠시 잠깁니다.</span></div>',
+          '    <div><strong>' + escapeHtml(title) + '</strong><span>' + escapeHtml(guide) + '</span></div>',
           '    <span class="ops-chip slate">' + escapeHtml(student.studentName || '-') + '</span>',
           '  </div>',
           '  <div class="student-log-compose-grid' + (authorSelect ? ' with-author' : '') + '">',
           '    <select class="field-select" data-role="student-log-type" aria-label="기록 유형">' + options + '</select>',
                authorSelect,
-          '    <textarea class="field-textarea" data-role="student-log-content" rows="3" placeholder="학부모 상담, 학생 상담, 첫수업 정보 등 필요한 내용을 입력하세요."></textarea>',
+          '    <textarea class="field-textarea" data-role="student-log-content" rows="3" placeholder="학부모 상담, 학생 상담, 첫수업 정보 등 필요한 내용을 입력하세요.">' + escapeHtml(contentValue) + '</textarea>',
           '  </div>',
           '  <div class="student-log-compose-actions">',
-          '    <span class="helper-text">저장 완료 안내가 뜬 뒤 목록에 반영됩니다.</span>',
-          '    <button type="button" class="button-primary" data-action="save-student-log-entry"><i data-lucide="save"></i> 기록 저장</button>',
+          '    <span class="helper-text">' + escapeHtml(helper) + '</span>',
+          '    <span class="button-row">' + cancelButton + '<button type="button" class="button-primary" data-action="save-student-log-entry"><i data-lucide="save"></i> ' + escapeHtml(saveLabel) + '</button></span>',
           '  </div>',
           '</form>'
         ].join('');
@@ -22489,16 +22625,70 @@
         });
       }
 
+      function findStudentForLog_(log) {
+        if (!log) {
+          return null;
+        }
+        var studentId = String(log.studentId || '').trim();
+        var studentNameKey = normalizeSearchText(log.studentName || '');
+        var sources = [
+          APP_STATE.visibleStudents || [],
+          APP_STATE.searchableStudents || [],
+          APP_STATE.activeStudents || [],
+          APP_STATE.allStudents || []
+        ];
+        for (var i = 0; i < sources.length; i += 1) {
+          var found = (sources[i] || []).find(function(student) {
+            return (studentId && String(student.studentId || '') === studentId) ||
+              (studentNameKey && normalizeSearchText(student.studentName || '') === studentNameKey);
+          });
+          if (found) {
+            return found;
+          }
+        }
+        return null;
+      }
+
+      function getStudentSchoolGradeText_(student) {
+        var parts = [];
+        if (student && student.school) {
+          parts.push(String(student.school || '').trim());
+        }
+        if (student && student.grade) {
+          var gradeText = String(student.grade || '').trim();
+          if (gradeText && !/학년|수생/i.test(gradeText)) {
+            gradeText += '학년';
+          }
+          parts.push(gradeText);
+        }
+        return parts.join(' · ') || '학교/학년 미지정';
+      }
+
+      function renderStudentLogStudentChips_(log) {
+        var student = findStudentForLog_(log) || {};
+        var name = String(student.studentName || log.studentName || '학생 미지정').trim();
+        var schoolGrade = getStudentSchoolGradeText_(student);
+        return '<span class="student-log-student-chip"><i data-lucide="user-round"></i>' + escapeHtml(name) + '</span>' +
+          '<span class="student-log-student-chip secondary">' + escapeHtml(schoolGrade) + '</span>';
+      }
+
       function renderStudentLogBubble_(log) {
         var isPending = Boolean(log && log.pending);
         var isAdmin = (log.createdByRole || '').toUpperCase() === 'ADMIN';
         var author = isAdmin ? (log.createdByName || '관리자') : ((log.createdByName || '강사') + ' 강사');
+        var canEdit = !isPending && log.rowNumber && (APP_STATE.isAdmin || (APP_STATE.user && APP_STATE.user.userId === log.createdById));
         var canDelete = APP_STATE.isAdmin || (APP_STATE.user && APP_STATE.user.userId === log.createdById);
         var primaryTag = (log.tags || [])[0] || '관리 기록';
         var toneClass = getLogTagToneClass(primaryTag);
         var isPriority = isFirstLessonLog_(log);
         var detailButton = !isPending && log.rowNumber
           ? '<button type="button" class="profile-link-button" data-action="show-log-detail" data-log-row="' + escapeAttribute(log.rowNumber) + '">원문</button>'
+          : '';
+        var copyButton = !isPending && log.rowNumber
+          ? '<button type="button" class="student-log-copy-button" data-action="copy-student-log-image" data-log-row="' + escapeAttribute(log.rowNumber) + '"><i data-lucide="image-down"></i>이미지</button>'
+          : '';
+        var editButton = canEdit
+          ? '<button type="button" class="student-log-edit-button" data-action="edit-student-log" data-log-row="' + escapeAttribute(log.rowNumber) + '"><i data-lucide="pencil"></i>수정</button>'
           : '';
         var deleteButton = !isPending && canDelete && log.rowNumber
           ? '<button type="button" class="log-delete-button" data-action="delete-log" data-log-row="' + escapeAttribute(log.rowNumber) + '">삭제</button>'
@@ -22507,13 +22697,14 @@
           '<article class="student-log-bubble ' + escapeAttribute(toneClass) + (isAdmin ? ' admin' : '') + (isPriority ? ' is-priority' : '') + (isPending ? ' is-pending' : '') + (APP_STATE.studentLogReactionSaving[String(log.rowNumber || '')] ? ' is-reacting' : '') + '">',
           '  <div class="student-log-bubble-head">',
           '    <div class="student-log-bubble-meta">',
+          '      ' + renderStudentLogStudentChips_(log),
           '      ' + renderStudentLogAuthorChip_(log, null, author),
           '      <span class="student-log-type-chip ' + escapeAttribute(toneClass) + '">' + escapeHtml(formatStudentLogTagLabel_(primaryTag)) + '</span>',
                  isPriority ? '<span class="student-log-priority-chip">우선 확인</span>' : '',
                  isPending ? '<span class="student-log-priority-chip">저장 중</span>' : '',
           '      <span class="student-log-time-chip">' + escapeHtml(formatTeachingLogDateTime(log.createdAt)) + '</span>',
           '    </div>',
-          '    <div class="student-log-bubble-actions">' + detailButton + deleteButton + '</div>',
+          '    <div class="student-log-bubble-actions">' + copyButton + detailButton + editButton + deleteButton + '</div>',
           '  </div>',
           '  <div class="student-log-bubble-text">' + escapeHtml(log.content || '-') + '</div>',
              renderLogTags(log.tags || []),
@@ -22777,6 +22968,24 @@
         var saveLogButton = event.target.closest('[data-action="save-student-log-entry"]');
         if (saveLogButton) {
           handleStudentLogSave_(saveLogButton);
+          return;
+        }
+
+        var cancelEditButton = event.target.closest('[data-action="cancel-student-log-edit"]');
+        if (cancelEditButton) {
+          cancelStudentLogEdit_();
+          return;
+        }
+
+        var editLogButton = event.target.closest('[data-action="edit-student-log"]');
+        if (editLogButton) {
+          startStudentLogEdit_(editLogButton.getAttribute('data-log-row'));
+          return;
+        }
+
+        var copyLogImageButton = event.target.closest('[data-action="copy-student-log-image"]');
+        if (copyLogImageButton) {
+          copyStudentLogImage_(copyLogImageButton.getAttribute('data-log-row'));
           return;
         }
 
@@ -24321,6 +24530,24 @@
           return;
         }
 
+        var cancelEditButton = event.target.closest('[data-action="cancel-student-log-edit"]');
+        if (cancelEditButton) {
+          cancelStudentLogEdit_();
+          return;
+        }
+
+        var editLogButton = event.target.closest('[data-action="edit-student-log"]');
+        if (editLogButton) {
+          startStudentLogEdit_(editLogButton.getAttribute('data-log-row'));
+          return;
+        }
+
+        var copyLogImageButton = event.target.closest('[data-action="copy-student-log-image"]');
+        if (copyLogImageButton) {
+          copyStudentLogImage_(copyLogImageButton.getAttribute('data-log-row'));
+          return;
+        }
+
         var reactionButton = event.target.closest('[data-action="react-log"]');
         if (reactionButton) {
           handleStudentLogReaction_(reactionButton);
@@ -24601,6 +24828,219 @@
         renderStudents();
       }
 
+      function startStudentLogEdit_(rowKey) {
+        var log = findStudentLogByRowKey_(rowKey);
+        if (!log || !log.rowNumber) {
+          setNotice('수정할 상담 기록을 찾을 수 없습니다.', 'warning');
+          return;
+        }
+        var userId = APP_STATE.user ? String(APP_STATE.user.userId || '') : '';
+        if (!APP_STATE.isAdmin && String(log.createdById || '') !== userId) {
+          setNotice('이 상담 기록을 수정할 권한이 없습니다.', 'warning');
+          return;
+        }
+        APP_STATE.studentLogEditing = {
+          studentId: String(log.studentId || ''),
+          rowNumber: String(log.rowNumber || '')
+        };
+        APP_STATE.selectedStudentId = String(log.studentId || APP_STATE.selectedStudentId || '');
+        renderStudents();
+        if (APP_STATE.selectedStudentDetailId) {
+          APP_STATE.selectedStudentDetailId = String(log.studentId || APP_STATE.selectedStudentDetailId || '');
+          renderStudentDetailModal_();
+        }
+        setNotice('상담 기록을 수정 모드로 열었습니다.', 'info');
+      }
+
+      function cancelStudentLogEdit_() {
+        APP_STATE.studentLogEditing = null;
+        renderStudents();
+        if (APP_STATE.selectedStudentDetailId) {
+          renderStudentDetailModal_();
+        }
+      }
+
+      function wrapCanvasText_(ctx, text, maxWidth) {
+        var paragraphs = String(text || '').split(/\r?\n/);
+        var lines = [];
+        paragraphs.forEach(function(paragraph) {
+          var source = paragraph || ' ';
+          var words = source.split(/(\s+)/).filter(function(part) { return part !== ''; });
+          var line = '';
+          words.forEach(function(word) {
+            var next = line ? line + word : word;
+            if (ctx.measureText(next).width <= maxWidth || !line) {
+              line = next;
+              return;
+            }
+            lines.push(line.trimEnd());
+            line = word.trimStart();
+          });
+          if (line) {
+            lines.push(line.trimEnd());
+          }
+        });
+        return lines;
+      }
+
+      function drawRoundRect_(ctx, x, y, width, height, radius) {
+        var r = Math.min(radius || 8, width / 2, height / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + width, y, x + width, y + height, r);
+        ctx.arcTo(x + width, y + height, x, y + height, r);
+        ctx.arcTo(x, y + height, x, y, r);
+        ctx.arcTo(x, y, x + width, y, r);
+        ctx.closePath();
+      }
+
+      function drawReportChip_(ctx, x, y, label, options) {
+        var config = options || {};
+        ctx.font = config.font || '700 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        var paddingX = config.paddingX || 12;
+        var width = Math.ceil(ctx.measureText(label).width + paddingX * 2);
+        var height = config.height || 30;
+        drawRoundRect_(ctx, x, y, width, height, config.radius || 8);
+        ctx.fillStyle = config.background || '#f8fafc';
+        ctx.fill();
+        ctx.strokeStyle = config.border || '#cbd5e1';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.fillStyle = config.color || '#0f172a';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, x + paddingX, y + height / 2 + 0.5);
+        return width;
+      }
+
+      function buildStudentLogImageCanvas_(log) {
+        var student = findStudentForLog_(log) || {};
+        var studentName = String(student.studentName || log.studentName || '학생 미지정').trim();
+        var schoolGrade = getStudentSchoolGradeText_(student);
+        var primaryTag = (log.tags || [])[0] || '관리 기록';
+        var author = ((log.createdByRole || '').toUpperCase() === 'ADMIN')
+          ? (log.createdByName || '관리자')
+          : ((log.createdByName || '강사') + ' 강사');
+        var meta = [
+          studentName,
+          schoolGrade,
+          author,
+          formatStudentLogTagLabel_(primaryTag)
+        ];
+        if (isFirstLessonLog_(log)) {
+          meta.push('우선 확인');
+        }
+        meta.push(formatTeachingLogDateTime(log.createdAt) || '-');
+
+        var baseWidth = 920;
+        var margin = 38;
+        var contentWidth = baseWidth - margin * 2;
+        var measureCanvas = document.createElement('canvas');
+        var measureCtx = measureCanvas.getContext('2d');
+        measureCtx.font = '700 22px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        var contentLines = wrapCanvasText_(measureCtx, log.content || '-', contentWidth);
+        var contentLineHeight = 34;
+        var rows = [];
+        var row = [];
+        var rowWidth = 0;
+        meta.forEach(function(label) {
+          measureCtx.font = '700 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+          var chipWidth = Math.ceil(measureCtx.measureText(label).width + 24);
+          if (row.length && rowWidth + chipWidth + 8 > contentWidth) {
+            rows.push(row);
+            row = [];
+            rowWidth = 0;
+          }
+          row.push({ label: label, width: chipWidth });
+          rowWidth += chipWidth + 8;
+        });
+        if (row.length) {
+          rows.push(row);
+        }
+
+        var height = margin + 44 + rows.length * 38 + 20 + contentLines.length * contentLineHeight + margin;
+        var scale = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.round(baseWidth * scale);
+        canvas.height = Math.round(height * scale);
+        canvas.style.width = baseWidth + 'px';
+        canvas.style.height = height + 'px';
+        var ctx = canvas.getContext('2d');
+        ctx.scale(scale, scale);
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fillRect(0, 0, baseWidth, height);
+        drawRoundRect_(ctx, 18, 18, baseWidth - 36, height - 36, 18);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = '#dbe5f2';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.fillStyle = '#0f172a';
+        ctx.font = '900 24px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        ctx.textBaseline = 'top';
+        ctx.fillText('상담 기록', margin, margin);
+
+        var y = margin + 44;
+        rows.forEach(function(items) {
+          var x = margin;
+          items.forEach(function(item, index) {
+            var style = index === 0
+              ? { background: '#eff6ff', border: '#bfdbfe', color: '#174ea6' }
+              : (index === 1
+                ? { background: '#f8fafc', border: '#cbd5e1', color: '#475569' }
+                : {});
+            x += drawReportChip_(ctx, x, y, item.label, style) + 8;
+          });
+          y += 38;
+        });
+
+        y += 14;
+        ctx.fillStyle = '#1e293b';
+        ctx.font = '700 22px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        ctx.textBaseline = 'top';
+        contentLines.forEach(function(line) {
+          ctx.fillText(line, margin, y);
+          y += contentLineHeight;
+        });
+        return canvas;
+      }
+
+      function copyStudentLogImage_(rowKey) {
+        var log = findStudentLogByRowKey_(rowKey);
+        if (!log || !log.rowNumber) {
+          setNotice('이미지로 복사할 상담 기록을 찾을 수 없습니다.', 'warning');
+          return;
+        }
+        var canvas = buildStudentLogImageCanvas_(log);
+        canvas.toBlob(function(blob) {
+          if (!blob) {
+            setNotice('상담 기록 이미지를 만들지 못했습니다.', 'warning');
+            return;
+          }
+          if (navigator.clipboard && window.ClipboardItem && navigator.clipboard.write) {
+            navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(function() {
+              setNotice('상담 기록 이미지를 클립보드에 복사했습니다.', 'success');
+            }).catch(function() {
+              fallbackDownloadStudentLogImage_(blob);
+            });
+            return;
+          }
+          fallbackDownloadStudentLogImage_(blob);
+        }, 'image/png');
+      }
+
+      function fallbackDownloadStudentLogImage_(blob) {
+        var url = URL.createObjectURL(blob);
+        var anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = 'student-log-report.png';
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+        setNotice('브라우저가 이미지 클립보드를 막아 PNG 파일로 내려받았습니다.', 'info');
+      }
+
       function handleStudentLogSave_(button) {
         var form = button.closest('[data-student-log-form]');
         if (!form) {
@@ -24615,6 +25055,7 @@
         var tag = typeInput ? String(typeInput.value || '').trim() : '';
         var authorInstructorId = authorInput ? resolveStudentLogAuthorInputValue_(authorInput.value || '') : '';
         var content = contentInput ? contentInput.value.trim() : '';
+        var editLogRow = form.getAttribute('data-edit-log-row') || '';
 
         if (!studentId) {
           setNotice('기록할 학생을 선택해주세요.', 'warning');
@@ -24640,6 +25081,44 @@
         }
         if (authorInput && studentId) {
           APP_STATE.studentLogAuthors[studentId] = authorInstructorId;
+        }
+
+        if (editLogRow) {
+          setStudentLogFormSaving_(form, true);
+          APP_STATE.studentLogSavingRows[String(editLogRow)] = true;
+          setNotice('상담/관리 기록을 수정하는 중입니다.', 'info');
+          updateStudentLog_(editLogRow, content, [tag])
+            .then(function(result) {
+              if (result && result.updatedLog) {
+                mergeUpdatedStudentLog_(result.updatedLog);
+              } else {
+                hydrateStudentDataOnly(result || {});
+              }
+              APP_STATE.studentLogEditing = null;
+              APP_STATE.selectedStudentId = studentId;
+              APP_STATE.studentLogTabs[studentId] = getStudentLogTabOptions_().some(function(option) {
+                return option.value === tag;
+              }) ? tag : '전체';
+              renderStudents();
+              if (APP_STATE.selectedStudentDetailId) {
+                APP_STATE.selectedStudentDetailId = studentId;
+                renderStudentDetailModal_();
+              }
+              writeDashboardSnapshot_();
+              setNotice('상담/관리 기록이 수정되었습니다.', 'success');
+            })
+            .catch(function(error) {
+              handleApiError_(error);
+            })
+            .finally(function() {
+              delete APP_STATE.studentLogSavingRows[String(editLogRow)];
+              setStudentLogFormSaving_(form, false);
+              renderStudents();
+              if (APP_STATE.selectedStudentDetailId) {
+                renderStudentDetailModal_();
+              }
+            });
+          return;
         }
 
         var clientRequestId = 'LOG-CLIENT-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
@@ -34764,6 +35243,9 @@
         APP_STATE.totalActiveStudentCount = 0;
         APP_STATE.homeroomAssignments = [];
         APP_STATE.studentLogTabs = {};
+        APP_STATE.studentLogEditing = null;
+        APP_STATE.studentLogSavingRows = {};
+        APP_STATE.studentLogReactionSaving = {};
         APP_STATE.selectedHomeroomInstructorId = '';
         APP_STATE.selectedStudentId = '';
         APP_STATE.selectedStudentDetailId = '';
