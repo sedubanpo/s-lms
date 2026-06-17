@@ -15171,10 +15171,8 @@
       }
 
       .grade-overview-score.grade-source-private {
-        border-color: rgba(234, 88, 12, 0.42);
-        background:
-          linear-gradient(135deg, rgba(234, 88, 12, 0.98), rgba(194, 65, 12, 0.92)),
-          var(--grade-subject-color, #ea580c);
+        border-color: var(--grade-subject-border, rgba(234, 88, 12, 0.42));
+        background: var(--grade-subject-color, #ea580c);
         box-shadow:
           inset 0 1px 0 rgba(255, 255, 255, 0.22),
           0 0 0 1px rgba(234, 88, 12, 0.08),
@@ -15182,10 +15180,8 @@
       }
 
       .grade-overview-score.grade-source-public {
-        border-color: rgba(37, 99, 235, 0.4);
-        background:
-          linear-gradient(135deg, rgba(37, 99, 235, 0.98), rgba(29, 78, 216, 0.9)),
-          var(--grade-subject-color, #2563eb);
+        border-color: var(--grade-subject-border, rgba(37, 99, 235, 0.4));
+        background: var(--grade-subject-color, #2563eb);
       }
 
       .grade-overview-type {
@@ -15265,6 +15261,16 @@
         border: 1px solid rgba(148, 163, 184, 0.34);
         border-radius: 7px;
         background: rgba(255, 255, 255, 0.72);
+      }
+
+      .grade-overview-exam.grade-source-public {
+        border-color: rgba(37, 99, 235, 0.22);
+        background: linear-gradient(135deg, rgba(239, 246, 255, 0.92), rgba(255, 255, 255, 0.74));
+      }
+
+      .grade-overview-exam.grade-source-private {
+        border-color: rgba(234, 88, 12, 0.24);
+        background: linear-gradient(135deg, rgba(255, 247, 237, 0.94), rgba(255, 255, 255, 0.74));
       }
 
       .grade-overview-exam-head,
@@ -43078,14 +43084,14 @@
           };
         });
         students.forEach(function(student) {
+          var subjectState = buildGradeMissingSubjectStateV2_(student, subjects, recordMap);
           subjects.forEach(function(subject) {
             var key = student.studentId + '|' + subject.subjectId;
             var records = recordMap[key] || [];
-            var entered = records.some(hasGradeRecordInputValueV2_);
-            if (entered) {
+            var instructors = getGradeResponsibleInstructorsForSubjectV2_(student, subject);
+            if (shouldSkipGradeMissingSubjectV2_(subject, subjectState[subject.subjectId], instructors)) {
               return;
             }
-            var instructors = getGradeResponsibleInstructorsForSubjectV2_(student, subject);
             if (keyword) {
               var searchText = normalizeSearchText([
                 student.studentName,
@@ -43251,14 +43257,23 @@
         var gradeLevelMap = {};
         var mockMonthMap = {};
         (students || []).forEach(function(student) {
+          var subjectState = buildGradeMissingSubjectStateV2_(student, subjects, recordMap);
           (subjects || []).forEach(function(subject) {
-            var key = student.studentId + '|' + subject.subjectId;
-            var entered = (recordMap[key] || []).some(hasGradeRecordInputValueV2_);
-            if (entered) {
+            var instructors = getGradeResponsibleInstructorsForSubjectV2_(student, subject);
+            if (shouldSkipGradeMissingSubjectV2_(subject, subjectState[subject.subjectId], instructors)) {
               return;
             }
             if (keyword) {
-              var searchText = normalizeSearchText([student.studentName, student.school, student.grade, subject.subjectName, subject.subjectCategory].filter(Boolean).join(' '));
+              var searchText = normalizeSearchText([
+                student.studentName,
+                student.school,
+                student.grade,
+                subject.subjectName,
+                subject.subjectCategory,
+                instructors.map(function(instructor) {
+                  return [instructor.name, instructor.userId, instructor.loginId, instructor.subject, instructor.subjectLabel].filter(Boolean).join(' ');
+                }).join(' ')
+              ].filter(Boolean).join(' '));
               if (searchText.indexOf(keyword) === -1) {
                 return;
               }
@@ -43301,6 +43316,54 @@
           gradeRows: gradeRows,
           mockMonthRows: mockMonthRows
         };
+      }
+
+      function buildGradeMissingSubjectStateV2_(student, subjects, recordMap) {
+        var state = {};
+        var familyStats = {};
+        (subjects || []).forEach(function(subject) {
+          var key = student.studentId + '|' + subject.subjectId;
+          var records = (recordMap && recordMap[key]) || [];
+          var family = getGradeSubjectFamily_(subject.subjectCategory || '', subject.subjectName || '');
+          var entered = records.some(hasGradeRecordInputValueV2_);
+          state[subject.subjectId] = {
+            records: records,
+            family: family,
+            entered: entered,
+            familyEntered: false,
+            familyHasRecord: false
+          };
+          if (!familyStats[family]) {
+            familyStats[family] = { entered: false, hasRecord: false };
+          }
+          familyStats[family].entered = familyStats[family].entered || entered;
+          familyStats[family].hasRecord = familyStats[family].hasRecord || Boolean(records.length);
+        });
+        Object.keys(state).forEach(function(subjectId) {
+          var family = state[subjectId].family;
+          var stats = familyStats[family] || {};
+          state[subjectId].familyEntered = Boolean(stats.entered);
+          state[subjectId].familyHasRecord = Boolean(stats.hasRecord);
+        });
+        return state;
+      }
+
+      function shouldSkipGradeMissingSubjectV2_(subject, state, instructors) {
+        state = state || {};
+        if (state.entered) {
+          return true;
+        }
+        if ((APP_STATE.gradeFilters && APP_STATE.gradeFilters.examCategory) !== '모의고사') {
+          return false;
+        }
+        var family = state.family || getGradeSubjectFamily_(subject && subject.subjectCategory || '', subject && subject.subjectName || '');
+        if (state.familyEntered && ['국어', '영어', '수학', '과학', '사회', '한국사'].indexOf(family) !== -1) {
+          return true;
+        }
+        if (!(instructors || []).length && !state.familyHasRecord) {
+          return true;
+        }
+        return false;
       }
 
       function hasGradeRecordInputValueV2_(record) {
@@ -43680,8 +43743,10 @@
         }
         var highlight = APP_STATE.gradeOverviewHighlight || {};
         var isActive = highlight.examKey && highlight.examKey === exam.key;
+        var source = actualRows.map(getGradeRecordMockExamSource_).find(Boolean) || '';
+        var sourceClass = source === '사설' ? ' grade-source-private' : (source === '교육청' ? ' grade-source-public' : '');
         return [
-          '<section class="grade-overview-exam">',
+          '<section class="grade-overview-exam' + sourceClass + '">',
           '  <div class="grade-overview-exam-head"><button type="button" class="grade-overview-exam-head-button ' + (isActive ? 'active' : '') + '" data-grade-action="highlight-grade-overview-exam" data-student-id="' + escapeAttribute((actualRows[0] && actualRows[0].studentId) || '') + '" data-exam-key="' + escapeAttribute(exam.key || '') + '">' + escapeHtml(exam.label) + '</button><span>' + actualRows.length + '건</span></div>',
           rows.length ? '  <div class="grade-overview-scores" style="grid-template-columns:repeat(' + Math.max(1, Math.min(rows.length, 14)) + ', minmax(126px, 1fr));">' + rows.slice(0, 14).map(function(record) { return renderGradeOverviewScoreChip_(record, contextRows || actualRows); }).join('') + (rows.length > 14 ? '<span class="grade-chip blue">+' + (rows.length - 14) + '</span>' : '') + '</div>' : '<div class="grade-empty">표시할 입력 성적이 없습니다.</div>',
           '</section>'
@@ -43835,9 +43900,9 @@
         var sourcePill = source ? '<span class="grade-source-pill">' + escapeHtml(source) + '</span>' : '';
         var ghostScore = score && score !== '-' ? '<span class="grade-overview-score-ghost" aria-hidden="true">' + escapeHtml(score) + '</span>' : '';
         if (record.__placeholder) {
-          return '<button type="button" class="grade-overview-score placeholder' + sourceClass + '">' + renderGradeLevelBadge_('') + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span>' + sourcePill + '</strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></span><span class="grade-overview-score-metric"><strong class="grade-overview-score-value">미입력</strong>' + renderGradeTrendDeltaBadge_(null) + '</span></button>';
+          return '<button type="button" class="grade-overview-score placeholder" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '">' + renderGradeLevelBadge_('') + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span>' + sourcePill + '</strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></span><span class="grade-overview-score-metric"><strong class="grade-overview-score-value">미입력</strong>' + renderGradeTrendDeltaBadge_(null) + '</span></button>';
         }
-        return '<button type="button" class="grade-overview-score' + activeClass + gradeRankClass + sourceClass + '" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '" data-grade-action="highlight-grade-overview-subject" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-key="' + escapeAttribute(subjectKey) + '">' + ghostScore + gradeBadge + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span>' + sourcePill + '</strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></span><span class="grade-overview-score-metric"><strong class="grade-overview-score-value">' + escapeHtml(score) + '</strong>' + deltaBadge + '</span></button>';
+        return '<button type="button" class="grade-overview-score' + activeClass + gradeRankClass + '" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '" data-grade-action="highlight-grade-overview-subject" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-key="' + escapeAttribute(subjectKey) + '">' + ghostScore + gradeBadge + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span>' + sourcePill + '</strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></span><span class="grade-overview-score-metric"><strong class="grade-overview-score-value">' + escapeHtml(score) + '</strong>' + deltaBadge + '</span></button>';
       }
 
       function renderGradeStudentTrendChart_(student, records) {
