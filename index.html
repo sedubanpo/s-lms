@@ -14037,6 +14037,46 @@
         width: 100%;
       }
 
+      .grade-missing-segment-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .grade-missing-segment-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 34px;
+        padding: 7px 10px;
+        border: 1px solid #dbe5f3;
+        border-radius: 7px;
+        background: #ffffff;
+        color: #334155;
+        font: inherit;
+        font-size: 0.72rem;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .grade-missing-segment-button.active {
+        border-color: #2563eb;
+        background: #eff6ff;
+        color: #1d4ed8;
+      }
+
+      .grade-missing-breakdown-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+        gap: 14px;
+      }
+
+      .grade-missing-breakdown-list {
+        display: grid;
+        gap: 8px;
+      }
+
       .grade-missing-mini-list {
         display: grid;
         gap: 8px;
@@ -17509,6 +17549,8 @@
           subject: ''
         },
         gradeSearchKeyword: '',
+        gradeMissingSchoolType: '',
+        gradeMissingGradeGroup: '',
         isGradeSearchComposing: false,
         pendingGradeSearchRenderAfterComposition: false,
         gradeSearchRenderTimer: null,
@@ -42956,15 +42998,78 @@
         ].join('');
       }
 
+      function normalizeGradeSchoolName_(school) {
+        return String(school || '').replace(/[()\[\]\s]/g, '').trim();
+      }
+
+      function getGradeSchoolType_(student) {
+        var school = normalizeGradeSchoolName_(student && student.school);
+        var gradeText = String(student && student.grade || '').trim();
+        if (/신반포$/.test(school)) {
+          return 'middle';
+        }
+        if (/고(?:등학교)?$/.test(school) || /고등학교$/.test(school)) {
+          return 'high';
+        }
+        if (/중(?:학교)?$/.test(school) || /중학교$/.test(school)) {
+          return 'middle';
+        }
+        if (/초(?:등학교)?$/.test(school) || /초등학교$/.test(school)) {
+          return 'elementary';
+        }
+        if (/^[123]$/.test(gradeText) && /고/.test(school)) {
+          return 'high';
+        }
+        return 'other';
+      }
+
+      function getGradeSchoolTypeLabel_(type) {
+        var map = {
+          high: '고등부',
+          middle: '중등부',
+          elementary: '초등부',
+          other: '기타'
+        };
+        return map[type] || '전체';
+      }
+
+      function getGradeLevelLabelForMissing_(student) {
+        var schoolType = getGradeSchoolType_(student);
+        var gradeNumber = getGradeNumber_(student && student.grade);
+        if (schoolType === 'high' && gradeNumber) {
+          return '고' + gradeNumber;
+        }
+        if (schoolType === 'middle' && gradeNumber) {
+          return '중' + gradeNumber;
+        }
+        if (schoolType === 'elementary' && gradeNumber) {
+          return '초' + gradeNumber;
+        }
+        return '학년 미지정';
+      }
+
       function buildGradeMissingDashboardV2_(students, subjects) {
         students = students || [];
         subjects = subjects || [];
+        var originalStudents = students.slice();
+        var schoolTypeFilter = APP_STATE.gradeMissingSchoolType || '';
+        var gradeGroupFilter = APP_STATE.gradeMissingGradeGroup || '';
+        var keyword = normalizeSearchText(APP_STATE.gradeMissingKeyword || '');
+        var segmentSummary = buildGradeMissingSegmentSummaryV2_(originalStudents, subjects, keyword);
+        students = students.filter(function(student) {
+          var schoolType = getGradeSchoolType_(student);
+          var gradeLabel = getGradeLevelLabelForMissing_(student);
+          return (!schoolTypeFilter || schoolType === schoolTypeFilter) &&
+            (!gradeGroupFilter || gradeLabel === gradeGroupFilter);
+        });
         var recordMap = buildGradeRecordMapV3_(students, subjects);
         var cells = [];
         var studentMap = {};
         var subjectMap = {};
         var instructorMap = {};
-        var keyword = normalizeSearchText(APP_STATE.gradeMissingKeyword || '');
+        var schoolTypeMap = {};
+        var gradeLevelMap = {};
+        var mockMonthMap = {};
         subjects.forEach(function(subject) {
           subjectMap[subject.subjectId] = {
             subject: subject,
@@ -42999,9 +43104,42 @@
             var cell = {
               student: student,
               subject: subject,
-              instructors: instructors
+              instructors: instructors,
+              schoolType: getGradeSchoolType_(student),
+              gradeLabel: getGradeLevelLabelForMissing_(student),
+              examMonth: getGradeExamMonth_(APP_STATE.gradeFilters && APP_STATE.gradeFilters.examName || '')
             };
             cells.push(cell);
+            schoolTypeMap[cell.schoolType] = schoolTypeMap[cell.schoolType] || {
+              key: cell.schoolType,
+              label: getGradeSchoolTypeLabel_(cell.schoolType),
+              count: 0,
+              students: {}
+            };
+            schoolTypeMap[cell.schoolType].count += 1;
+            schoolTypeMap[cell.schoolType].students[student.studentId] = true;
+            gradeLevelMap[cell.gradeLabel] = gradeLevelMap[cell.gradeLabel] || {
+              key: cell.gradeLabel,
+              label: cell.gradeLabel,
+              schoolType: cell.schoolType,
+              count: 0,
+              students: {}
+            };
+            gradeLevelMap[cell.gradeLabel].count += 1;
+            gradeLevelMap[cell.gradeLabel].students[student.studentId] = true;
+            if ((APP_STATE.gradeFilters && APP_STATE.gradeFilters.examCategory) === '모의고사') {
+              var monthKey = cell.examMonth || APP_STATE.gradeFilters.examName || '모의고사';
+              mockMonthMap[monthKey] = mockMonthMap[monthKey] || {
+                key: monthKey,
+                label: monthKey,
+                count: 0,
+                students: {},
+                byGrade: {}
+              };
+              mockMonthMap[monthKey].count += 1;
+              mockMonthMap[monthKey].students[student.studentId] = true;
+              mockMonthMap[monthKey].byGrade[cell.gradeLabel] = (mockMonthMap[monthKey].byGrade[cell.gradeLabel] || 0) + 1;
+            }
             if (!studentMap[student.studentId]) {
               studentMap[student.studentId] = {
                 student: student,
@@ -43067,14 +43205,101 @@
         }).sort(function(a, b) {
           return b.count - a.count || String(a.name || '').localeCompare(String(b.name || ''), 'ko');
         });
+        var schoolTypeRows = Object.keys(schoolTypeMap).map(function(key) {
+          var row = schoolTypeMap[key];
+          row.studentCount = Object.keys(row.students || {}).length;
+          return row;
+        }).sort(function(a, b) {
+          var order = ['high', 'middle', 'elementary', 'other'];
+          return order.indexOf(a.key) - order.indexOf(b.key);
+        });
+        var gradeRows = Object.keys(gradeLevelMap).map(function(key) {
+          var row = gradeLevelMap[key];
+          row.studentCount = Object.keys(row.students || {}).length;
+          return row;
+        }).sort(function(a, b) {
+          return String(a.label || '').localeCompare(String(b.label || ''), 'ko', { numeric: true });
+        });
+        var mockMonthRows = Object.keys(mockMonthMap).map(function(key) {
+          var row = mockMonthMap[key];
+          row.studentCount = Object.keys(row.students || {}).length;
+          return row;
+        }).sort(function(a, b) {
+          return getGradeMockExamOrderClient_(a.label) - getGradeMockExamOrderClient_(b.label);
+        });
         return {
+          originalStudents: originalStudents,
           students: students,
           subjects: subjects,
           cells: cells,
           studentRows: studentRows,
           subjectRows: subjectRows,
           instructorRows: instructorRows,
+          schoolTypeRows: schoolTypeRows,
+          gradeRows: gradeRows,
+          mockMonthRows: mockMonthRows,
+          segmentSchoolTypeRows: segmentSummary.schoolTypeRows,
+          segmentGradeRows: segmentSummary.gradeRows,
+          segmentMockMonthRows: segmentSummary.mockMonthRows,
           unassignedCells: cells.filter(function(cell) { return !cell.instructors.length; })
+        };
+      }
+
+      function buildGradeMissingSegmentSummaryV2_(students, subjects, keyword) {
+        var recordMap = buildGradeRecordMapV3_(students, subjects);
+        var schoolTypeMap = {};
+        var gradeLevelMap = {};
+        var mockMonthMap = {};
+        (students || []).forEach(function(student) {
+          (subjects || []).forEach(function(subject) {
+            var key = student.studentId + '|' + subject.subjectId;
+            var entered = (recordMap[key] || []).some(hasGradeRecordInputValueV2_);
+            if (entered) {
+              return;
+            }
+            if (keyword) {
+              var searchText = normalizeSearchText([student.studentName, student.school, student.grade, subject.subjectName, subject.subjectCategory].filter(Boolean).join(' '));
+              if (searchText.indexOf(keyword) === -1) {
+                return;
+              }
+            }
+            var schoolType = getGradeSchoolType_(student);
+            var gradeLabel = getGradeLevelLabelForMissing_(student);
+            var examMonth = getGradeExamMonth_(APP_STATE.gradeFilters && APP_STATE.gradeFilters.examName || '');
+            schoolTypeMap[schoolType] = schoolTypeMap[schoolType] || { key: schoolType, label: getGradeSchoolTypeLabel_(schoolType), count: 0, students: {} };
+            schoolTypeMap[schoolType].count += 1;
+            schoolTypeMap[schoolType].students[student.studentId] = true;
+            gradeLevelMap[gradeLabel] = gradeLevelMap[gradeLabel] || { key: gradeLabel, label: gradeLabel, schoolType: schoolType, count: 0, students: {} };
+            gradeLevelMap[gradeLabel].count += 1;
+            gradeLevelMap[gradeLabel].students[student.studentId] = true;
+            if ((APP_STATE.gradeFilters && APP_STATE.gradeFilters.examCategory) === '모의고사') {
+              var monthKey = examMonth || APP_STATE.gradeFilters.examName || '모의고사';
+              mockMonthMap[monthKey] = mockMonthMap[monthKey] || { key: monthKey, label: monthKey, count: 0, students: {}, byGrade: {} };
+              mockMonthMap[monthKey].count += 1;
+              mockMonthMap[monthKey].students[student.studentId] = true;
+              mockMonthMap[monthKey].byGrade[gradeLabel] = (mockMonthMap[monthKey].byGrade[gradeLabel] || 0) + 1;
+            }
+          });
+        });
+        var schoolTypeRows = Object.keys(schoolTypeMap).map(function(key) {
+          var row = schoolTypeMap[key];
+          row.studentCount = Object.keys(row.students || {}).length;
+          return row;
+        });
+        var gradeRows = Object.keys(gradeLevelMap).map(function(key) {
+          var row = gradeLevelMap[key];
+          row.studentCount = Object.keys(row.students || {}).length;
+          return row;
+        });
+        var mockMonthRows = Object.keys(mockMonthMap).map(function(key) {
+          var row = mockMonthMap[key];
+          row.studentCount = Object.keys(row.students || {}).length;
+          return row;
+        });
+        return {
+          schoolTypeRows: schoolTypeRows,
+          gradeRows: gradeRows,
+          mockMonthRows: mockMonthRows
         };
       }
 
@@ -43096,8 +43321,9 @@
 
       function getGradeResponsibleInstructorsForSubjectV2_(student, subject) {
         var seen = {};
+        var studentIds = getStudentIdAliases_(student);
         return (APP_STATE.permissions || []).filter(function(permission) {
-          return String(permission.studentId || '') === String(student && student.studentId || '') &&
+          return studentIds.indexOf(String(permission.studentId || '')) !== -1 &&
             String(permission.permission || 'ALLOW').toUpperCase() === 'ALLOW';
         }).map(function(permission) {
           var instructorId = String(permission.instructorId || permission.userId || '').trim();
@@ -43127,22 +43353,102 @@
         var cells = dashboard.cells || [];
         return [
           '<section class="grades-panel grade-missing-dashboard">',
-          '  <div class="grades-panel-head"><div><h3>미입력 확인 대시보드</h3><p>현재 필터 기준으로 성적이 비어 있는 학생-과목과 권한 강사를 모았습니다.</p></div><span class="grade-chip warn">' + cells.length + '칸</span></div>',
+          '  <div class="grades-panel-head"><div><h3>미입력 확인 대시보드</h3><p>학교급, 학년, 시험 월 기준으로 성적이 비어 있는 학생-과목과 권한 강사를 확인합니다.</p></div><span class="grade-chip warn">' + cells.length + '칸</span></div>',
           '  <div class="grade-missing-toolbar">',
           '    <input class="field-input" type="text" placeholder="학생명, 학교, 과목, 권한 강사 검색" data-grade-missing-search value="' + escapeAttribute(APP_STATE.gradeMissingKeyword || '') + '">',
           '    <button type="button" class="mini-button" data-grade-action="clear-missing-search"><i data-lucide="x"></i> 검색 해제</button>',
           '  </div>',
+          renderGradeMissingSegmentFiltersV2_(dashboard),
           '  <div class="grade-missing-dashboard-grid">',
           renderGradeDashboardMetricCardV2_('필터 대상', (dashboard.students || []).length + '명', (dashboard.subjects || []).length + '과목'),
           renderGradeDashboardMetricCardV2_('미입력 학생', (dashboard.studentRows || []).length + '명', '연락 대상'),
           renderGradeDashboardMetricCardV2_('미입력 과목', cells.length + '칸', '학생-과목 기준'),
           renderGradeDashboardMetricCardV2_('권한 미배정', (dashboard.unassignedCells || []).length + '칸', '담당 확인 필요'),
           '  </div>',
+          renderGradeMissingBreakdownV2_(dashboard),
           renderGradeMissingStudentRowsV2_(dashboard.studentRows || []),
           '  <div class="grade-missing-side-grid">',
           renderGradeMissingSubjectPanelV2_(dashboard.subjectRows || []),
           renderGradeMissingInstructorPanelV2_(dashboard.instructorRows || []),
           '  </div>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderGradeMissingSegmentFiltersV2_(dashboard) {
+        var segmentSchoolTypeRows = dashboard.segmentSchoolTypeRows || dashboard.schoolTypeRows || [];
+        var segmentGradeRows = dashboard.segmentGradeRows || dashboard.gradeRows || [];
+        var segmentTotalCount = segmentSchoolTypeRows.reduce(function(total, row) {
+          return total + Number(row.count || 0);
+        }, 0);
+        var typeButtons = [
+          { key: '', label: '전체', count: segmentTotalCount || (dashboard.cells || []).length },
+          { key: 'high', label: '고등부', count: getGradeMissingRowCountByKey_(segmentSchoolTypeRows, 'high') },
+          { key: 'middle', label: '중등부', count: getGradeMissingRowCountByKey_(segmentSchoolTypeRows, 'middle') },
+          { key: 'elementary', label: '초등부', count: getGradeMissingRowCountByKey_(segmentSchoolTypeRows, 'elementary') },
+          { key: 'other', label: '기타', count: getGradeMissingRowCountByKey_(segmentSchoolTypeRows, 'other') }
+        ];
+        var gradeButtons = ['고1', '고2', '고3', '중1', '중2', '중3'].map(function(label) {
+          return { key: label, label: label, count: getGradeMissingRowCountByKey_(segmentGradeRows, label) };
+        });
+        return [
+          '<div class="grade-missing-segment-row">',
+          typeButtons.map(function(item) {
+            return renderGradeMissingSegmentButtonV2_('schoolType', item.key, item.label, item.count, (APP_STATE.gradeMissingSchoolType || '') === item.key);
+          }).join(''),
+          '</div>',
+          '<div class="grade-missing-segment-row">',
+          renderGradeMissingSegmentButtonV2_('gradeGroup', '', '전체 학년', '', !APP_STATE.gradeMissingGradeGroup),
+          gradeButtons.map(function(item) {
+            return renderGradeMissingSegmentButtonV2_('gradeGroup', item.key, item.label, item.count, (APP_STATE.gradeMissingGradeGroup || '') === item.key);
+          }).join(''),
+          '</div>'
+        ].join('');
+      }
+
+      function renderGradeMissingSegmentButtonV2_(filterKey, value, label, count, active) {
+        return '<button type="button" class="grade-missing-segment-button ' + (active ? 'active' : '') + '" data-grade-action="set-missing-filter" data-filter-key="' + escapeAttribute(filterKey) + '" data-value="' + escapeAttribute(value || '') + '">' + escapeHtml(label || '-') + (count !== '' && count !== undefined ? '<span class="grade-chip blue">' + escapeHtml(String(count)) + '</span>' : '') + '</button>';
+      }
+
+      function getGradeMissingRowCountByKey_(rows, key) {
+        var row = (rows || []).find(function(item) { return item.key === key || item.label === key; });
+        return row ? row.count : 0;
+      }
+
+      function renderGradeMissingBreakdownV2_(dashboard) {
+        return [
+          '<div class="grade-missing-breakdown-grid">',
+          renderGradeMissingSchoolTypePanelV2_(dashboard.schoolTypeRows || []),
+          renderGradeMissingMockMonthPanelV2_(dashboard.mockMonthRows || [], dashboard.gradeRows || []),
+          '</div>'
+        ].join('');
+      }
+
+      function renderGradeMissingSchoolTypePanelV2_(rows) {
+        return [
+          '<section class="grade-missing-subpanel">',
+          '  <div class="grade-missing-subpanel-head"><div><h3>학교급별 미입력</h3><p>학교명 끝 글자 기준으로 고등부/중등부를 분류합니다.</p></div></div>',
+          rows.length ? '<div class="grade-missing-breakdown-list">' + rows.map(function(row) {
+            return '<button type="button" class="grade-missing-mini-row" data-grade-action="set-missing-filter" data-filter-key="schoolType" data-value="' + escapeAttribute(row.key || '') + '"><div><strong>' + escapeHtml(row.label || '-') + '</strong><span>학생 ' + escapeHtml(String(row.studentCount || 0)) + '명</span></div><span class="grade-chip warn">' + escapeHtml(String(row.count || 0)) + '칸</span></button>';
+          }).join('') + '</div>' : '<div class="grade-empty">학교급별 미입력 항목이 없습니다.</div>',
+          '</section>'
+        ].join('');
+      }
+
+      function renderGradeMissingMockMonthPanelV2_(mockRows, gradeRows) {
+        var isMock = APP_STATE.gradeFilters && APP_STATE.gradeFilters.examCategory === '모의고사';
+        var rows = isMock ? mockRows : gradeRows.filter(function(row) {
+          return /^고[123]$/.test(row.label || '');
+        });
+        return [
+          '<section class="grade-missing-subpanel">',
+          '  <div class="grade-missing-subpanel-head"><div><h3>' + (isMock ? '모의고사 월별 확인' : '고등부 학년별 확인') + '</h3><p>' + (isMock ? '3월, 5월, 6월 등 회차별 미입력 분포입니다.' : '모의고사 시간표 확인을 위해 고1-고3을 따로 봅니다.') + '</p></div></div>',
+          rows.length ? '<div class="grade-missing-breakdown-list">' + rows.map(function(row) {
+            var detail = row.byGrade ? Object.keys(row.byGrade).sort(function(a, b) { return String(a).localeCompare(String(b), 'ko', { numeric: true }); }).map(function(key) {
+              return key + ' ' + row.byGrade[key] + '칸';
+            }).join(' · ') : ('학생 ' + String(row.studentCount || 0) + '명');
+            return '<div class="grade-missing-mini-row"><div><strong>' + escapeHtml(row.label || '-') + '</strong><span>' + escapeHtml(detail) + '</span></div><span class="grade-chip warn">' + escapeHtml(String(row.count || 0)) + '칸</span></div>';
+          }).join('') + '</div>' : '<div class="grade-empty">현재 조건에서 표시할 분류가 없습니다.</div>',
           '</section>'
         ].join('');
       }
@@ -44752,6 +45058,24 @@
         var action = button.getAttribute('data-grade-action');
         if (action === 'set-school-filter') {
           APP_STATE.gradeFilters.school = button.getAttribute('data-value') || '';
+          APP_STATE.gradePage = 1;
+          renderGrades();
+        } else if (action === 'set-missing-filter') {
+          var filterKey = button.getAttribute('data-filter-key') || '';
+          var filterValue = button.getAttribute('data-value') || '';
+          if (filterKey === 'schoolType') {
+            APP_STATE.gradeMissingSchoolType = filterValue;
+            if (filterValue && filterValue !== 'high' && /^고[123]$/.test(APP_STATE.gradeMissingGradeGroup || '')) {
+              APP_STATE.gradeMissingGradeGroup = '';
+            }
+          } else if (filterKey === 'gradeGroup') {
+            APP_STATE.gradeMissingGradeGroup = filterValue;
+            if (/^고[123]$/.test(filterValue)) {
+              APP_STATE.gradeMissingSchoolType = 'high';
+            } else if (/^중[123]$/.test(filterValue)) {
+              APP_STATE.gradeMissingSchoolType = 'middle';
+            }
+          }
           APP_STATE.gradePage = 1;
           renderGrades();
         } else if (action === 'set-exam-type') {
