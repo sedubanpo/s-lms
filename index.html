@@ -19169,21 +19169,38 @@
           var searchableStudents = students;
           if (user.role !== 'ADMIN') {
             scopedStudents = activeStudents.filter(function(student) {
-              return (permissionMap[student.studentId] || []).some(function(instructorId) {
-                return userMatchesInstructorIdentifier(instructorId);
+              return getStudentIdAliases_(student).some(function(studentId) {
+                return (permissionMap[studentId] || []).some(function(instructorId) {
+                  return userMatchesInstructorIdentifier(instructorId);
+                });
               });
             }).map(function(student) {
-              return Object.assign({}, student, permissionMetaMap[student.studentId] || {});
+              var meta = null;
+              getStudentIdAliases_(student).some(function(studentId) {
+                if (permissionMetaMap[studentId]) {
+                  meta = permissionMetaMap[studentId];
+                  return true;
+                }
+                return false;
+              });
+              return Object.assign({}, student, meta || {});
             });
             var scopedMap = {};
             scopedStudents.forEach(function(student) {
-              scopedMap[student.studentId] = student;
+              getStudentIdAliases_(student).forEach(function(studentId) {
+                scopedMap[studentId] = student;
+              });
             });
             searchableStudents = activeStudents.map(function(student) {
-              if (scopedMap[student.studentId]) {
-                return scopedMap[student.studentId];
+              var scopedStudent = getStudentIdAliases_(student).map(function(studentId) {
+                return scopedMap[studentId];
+              }).filter(Boolean)[0];
+              if (scopedStudent) {
+                return scopedStudent;
               }
-              var request = requestMap[student.studentId] || null;
+              var request = getStudentIdAliases_(student).map(function(studentId) {
+                return requestMap[studentId];
+              }).filter(Boolean)[0] || null;
               return Object.assign({}, student, {
                 logs: [],
                 isRestricted: true,
@@ -22874,13 +22891,22 @@
 
       function mergeStudentRecordsForDisplay_(current, incoming) {
         if (!current) {
-          return Object.assign({}, incoming);
+          var initialAliases = uniqueList_([incoming.studentId, incoming.id].concat(incoming.studentIdAliases || []).map(function(id) {
+            return String(id || '').trim();
+          }).filter(Boolean));
+          return Object.assign({}, incoming, {
+            studentIdAliases: initialAliases
+          });
         }
         if (!incoming) {
           return Object.assign({}, current);
         }
         var primary = getStudentRecordPriority_(incoming) >= getStudentRecordPriority_(current) ? incoming : current;
         var secondary = primary === incoming ? current : incoming;
+        var aliases = uniqueList_([primary.studentId, primary.id, secondary.studentId, secondary.id]
+          .concat(primary.studentIdAliases || [], secondary.studentIdAliases || [])
+          .map(function(id) { return String(id || '').trim(); })
+          .filter(Boolean));
         var mergedLogs = [];
         var seenLogs = {};
         [].concat(secondary.logs || [], primary.logs || []).forEach(function(log) {
@@ -22902,6 +22928,7 @@
           grade: primary.grade || secondary.grade || '',
           subject: primary.subject || secondary.subject || '',
           baseSubject: primary.baseSubject || secondary.baseSubject || '',
+          studentIdAliases: aliases,
           logs: mergedLogs
         });
       }
@@ -22919,12 +22946,19 @@
           }
           if (!map[key]) {
             order.push(key);
-            map[key] = Object.assign({}, student);
+            map[key] = mergeStudentRecordsForDisplay_(null, student);
             return;
           }
           map[key] = mergeStudentRecordsForDisplay_(map[key], student);
         });
         return order.map(function(key) { return map[key]; });
+      }
+
+      function getStudentIdAliases_(student) {
+        return uniqueList_([student && student.studentId, student && student.id]
+          .concat(student && student.studentIdAliases || [])
+          .map(function(id) { return String(id || '').trim(); })
+          .filter(Boolean));
       }
 
       function collectStudentTagSet(student) {
@@ -25813,7 +25847,7 @@
       function findStudentById_(studentId) {
         var target = String(studentId || '');
         return (APP_STATE.visibleStudents || []).find(function(student) {
-          return String(student.studentId || '') === target;
+          return getStudentIdAliases_(student).indexOf(target) !== -1;
         }) || null;
       }
 
@@ -25827,7 +25861,7 @@
         ];
         for (var i = 0; i < sources.length; i += 1) {
           var found = (sources[i] || []).find(function(student) {
-            return String(student.studentId || '') === target;
+            return getStudentIdAliases_(student).indexOf(target) !== -1;
           });
           if (found) {
             return found;
@@ -26947,7 +26981,7 @@
             '<tr class="student-index-row" data-student-id="' + escapeAttribute(student.studentId || '') + '">',
             '<td class="student-name-cell"><div class="student-name-cell-inner"><div class="student-name-main"><strong>' + escapeHtml(student.studentName || '-') + '</strong><span>' + renderStudentSchoolGradeHtml_(student, true) + '</span></div></div></td>',
             '<td>' + renderPermissionChips_(instructors, 8) + '</td>',
-            '<td>' + escapeHtml(String((permissionMap[student.studentId] || []).length)) + '건</td>',
+            '<td>' + escapeHtml(String(getPermissionInstructorIdsForStudent_(permissionMap, student).length)) + '건</td>',
             '<td>' + (instructors.length ? renderStatusChip_('연결됨', 'ok') : renderStatusChip_('미배정', 'warn')) + '</td>',
             '</tr>'
           ].join('');
@@ -27084,7 +27118,7 @@
         var total = Math.max(1, students.length);
         var permissionMap = getPermissionMap();
         var base = Math.round(students.filter(function(student) { return student.studentName && student.school && student.grade; }).length / total * 100);
-        var permission = Math.round(students.filter(function(student) { return (permissionMap[student.studentId] || []).length; }).length / total * 100);
+        var permission = Math.round(students.filter(function(student) { return getPermissionInstructorIdsForStudent_(permissionMap, student).length; }).length / total * 100);
         var consulting = Math.round(students.filter(function(student) { return (student.logs || []).length; }).length / total * 100);
         var material = Math.round(students.filter(function(student) { return getSchoolMaterialInfo_(student.school).available > 0; }).length / total * 100);
         return { base: base, permission: permission, consulting: consulting, material: material, average: Math.round((base + permission + consulting + material) / 4) };
@@ -29487,15 +29521,15 @@
           var matchesKeyword = !keyword || searchText.indexOf(keyword) !== -1;
           var matchesSchool = !school || student.school === school;
           var matchesGrade = !grade || String(student.grade || '') === grade;
-          var permissionCount = (permissionMap[student.studentId] || []).length;
+          var permissionCount = getPermissionInstructorIdsForStudent_(permissionMap, student).length;
           var matchesDashboard = !dashboardFilter ||
             (dashboardFilter === 'unassigned' && permissionCount === 0) ||
             (dashboardFilter === 'single' && permissionCount === 1) ||
             (dashboardFilter === 'assigned' && permissionCount > 0);
           return matchesKeyword && matchesSchool && matchesGrade && matchesDashboard;
         }).sort(function(a, b) {
-          var aCount = (permissionMap[a.studentId] || []).length;
-          var bCount = (permissionMap[b.studentId] || []).length;
+          var aCount = getPermissionInstructorIdsForStudent_(permissionMap, a).length;
+          var bCount = getPermissionInstructorIdsForStudent_(permissionMap, b).length;
           if (aCount !== bCount) {
             return aCount - bCount;
           }
@@ -29511,13 +29545,13 @@
           return student.active !== false && student.status !== 'INACTIVE';
         });
         var unassigned = students.filter(function(student) {
-          return !(permissionMap[student.studentId] || []).length;
+          return !getPermissionInstructorIdsForStudent_(permissionMap, student).length;
         });
         var single = students.filter(function(student) {
-          return (permissionMap[student.studentId] || []).length === 1;
+          return getPermissionInstructorIdsForStudent_(permissionMap, student).length === 1;
         });
         var assigned = students.filter(function(student) {
-          return (permissionMap[student.studentId] || []).length > 0;
+          return getPermissionInstructorIdsForStudent_(permissionMap, student).length > 0;
         });
         var pending = getPendingPermissionRequests_();
         var instructorLoad = (APP_STATE.instructors || []).map(function(instructor) {
@@ -29615,7 +29649,7 @@
           students.map(function(student) {
             var selectedClass = student.studentId === APP_STATE.selectedPermissionStudentId ? ' class="selected"' : '';
             var checked = APP_STATE.permissionBulkSelectedStudentIds && APP_STATE.permissionBulkSelectedStudentIds[student.studentId] ? ' checked' : '';
-            var instructorIds = permissionMap[student.studentId] || [];
+            var instructorIds = getPermissionInstructorIdsForStudent_(permissionMap, student);
             var statusChip = instructorIds.length
               ? '<span class="teacher-chip primary">' + escapeHtml(String(instructorIds.length)) + '명 연결</span>'
               : '<span class="teacher-chip unassigned">권한 없음</span>';
@@ -30375,15 +30409,44 @@
 
       function getPermissionMap() {
         var map = {};
+        var aliasToCanonicalMap = {};
+        [APP_STATE.visibleStudents || [], APP_STATE.searchableStudents || [], APP_STATE.activeStudents || [], APP_STATE.allStudents || []].forEach(function(students) {
+          (students || []).forEach(function(student) {
+            var canonicalId = String(student && student.studentId || '').trim();
+            if (!canonicalId) {
+              return;
+            }
+            getStudentIdAliases_(student).forEach(function(aliasId) {
+              aliasToCanonicalMap[aliasId] = canonicalId;
+            });
+          });
+        });
         APP_STATE.permissions.forEach(function(item) {
-          if (!map[item.studentId]) {
-            map[item.studentId] = [];
-          }
-          if (item.instructorId && map[item.studentId].indexOf(item.instructorId) === -1) {
-            map[item.studentId].push(item.instructorId);
-          }
+          var sourceStudentId = String(item && item.studentId || '').trim();
+          var studentIds = uniqueList_([sourceStudentId, aliasToCanonicalMap[sourceStudentId]].filter(Boolean));
+          studentIds.forEach(function(studentId) {
+            if (!map[studentId]) {
+              map[studentId] = [];
+            }
+            if (item.instructorId && map[studentId].indexOf(item.instructorId) === -1) {
+              map[studentId].push(item.instructorId);
+            }
+          });
         });
         return map;
+      }
+
+      function getPermissionInstructorIdsForStudent_(permissionMap, student) {
+        var ids = [];
+        getStudentIdAliases_(student).forEach(function(studentId) {
+          ids = ids.concat((permissionMap && permissionMap[studentId]) || []);
+        });
+        return uniqueList_(ids.filter(Boolean));
+      }
+
+      function getPermissionStorageStudentIds_(studentId) {
+        var student = findAnyStudentById_(studentId);
+        return student ? getStudentIdAliases_(student) : [String(studentId || '')].filter(Boolean);
       }
 
       function buildStudentPermissionFirebasePayload_(studentId, instructorIds) {
@@ -30482,11 +30545,12 @@
       }
 
       function replaceStudentPermissionsInState_(studentId, instructorIds) {
+        var storageStudentIds = getPermissionStorageStudentIds_(studentId);
         var rows = uniqueList_(instructorIds || []).map(function(instructorId) {
           return buildSingleStudentPermissionFirebasePayload_(studentId, instructorId);
         });
         APP_STATE.permissions = (APP_STATE.permissions || []).filter(function(item) {
-          return String(item.studentId || '') !== String(studentId || '');
+          return storageStudentIds.indexOf(String(item.studentId || '')) === -1;
         }).concat(rows);
         return buildStudentPermissionFirebasePayload_(studentId, instructorIds);
       }
@@ -30499,12 +30563,19 @@
           }
           var collectionName = (state.collections && state.collections.permissions) || 'studentPermissions';
           var collection = state.firestore.collection(collectionName);
-          return collection.where('studentId', '==', String(studentId || '')).get().then(function(snapshot) {
+          var storageStudentIds = getPermissionStorageStudentIds_(studentId);
+          return Promise.all(storageStudentIds.map(function(storageStudentId) {
+            return collection.where('studentId', '==', String(storageStudentId || '')).get();
+          })).then(function(snapshots) {
             var batch = state.firestore.batch();
-            snapshot.forEach(function(doc) {
-              batch.delete(doc.ref);
+            snapshots.forEach(function(snapshot) {
+              snapshot.forEach(function(doc) {
+                batch.delete(doc.ref);
+              });
             });
-            batch.delete(collection.doc(String(studentId || '')));
+            storageStudentIds.forEach(function(storageStudentId) {
+              batch.delete(collection.doc(String(storageStudentId || '')));
+            });
             uniqueList_(instructorIds || []).forEach(function(instructorId) {
               var payload = buildSingleStudentPermissionFirebasePayload_(studentId, instructorId);
               batch.set(collection.doc(payload.permissionId), payload, { merge: true });
@@ -30537,13 +30608,16 @@
           var instructorPermissionId = getInstructorPrimaryPermissionId_(instructor);
           var deleteIds = uniqueList_(buildInstructorIdentifierCandidates_(instructor).concat([instructor.userId, instructor.loginId, instructorPermissionId]).filter(Boolean));
           (studentIds || []).forEach(function(studentId) {
-            var currentIds = (permissionMap[studentId] || []).slice();
+            var storageStudentIds = getPermissionStorageStudentIds_(studentId);
+            var currentIds = getPermissionInstructorIdsForStudent_(permissionMap, findAnyStudentById_(studentId) || { studentId: studentId });
             var nextIds = mode === 'remove'
               ? currentIds.filter(function(id) { return !isInstructorIdentifierInCandidates_(id, instructor); })
               : uniqueList_(currentIds.concat([instructorPermissionId]));
             if (mode === 'remove') {
-              deleteIds.forEach(function(id) {
-                batch.delete(state.firestore.collection(collectionName).doc(buildStudentInstructorPermissionDocId_(studentId, id)));
+              storageStudentIds.forEach(function(storageStudentId) {
+                deleteIds.forEach(function(id) {
+                  batch.delete(state.firestore.collection(collectionName).doc(buildStudentInstructorPermissionDocId_(storageStudentId, id)));
+                });
               });
             } else {
               var payload = buildSingleStudentPermissionFirebasePayload_(studentId, instructorPermissionId);
@@ -30587,7 +30661,7 @@
           var batch = state.firestore.batch();
           var now = new Date();
           requests.forEach(function(request) {
-            var currentIds = (permissionMap[request.studentId] || []).slice();
+            var currentIds = getPermissionInstructorIdsForStudent_(permissionMap, findAnyStudentById_(request.studentId) || { studentId: request.studentId });
             var instructorId = canonicalizePermissionInstructorId_(request.instructorId);
             var nextIds = uniqueList_(currentIds.concat([instructorId]));
             permissionMap[request.studentId] = nextIds;
@@ -34120,7 +34194,7 @@
         if (!student || !subjectDefinition) {
           return false;
         }
-        var allowedInstructorIds = (permissionMap && permissionMap[student.studentId]) || [];
+        var allowedInstructorIds = getPermissionInstructorIdsForStudent_(permissionMap, student);
         if (!allowedInstructorIds.length) {
           return false;
         }
@@ -34170,7 +34244,7 @@
           }];
         }
 
-        var allowedInstructorIds = permissionMap[student.studentId] || [];
+        var allowedInstructorIds = getPermissionInstructorIdsForStudent_(permissionMap, student);
         var categories = subjectDefinition.instructorSubjectCategories || [];
         var matchedInstructors = APP_STATE.instructors.filter(function(instructor) {
           return allowedInstructorIds.indexOf(instructor.userId) !== -1 &&
