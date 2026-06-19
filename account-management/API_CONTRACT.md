@@ -47,7 +47,7 @@ Current direct-write queue items use this shape locally before commit:
   "id": "teacher-...",
   "type": "teacher",
   "summary": "남종언 · 강사 · 01086021065",
-  "targets": ["firestore", "pendingAction"],
+  "targets": ["firestore", "sheetSync", "pendingAction"],
   "status": "DRAFT",
   "payload": {}
 }
@@ -153,6 +153,11 @@ The browser should block obvious same name + school + grade duplicates, but name
       "subject": "국어",
       "role": "INSTRUCTOR",
       "status": "ACTIVE",
+      "lessonLogUrl": "https://forms...",
+      "workPageUrl": "https://west-orangutan...",
+      "dailyHoursUrl": "https://docs.google.com/...",
+      "profileImageUrl": "https://github.com/...",
+      "password": "new-password-when-needed",
       "apps": {
         "sLms": true,
         "teacherPortal": true,
@@ -174,9 +179,22 @@ Expected primary writes:
 - Firestore `userAppAccess`
 - Firestore `loginAliases`
 - Audit log
-- Optional pending admin action when Auth or Sheets work is needed
+- `legacySheetSyncJobs` pending job for the S-edu page spreadsheet mirror
+- Optional pending admin action when Auth work is needed
 
 Auth password updates must not be force-applied from the browser. The static app can update account metadata and produce a pending password/admin action for a separate privileged script if needed.
+
+During the mixed Firebase + S-edu page period, teacher sheet sync jobs should target spreadsheet `1ByPeH0bZZrZDvW_yPkCpQCIuk724_Gt7uudUj_Ue8Ho`, tab `Teachers`, using these column names:
+
+- `비밀번호(ID)`
+- `선생님성함`
+- `과목`
+- `수업일지링크`
+- `업무페이지링크`
+- `일일시수조회링크`
+- `비밀번호`
+- `프로필 이미지`
+- `재직`
 
 ## Direct Commit Result
 
@@ -195,6 +213,7 @@ The static app writes commit metadata to:
 
 - `accountManagementRequests`
 - `accountManagementAuditLogs`
+- `legacySheetSyncJobs`
 
 If Firebase succeeds but Auth or Sheets work remains, leave the request with a pending admin action rather than trying to use Admin SDK credentials in the browser.
 

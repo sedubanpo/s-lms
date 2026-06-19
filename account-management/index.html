@@ -617,7 +617,7 @@
       </nav>
 
       <div class="sidebar-note">
-        Firebase Web SDK로 Firestore에 직접 저장합니다. Auth 사용자 생성/삭제/강제 비밀번호 변경은 이번 범위에서 제외하고, 필요한 후속 조치는 pending 문서로 남깁니다.
+        Firebase Web SDK로 Firestore에 직접 저장합니다. S-edu page 스프레드시트 병행 기간에는 Sheets 동기화 작업도 함께 남깁니다.
       </div>
     </aside>
 
@@ -672,7 +672,7 @@
               <div class="panel-body">
                 <div class="sync-lanes">
                   <div class="lane"><strong>Primary Firestore</strong><span>students, users, userProfiles, userAppAccess, loginAliases</span></div>
-                  <div class="lane"><strong>Pending actions</strong><span>accountManagementRequests, accountManagementAuditLogs. Auth/Sheets 후속 작업은 상태로 남깁니다.</span></div>
+                  <div class="lane"><strong>Pending actions</strong><span>accountManagementRequests, accountManagementAuditLogs, legacySheetSyncJobs. Auth/Sheets 후속 작업은 상태로 남깁니다.</span></div>
                 </div>
                 <div class="danger-note" style="margin-top:10px;">브라우저에는 Admin SDK, service account key, Google Sheets key를 넣지 않습니다.</div>
               </div>
@@ -749,7 +749,7 @@
             </div>
           </section>
           <aside class="panel">
-            <div class="panel-head"><div><h3>강사 계정 요청</h3><p>Firestore 계정 문서와 로그인 alias 메타데이터를 갱신합니다.</p></div></div>
+            <div class="panel-head"><div><h3>강사 계정 요청</h3><p>Firestore 계정 문서, 로그인 alias, S-edu page 동기화 데이터를 갱신합니다.</p></div></div>
             <div class="panel-body">
               <form id="teacherForm" class="form-grid" onsubmit="return false;">
                 <div class="form-field"><label>이름</label><input class="field" id="teacherNameInput" autocomplete="off"></div>
@@ -757,13 +757,18 @@
                 <div class="form-field"><label>과목/부서</label><input class="field" id="teacherSubjectInput" autocomplete="off"></div>
                 <div class="form-field"><label>직급</label><select class="select" id="teacherRoleInput"><option value="INSTRUCTOR">강사</option><option value="STAFF">실무자</option><option value="ADMIN">관리자</option><option value="DISABLED">비활성</option></select></div>
                 <div class="form-field"><label>상태</label><select class="select" id="teacherStatusInput"><option value="ACTIVE">활성</option><option value="DISABLED">비활성</option></select></div>
+                <div class="form-field"><label>비밀번호</label><input class="field password" id="teacherPasswordInput" type="password" autocomplete="new-password" placeholder="변경 시 입력"></div>
                 <div class="form-field"><label>Auth 후속 작업</label><select class="select" id="teacherAuthActionInput"><option value="">없음</option><option value="CREATE_AUTH_USER">Auth 사용자 생성 필요</option><option value="RESET_PASSWORD">비밀번호 변경 필요</option><option value="DISABLE_AUTH_USER">Auth 사용자 비활성 필요</option></select></div>
+                <div class="form-field full"><label>수업일지링크</label><input class="field" id="teacherLessonLogLinkInput" autocomplete="off" placeholder="https://forms..."></div>
+                <div class="form-field full"><label>업무페이지링크</label><input class="field" id="teacherWorkPageLinkInput" autocomplete="off" placeholder="https://west-orangutan..."></div>
+                <div class="form-field full"><label>일일시수조회링크</label><input class="field" id="teacherDailyHoursLinkInput" autocomplete="off" placeholder="https://docs.google.com/..."></div>
+                <div class="form-field full"><label>프로필이미지</label><input class="field" id="teacherProfileImageInput" autocomplete="off" placeholder="https://github.com/..."></div>
                 <div class="form-field full"><label>앱 권한</label><div class="sync-lanes"><label><input type="checkbox" id="appSLms" checked> S-LMS</label><label><input type="checkbox" id="appTeacher" checked> 강사 포털</label><label><input type="checkbox" id="appDesk"> 데스크</label><label><input type="checkbox" id="appLive" checked> 라이브 시간표</label></div></div>
                 <div class="form-field full"><label>세부 권한</label><div class="sync-lanes"><label><input type="checkbox" id="permManageAccounts"> 계정 관리</label><label><input type="checkbox" id="permEditGrades"> 성적 입력</label><label><input type="checkbox" id="permDeleteGrades"> 성적 삭제</label><label><input type="checkbox" id="permManageMaterials"> 자료 관리</label></div></div>
                 <div class="form-field full"><label>메모</label><textarea class="textarea" id="teacherMemoInput" placeholder="계정 생성 사유, 권한 변경 사유, 비밀번호 전달 메모"></textarea></div>
                 <div class="form-field full">
                   <button class="button primary" id="queueTeacherButton">강사 변경 대기열 추가</button>
-                  <p class="help">Auth 사용자 생성/삭제/강제 비밀번호 변경은 저장하지 않고 pending action으로 기록합니다.</p>
+                  <p class="help">비밀번호와 Sheets 반영은 안전한 서버 권한이 필요하므로 pending action과 Sheets sync job으로 기록합니다.</p>
                 </div>
               </form>
             </div>
@@ -805,7 +810,7 @@
             <div class="panel-head"><div><h3>No-Blaze 원칙</h3><p>Functions와 Admin SDK 없이 릴리스합니다.</p></div></div>
             <div class="panel-body">
               <div class="audit-item"><strong>직접 저장</strong><span>관리자 로그인 후 Firestore rules가 허용하는 문서만 저장합니다.</span></div>
-              <div class="audit-item" style="margin-top:8px;"><strong>후속 작업</strong><span>Auth/Sheets 작업은 accountManagementRequests에 pending 상태로 남깁니다.</span></div>
+              <div class="audit-item" style="margin-top:8px;"><strong>후속 작업</strong><span>Auth 작업은 accountManagementRequests에, Sheets 작업은 legacySheetSyncJobs에 pending 상태로 남깁니다.</span></div>
               <div class="audit-item" style="margin-top:8px;"><strong>보안</strong><span>관리자 권한은 users/userAppAccess 문서와 Firestore rules로 확인합니다.</span></div>
             </div>
           </aside>
@@ -831,7 +836,8 @@
       userAppAccess: "userAppAccess",
       loginAliases: "loginAliases",
       requests: "accountManagementRequests",
-      audits: "accountManagementAuditLogs"
+      audits: "accountManagementAuditLogs",
+      sheetJobs: "legacySheetSyncJobs"
     };
 
     const state = {
@@ -1197,6 +1203,10 @@
             subject: profile.department || (profile.subjects || []).join(", ") || "",
             role: String(user.role || "INSTRUCTOR").toUpperCase(),
             status: user.status || "ACTIVE",
+            lessonLogUrl: profile.lessonLogUrl || profile.lessonLogLink || profile.teachingLogUrl || "",
+            workPageUrl: profile.workPageUrl || profile.workPageLink || profile.workUrl || "",
+            dailyHoursUrl: profile.dailyHoursUrl || profile.dailyHoursLink || profile.dailyHoursUrlLink || "",
+            profileImageUrl: profile.profileImageUrl || profile.profileImage || profile.photoURL || "",
             apps: appsToArray(accessDoc.apps || {}),
             appMap: accessDoc.apps || {},
             permissions: accessDoc.permissions || {}
@@ -1218,7 +1228,7 @@
         type,
         summary,
         payload,
-        targets: ["firestore", "pendingAction"],
+        targets: type === "teacher" || type === "student" ? ["firestore", "sheetSync", "pendingAction"] : ["firestore", "pendingAction"],
         status: "DRAFT",
         createdAt: new Date().toISOString()
       };
@@ -1259,10 +1269,19 @@
       const subject = $("teacherSubjectInput").value.trim();
       const role = $("teacherRoleInput").value;
       const status = $("teacherStatusInput").value;
-      const authAction = $("teacherAuthActionInput").value;
+      const password = $("teacherPasswordInput").value.trim();
+      const authAction = password ? "RESET_PASSWORD" : $("teacherAuthActionInput").value;
+      const lessonLogUrl = $("teacherLessonLogLinkInput").value.trim();
+      const workPageUrl = $("teacherWorkPageLinkInput").value.trim();
+      const dailyHoursUrl = $("teacherDailyHoursLinkInput").value.trim();
+      const profileImageUrl = $("teacherProfileImageInput").value.trim();
       const memo = $("teacherMemoInput").value.trim();
       if (!name || !loginId || loginId.length < 8) {
         toast("강사명과 로그인 ID를 확인해 주세요.");
+        return;
+      }
+      if (password && password.length < 6) {
+        toast("Firebase Auth 비밀번호는 6자 이상이어야 합니다.");
         return;
       }
       const apps = {
@@ -1281,7 +1300,7 @@
       const existing = state.editingTeacherUid || (state.teachers.find(item => item.loginId === loginId) || {}).uid || "";
       queueRequest("teacher", `${name} · ${roleLabel(role)} · ${loginId}`, {
         action: "upsertTeacherMetadata",
-        teacher: { uid: existing, name, loginId, subject, role, status, apps, permissions, authAction, memo },
+        teacher: { uid: existing, name, loginId, subject, role, status, apps, permissions, authAction, lessonLogUrl, workPageUrl, dailyHoursUrl, profileImageUrl, password, memo },
         requiredCollections: ["users", "userProfiles", "userAppAccess", "loginAliases"]
       });
       state.editingTeacherUid = "";
@@ -1348,6 +1367,14 @@
           instructorId: draft.loginId,
           department: draft.subject,
           subjects: draft.subject ? [draft.subject] : [],
+          lessonLogUrl: draft.lessonLogUrl || "",
+          lessonLogLink: draft.lessonLogUrl || "",
+          workPageUrl: draft.workPageUrl || "",
+          workPageLink: draft.workPageUrl || "",
+          dailyHoursUrl: draft.dailyHoursUrl || "",
+          dailyHoursLink: draft.dailyHoursUrl || "",
+          profileImageUrl: draft.profileImageUrl || "",
+          profileImage: draft.profileImageUrl || "",
           updatedAt: now,
           updatedBy: user.uid || ""
         }, { merge: true }),
@@ -1391,10 +1418,10 @@
         requestPayload.pendingAdminAction = {
           type: item.payload.teacher.authAction,
           status: "PENDING",
-          reason: "Auth Admin SDK 작업은 no-Blaze 정적 릴리스 범위에서 제외됨"
+          reason: "Firebase Auth 사용자 생성/비밀번호 변경/비활성은 권한 있는 서버 또는 수동 관리자 작업 필요"
         };
       }
-      await Promise.all([
+      const writes = [
         db.collection(COLLECTIONS.requests).doc(item.id).set(requestPayload, { merge: true }),
         db.collection(COLLECTIONS.audits).doc(requestId("audit")).set({
           requestId: item.id,
@@ -1406,7 +1433,56 @@
           operatorName: operator.name || "",
           createdAt: now
         })
-      ]);
+      ];
+      if (item.type === "student" || item.type === "teacher") {
+        writes.push(db.collection(COLLECTIONS.sheetJobs).doc(item.id).set({
+          id: item.id,
+          requestId: item.id,
+          type: item.type,
+          sheetName: item.type === "teacher" ? "Teachers" : "student",
+          spreadsheetId: "1ByPeH0bZZrZDvW_yPkCpQCIuk724_Gt7uudUj_Ue8Ho",
+          status: "PENDING",
+          payload: buildSheetSyncPayload(item),
+          operatorUid: operator.uid || "",
+          operatorName: operator.name || "",
+          createdAt: now,
+          updatedAt: now
+        }, { merge: true }));
+      }
+      await Promise.all(writes);
+    }
+
+    function formatSheetLoginId(loginId) {
+      const digits = canonicalLoginId(loginId);
+      if (/^010\d{8}$/.test(digits)) return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+      return loginId || digits;
+    }
+
+    function buildSheetSyncPayload(item) {
+      if (item.type === "teacher") {
+        const teacher = item.payload.teacher || {};
+        return {
+          match: { column: "비밀번호(ID)", value: formatSheetLoginId(teacher.loginId) },
+          columns: {
+            "비밀번호(ID)": formatSheetLoginId(teacher.loginId),
+            "선생님성함": teacher.name || "",
+            "과목": teacher.subject || "",
+            "수업일지링크": teacher.lessonLogUrl || "",
+            "업무페이지링크": teacher.workPageUrl || "",
+            "일일시수조회링크": teacher.dailyHoursUrl || "",
+            "비밀번호": teacher.password || "",
+            "프로필 이미지": teacher.profileImageUrl || "",
+            "재직": teacher.status === "ACTIVE"
+          },
+          authAction: teacher.authAction || "",
+          containsPassword: Boolean(teacher.password)
+        };
+      }
+      const student = item.payload.student || {};
+      return {
+        match: { column: "studentId", value: student.studentId || "" },
+        columns: Object.assign({}, student)
+      };
     }
 
     async function submitQueue() {
@@ -1626,7 +1702,12 @@
             $("teacherSubjectInput").value = teacher.subject || "";
             $("teacherRoleInput").value = teacher.role;
             $("teacherStatusInput").value = teacher.status;
+            $("teacherPasswordInput").value = "";
             $("teacherAuthActionInput").value = "";
+            $("teacherLessonLogLinkInput").value = teacher.lessonLogUrl || "";
+            $("teacherWorkPageLinkInput").value = teacher.workPageUrl || "";
+            $("teacherDailyHoursLinkInput").value = teacher.dailyHoursUrl || "";
+            $("teacherProfileImageInput").value = teacher.profileImageUrl || "";
             $("appSLms").checked = (teacher.apps || []).includes("sLms");
             $("appTeacher").checked = (teacher.apps || []).includes("teacherPortal");
             $("appDesk").checked = (teacher.apps || []).includes("deskPortal");

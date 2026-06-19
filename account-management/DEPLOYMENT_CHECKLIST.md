@@ -70,4 +70,16 @@ Before copying to GitHub Pages, verify:
 - Non-admin accounts cannot write through Firestore rules.
 - Student create/status update writes the expected `students` fields.
 - Teacher metadata update writes `users`, `userProfiles`, `userAppAccess`, and `loginAliases`.
+- Teacher metadata includes S-edu page legacy fields: `수업일지링크`, `업무페이지링크`, `일일시수조회링크`, `프로필 이미지`, and optional password follow-up.
+- Student and teacher changes create `legacySheetSyncJobs` so the S-edu page spreadsheet mirror can be processed by a privileged Apps Script, script runner, or later server worker.
 - Auth follow-up actions create pending request metadata instead of trying to create/delete Auth users in the browser.
+
+## Mixed Firebase + Spreadsheet Constraint
+
+The static browser app cannot safely write Google Sheets or force-change another Firebase Auth user's password because both require privileged credentials. Keep service account keys and Admin SDK out of the browser.
+
+Until a privileged sync path is selected, the app commits Firestore metadata and records pending jobs/actions:
+
+- `accountManagementRequests`: operator request, result, and Auth follow-up state
+- `accountManagementAuditLogs`: immutable operation trail
+- `legacySheetSyncJobs`: S-edu page spreadsheet mirror payload
