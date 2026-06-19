@@ -37949,9 +37949,6 @@
         if (student && student.grade) {
           parts.push('<span>' + escapeHtml(student.grade) + '</span>');
         }
-        if (student && student.studentId && !isAutoRowStudentId_(student.studentId)) {
-          parts.push('<span>' + escapeHtml(student.studentId) + '</span>');
-        }
         return parts.length ? '<span class="school-meta-line">' + parts.join('<span class="school-meta-separator">·</span>') + '</span>' : '-';
       }
 
@@ -44976,9 +44973,6 @@
 
       function formatGradeStudentMeta_(student) {
         var parts = [student && student.school, student && student.grade].filter(Boolean);
-        if (student && student.studentId && !isAutoRowStudentId_(student.studentId)) {
-          parts.push(student.studentId);
-        }
         return parts.join(' · ') || '-';
       }
 
