@@ -768,7 +768,7 @@
                 <div class="form-field full"><label>메모</label><textarea class="textarea" id="teacherMemoInput" placeholder="계정 생성 사유, 권한 변경 사유, 비밀번호 전달 메모"></textarea></div>
                 <div class="form-field full">
                   <button class="button primary" id="queueTeacherButton">강사 변경 대기열 추가</button>
-                  <p class="help">비밀번호와 Sheets 반영은 안전한 서버 권한이 필요하므로 pending action과 Sheets sync job으로 기록합니다.</p>
+                  <p class="help">S-LMS 관리자 세션이 있으면 S-edu page에 즉시 반영하고, 없으면 Sheets sync job으로 남깁니다.</p>
                 </div>
               </form>
             </div>
@@ -810,7 +810,7 @@
             <div class="panel-head"><div><h3>No-Blaze 원칙</h3><p>Functions와 Admin SDK 없이 릴리스합니다.</p></div></div>
             <div class="panel-body">
               <div class="audit-item"><strong>직접 저장</strong><span>관리자 로그인 후 Firestore rules가 허용하는 문서만 저장합니다.</span></div>
-              <div class="audit-item" style="margin-top:8px;"><strong>후속 작업</strong><span>Auth 작업은 accountManagementRequests에, Sheets 작업은 legacySheetSyncJobs에 pending 상태로 남깁니다.</span></div>
+              <div class="audit-item" style="margin-top:8px;"><strong>후속 작업</strong><span>Auth 작업은 accountManagementRequests에 남기고, Sheets 작업은 S-LMS 세션이 있으면 즉시 반영합니다.</span></div>
               <div class="audit-item" style="margin-top:8px;"><strong>보안</strong><span>관리자 권한은 users/userAppAccess 문서와 Firestore rules로 확인합니다.</span></div>
             </div>
           </aside>
