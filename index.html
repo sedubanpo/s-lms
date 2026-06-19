@@ -19112,7 +19112,7 @@
             safePermissionGet(collections.permissions || 'studentPermissions'),
             safePendingPermissionRequestsGet(collections.permissionRequests || 'permissionRequests'),
             user.role === 'ADMIN' ? safeCollectionGet(collections.homerooms || 'studentHomerooms', 'homeroom') : Promise.resolve({ docs: [] }),
-            safeLimitedCollectionGet(collections.studentLogs || 'studentLogs', 'student log', 'createdAtMs', 50)
+            safeCollectionGet(collections.studentLogs || 'studentLogs', 'student log')
           ]);
           return contextDataPromise.then(function(adminResults) {
           var userSnapshot = adminResults[0];
