@@ -1166,14 +1166,62 @@
       const status = String(data.status || (data.active === false || data.isActive === false ? "PAUSED" : "ACTIVE")).toUpperCase();
       return {
         studentId: data.studentId || data.id || doc.id || "",
+        docId: doc.id || data.studentId || data.id || "",
         name: data.name || data.studentName || "",
         school: data.school || "",
         grade: data.grade || "",
         status: ["INACTIVE", "SUSPENDED"].includes(status) ? "PAUSED" : status,
         active: data.active !== false && data.isActive !== false && !["PAUSED", "STOPPED", "DISABLED", "INACTIVE"].includes(status),
         memo: data.memo || data.note || data.statusMemo || "",
-        updatedAt: data.updatedAt || ""
+        updatedAt: data.updatedAt || "",
+        updatedAtMs: Number(data.updatedAtMs || 0)
       };
+    }
+
+    function normalizeStudentIdentityPart(value) {
+      return String(value || "").trim().replace(/\s+/g, "").toLowerCase();
+    }
+
+    function studentIdentityKey(student) {
+      return [
+        normalizeStudentIdentityPart(student.name),
+        normalizeStudentIdentityPart(student.school),
+        normalizeStudentIdentityPart(student.grade)
+      ].join("|");
+    }
+
+    function studentSortTime(student) {
+      if (student.updatedAtMs) return student.updatedAtMs;
+      const parsed = student.updatedAt && Date.parse(student.updatedAt);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function chooseDisplayStudent(current, next) {
+      if (!current) return next;
+      if (next.active !== current.active) return next.active ? next : current;
+      if (studentSortTime(next) !== studentSortTime(current)) {
+        return studentSortTime(next) > studentSortTime(current) ? next : current;
+      }
+      const currentId = String(current.studentId || current.docId || "");
+      const nextId = String(next.studentId || next.docId || "");
+      if (currentId.startsWith("STU-") !== nextId.startsWith("STU-")) {
+        return nextId.startsWith("STU-") ? next : current;
+      }
+      return current;
+    }
+
+    function dedupeStudents(students) {
+      const byKey = new Map();
+      students.forEach(student => {
+        const key = studentIdentityKey(student);
+        if (!key.replace(/\|/g, "")) {
+          byKey.set(student.studentId || student.docId || requestId("student"), student);
+          return;
+        }
+        const selected = chooseDisplayStudent(byKey.get(key), student);
+        byKey.set(key, selected);
+      });
+      return Array.from(byKey.values());
     }
 
     async function loadFirestoreData() {
@@ -1187,7 +1235,9 @@
           db.collection(COLLECTIONS.userProfiles).get(),
           db.collection(COLLECTIONS.userAppAccess).get()
         ]);
-        state.students = studentsSnap.docs.map(normalizeStudent).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+        const normalizedStudents = studentsSnap.docs.map(normalizeStudent);
+        state.students = dedupeStudents(normalizedStudents).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+        const hiddenDuplicateCount = Math.max(0, normalizedStudents.length - state.students.length);
         const profiles = {};
         const access = {};
         profilesSnap.docs.forEach(doc => profiles[doc.id] = doc.data() || {});
@@ -1212,7 +1262,7 @@
             permissions: accessDoc.permissions || {}
           };
         }).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
-        addLocalAudit("Firestore 로드", `학생 ${state.students.length}명, 계정 ${state.teachers.length}건을 불러왔습니다.`);
+        addLocalAudit("Firestore 로드", `학생 ${state.students.length}명, 계정 ${state.teachers.length}건을 불러왔습니다.${hiddenDuplicateCount ? ` 중복 학생 표시 ${hiddenDuplicateCount}건을 접었습니다.` : ""}`);
       } catch (error) {
         addLocalAudit("Firestore 로드 실패", error.message || String(error));
         toast("Firestore 로드 실패: " + (error.message || error));
