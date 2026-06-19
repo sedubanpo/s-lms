@@ -940,7 +940,8 @@
     function buildAliasCandidates(loginId) {
       const raw = String(loginId || "").trim();
       const canonical = canonicalLoginId(raw);
-      return Array.from(new Set([raw, canonical, authEmailForLoginId(canonical)].filter(Boolean).map(item => item.toLowerCase())));
+      const shortPhone = canonical.startsWith("010") && canonical.length === 11 ? canonical.slice(3) : "";
+      return Array.from(new Set([raw, canonical, shortPhone, authEmailForLoginId(canonical)].filter(Boolean).map(item => item.toLowerCase())));
     }
 
     function statusLabel(status) {
