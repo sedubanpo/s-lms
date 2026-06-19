@@ -829,6 +829,8 @@
       authDomain: "fir-lms-prod.firebaseapp.com",
       projectId: "fir-lms-prod"
     };
+    const SLMS_API_URL = "https://script.google.com/macros/s/AKfycbxNNT0JOl4RsMBDsvyy8wnR2PchU7SMB0F9VloUF0pcfsc6tS9gDuHzkCzKhXtOQ8-F/exec";
+    const SLMS_SESSION_STORAGE_KEY = "slms_api_session";
     const COLLECTIONS = {
       students: "students",
       users: "users",
@@ -1491,8 +1493,9 @@
           type: item.type,
           sheetName: item.type === "teacher" ? "Teachers" : "student",
           spreadsheetId: "1ByPeH0bZZrZDvW_yPkCpQCIuk724_Gt7uudUj_Ue8Ho",
-          status: "PENDING",
+          status: result.sheetSync && result.sheetSync.ok ? "SYNCED" : "PENDING",
           payload: buildSheetSyncPayload(item),
+          syncResult: result.sheetSync || null,
           operatorUid: operator.uid || "",
           operatorName: operator.name || "",
           createdAt: now,
@@ -1535,6 +1538,57 @@
       };
     }
 
+    function readSlmsSessionToken() {
+      if (!window.localStorage) return "";
+      try {
+        const raw = localStorage.getItem(SLMS_SESSION_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        const token = parsed && parsed.token ? String(parsed.token) : "";
+        return token && !token.startsWith("firebase:") ? token : "";
+      } catch (error) {
+        return "";
+      }
+    }
+
+    async function syncSheetViaAppsScript(item) {
+      const token = readSlmsSessionToken();
+      if (!token) {
+        return {
+          ok: false,
+          skipped: true,
+          pending: true,
+          errorCode: "SLMS_SESSION_REQUIRED",
+          message: "S-LMS 관리자 세션 토큰이 없어 Sheets 동기화를 pending으로 남겼습니다."
+        };
+      }
+
+      const response = await fetch(SLMS_API_URL, {
+        method: "POST",
+        redirect: "follow",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "syncAccountManagementSheet",
+          token,
+          requestId: item.id,
+          type: item.type,
+          payload: buildSheetSyncPayload(item)
+        })
+      });
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (error) {
+        throw new Error("Apps Script 응답이 JSON 형식이 아닙니다.");
+      }
+      if (!data.ok) {
+        const error = new Error(data.message || "Sheets 동기화에 실패했습니다.");
+        error.errorCode = data.errorCode || "SHEET_SYNC_FAILED";
+        throw error;
+      }
+      return data;
+    }
+
     async function submitQueue() {
       const selected = state.queue.filter(item => state.selectedQueueIds[item.id]);
       if (!selected.length) {
@@ -1563,6 +1617,17 @@
           if (item.type === "teacher") {
             result.documentId = await writeTeacher(db, item, now);
             if (item.payload.teacher && item.payload.teacher.authAction) result.pendingTargets.push(item.payload.teacher.authAction);
+          }
+          result.sheetSync = await syncSheetViaAppsScript(item).catch(error => ({
+            ok: false,
+            pending: true,
+            errorCode: error.errorCode || "SHEET_SYNC_FAILED",
+            message: error.message || String(error)
+          }));
+          if (result.sheetSync && result.sheetSync.ok) {
+            result.committedTargets.push("spreadsheet");
+          } else {
+            result.pendingTargets.push("spreadsheet");
           }
           await writeRequestAndAudit(db, item, result, now);
           item.status = "COMMITTED";
