@@ -26235,7 +26235,7 @@
       function getStudentGradeRecordsForProfile_(studentId) {
         var target = String(studentId || '');
         return (APP_STATE.grades || []).filter(function(record) {
-          return String(record.studentId || '') === target;
+          return gradeRecordMatchesStudentId_(record, target);
         }).map(normalizeGradeRecordV2_).sort(sortGradesByUpdatedDesc_);
       }
 
@@ -38398,8 +38398,12 @@
 
       function renderGradeMissingStudentList_() {
         var entered = {};
+        var aliasLookup = buildGradeStudentAliasLookup_(APP_STATE.gradeStudents || []);
         (APP_STATE.grades || []).forEach(function(record) {
-          entered[record.studentId] = true;
+          var displayStudentId = getGradeDisplayStudentIdForRecord_(record, aliasLookup);
+          if (displayStudentId) {
+            entered[displayStudentId] = true;
+          }
         });
         var missing = (APP_STATE.gradeStudents || []).filter(function(student) {
           return !entered[student.studentId];
@@ -38817,7 +38821,7 @@
         var filters = APP_STATE.gradeFilters;
         var currentSubject = subject || '';
         return (APP_STATE.grades || []).find(function(record) {
-          return record.studentId === studentId &&
+          return gradeRecordMatchesStudentId_(record, studentId) &&
             String(record.schoolYear || '') === String(filters.schoolYear || '') &&
             String(record.examCategory || '') === String(filters.examCategory || '') &&
             String(record.term || '') === String(filters.examCategory === '내신' ? (filters.term || '') : '') &&
@@ -38833,7 +38837,7 @@
 
       function getGradesForStudent_(studentId) {
         return (APP_STATE.grades || []).filter(function(record) {
-          return record.studentId === studentId;
+          return gradeRecordMatchesStudentId_(record, studentId);
         });
       }
 
@@ -38856,8 +38860,12 @@
       }
 
       function findGradeStudentById_(studentId) {
+        var target = String(studentId || '').trim();
+        if (!target) {
+          return null;
+        }
         return (APP_STATE.gradeStudents || []).find(function(student) {
-          return student.studentId === studentId;
+          return getStudentIdAliases_(student).indexOf(target) !== -1;
         }) || null;
       }
 
@@ -39148,8 +39156,12 @@
         var studentSeen = {};
         var internalScores = [];
         var mockGrades = [];
+        var aliasLookup = buildGradeStudentAliasLookup_(students || []);
         (grades || []).forEach(function(record) {
-          studentSeen[record.studentId] = true;
+          var displayStudentId = getGradeDisplayStudentIdForRecord_(record, aliasLookup);
+          if (displayStudentId) {
+            studentSeen[displayStudentId] = true;
+          }
           if (record.examCategory === '내신' && record.rawScore !== '') {
             internalScores.push(Number(record.rawScore));
           }
@@ -40242,22 +40254,27 @@
         var students = getGradeFilteredStudents_();
         var subjects = getGradeVisibleSubjects_();
         var allRecords = getGradeCurrentRecordsV3_(students, subjects);
+        var aliasLookup = buildGradeStudentAliasLookup_(students);
         var submitterFilter = APP_STATE.gradeStatsSubmitterFilter || 'all';
         var records = filterGradeStatsRecordsBySubmitterTypeV2_(allRecords, submitterFilter);
         var recordsByStudent = {};
         var subjectStudentMap = {};
         records.forEach(function(record) {
-          if (!recordsByStudent[record.studentId]) {
-            recordsByStudent[record.studentId] = [];
+          var displayStudentId = getGradeDisplayStudentIdForRecord_(record, aliasLookup);
+          if (!displayStudentId) {
+            return;
           }
-          recordsByStudent[record.studentId].push(record);
+          if (!recordsByStudent[displayStudentId]) {
+            recordsByStudent[displayStudentId] = [];
+          }
+          recordsByStudent[displayStudentId].push(record);
           var subject = findVisibleSubjectForGradeRecordV3_(record, subjects);
           var subjectKey = subject ? subject.subjectId : (record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName));
           if (subjectKey) {
             if (!subjectStudentMap[subjectKey]) {
               subjectStudentMap[subjectKey] = {};
             }
-            subjectStudentMap[subjectKey][record.studentId] = true;
+            subjectStudentMap[subjectKey][displayStudentId] = true;
           }
         });
         var entered = [];
@@ -40636,9 +40653,13 @@
         var records = options.records || getGradeRecordsForInstructorCoverageScopeV2_(options.scope || buildCurrentGradeExamScopeV2_(), students, subjects);
         var studentMap = {};
         var visibleStudentIds = {};
+        var aliasLookup = buildGradeStudentAliasLookup_(students);
         students.forEach(function(student) {
           studentMap[student.studentId] = student;
           visibleStudentIds[student.studentId] = true;
+          getStudentIdAliases_(student).forEach(function(aliasId) {
+            visibleStudentIds[aliasId] = true;
+          });
         });
         var instructorMap = buildGradeInstructorLookupV2_();
         var rowMap = {};
@@ -40647,6 +40668,7 @@
           if (!visibleStudentIds[studentId]) {
             return;
           }
+          var displayStudentId = aliasLookup[studentId] || studentId;
           var instructorId = String(permission.instructorId || '').trim();
           if (!instructorId || (options.instructorFilterId && instructorId !== options.instructorFilterId)) {
             return;
@@ -40679,13 +40701,17 @@
           if (!rowMap[key].subjectLabel && subjectLabel) {
             rowMap[key].subjectLabel = subjectLabel;
           }
-          if (!rowMap[key].studentIds[studentId]) {
-            rowMap[key].studentIds[studentId] = true;
-            rowMap[key].students.push(studentMap[studentId]);
+          if (!rowMap[key].studentIds[displayStudentId]) {
+            rowMap[key].studentIds[displayStudentId] = true;
+            var displayStudent = studentMap[displayStudentId] || findGradeStudentById_(displayStudentId);
+            if (displayStudent) {
+              rowMap[key].students.push(displayStudent);
+            }
           }
         });
         records = records.filter(function(record) {
-          return visibleStudentIds[record.studentId] && String(record.finalScore || record.provisionalScore || record.rawScore || record.gradeLevel || '').trim() !== '';
+          var displayStudentId = getGradeDisplayStudentIdForRecord_(record, aliasLookup);
+          return visibleStudentIds[displayStudentId] && String(record.finalScore || record.provisionalScore || record.rawScore || record.gradeLevel || '').trim() !== '';
         });
         Object.keys(rowMap).forEach(function(key) {
           var row = rowMap[key];
@@ -40697,15 +40723,16 @@
           });
           var enteredPairs = {};
           records.forEach(function(record) {
-            if (!row.studentIds[record.studentId]) {
+            var displayStudentId = getGradeDisplayStudentIdForRecord_(record, aliasLookup);
+            if (!row.studentIds[displayStudentId]) {
               return;
             }
             var subject = findVisibleSubjectForGradeRecordV3_(record, row.subjects);
             if (!subject || !subjectIds[subject.subjectId]) {
               return;
             }
-            enteredPairs[record.studentId + '|' + subject.subjectId] = true;
-            row.enteredStudentIds[record.studentId] = true;
+            enteredPairs[displayStudentId + '|' + subject.subjectId] = true;
+            row.enteredStudentIds[displayStudentId] = true;
           });
           row.studentCount = row.students.length;
           row.targetCells = row.studentCount * Math.max(1, row.subjects.length);
@@ -40755,11 +40782,13 @@
       function getGradeRecordsForInstructorCoverageScopeV2_(scope, students, subjects) {
         scope = scope || {};
         var studentIds = {};
+        var aliasLookup = buildGradeStudentAliasLookup_(students);
         (students || []).forEach(function(student) {
           studentIds[student.studentId] = true;
         });
         return (APP_STATE.grades || []).filter(function(record) {
-          if (!studentIds[record.studentId]) {
+          var displayStudentId = getGradeDisplayStudentIdForRecord_(record, aliasLookup);
+          if (!studentIds[displayStudentId]) {
             return false;
           }
           if (scope.examYear && String(record.examYear || record.schoolYear || '') !== String(scope.examYear)) {
@@ -41242,7 +41271,7 @@
         var payload = {
           token: APP_STATE.token,
           gradeId: record ? (record.gradeId || '') : '',
-          studentId: studentId,
+          studentId: record && record.studentId ? record.studentId : studentId,
           studentName: student.studentName || student.name || '',
           school: student.school || '',
           grade: student.grade || '',
@@ -41299,7 +41328,7 @@
       function getGradeRecordForStudent_(studentId, subjectId) {
         var filters = APP_STATE.gradeFilters;
         return (APP_STATE.grades || []).find(function(record) {
-          return record.studentId === studentId &&
+          return gradeRecordMatchesStudentId_(record, studentId) &&
             String(record.examYear || record.schoolYear || '') === String(getGradeYear_()) &&
             String(record.examCategory || '') === String(filters.examCategory || '') &&
             String(record.term || '') === String(filters.examCategory === '내신' ? (filters.term || '') : '') &&
@@ -41308,6 +41337,45 @@
             String(record.examRound || '') === String(filters.examRound || '') &&
             String(record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName)) === String(subjectId || '');
         }) || null;
+      }
+
+      function getGradeStudentIdAliasesById_(studentId) {
+        var target = String(studentId || '').trim();
+        var student = findGradeStudentById_(target);
+        if (student) {
+          return getStudentIdAliases_(student);
+        }
+        return target ? [target] : [];
+      }
+
+      function gradeRecordMatchesStudentId_(record, studentId) {
+        var recordStudentId = String(record && record.studentId || '').trim();
+        if (!recordStudentId) {
+          return false;
+        }
+        return getGradeStudentIdAliasesById_(studentId).indexOf(recordStudentId) !== -1;
+      }
+
+      function buildGradeStudentAliasLookup_(students) {
+        var lookup = {};
+        (students || []).forEach(function(student) {
+          var displayStudentId = String(student && student.studentId || '').trim();
+          if (!displayStudentId) {
+            return;
+          }
+          getStudentIdAliases_(student).forEach(function(aliasId) {
+            lookup[String(aliasId || '').trim()] = displayStudentId;
+          });
+        });
+        return lookup;
+      }
+
+      function getGradeDisplayStudentIdForRecord_(record, aliasLookup) {
+        var recordStudentId = String(record && record.studentId || '').trim();
+        if (!recordStudentId) {
+          return '';
+        }
+        return (aliasLookup && aliasLookup[recordStudentId]) || recordStudentId;
       }
 
       function gradeRecordMatchesSubjectId_(record, subjectId) {
@@ -41338,7 +41406,7 @@
         return (APP_STATE.gradeStudents || []).filter(function(student) {
           var searchText = normalizeSearchText([student.studentName, student.school, student.grade, student.subject].join(' '));
           var recordText = keyword ? normalizeSearchText((APP_STATE.grades || []).filter(function(record) {
-            return record.studentId === student.studentId;
+            return gradeRecordMatchesStudentId_(record, student.studentId);
           }).map(function(record) {
             return [record.subjectCategory, record.subjectName, record.detailSubject, record.examName].join(' ');
           }).join(' ')) : '';
@@ -41781,7 +41849,7 @@
         var currentType = getGradeExamTypeGroup_(record);
         var subjectKey = buildGradeTrendSubjectKey_(record);
         return (APP_STATE.grades || []).filter(function(item) {
-          if (item === record || item.studentId !== record.studentId || getGradeExamTypeGroup_(item) !== currentType) {
+          if (item === record || !gradeRecordMatchesStudentId_(item, record.studentId) || getGradeExamTypeGroup_(item) !== currentType) {
             return false;
           }
           if (buildGradeTrendSubjectKey_(item) !== subjectKey) {
@@ -43571,12 +43639,14 @@
         scheduleGradeHistoryLoadForDisplay_();
         var filters = APP_STATE.gradeFilters || {};
         var studentIds = {};
+        var aliasLookup = buildGradeStudentAliasLookup_(students);
         var selectedSubject = filters.subject ? findGradeSubjectById_(filters.subject) : null;
         (students || []).forEach(function(student) {
           studentIds[student.studentId] = true;
         });
         var matchesFilters = function(record) {
-          return studentIds[record.studentId] &&
+          var displayStudentId = getGradeDisplayStudentIdForRecord_(record, aliasLookup);
+          return studentIds[displayStudentId] &&
             (!filters.examYear || String(record.examYear || record.schoolYear || '') === String(filters.examYear)) &&
             (!filters.subjectCategory || record.subjectCategory === filters.subjectCategory) &&
             (!filters.subject || record.subjectName === filters.subject || (selectedSubject && isGradeBroadSubjectV3_(selectedSubject) && normalizeSearchText(record.subjectCategory || record.subjectArea) === normalizeSearchText(selectedSubject.subjectCategory)));
@@ -43669,14 +43739,19 @@
 
       function groupGradeOverviewByStudent_(students, records) {
         var map = {};
+        var aliasLookup = buildGradeStudentAliasLookup_(students);
         (students || []).forEach(function(student) {
           map[student.studentId] = { student: student, records: [] };
         });
         (records || []).forEach(function(record) {
-          if (!map[record.studentId]) {
-            map[record.studentId] = { student: findGradeStudentById_(record.studentId) || record, records: [] };
+          var displayStudentId = getGradeDisplayStudentIdForRecord_(record, aliasLookup);
+          if (!displayStudentId) {
+            return;
           }
-          map[record.studentId].records.push(record);
+          if (!map[displayStudentId]) {
+            map[displayStudentId] = { student: findGradeStudentById_(displayStudentId) || findGradeStudentById_(record.studentId) || record, records: [] };
+          }
+          map[displayStudentId].records.push(record);
         });
         return Object.keys(map).map(function(studentId) {
           return map[studentId];
@@ -44398,7 +44473,7 @@
         var type = getGradeExamTypeGroup_(record);
         var previous = (contextRows || []).filter(function(item) {
           return item !== record &&
-            item.studentId === record.studentId &&
+            gradeRecordMatchesStudentId_(item, record.studentId) &&
             getGradeExamTypeGroup_(item) === type &&
             buildGradeTrendSubjectKey_(item) === subjectKey &&
             getGradeExamChronoValue_(item) < currentOrder &&
@@ -44559,7 +44634,8 @@
 
       function renderGradeV3Metrics_(students, subjects) {
         var records = getGradeCurrentRecordsV3_(students, subjects);
-        var enteredStudents = uniqueList_(records.map(function(record) { return record.studentId || ''; }).filter(Boolean)).length;
+        var aliasLookup = buildGradeStudentAliasLookup_(students);
+        var enteredStudents = uniqueList_(records.map(function(record) { return getGradeDisplayStudentIdForRecord_(record, aliasLookup); }).filter(Boolean)).length;
         var totalCells = Math.max(0, students.length * subjects.length);
         var completedCells = records.filter(function(record) {
           return String(record.finalScore || record.provisionalScore || record.rawScore || '').trim() !== '';
@@ -44781,15 +44857,17 @@
       function buildGradeRecordMapV3_(students, subjects) {
         var studentIds = {};
         var subjectIds = {};
+        var aliasLookup = buildGradeStudentAliasLookup_(students);
         students.forEach(function(student) { studentIds[student.studentId] = true; });
         subjects.forEach(function(subject) { subjectIds[subject.subjectId] = true; });
         var map = {};
         getGradeCurrentRecordsV3_(students, subjects).forEach(function(record) {
           var subject = findVisibleSubjectForGradeRecordV3_(record, subjects);
-          if (!studentIds[record.studentId] || !subject) {
+          var displayStudentId = getGradeDisplayStudentIdForRecord_(record, aliasLookup);
+          if (!studentIds[displayStudentId] || !subject) {
             return;
           }
-          var key = record.studentId + '|' + subject.subjectId;
+          var key = displayStudentId + '|' + subject.subjectId;
           if (!map[key]) {
             map[key] = [];
           }
@@ -44802,6 +44880,7 @@
         scheduleGradeHistoryLoadForDisplay_();
         var studentIds = {};
         var subjectIds = {};
+        var aliasLookup = buildGradeStudentAliasLookup_(students);
         (students || []).forEach(function(student) { studentIds[student.studentId] = true; });
         (subjects || []).forEach(function(subject) { subjectIds[subject.subjectId] = true; });
         var currentRows = filterGradeRecordsByCurrentFilters_(APP_STATE.grades || []);
@@ -44810,7 +44889,8 @@
           : [];
         return mergeCurrentAndHistoryGradeRecordsForDisplay_(currentRows, historyRows).filter(function(record) {
           var subjectId = record.subjectId || buildGradeSubjectIdClient_(record.subjectCategory, record.subjectName);
-          return studentIds[record.studentId] && (subjectIds[subjectId] || Boolean(findVisibleSubjectForGradeRecordV3_(record, subjects)));
+          var displayStudentId = getGradeDisplayStudentIdForRecord_(record, aliasLookup);
+          return studentIds[displayStudentId] && (subjectIds[subjectId] || Boolean(findVisibleSubjectForGradeRecordV3_(record, subjects)));
         });
       }
 
