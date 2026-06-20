@@ -1475,7 +1475,7 @@
         };
       }
       const writes = [
-        db.collection(COLLECTIONS.requests).doc(item.id).set(requestPayload, { merge: true }),
+        db.collection(COLLECTIONS.requests).doc(item.id).set(requestPayload),
         db.collection(COLLECTIONS.audits).doc(requestId("audit")).set({
           requestId: item.id,
           type: item.type,
@@ -1501,7 +1501,7 @@
           operatorName: operator.name || "",
           createdAt: now,
           updatedAt: now
-        }, { merge: true }));
+        }));
       }
       await Promise.all(writes);
     }
