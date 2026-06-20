@@ -1553,13 +1553,16 @@
 
     async function syncSheetViaAppsScript(item) {
       const token = readSlmsSessionToken();
-      if (!token) {
+      const auth = await getAuth();
+      const firebaseUser = auth.currentUser;
+      const firebaseIdToken = firebaseUser ? await firebaseUser.getIdToken() : "";
+      if (!token && !firebaseIdToken) {
         return {
           ok: false,
           skipped: true,
           pending: true,
           errorCode: "SLMS_SESSION_REQUIRED",
-          message: "S-LMS 관리자 세션 토큰이 없어 Sheets 동기화를 pending으로 남겼습니다."
+          message: "S-LMS 또는 Firebase 관리자 세션이 없어 Sheets 동기화를 pending으로 남겼습니다."
         };
       }
 
@@ -1570,6 +1573,7 @@
         body: JSON.stringify({
           action: "syncAccountManagementSheet",
           token,
+          firebaseIdToken,
           requestId: item.id,
           type: item.type,
           payload: buildSheetSyncPayload(item)
