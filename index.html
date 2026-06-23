@@ -7375,15 +7375,16 @@
       }
 
       .student-log-list-panel .filter-bar {
-        grid-template-columns: minmax(260px, 1fr) 150px 150px 170px;
+        grid-template-columns: minmax(260px, 1fr) 138px 138px 158px;
       }
 
       .student-log-author-tabs {
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: 6px;
         padding: 0 16px 12px;
-        overflow-x: auto;
+        overflow: visible;
       }
 
       .student-log-author-tab {
@@ -7446,7 +7447,7 @@
 
       .student-log-list-table {
         width: 100%;
-        min-width: 1280px;
+        min-width: 1020px;
         border-collapse: collapse;
         table-layout: fixed;
         font-size: 0.8rem;
@@ -7473,31 +7474,31 @@
       }
 
       .student-log-list-table th:nth-child(1),
-      .student-log-list-table td:nth-child(1) { width: 130px; }
+      .student-log-list-table td:nth-child(1) { width: 112px; }
 
       .student-log-list-table th:nth-child(2),
-      .student-log-list-table td:nth-child(2) { width: 130px; }
+      .student-log-list-table td:nth-child(2) { width: 112px; }
 
       .student-log-list-table th:nth-child(3),
-      .student-log-list-table td:nth-child(3) { width: 78px; }
+      .student-log-list-table td:nth-child(3) { width: 72px; }
 
       .student-log-list-table th:nth-child(4),
-      .student-log-list-table td:nth-child(4) { width: 170px; }
+      .student-log-list-table td:nth-child(4) { width: 140px; }
 
       .student-log-list-table th:nth-child(5),
-      .student-log-list-table td:nth-child(5) { width: 128px; }
+      .student-log-list-table td:nth-child(5) { width: 122px; }
 
       .student-log-list-table th:nth-child(6),
       .student-log-list-table td:nth-child(6) {
-        width: 420px;
-        max-width: 420px;
+        width: auto;
+        max-width: none;
       }
 
       .student-log-list-table th:nth-child(7),
-      .student-log-list-table td:nth-child(7) { width: 124px; }
+      .student-log-list-table td:nth-child(7) { width: 104px; }
 
       .student-log-list-table th:nth-child(8),
-      .student-log-list-table td:nth-child(8) { width: 270px; }
+      .student-log-list-table td:nth-child(8) { width: 184px; }
 
       .student-log-list-content {
         display: -webkit-box;
@@ -43967,14 +43968,11 @@
         var deltaBadge = renderGradeTrendDeltaBadge_(delta);
         var activeClass = active ? ' active' : '';
         var gradeRankClass = gradeLevel ? ' grade-rank-' + escapeAttribute(String(gradeLevel)) : '';
-        var source = getGradeRecordMockExamSource_(record);
-        var sourceClass = source === '사설' ? ' grade-source-private' : (source === '교육청' ? ' grade-source-public' : '');
-        var sourcePill = source ? '<span class="grade-source-pill">' + escapeHtml(source) + '</span>' : '';
         var ghostScore = score && score !== '-' ? '<span class="grade-overview-score-ghost" aria-hidden="true">' + escapeHtml(score) + '</span>' : '';
         if (record.__placeholder) {
-          return '<button type="button" class="grade-overview-score placeholder" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '">' + renderGradeLevelBadge_('') + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span>' + sourcePill + '</strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></span><span class="grade-overview-score-metric"><strong class="grade-overview-score-value">미입력</strong>' + renderGradeTrendDeltaBadge_(null) + '</span></button>';
+          return '<button type="button" class="grade-overview-score placeholder" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '">' + renderGradeLevelBadge_('') + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span></strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></span><span class="grade-overview-score-metric"><strong class="grade-overview-score-value">미입력</strong>' + renderGradeTrendDeltaBadge_(null) + '</span></button>';
         }
-        return '<button type="button" class="grade-overview-score' + activeClass + gradeRankClass + '" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '" data-grade-action="highlight-grade-overview-subject" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-key="' + escapeAttribute(subjectKey) + '">' + ghostScore + gradeBadge + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span>' + sourcePill + '</strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></span><span class="grade-overview-score-metric"><strong class="grade-overview-score-value">' + escapeHtml(score) + '</strong>' + deltaBadge + '</span></button>';
+        return '<button type="button" class="grade-overview-score' + activeClass + gradeRankClass + '" style="' + escapeAttribute(buildGradeSubjectStyle_(color)) + '" data-grade-action="highlight-grade-overview-subject" data-student-id="' + escapeAttribute(record.studentId || '') + '" data-subject-key="' + escapeAttribute(subjectKey) + '">' + ghostScore + gradeBadge + '<span class="grade-overview-score-text"><strong class="grade-overview-score-title"><span class="subject-name">' + escapeHtml(record.subjectName || '-') + '</span></strong><span>' + escapeHtml(record.subjectCategory || '-') + '</span></span><span class="grade-overview-score-metric"><strong class="grade-overview-score-value">' + escapeHtml(score) + '</strong>' + deltaBadge + '</span></button>';
       }
 
       function renderGradeStudentTrendChart_(student, records) {
