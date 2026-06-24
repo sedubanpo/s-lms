@@ -34211,16 +34211,20 @@
         }
         if (!subjectDefinition || subjectDefinition.isEnabled === false) {
           return matchesJikboSubjectFallback_(student, eventItem.subjectName) ||
-            matchesJikboSubjectFallback_(student, eventItem.subjectCategory || eventItem.majorSubject);
+            matchesJikboSubjectFallback_(student, eventItem.subjectCategory || eventItem.majorSubject) ||
+            shouldIncludeUnmappedJikboStudent_(student, permissionMap);
         }
         if (matchesJikboStudentKeywords_(student, subjectDefinition.studentSubjectKeywords || [])) {
           return true;
         }
-        return hasJikboInstructorSubjectMatch_(student, subjectDefinition, permissionMap);
+        if (hasJikboInstructorSubjectMatch_(student, subjectDefinition, permissionMap)) {
+          return true;
+        }
+        return shouldIncludeUnmappedJikboStudent_(student, permissionMap);
       }
 
       function matchesJikboStudentKeywords_(student, keywords) {
-        var studentText = normalizeSearchText(student && student.subject);
+        var studentText = getJikboStudentSubjectSearchText_(student);
         if (!studentText) {
           return false;
         }
@@ -34231,12 +34235,39 @@
       }
 
       function matchesJikboSubjectFallback_(student, subjectName) {
-        var studentText = normalizeSearchText(student && student.subject);
+        var studentText = getJikboStudentSubjectSearchText_(student);
         var subjectText = normalizeSearchText(subjectName);
         if (!studentText || !subjectText) {
           return false;
         }
         return studentText.indexOf(subjectText) !== -1 || subjectText.indexOf(studentText) !== -1;
+      }
+
+      function getJikboStudentSubjectSearchText_(student) {
+        var parts = [];
+        [student && student.subject, student && student.baseSubject].forEach(function(value) {
+          if (value) {
+            parts.push(value);
+          }
+        });
+        if (student && student.subjectOverride) {
+          [student.subjectOverride.subject, student.subjectOverride.subjectName].forEach(function(value) {
+            if (value) {
+              parts.push(value);
+            }
+          });
+        }
+        return normalizeSearchText(uniqueList_(parts).join(' '));
+      }
+
+      function isJikboStudentSubjectUnset_(student) {
+        var text = getJikboStudentSubjectSearchText_(student);
+        return !text || text === '-' || text === '미지정' || text === '과목미지정';
+      }
+
+      function shouldIncludeUnmappedJikboStudent_(student, permissionMap) {
+        return isJikboStudentSubjectUnset_(student) &&
+          !getPermissionInstructorIdsForStudent_(permissionMap, student).length;
       }
 
       function hasJikboInstructorSubjectMatch_(student, subjectDefinition, permissionMap) {
