@@ -5926,6 +5926,23 @@
         background: rgba(255, 255, 255, 0.82);
       }
 
+      .jikbo-summary-detail.collapsed .jikbo-summary-empty {
+        border-style: solid;
+        background: rgba(248, 251, 255, 0.9);
+      }
+
+      .jikbo-summary-toggle {
+        min-height: 28px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(190, 206, 232, 0.94);
+        background: rgba(255, 255, 255, 0.94);
+        color: var(--brand-deep);
+        font-size: 0.72rem;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
       .jikbo-summary-detail-head {
         display: flex;
         align-items: center;
@@ -6031,27 +6048,27 @@
       }
 
       .jikbo-status-badge.pending {
-        background: rgba(255, 244, 214, 0.96);
-        border-color: rgba(217, 119, 6, 0.24);
-        color: #a16207;
-      }
-
-      .jikbo-status-badge.confirmed {
-        background: rgba(227, 247, 234, 0.96);
-        border-color: rgba(22, 128, 76, 0.24);
-        color: #166534;
-      }
-
-      .jikbo-status-badge.not-held {
         background: rgba(241, 245, 249, 0.98);
-        border-color: rgba(100, 116, 139, 0.26);
+        border-color: rgba(100, 116, 139, 0.22);
         color: #475569;
       }
 
+      .jikbo-status-badge.confirmed {
+        background: rgba(220, 252, 231, 0.96);
+        border-color: rgba(22, 163, 74, 0.26);
+        color: #15803d;
+      }
+
+      .jikbo-status-badge.not-held {
+        background: rgba(254, 226, 226, 0.98);
+        border-color: rgba(239, 68, 68, 0.26);
+        color: #b91c1c;
+      }
+
       .jikbo-status-badge.substitute {
-        background: rgba(232, 245, 255, 0.98);
-        border-color: rgba(14, 116, 144, 0.24);
-        color: #0e7490;
+        background: rgba(254, 249, 195, 0.98);
+        border-color: rgba(202, 138, 4, 0.26);
+        color: #a16207;
       }
 
       .jikbo-summary-empty {
@@ -6286,7 +6303,7 @@
       }
 
       .jikbo-date-header {
-        min-width: 112px;
+        min-width: 148px;
       }
 
       .jikbo-date-header.weekend,
@@ -6413,7 +6430,7 @@
       }
 
       .jikbo-day-cell {
-        min-width: 112px;
+        min-width: 148px;
         padding: 8px 6px;
         vertical-align: top;
         background: rgba(255, 247, 237, 0.9);
@@ -6588,31 +6605,47 @@
       }
 
       .jikbo-chip.class.confirmed {
-        background: rgba(227, 247, 234, 0.98);
-        border-color: rgba(22, 128, 76, 0.24);
-        color: #166534;
+        background: rgba(220, 252, 231, 0.98);
+        border-color: rgba(22, 163, 74, 0.28);
+        color: #15803d;
         cursor: pointer;
       }
 
       .jikbo-chip.class.pending {
-        background: rgba(255, 244, 214, 0.98);
-        border-color: rgba(217, 119, 6, 0.24);
-        color: #a16207;
-        cursor: pointer;
-      }
-
-      .jikbo-chip.class.not-held {
         background: rgba(241, 245, 249, 0.98);
-        border-color: rgba(100, 116, 139, 0.26);
+        border-color: rgba(100, 116, 139, 0.24);
         color: #475569;
         cursor: pointer;
       }
 
-      .jikbo-chip.class.substitute {
-        background: rgba(232, 245, 255, 0.98);
-        border-color: rgba(14, 116, 144, 0.24);
-        color: #0e7490;
+      .jikbo-chip.class.not-held {
+        background: rgba(254, 226, 226, 0.98);
+        border-color: rgba(239, 68, 68, 0.28);
+        color: #b91c1c;
         cursor: pointer;
+      }
+
+      .jikbo-chip.class.substitute {
+        background: rgba(254, 249, 195, 0.98);
+        border-color: rgba(202, 138, 4, 0.28);
+        color: #a16207;
+        cursor: pointer;
+      }
+
+      .jikbo-chip.class.actual-shifted {
+        position: relative;
+        padding-right: 20px;
+      }
+
+      .jikbo-chip.class.actual-shifted::after {
+        content: "";
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 0;
+        height: 0;
+        border-left: 15px solid transparent;
+        border-top: 15px solid rgba(37, 99, 235, 0.42);
       }
 
       .jikbo-chip.class.subject-math {
@@ -6643,6 +6676,30 @@
         background: rgba(255, 243, 214, 0.96);
         border-color: rgba(183, 121, 8, 0.2);
         color: #b77908;
+      }
+
+      .jikbo-chip.class.confirmed {
+        background: rgba(220, 252, 231, 0.98);
+        border-color: rgba(22, 163, 74, 0.28);
+        color: #15803d;
+      }
+
+      .jikbo-chip.class.pending {
+        background: rgba(241, 245, 249, 0.98);
+        border-color: rgba(100, 116, 139, 0.24);
+        color: #475569;
+      }
+
+      .jikbo-chip.class.not-held {
+        background: rgba(254, 226, 226, 0.98);
+        border-color: rgba(239, 68, 68, 0.28);
+        color: #b91c1c;
+      }
+
+      .jikbo-chip.class.substitute {
+        background: rgba(254, 249, 195, 0.98);
+        border-color: rgba(202, 138, 4, 0.28);
+        color: #a16207;
       }
 
       .jikbo-exam-subject-badge.subject-math {
@@ -6699,9 +6756,9 @@
 
       .jikbo-inline-status {
         display: inline-grid;
-        grid-template-columns: minmax(88px, 1fr);
+        grid-template-columns: minmax(112px, 1fr);
         gap: 5px;
-        min-width: 132px;
+        min-width: 156px;
         max-width: 100%;
       }
 
@@ -17197,7 +17254,7 @@
         <div class="modal-top">
           <div>
             <h3>직보 진행 상태</h3>
-            <p>선택한 직보의 상태, 시간, 특이사항을 저장합니다.</p>
+            <p>선택한 직보의 상태, 진행일, 시간, 진행 선생님을 저장합니다.</p>
           </div>
           <button id="closeJikboStatusModalButton" type="button" class="icon-button" aria-label="직보 상태창 닫기">×</button>
         </div>
@@ -17208,13 +17265,25 @@
             <select id="jikboStatusProgressInput" class="field-select">
               <option value="미정">미정</option>
               <option value="확정">확정</option>
-              <option value="미진행">미진행</option>
+              <option value="미확정">미확정</option>
               <option value="대체진행">대체진행</option>
             </select>
           </div>
           <div class="field-shell">
-            <label class="field-label" for="jikboStatusTimeInput">시간</label>
-            <input id="jikboStatusTimeInput" class="field-input" type="time">
+            <label class="field-label" for="jikboStatusActualDateInput">진행일</label>
+            <input id="jikboStatusActualDateInput" class="field-input" type="date">
+          </div>
+          <div class="field-shell">
+            <label class="field-label" for="jikboStatusStartTimeInput">시작시간</label>
+            <input id="jikboStatusStartTimeInput" class="field-input" type="time">
+          </div>
+          <div class="field-shell">
+            <label class="field-label" for="jikboStatusEndTimeInput">종료시간</label>
+            <input id="jikboStatusEndTimeInput" class="field-input" type="time">
+          </div>
+          <div class="field-shell">
+            <label class="field-label" for="jikboStatusInstructorSelect">진행 선생님</label>
+            <select id="jikboStatusInstructorSelect" class="field-select"></select>
           </div>
           <div class="field-shell">
             <label class="field-label" for="jikboStatusSubstituteDateInput">대체 진행일</label>
@@ -17521,6 +17590,7 @@
         jikboCalendarYear: new Date().getFullYear(),
         jikboCalendarMonth: new Date().getMonth(),
         selectedJikboSummaryPanel: '',
+        jikboUnresolvedExpanded: false,
         materialsLoaded: false,
         eventsLoaded: false,
         pendingStudentRenderAfterComposition: false,
@@ -20697,8 +20767,13 @@
           jikboDate: formatDateInputValue_(data.jikboDate || ''),
           instructorId: String(data.instructorId || ''),
           instructorName: String(data.instructorName || ''),
-          progressStatus: String(data.progressStatus || data.status || '미정'),
+          progressStatus: normalizeJikboProgressStatusClient_(data.progressStatus || data.status || '미정'),
           confirmedTime: String(data.confirmedTime || ''),
+          startTime: String(data.startTime || data.confirmedTime || ''),
+          endTime: String(data.endTime || ''),
+          actualDate: formatDateInputValue_(data.actualDate || data.substituteDate || data.jikboDate || ''),
+          progressInstructorId: String(data.progressInstructorId || data.instructorId || ''),
+          progressInstructorName: String(data.progressInstructorName || data.instructorName || ''),
           substituteDate: formatDateInputValue_(data.substituteDate || ''),
           note: String(data.note || ''),
           updatedAt: String(data.updatedAt || ''),
@@ -20715,6 +20790,14 @@
         return String(value || '').split(/[,，]/).map(function(item) {
           return item.trim();
         }).filter(Boolean);
+      }
+
+      function normalizeJikboProgressStatusClient_(value) {
+        var text = String(value || '').trim();
+        if (text === '미진행') {
+          return '미확정';
+        }
+        return ['미정', '확정', '미확정', '대체진행'].indexOf(text) !== -1 ? text : '미정';
       }
 
       function getJikboCurrentUserId_() {
@@ -20981,8 +21064,8 @@
           sourceDraft.subjectName,
           sourceDraft.examDate,
           sourceDraft.jikboDate,
-          sourceDraft.instructorId,
-          sourceDraft.instructorName
+          sourceValues.instructorId || sourceDraft.instructorId,
+          sourceValues.instructorName || sourceDraft.instructorName
         ]);
         return {
           statusId: statusId,
@@ -20994,10 +21077,15 @@
           subjectName: sourceDraft.subjectName || '',
           examDate: formatDateInputValue_(sourceDraft.examDate || ''),
           jikboDate: formatDateInputValue_(sourceDraft.jikboDate || ''),
-          instructorId: sourceDraft.instructorId || '',
-          instructorName: sourceDraft.instructorName || '',
-          progressStatus: sourceValues.progressStatus || '미정',
-          confirmedTime: sourceValues.confirmedTime || '',
+          instructorId: sourceValues.instructorId || sourceDraft.instructorId || '',
+          instructorName: sourceValues.instructorName || sourceDraft.instructorName || '',
+          progressStatus: normalizeJikboProgressStatusClient_(sourceValues.progressStatus || '미정'),
+          confirmedTime: sourceValues.confirmedTime || sourceValues.startTime || '',
+          startTime: sourceValues.startTime || sourceValues.confirmedTime || '',
+          endTime: sourceValues.endTime || '',
+          actualDate: formatDateInputValue_(sourceValues.actualDate || sourceDraft.jikboDate || ''),
+          progressInstructorId: sourceValues.instructorId || sourceDraft.instructorId || '',
+          progressInstructorName: sourceValues.instructorName || sourceDraft.instructorName || '',
           substituteDate: formatDateInputValue_(sourceValues.substituteDate || ''),
           note: sourceValues.note || '',
           updatedAt: now.toISOString(),
@@ -32619,6 +32707,11 @@
             instructorLabel: source.getAttribute('data-jikbo-instructor-label') || '',
             progressStatus: source.getAttribute('data-jikbo-progress-status') || '',
             confirmedTime: source.getAttribute('data-jikbo-confirmed-time') || '',
+            startTime: source.getAttribute('data-jikbo-start-time') || '',
+            endTime: source.getAttribute('data-jikbo-end-time') || '',
+            actualDate: source.getAttribute('data-jikbo-actual-date') || '',
+            progressInstructorId: source.getAttribute('data-jikbo-progress-instructor-id') || '',
+            progressInstructorName: source.getAttribute('data-jikbo-progress-instructor-name') || '',
             note: source.getAttribute('data-jikbo-note') || '',
             substituteDate: source.getAttribute('data-jikbo-substitute-date') || ''
           };
@@ -32649,8 +32742,13 @@
           '<br>',
           '시험일 ' + escapeHtml(draft.examDate || '-') + ' / 직보일 ' + escapeHtml(draft.jikboDate || '-')
         ].join('');
-        document.getElementById('jikboStatusProgressInput').value = (existing && existing.progressStatus) || draft.progressStatus || '미정';
-        document.getElementById('jikboStatusTimeInput').value = (existing && existing.confirmedTime) || draft.confirmedTime || '';
+        var progressInstructorId = (existing && (existing.progressInstructorId || existing.instructorId)) || draft.progressInstructorId || draft.instructorId || '';
+        document.getElementById('jikboStatusProgressInput').value = normalizeJikboProgressStatusClient_((existing && existing.progressStatus) || draft.progressStatus || '미정');
+        document.getElementById('jikboStatusActualDateInput').value = (existing && existing.actualDate) || draft.actualDate || draft.jikboDate || '';
+        document.getElementById('jikboStatusStartTimeInput').value = (existing && (existing.startTime || existing.confirmedTime)) || draft.startTime || draft.confirmedTime || '';
+        document.getElementById('jikboStatusEndTimeInput').value = (existing && existing.endTime) || draft.endTime || '';
+        document.getElementById('jikboStatusInstructorSelect').innerHTML = renderJikboInstructorOptions_(progressInstructorId);
+        document.getElementById('jikboStatusInstructorSelect').value = progressInstructorId;
         document.getElementById('jikboStatusSubstituteDateInput').value = (existing && existing.substituteDate) || draft.substituteDate || '';
         document.getElementById('jikboStatusNoteInput').value = (existing && existing.note) || draft.note || '';
         document.getElementById('jikboStatusModal').classList.remove('hidden');
@@ -32659,15 +32757,18 @@
       }
 
       function syncJikboStatusFormMode_() {
-        var progressStatus = document.getElementById('jikboStatusProgressInput').value;
-        var timeInput = document.getElementById('jikboStatusTimeInput');
+        var progressStatus = normalizeJikboProgressStatusClient_(document.getElementById('jikboStatusProgressInput').value);
+        var actualDateInput = document.getElementById('jikboStatusActualDateInput');
+        var startTimeInput = document.getElementById('jikboStatusStartTimeInput');
+        var endTimeInput = document.getElementById('jikboStatusEndTimeInput');
+        var instructorSelect = document.getElementById('jikboStatusInstructorSelect');
         var substituteDateInput = document.getElementById('jikboStatusSubstituteDateInput');
-        var shouldEnableTime = progressStatus === '확정';
+        var shouldEnableDetails = progressStatus === '확정' || progressStatus === '대체진행';
         var shouldEnableSubstituteDate = progressStatus === '대체진행';
-        timeInput.disabled = !shouldEnableTime;
-        if (!shouldEnableTime) {
-          timeInput.value = '';
-        }
+        actualDateInput.disabled = !shouldEnableDetails;
+        startTimeInput.disabled = !shouldEnableDetails;
+        endTimeInput.disabled = !shouldEnableDetails;
+        instructorSelect.disabled = !shouldEnableDetails;
         substituteDateInput.disabled = !shouldEnableSubstituteDate;
         if (!shouldEnableSubstituteDate) {
           substituteDateInput.value = '';
@@ -32683,12 +32784,24 @@
         }
 
         setLoading('직보 상태를 저장하는 중입니다.');
+        var modalInstructorSelect = document.getElementById('jikboStatusInstructorSelect');
+        var modalInstructorId = modalInstructorSelect ? modalInstructorSelect.value : '';
         var values = {
-          progressStatus: document.getElementById('jikboStatusProgressInput').value,
-          confirmedTime: document.getElementById('jikboStatusTimeInput').value,
+          progressStatus: normalizeJikboProgressStatusClient_(document.getElementById('jikboStatusProgressInput').value),
+          actualDate: document.getElementById('jikboStatusActualDateInput').value || draft.jikboDate || '',
+          startTime: document.getElementById('jikboStatusStartTimeInput').value,
+          endTime: document.getElementById('jikboStatusEndTimeInput').value,
+          confirmedTime: document.getElementById('jikboStatusStartTimeInput').value,
+          instructorId: modalInstructorId || draft.instructorId || '',
+          instructorName: modalInstructorId ? resolveInstructorNameById_(modalInstructorId) : (draft.instructorName || ''),
           substituteDate: document.getElementById('jikboStatusSubstituteDateInput').value,
           note: document.getElementById('jikboStatusNoteInput').value.trim()
         };
+        if ((values.progressStatus === '확정' || values.progressStatus === '대체진행') && (!values.actualDate || !values.startTime || !values.endTime || !values.instructorId)) {
+          clearLoading();
+          setNotice('확정/대체진행 상태는 진행일, 시작시간, 종료시간, 진행 선생님을 모두 입력해 주세요.', 'warning');
+          return;
+        }
         var savePromise = isFirebaseDirectFeatureEnabled_('jikboWrite')
           ? saveJikboStatusViaFirebaseDirect_(draft, values).catch(function(error) {
               if (window.console && console.warn) {
@@ -32700,10 +32813,15 @@
                 subjectName: draft.subjectName,
                 examDate: draft.examDate,
                 jikboDate: draft.jikboDate,
-                instructorId: draft.instructorId,
-                instructorName: draft.instructorName,
+                instructorId: values.instructorId,
+                instructorName: values.instructorName,
                 progressStatus: values.progressStatus,
                 confirmedTime: values.confirmedTime,
+                startTime: values.startTime,
+                endTime: values.endTime,
+                actualDate: values.actualDate,
+                progressInstructorId: values.instructorId,
+                progressInstructorName: values.instructorName,
                 substituteDate: values.substituteDate,
                 note: values.note
               });
@@ -32714,10 +32832,15 @@
           subjectName: draft.subjectName,
           examDate: draft.examDate,
           jikboDate: draft.jikboDate,
-          instructorId: draft.instructorId,
-          instructorName: draft.instructorName,
+          instructorId: values.instructorId,
+          instructorName: values.instructorName,
           progressStatus: values.progressStatus,
           confirmedTime: values.confirmedTime,
+          startTime: values.startTime,
+          endTime: values.endTime,
+          actualDate: values.actualDate,
+          progressInstructorId: values.instructorId,
+          progressInstructorName: values.instructorName,
           substituteDate: values.substituteDate,
           note: values.note
         });
@@ -32865,11 +32988,12 @@
         var progressInput = container.querySelector('[data-jikbo-inline-progress]');
         var timeInput = container.querySelector('[data-jikbo-inline-time]');
         var substituteDateInput = container.querySelector('[data-jikbo-inline-substitute-date]');
-        var progressStatus = progressInput ? progressInput.value : '미정';
+        var progressStatus = normalizeJikboProgressStatusClient_(progressInput ? progressInput.value : '미정');
         if (timeInput) {
-          timeInput.disabled = progressStatus !== '확정';
-          timeInput.classList.toggle('hidden', progressStatus !== '확정');
-          if (progressStatus !== '확정') {
+          var needsTime = progressStatus === '확정' || progressStatus === '대체진행';
+          timeInput.disabled = !needsTime;
+          timeInput.classList.toggle('hidden', !needsTime);
+          if (!needsTime) {
             timeInput.value = '';
           }
         }
@@ -32898,11 +33022,11 @@
         var progressInput = container.querySelector('[data-jikbo-inline-progress]');
         var timeInput = container.querySelector('[data-jikbo-inline-time]');
         var substituteDateInput = container.querySelector('[data-jikbo-inline-substitute-date]');
-        var progressStatus = progressInput ? progressInput.value : '미정';
+        var progressStatus = normalizeJikboProgressStatusClient_(progressInput ? progressInput.value : '미정');
         var confirmedTime = timeInput ? timeInput.value : '';
         var substituteDate = substituteDateInput ? substituteDateInput.value : '';
 
-        if (progressStatus === '확정' && !confirmedTime) {
+        if ((progressStatus === '확정' || progressStatus === '대체진행') && !confirmedTime) {
           if (timeInput && source === progressInput) {
             timeInput.focus();
           }
@@ -32926,7 +33050,12 @@
           instructorId: draft.instructorId,
           instructorName: draft.instructorName,
           progressStatus: progressStatus,
-          confirmedTime: progressStatus === '확정' ? confirmedTime : '',
+          confirmedTime: (progressStatus === '확정' || progressStatus === '대체진행') ? confirmedTime : '',
+          startTime: (progressStatus === '확정' || progressStatus === '대체진행') ? confirmedTime : '',
+          endTime: draft.endTime || '',
+          actualDate: draft.actualDate || draft.jikboDate,
+          progressInstructorId: draft.progressInstructorId || draft.instructorId,
+          progressInstructorName: draft.progressInstructorName || draft.instructorName,
           substituteDate: progressStatus === '대체진행' ? substituteDate : '',
           note: draft.note || ''
         };
@@ -32938,6 +33067,11 @@
           ? saveJikboStatusViaFirebaseDirect_(draft, {
               progressStatus: optimisticStatus.progressStatus,
               confirmedTime: optimisticStatus.confirmedTime,
+              startTime: optimisticStatus.startTime,
+              endTime: optimisticStatus.endTime,
+              actualDate: optimisticStatus.actualDate,
+              instructorId: optimisticStatus.progressInstructorId,
+              instructorName: optimisticStatus.progressInstructorName,
               substituteDate: optimisticStatus.substituteDate,
               note: optimisticStatus.note
             }).catch(function(error) {
@@ -32954,6 +33088,11 @@
                 instructorName: optimisticStatus.instructorName,
                 progressStatus: optimisticStatus.progressStatus,
                 confirmedTime: optimisticStatus.confirmedTime,
+                startTime: optimisticStatus.startTime,
+                endTime: optimisticStatus.endTime,
+                actualDate: optimisticStatus.actualDate,
+                progressInstructorId: optimisticStatus.progressInstructorId,
+                progressInstructorName: optimisticStatus.progressInstructorName,
                 substituteDate: optimisticStatus.substituteDate,
                 note: optimisticStatus.note
               });
@@ -32968,6 +33107,11 @@
           instructorName: optimisticStatus.instructorName,
           progressStatus: optimisticStatus.progressStatus,
           confirmedTime: optimisticStatus.confirmedTime,
+          startTime: optimisticStatus.startTime,
+          endTime: optimisticStatus.endTime,
+          actualDate: optimisticStatus.actualDate,
+          progressInstructorId: optimisticStatus.progressInstructorId,
+          progressInstructorName: optimisticStatus.progressInstructorName,
           substituteDate: optimisticStatus.substituteDate,
           note: optimisticStatus.note
         });
@@ -33094,6 +33238,17 @@
         if (summaryButton) {
           var panelName = summaryButton.getAttribute('data-jikbo-summary-panel') || '';
           APP_STATE.selectedJikboSummaryPanel = APP_STATE.selectedJikboSummaryPanel === panelName ? '' : panelName;
+          if (panelName === 'unresolvedStudents' && APP_STATE.selectedJikboSummaryPanel === panelName) {
+            APP_STATE.jikboUnresolvedExpanded = true;
+          }
+          renderJikboSummary_(buildJikboBoardModel_());
+          return;
+        }
+
+        var unresolvedToggleButton = event.target.closest('[data-jikbo-summary-toggle-unresolved]');
+        if (unresolvedToggleButton) {
+          APP_STATE.jikboUnresolvedExpanded = !APP_STATE.jikboUnresolvedExpanded;
+          APP_STATE.selectedJikboSummaryPanel = 'unresolvedStudents';
           renderJikboSummary_(buildJikboBoardModel_());
           return;
         }
@@ -33386,6 +33541,11 @@
                     instructorLabel: item.instructorLabel,
                     progressStatus: item.progressStatus,
                     confirmedTime: item.confirmedTime,
+                    startTime: item.startTime,
+                    endTime: item.endTime,
+                    actualDate: item.actualDate,
+                    progressInstructorId: item.progressInstructorId,
+                    progressInstructorName: item.progressInstructorName,
                     substituteDate: item.substituteDate,
                     note: item.note
                   };
@@ -33432,15 +33592,11 @@
           return group;
         }).filter(Boolean);
 
-        var monthDateKeys = Object.keys(activeDateKeyMap).sort();
-        var monthDates = monthDateKeys.map(function(dateKey) {
-          return parseEventDateForClient_(dateKey);
-        }).filter(Boolean);
+        var monthDates = buildJikboContinuousDateRange_(Object.keys(activeDateKeyMap));
+        var monthDateKeys = monthDates.map(function(date) { return formatDateKey_(date); });
 
         if (!monthDates.length) {
-          monthDates = uniqueList_(monthEventList.map(function(item) { return item.isoDate; }).filter(Boolean)).sort().map(function(dateKey) {
-            return parseEventDateForClient_(dateKey);
-          }).filter(Boolean);
+          monthDates = buildJikboContinuousDateRange_(uniqueList_(monthEventList.map(function(item) { return item.isoDate; }).filter(Boolean)).sort());
           monthDateKeys = monthDates.map(function(date) { return formatDateKey_(date); });
         }
 
@@ -33544,9 +33700,19 @@
       }
 
       function renderJikboSummaryDetailPanel_(panel) {
+        var isUnresolvedPanel = panel && panel.panelKey === 'unresolvedStudents';
+        var isCollapsed = isUnresolvedPanel && !APP_STATE.jikboUnresolvedExpanded;
+        if (isCollapsed) {
+          return [
+            '<section class="jikbo-summary-detail glass-panel collapsed">',
+            '<div class="jikbo-summary-detail-head"><div><h4>' + escapeHtml(panel.title || '-') + '</h4><p>' + escapeHtml(panel.description || '') + '</p></div><div class="jikbo-summary-status-badges"><span class="jikbo-summary-badge ' + (panel.alert ? 'alert' : '') + '">' + escapeHtml(String(panel.count || 0)) + '건</span><button type="button" class="jikbo-summary-toggle" data-jikbo-summary-toggle-unresolved="true">펼치기</button></div></div>',
+            '<div class="jikbo-summary-empty">미확정 목록은 접혀 있습니다. 필요한 경우 펼쳐서 학생별 직보를 정리하세요.</div>',
+            '</section>'
+          ].join('');
+        }
         return [
           '<section class="jikbo-summary-detail glass-panel">',
-          '<div class="jikbo-summary-detail-head"><div><h4>' + escapeHtml(panel.title || '-') + '</h4><p>' + escapeHtml(panel.description || '') + '</p></div><span class="jikbo-summary-badge ' + (panel.alert ? 'alert' : '') + '">' + escapeHtml(String(panel.count || 0)) + '건</span></div>',
+          '<div class="jikbo-summary-detail-head"><div><h4>' + escapeHtml(panel.title || '-') + '</h4><p>' + escapeHtml(panel.description || '') + '</p></div><div class="jikbo-summary-status-badges"><span class="jikbo-summary-badge ' + (panel.alert ? 'alert' : '') + '">' + escapeHtml(String(panel.count || 0)) + '건</span>' + (isUnresolvedPanel ? '<button type="button" class="jikbo-summary-toggle" data-jikbo-summary-toggle-unresolved="true">접기</button>' : '') + '</div></div>',
           (panel.items || []).length
             ? '<div class="jikbo-summary-detail-list ' + (panel.compactGrid ? 'compact-grid' : '') + '">' + panel.items.map(function(item) {
               if (panel.panelKey === 'unresolvedStudents' && item.key) {
@@ -33764,7 +33930,7 @@
         if (progressStatus === '확정') {
           return 'confirmed';
         }
-        if (progressStatus === '미진행') {
+        if (progressStatus === '미확정' || progressStatus === '미진행') {
           return 'not-held';
         }
         if (progressStatus === '대체진행') {
@@ -33791,9 +33957,12 @@
           title: [item.studentName || '-', item.subjectName || '-'].join(' · '),
           meta: [
             [item.school || '-', formatJikboGradeLabel_(item.grade)].filter(Boolean).join(' '),
-            item.instructorLabel || '강사 미배정',
-            progressStatus === '확정' && item.confirmedTime ? item.confirmedTime : '',
-            progressStatus === '대체진행' && item.substituteDate ? item.substituteDate : ''
+            item.progressInstructorName || item.instructorLabel || '강사 미배정',
+            (progressStatus === '확정' || progressStatus === '대체진행') && (item.startTime || item.confirmedTime || item.endTime)
+              ? [item.startTime || item.confirmedTime, item.endTime].filter(Boolean).join('-')
+              : '',
+            item.actualDate && item.actualDate !== item.dateKey ? '진행일 ' + item.actualDate : '',
+            progressStatus === '대체진행' && item.substituteDate ? '대체 ' + item.substituteDate : ''
           ].filter(Boolean).join(' · '),
           progressStatus: progressStatus,
           preview: [item.studentName || '-', item.subjectName || '-'].join(' · ')
@@ -33919,7 +34088,8 @@
           var statusClass = getJikboProgressToneClass_(item.progressStatus, item.status);
           var subjectToneClass = getSubjectToneClass_(item.subjectName);
           var detailParts = [item.instructorLabel || (item.status === 'missing-subject' ? '과목 미설정' : '미배정')];
-          var statusKey = item.scheduleStatusKey || buildJikboStatusKey_(item.studentId, item.subjectName, item.examDate, item.dateKey, item.instructorId, item.instructorName);
+          var statusJikboDate = item.originalDateKey || item.dateKey;
+          var statusKey = item.scheduleStatusKey || buildJikboStatusKey_(item.studentId, item.subjectName, item.examDate, statusJikboDate, item.instructorId, item.instructorName);
           APP_STATE.jikboStatusDraftMap[statusKey] = {
             studentId: item.studentId,
             studentName: item.studentName,
@@ -33927,24 +34097,32 @@
             grade: item.grade,
             subjectName: item.subjectName,
             examDate: item.examDate,
-            jikboDate: item.dateKey,
+            jikboDate: statusJikboDate,
             instructorId: item.instructorId,
             instructorName: item.instructorName,
             instructorLabel: item.instructorLabel,
             progressStatus: item.progressStatus,
             confirmedTime: item.confirmedTime,
+            startTime: item.startTime,
+            endTime: item.endTime,
+            actualDate: item.actualDate,
+            progressInstructorId: item.progressInstructorId,
+            progressInstructorName: item.progressInstructorName,
             note: item.note,
             substituteDate: item.substituteDate
           };
-          if (item.progressStatus === '확정' && item.confirmedTime) {
-            detailParts.push(item.confirmedTime);
+          if ((item.progressStatus === '확정' || item.progressStatus === '대체진행') && (item.startTime || item.confirmedTime || item.endTime)) {
+            detailParts.push([item.startTime || item.confirmedTime, item.endTime].filter(Boolean).join('-'));
           } else if (item.progressStatus === '대체진행' && item.substituteDate) {
             detailParts.push(item.substituteDate);
-          } else if (item.progressStatus === '미정' || item.progressStatus === '미진행') {
+          } else if (item.progressStatus === '미정' || item.progressStatus === '미확정' || item.progressStatus === '미진행') {
             detailParts.push(item.progressStatus);
           }
+          if (item.isActualDateShifted && item.originalDateKey) {
+            detailParts.push(formatJikboRangeLabel_(item.originalDateKey) + '에서 이동');
+          }
           return '<div class="jikbo-inline-status" data-jikbo-inline-status="' + escapeAttribute(statusKey) + '">' +
-            '<button type="button" class="jikbo-chip class ' + escapeAttribute(statusClass + ' ' + subjectToneClass) + '"' +
+            '<button type="button" class="jikbo-chip class ' + escapeAttribute(statusClass + ' ' + subjectToneClass + (item.isActualDateShifted ? ' actual-shifted' : '')) + '"' +
             ' data-jikbo-status-open="' + escapeAttribute(statusKey) + '"' +
             ' data-jikbo-student-id="' + escapeAttribute(item.studentId) + '"' +
             ' data-jikbo-student-name="' + escapeAttribute(item.studentName) + '"' +
@@ -33952,26 +34130,32 @@
             ' data-jikbo-grade="' + escapeAttribute(item.grade) + '"' +
             ' data-jikbo-subject="' + escapeAttribute(item.subjectName) + '"' +
             ' data-jikbo-exam-date="' + escapeAttribute(item.examDate) + '"' +
-            ' data-jikbo-date="' + escapeAttribute(item.dateKey) + '"' +
+            ' data-jikbo-date="' + escapeAttribute(statusJikboDate) + '"' +
             ' data-jikbo-instructor-id="' + escapeAttribute(item.instructorId) + '"' +
             ' data-jikbo-instructor-name="' + escapeAttribute(item.instructorName) + '"' +
             ' data-jikbo-instructor-label="' + escapeAttribute(item.instructorLabel) + '"' +
             ' data-jikbo-progress-status="' + escapeAttribute(item.progressStatus) + '"' +
             ' data-jikbo-confirmed-time="' + escapeAttribute(item.confirmedTime) + '"' +
+            ' data-jikbo-start-time="' + escapeAttribute(item.startTime) + '"' +
+            ' data-jikbo-end-time="' + escapeAttribute(item.endTime) + '"' +
+            ' data-jikbo-actual-date="' + escapeAttribute(item.actualDate) + '"' +
+            ' data-jikbo-progress-instructor-id="' + escapeAttribute(item.progressInstructorId) + '"' +
+            ' data-jikbo-progress-instructor-name="' + escapeAttribute(item.progressInstructorName) + '"' +
             ' data-jikbo-note="' + escapeAttribute(item.note) + '"' +
             ' data-jikbo-substitute-date="' + escapeAttribute(item.substituteDate) + '"' +
             (item.note ? ' title="' + escapeAttribute(item.note) + '"' : '') +
             '><span class="jikbo-chip-subject-badge ' + escapeAttribute(subjectToneClass) + '">' + escapeHtml(item.subjectName || '-') + '</span><span class="jikbo-chip-meta">' + escapeHtml(detailParts.filter(Boolean).join(' · ')) + '</span></button>' +
             '<select aria-label="직보 상태" data-jikbo-inline-progress="' + escapeAttribute(statusKey) + '">' + renderJikboProgressOptions_(item.progressStatus) + '</select>' +
-            '<input aria-label="직보 확정 시간" class="' + (item.progressStatus === '확정' ? '' : 'hidden') + '" type="time" value="' + escapeAttribute(item.confirmedTime || '') + '" data-jikbo-inline-time="' + escapeAttribute(statusKey) + '"' + (item.progressStatus === '확정' ? '' : ' disabled') + '>' +
+            '<input aria-label="직보 시작시간" class="' + (item.progressStatus === '확정' || item.progressStatus === '대체진행' ? '' : 'hidden') + '" type="time" value="' + escapeAttribute(item.startTime || item.confirmedTime || '') + '" data-jikbo-inline-time="' + escapeAttribute(statusKey) + '"' + (item.progressStatus === '확정' || item.progressStatus === '대체진행' ? '' : ' disabled') + '>' +
             '<input aria-label="대체 진행일" class="' + (item.progressStatus === '대체진행' ? '' : 'hidden') + '" type="date" value="' + escapeAttribute(item.substituteDate || '') + '" data-jikbo-inline-substitute-date="' + escapeAttribute(statusKey) + '"' + (item.progressStatus === '대체진행' ? '' : ' disabled') + '>' +
           '</div>';
         }).join('') + '</div>';
       }
 
       function renderJikboProgressOptions_(selectedValue) {
-        return ['미정', '확정', '미진행', '대체진행'].map(function(value) {
-          return '<option value="' + escapeAttribute(value) + '"' + (value === selectedValue ? ' selected' : '') + '>' + escapeHtml(value) + '</option>';
+        var normalizedSelected = normalizeJikboProgressStatusClient_(selectedValue);
+        return ['미정', '확정', '미확정', '대체진행'].map(function(value) {
+          return '<option value="' + escapeAttribute(value) + '"' + (value === normalizedSelected ? ' selected' : '') + '>' + escapeHtml(value) + '</option>';
         }).join('');
       }
 
@@ -34001,19 +34185,40 @@
         return dates;
       }
 
+      function buildJikboContinuousDateRange_(dateKeys) {
+        var parsedDates = uniqueList_(dateKeys || []).map(function(dateKey) {
+          return parseEventDateForClient_(dateKey);
+        }).filter(Boolean).sort(function(a, b) {
+          return a.getTime() - b.getTime();
+        });
+        if (!parsedDates.length) {
+          return [];
+        }
+        var start = new Date(parsedDates[0].getFullYear(), parsedDates[0].getMonth(), parsedDates[0].getDate());
+        var endSource = parsedDates[parsedDates.length - 1];
+        var end = new Date(endSource.getFullYear(), endSource.getMonth(), endSource.getDate());
+        var result = [];
+        var cursor = new Date(start);
+        while (cursor.getTime() <= end.getTime()) {
+          result.push(new Date(cursor));
+          cursor.setDate(cursor.getDate() + 1);
+        }
+        return result;
+      }
+
       function getJikboExamEventsForCurrentMonth_() {
         var sourceEvents = (APP_STATE.jikboExamEvents && APP_STATE.jikboExamEvents.length)
           ? APP_STATE.jikboExamEvents
           : buildJikboExamEventsFromEvents_(APP_STATE.events || []);
+        var rangeStart = new Date(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth, 1);
+        rangeStart.setDate(rangeStart.getDate() - 3);
+        var rangeEnd = new Date(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth + 1, 0);
+        rangeEnd.setDate(rangeEnd.getDate() + 7);
         return (sourceEvents || []).filter(function(item) {
           var parsed = parseEventDateForClient_(item.isoDate || item.date);
           var jikboDate = parseEventDateForClient_(getJikboPreviousDateKey_(item.isoDate || item.date));
-          return (parsed &&
-            parsed.getFullYear() === APP_STATE.jikboCalendarYear &&
-            parsed.getMonth() === APP_STATE.jikboCalendarMonth) ||
-            (jikboDate &&
-              jikboDate.getFullYear() === APP_STATE.jikboCalendarYear &&
-              jikboDate.getMonth() === APP_STATE.jikboCalendarMonth);
+          return (parsed && parsed >= rangeStart && parsed <= rangeEnd) ||
+            (jikboDate && jikboDate >= rangeStart && jikboDate <= rangeEnd);
         });
       }
 
@@ -34088,7 +34293,12 @@
           if (!item || !item.studentId || !item.subjectName || !item.examDate || !item.jikboDate) {
             return;
           }
-          map[buildJikboStatusKey_(item.studentId, item.subjectName, item.examDate, item.jikboDate, item.instructorId, item.instructorName)] = item;
+          var exactKey = buildJikboStatusKey_(item.studentId, item.subjectName, item.examDate, item.jikboDate, item.instructorId, item.instructorName);
+          var looseKey = buildJikboStatusLooseKey_(item.studentId, item.subjectName, item.examDate, item.jikboDate);
+          map[exactKey] = item;
+          if (!map[looseKey] || Number(item.updatedAtMs || 0) >= Number(map[looseKey].updatedAtMs || 0)) {
+            map[looseKey] = item;
+          }
         });
         return map;
       }
@@ -34105,6 +34315,15 @@
           String(jikboDate || ''),
           String(instructorId || ''),
           normalizeSearchText(instructorName)
+        ].join('|');
+      }
+
+      function buildJikboStatusLooseKey_(studentId, subjectName, examDate, jikboDate) {
+        return [
+          String(studentId || ''),
+          normalizeSearchText(subjectName),
+          String(examDate || ''),
+          String(jikboDate || '')
         ].join('|');
       }
 
@@ -34142,12 +34361,31 @@
 
       function applyJikboStatusMeta_(item, statusMap) {
         var key = buildJikboStatusKey_(item.studentId, item.subjectName, item.examDate, item.dateKey, item.instructorId, item.instructorName);
-        var saved = statusMap && statusMap[key] ? statusMap[key] : null;
-        item.progressStatus = saved && saved.progressStatus ? saved.progressStatus : '미정';
-        item.confirmedTime = saved && saved.confirmedTime ? saved.confirmedTime : '';
+        var looseKey = buildJikboStatusLooseKey_(item.studentId, item.subjectName, item.examDate, item.dateKey);
+        var saved = statusMap && (statusMap[key] || statusMap[looseKey]) ? (statusMap[key] || statusMap[looseKey]) : null;
+        item.progressStatus = normalizeJikboProgressStatusClient_(saved && saved.progressStatus ? saved.progressStatus : '미정');
+        item.confirmedTime = saved && (saved.confirmedTime || saved.startTime) ? (saved.confirmedTime || saved.startTime) : '';
+        item.startTime = saved && (saved.startTime || saved.confirmedTime) ? (saved.startTime || saved.confirmedTime) : '';
+        item.endTime = saved && saved.endTime ? saved.endTime : '';
+        item.actualDate = saved && saved.actualDate ? saved.actualDate : item.dateKey;
+        item.progressInstructorId = saved && (saved.progressInstructorId || saved.instructorId) ? (saved.progressInstructorId || saved.instructorId) : item.instructorId;
+        item.progressInstructorName = saved && (saved.progressInstructorName || saved.instructorName) ? (saved.progressInstructorName || saved.instructorName) : item.instructorName;
+        if (saved && (saved.progressInstructorId || saved.instructorId || saved.progressInstructorName || saved.instructorName)) {
+          item.instructorId = item.progressInstructorId || '';
+          item.instructorName = item.progressInstructorName || '';
+          item.instructorLabel = item.progressInstructorName || item.instructorLabel || '';
+          item.status = item.instructorName ? 'assigned' : item.status;
+        }
+        if (item.actualDate && item.actualDate !== item.dateKey) {
+          item.originalDateKey = item.dateKey;
+          item.dateKey = item.actualDate;
+          item.isActualDateShifted = true;
+        }
         item.note = saved && saved.note ? saved.note : '';
         item.substituteDate = saved && saved.substituteDate ? saved.substituteDate : '';
-        item.scheduleStatusKey = key;
+        item.scheduleStatusKey = saved
+          ? buildJikboStatusKey_(item.studentId, item.subjectName, item.examDate, item.originalDateKey || saved.jikboDate || item.dateKey, saved.instructorId, saved.instructorName)
+          : key;
       }
 
       function getJikboProgressToneClass_(progressStatus, fallbackStatus) {
@@ -34157,7 +34395,7 @@
         if (progressStatus === '미정') {
           return 'pending';
         }
-        if (progressStatus === '미진행') {
+        if (progressStatus === '미확정' || progressStatus === '미진행') {
           return 'not-held';
         }
         if (progressStatus === '대체진행') {
@@ -34167,7 +34405,7 @@
       }
 
       function isJikboUnresolvedStatus_(progressStatus) {
-        return !progressStatus || progressStatus === '미정';
+        return !progressStatus || progressStatus === '미정' || progressStatus === '미확정';
       }
 
       function upsertJikboScheduleStatusLocal_(statusItem) {
@@ -39416,6 +39654,7 @@
         APP_STATE.jikboCalendarYear = new Date().getFullYear();
         APP_STATE.jikboCalendarMonth = new Date().getMonth();
         APP_STATE.selectedJikboSummaryPanel = '';
+        APP_STATE.jikboUnresolvedExpanded = false;
         APP_STATE.materialsLoaded = false;
         APP_STATE.eventsLoaded = false;
         APP_STATE.materialsLoading = false;
