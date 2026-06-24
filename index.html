@@ -7420,7 +7420,7 @@
 
       .filter-bar {
         display: grid;
-        grid-template-columns: minmax(240px, 1fr) 150px 150px;
+        grid-template-columns: minmax(240px, 1fr) 150px 150px 160px;
         gap: 8px;
         padding: 12px 16px;
         border-bottom: 1px solid #e2e8f0;
@@ -7830,6 +7830,44 @@
         max-width: 120px;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+
+      .permission-student-table {
+        min-width: 760px;
+        table-layout: fixed;
+      }
+
+      .permission-student-table th:nth-child(1),
+      .permission-student-table td:nth-child(1) {
+        width: 132px;
+      }
+
+      .permission-student-table th:nth-child(2),
+      .permission-student-table td:nth-child(2) {
+        width: 92px;
+      }
+
+      .permission-student-table th:nth-child(3),
+      .permission-student-table td:nth-child(3) {
+        width: 116px;
+      }
+
+      .permission-student-table th:nth-child(4),
+      .permission-student-table td:nth-child(4) {
+        width: 64px;
+      }
+
+      .permission-student-table th:nth-child(5),
+      .permission-student-table td:nth-child(5) {
+        width: auto;
+      }
+
+      .permission-student-table .table-row-button,
+      .permission-student-table .table-row-button span,
+      .permission-student-table td > strong {
+        min-width: 0;
+        white-space: nowrap;
+        word-break: keep-all;
       }
 
       .restricted-data {
@@ -17440,6 +17478,7 @@
         studentLogAuthors: {},
         studentLogAuthorFilter: '',
         studentPermissionInstructorFilter: '',
+        studentPermissionStatusFilter: '',
         studentLogPages: {},
         studentLogReactionSaving: {},
         studentLogEditing: null,
@@ -22388,8 +22427,21 @@
 
       function findInstructorById_(instructorId) {
         var target = String(instructorId || '');
-        return (APP_STATE.instructors || []).find(function(instructor) {
+        var directMatch = (APP_STATE.instructors || []).find(function(instructor) {
           return isInstructorIdentifierInCandidates_(target, instructor);
+        }) || null;
+        if (directMatch) {
+          return directMatch;
+        }
+        var permissionRow = (APP_STATE.permissions || []).find(function(item) {
+          return sameInstructorIdentifier_(item && item.instructorId, target) && String(item && item.instructorName || '').trim();
+        });
+        var storedName = normalizeSearchText(permissionRow && permissionRow.instructorName);
+        if (!storedName) {
+          return null;
+        }
+        return (APP_STATE.instructors || []).find(function(instructor) {
+          return normalizeSearchText(instructor && (instructor.name || instructor.displayName || instructor.userName)) === storedName;
         }) || null;
       }
 
@@ -23138,6 +23190,8 @@
         var school = document.getElementById('studentSchoolFilter').value;
         var tag = document.getElementById('studentTagFilter').value;
         var instructorFilter = APP_STATE.studentPermissionInstructorFilter || '';
+        var permissionStatusFilter = APP_STATE.studentPermissionStatusFilter || '';
+        var permissionMap = getPermissionMap();
 
         return orderStudentsForDisplay_(getStudentSearchSource_().filter(function(student) {
           var matchesKeyword = !keyword || buildStudentSearchText(student).indexOf(keyword) !== -1;
@@ -23146,10 +23200,14 @@
           var matchesTag = !tag || tags.indexOf(tag) !== -1;
           var matchesInstructor = student.isRestricted
             ? !instructorFilter
-            : (!instructorFilter || (getPermissionMap()[student.studentId] || []).some(function(id) {
+            : (!instructorFilter || (permissionMap[student.studentId] || []).some(function(id) {
                 return sameInstructorIdentifier_(id, instructorFilter);
               }));
-          return matchesKeyword && matchesSchool && matchesTag && matchesInstructor;
+          var permissionCount = student.isRestricted ? 0 : getPermissionInstructorIdsForStudent_(permissionMap, student).length;
+          var matchesPermissionStatus = !permissionStatusFilter ||
+            (permissionStatusFilter === 'unassigned' && permissionCount === 0) ||
+            (permissionStatusFilter === 'assigned' && permissionCount > 0);
+          return matchesKeyword && matchesSchool && matchesTag && matchesInstructor && matchesPermissionStatus;
         }));
       }
 
@@ -23749,6 +23807,7 @@
           '  <input class="field-input" data-student-filter-input type="search" value="' + escapeAttribute(document.getElementById('studentSearchInput').value || '') + '" placeholder="학생명, 학교, 태그 검색">',
           '  <select class="field-select" data-student-school-select>' + buildStudentSchoolOptions_() + '</select>',
           '  <select class="field-select" data-student-tag-select>' + buildStudentTagOptions_() + '</select>',
+          '  <select class="field-select" data-student-permission-status-select>' + buildStudentPermissionStatusOptions_() + '</select>',
           '</div>',
           renderStudentActivePermissionFilter_(),
           emptyHtml ? '<div style="padding:16px;">' + emptyHtml + '</div>' : '<div class="student-index-table-wrap">' + renderStudentIndexTable_(students) + '</div>'
@@ -23919,6 +23978,15 @@
         return ['<option value="">전체 태그</option>'].concat(tags.sort().map(function(tag) {
           return '<option value="' + escapeAttribute(tag) + '"' + (tag === current ? ' selected' : '') + '>' + escapeHtml(tag) + '</option>';
         })).join('');
+      }
+
+      function buildStudentPermissionStatusOptions_() {
+        var current = APP_STATE.studentPermissionStatusFilter || '';
+        return [
+          '<option value=""' + (!current ? ' selected' : '') + '>전체 권한 상태</option>',
+          '<option value="unassigned"' + (current === 'unassigned' ? ' selected' : '') + '>강사 권한 미배정</option>',
+          '<option value="assigned"' + (current === 'assigned' ? ' selected' : '') + '>강사 권한 연결</option>'
+        ].join('');
       }
 
       function buildStudentAuthorOptions_() {
@@ -27282,24 +27350,17 @@
           return String(item.studentId || '') === String(studentId || '') &&
             String(item.permission || 'ALLOW').toUpperCase() === 'ALLOW';
         });
-        var seen = {};
-        var seenLabel = {};
-        return rows.map(function(item) {
-          var id = String(item.instructorId || item.userId || '').trim();
-          if (!id || seen[id]) {
-            return null;
-          }
+        var ids = normalizePermissionInstructorIds_(rows.map(function(item) {
+          return String(item.instructorId || item.userId || '').trim();
+        }));
+        return ids.map(function(id) {
+          var item = rows.find(function(row) {
+            var matched = findInstructorById_(row.instructorId);
+            return matched
+              ? isInstructorIdentifierInCandidates_(id, matched)
+              : getPermissionInstructorIdentityKey_(row.instructorId) === getPermissionInstructorIdentityKey_(id);
+          }) || {};
           var instructor = findInstructorById_(id);
-          var displayName = instructor && (instructor.name || instructor.userName || instructor.displayName) || item.instructorName || id;
-          var displaySubject = instructor && (instructor.subject || instructor.department) || item.subject || '';
-          var labelKey = normalizeSearchText([displayName, displaySubject].join('|'));
-          if (labelKey && seenLabel[labelKey]) {
-            return null;
-          }
-          seen[id] = true;
-          if (labelKey) {
-            seenLabel[labelKey] = true;
-          }
           if (instructor) {
             return instructor;
           }
@@ -27318,7 +27379,7 @@
             name: item.instructorName || id,
             subject: item.subject || ''
           };
-        }).filter(Boolean);
+        });
       }
 
       function getSchoolMaterialInfo_(school) {
@@ -28227,6 +28288,12 @@
         var tagSelect = event.target.closest('[data-student-tag-select]');
         if (tagSelect) {
           document.getElementById('studentTagFilter').value = tagSelect.value || '';
+          renderStudentsPreservingSearchFocus_();
+          return;
+        }
+        var permissionStatusSelect = event.target.closest('[data-student-permission-status-select]');
+        if (permissionStatusSelect) {
+          APP_STATE.studentPermissionStatusFilter = permissionStatusSelect.value || '';
           renderStudentsPreservingSearchFocus_();
           return;
         }
@@ -29235,7 +29302,7 @@
 
         wrap.innerHTML = [
           '<div class="data-table-wrap">',
-          '  <table class="data-table">',
+          '  <table class="data-table permission-student-table">',
           '    <thead><tr><th>선택</th><th>학생명</th><th>원</th><th>학년</th><th>과목</th><th>담임 강사</th></tr></thead>',
           '    <tbody>',
           students.map(function(student) {
@@ -29693,7 +29760,7 @@
           return getPermissionInstructorIdsForStudent_(permissionMap, student).length > 0;
         });
         var pending = getPendingPermissionRequests_();
-        var instructorLoad = (APP_STATE.instructors || []).map(function(instructor) {
+        var instructorLoad = getUniquePermissionInstructors_().map(function(instructor) {
           return {
             instructor: instructor,
             count: getInstructorPermissionStudentCount_(instructor.userId)
@@ -29828,12 +29895,11 @@
           return;
         }
 
-        var selected = getPermissionDraftSelection_(student.studentId);
+        var selected = normalizePermissionInstructorIds_(getPermissionDraftSelection_(student.studentId));
         var visibleInstructors = getVisiblePermissionInstructors_();
         var summary = selected.length
           ? selected.map(function(id) {
-              var matched = findInstructorById_(id);
-              return matched ? matched.name : id;
+              return getPermissionInstructorLabel_(id);
             })
           : [];
         var subjectLabel = student.subject || '과목 미지정';
@@ -30030,9 +30096,9 @@
       function getPermissionDraftSelection_(studentId) {
         var key = String(studentId || '');
         if (Object.prototype.hasOwnProperty.call(APP_STATE.permissionDrafts, key)) {
-          return (APP_STATE.permissionDrafts[key] || []).slice();
+          return normalizePermissionInstructorIds_(APP_STATE.permissionDrafts[key] || []);
         }
-        return (getPermissionMap()[key] || []).slice();
+        return normalizePermissionInstructorIds_(getPermissionMap()[key] || []);
       }
 
       function setPermissionDraftSelection_(studentId, instructorIds) {
@@ -30040,20 +30106,65 @@
         if (!key) {
           return;
         }
-        APP_STATE.permissionDrafts[key] = uniqueList_((instructorIds || []).filter(Boolean));
+        APP_STATE.permissionDrafts[key] = normalizePermissionInstructorIds_(instructorIds || []);
+      }
+
+      function getStoredPermissionInstructorName_(instructorId) {
+        var target = String(instructorId || '').trim();
+        var row = (APP_STATE.permissions || []).find(function(item) {
+          return sameInstructorIdentifier_(item && item.instructorId, target) && String(item && item.instructorName || '').trim();
+        });
+        return row ? String(row.instructorName || '').trim() : '';
+      }
+
+      function getPermissionInstructorLabel_(instructorId) {
+        var instructor = findInstructorById_(instructorId);
+        if (instructor) {
+          return instructor.name || instructor.displayName || instructor.userName || instructor.loginId || instructor.userId || instructorId;
+        }
+        return getStoredPermissionInstructorName_(instructorId) || instructorId;
+      }
+
+      function getPermissionInstructorIdentityKey_(instructorId) {
+        var instructor = findInstructorById_(instructorId);
+        if (instructor) {
+          return 'account:' + normalizeSearchText(getInstructorPrimaryPermissionId_(instructor) || instructor.userId || instructor.name);
+        }
+        var storedName = getStoredPermissionInstructorName_(instructorId);
+        return storedName
+          ? 'name:' + normalizeSearchText(storedName)
+          : 'id:' + normalizeSearchText(canonicalizePermissionInstructorId_(instructorId));
+      }
+
+      function normalizePermissionInstructorIds_(instructorIds) {
+        var seen = {};
+        return (instructorIds || []).map(function(id) {
+          var instructor = findInstructorById_(id);
+          return instructor ? getInstructorPrimaryPermissionId_(instructor) : String(id || '').trim();
+        }).filter(function(id) {
+          if (!id) {
+            return false;
+          }
+          var key = getPermissionInstructorIdentityKey_(id);
+          if (seen[key]) {
+            return false;
+          }
+          seen[key] = true;
+          return true;
+        });
       }
 
       function renderPermissionInstructorList_(instructorIds) {
-        var ids = uniqueList_((instructorIds || []).filter(Boolean));
+        var ids = normalizePermissionInstructorIds_(instructorIds || []);
         if (!ids.length) {
           return '<span class="teacher-chip unassigned">미배정</span>';
         }
         return '<div class="permission-instructor-list">' + ids.map(function(id) {
           var instructor = findInstructorById_(id);
-          var label = instructor ? instructor.name : id;
+          var label = getPermissionInstructorLabel_(id);
           var title = instructor
             ? [instructor.name, instructor.loginId || instructor.userId, instructor.subject].filter(Boolean).join(' · ')
-            : id;
+            : label;
           return '<span class="teacher-chip primary" title="' + escapeAttribute(title) + '">' + escapeHtml(label || id) + '</span>';
         }).join('') + '</div>';
       }
@@ -30072,12 +30183,12 @@
       }
 
       function renderPermissionSelectedChips_(selected) {
-        if (!selected || !selected.length) {
+        selected = normalizePermissionInstructorIds_(selected || []);
+        if (!selected.length) {
           return '<span class="permission-empty-selection">아직 선택된 열람 강사가 없습니다.</span>';
         }
         return selected.map(function(id) {
-          var instructor = findInstructorById_(id) || { userId: id, name: id };
-          return '<button type="button" class="teacher-chip primary permission-selected-chip" data-action="permission-remove-instructor" data-instructor-id="' + escapeAttribute(id) + '">' + escapeHtml(instructor.name || id) + '<span aria-hidden="true">×</span></button>';
+          return '<button type="button" class="teacher-chip primary permission-selected-chip" data-action="permission-remove-instructor" data-instructor-id="' + escapeAttribute(id) + '">' + escapeHtml(getPermissionInstructorLabel_(id)) + '<span aria-hidden="true">×</span></button>';
         }).join('');
       }
 
@@ -30097,7 +30208,7 @@
 
       function getVisiblePermissionInstructors_() {
         var instructorKeyword = normalizeSearchText(APP_STATE.permissionInstructorKeyword);
-        return (APP_STATE.instructors || []).slice().sort(compareInstructorsByName_).filter(function(instructor) {
+        return getUniquePermissionInstructors_().sort(compareInstructorsByName_).filter(function(instructor) {
           if (!instructorKeyword) {
             return true;
           }
@@ -30108,12 +30219,24 @@
 
       function getVisiblePermissionBulkInstructors_() {
         var instructorKeyword = normalizeSearchText(APP_STATE.permissionBulkInstructorKeyword);
-        return (APP_STATE.instructors || []).slice().sort(compareInstructorsByName_).filter(function(instructor) {
+        return getUniquePermissionInstructors_().sort(compareInstructorsByName_).filter(function(instructor) {
           if (!instructorKeyword) {
             return true;
           }
           var searchText = normalizeSearchText([instructor.name, instructor.userId, instructor.subject].join(' '));
           return searchText.indexOf(instructorKeyword) !== -1;
+        });
+      }
+
+      function getUniquePermissionInstructors_() {
+        var seen = {};
+        return (APP_STATE.instructors || []).filter(function(instructor) {
+          var key = 'account:' + normalizeSearchText(getInstructorPrimaryPermissionId_(instructor) || instructor.userId || instructor.name);
+          if (!key || seen[key]) {
+            return false;
+          }
+          seen[key] = true;
+          return true;
         });
       }
 
@@ -30532,14 +30655,16 @@
           return;
         }
 
-        wrap.innerHTML = APP_STATE.instructors.map(function(instructor) {
-          var checked = selected.indexOf(instructor.userId) !== -1 ? ' checked' : '';
+        wrap.innerHTML = getUniquePermissionInstructors_().map(function(instructor) {
+          var checked = selected.some(function(id) {
+            return isInstructorIdentifierInCandidates_(id, instructor);
+          }) ? ' checked' : '';
           return [
             '<label class="check-card">',
             '  <input type="checkbox" data-instructor-id="' + escapeHtml(instructor.userId) + '"' + checked + '>',
             '  <div>',
             '    <div style="font-weight:800;">' + escapeHtml(instructor.name) + '</div>',
-            '    <div style="margin-top:4px;color:var(--text-soft);font-size:0.78rem;">' + escapeHtml(instructor.userId) + '</div>',
+            '    <div style="margin-top:4px;color:var(--text-soft);font-size:0.78rem;">' + escapeHtml(instructor.subject || instructor.loginId || '') + '</div>',
             '  </div>',
             '</label>'
           ].join('');
@@ -30580,7 +30705,7 @@
         getStudentIdAliases_(student).forEach(function(studentId) {
           ids = ids.concat((permissionMap && permissionMap[studentId]) || []);
         });
-        return uniqueList_(ids.filter(Boolean));
+        return normalizePermissionInstructorIds_(ids);
       }
 
       function getPermissionStorageStudentIds_(studentId) {
@@ -30590,9 +30715,9 @@
 
       function buildStudentPermissionFirebasePayload_(studentId, instructorIds) {
         var student = findAnyStudentById_(studentId) || {};
-        var ids = uniqueList_((instructorIds || []).map(function(id) {
+        var ids = normalizePermissionInstructorIds_((instructorIds || []).map(function(id) {
           return canonicalizePermissionInstructorId_(id);
-        }).filter(Boolean));
+        }));
         var names = ids.map(function(id) {
           var instructor = findInstructorById_(id);
           return instructor ? (instructor.name || instructor.userId || id) : id;
@@ -30685,7 +30810,8 @@
 
       function replaceStudentPermissionsInState_(studentId, instructorIds) {
         var storageStudentIds = getPermissionStorageStudentIds_(studentId);
-        var rows = uniqueList_(instructorIds || []).map(function(instructorId) {
+        instructorIds = normalizePermissionInstructorIds_(instructorIds || []);
+        var rows = instructorIds.map(function(instructorId) {
           return buildSingleStudentPermissionFirebasePayload_(studentId, instructorId);
         });
         APP_STATE.permissions = (APP_STATE.permissions || []).filter(function(item) {
@@ -30715,7 +30841,7 @@
             storageStudentIds.forEach(function(storageStudentId) {
               batch.delete(collection.doc(String(storageStudentId || '')));
             });
-            uniqueList_(instructorIds || []).forEach(function(instructorId) {
+            normalizePermissionInstructorIds_(instructorIds || []).forEach(function(instructorId) {
               var payload = buildSingleStudentPermissionFirebasePayload_(studentId, instructorId);
               batch.set(collection.doc(payload.permissionId), payload, { merge: true });
             });
@@ -30851,7 +30977,7 @@
           return;
         }
 
-        var instructorIds = getPermissionDraftSelection_(studentId);
+        var instructorIds = normalizePermissionInstructorIds_(getPermissionDraftSelection_(studentId));
 
         setLoading('학생 열람 권한을 저장하는 중입니다.', true);
         saveStudentPermissionsViaFirebaseDirect_(studentId, instructorIds)
