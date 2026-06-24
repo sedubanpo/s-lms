@@ -17483,6 +17483,10 @@
         studentLogSavingRows: {},
         studentProfileBoardTabs: {},
         studentDataLoading: false,
+        studentLogsLoading: false,
+        studentLogsLoaded: false,
+        studentLogsLoadScheduled: false,
+        studentSupplementPreloadScheduled: false,
         lastDashboardSyncAt: 0,
         autoSyncInFlight: false,
         selectedStudentId: '',
@@ -17784,8 +17788,9 @@
           APP_STATE.user = savedSession.user || null;
           APP_STATE.isAdmin = Boolean(APP_STATE.user && APP_STATE.user.role === 'ADMIN');
           if (isFirebaseSessionToken_(APP_STATE.token)) {
-            APP_STATE.studentDataLoading = true;
-            renderAll();
+            var hasCachedDashboard = hydrateDashboardSnapshot_(readDashboardSnapshot_());
+            APP_STATE.studentDataLoading = !hasCachedDashboard;
+            renderInitialAppView_();
             showAppOnly();
             restoreFirebaseStoredSession_().finally(clearLoading);
             return;
@@ -18251,32 +18256,42 @@
         if (!APP_STATE.user || !APP_STATE.user.userId || !APP_STATE.token) {
           return;
         }
-
-        localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify({
-          userId: APP_STATE.user.userId,
-          storedAt: Date.now(),
-          studentData: {
-            user: APP_STATE.user,
-            isAdmin: APP_STATE.isAdmin,
-            visibleStudents: APP_STATE.visibleStudents,
-            searchableStudents: APP_STATE.searchableStudents,
-            activeStudents: APP_STATE.activeStudents,
-            allStudents: APP_STATE.allStudents,
-            totalActiveStudentCount: APP_STATE.totalActiveStudentCount,
-            instructors: APP_STATE.instructors,
-            permissions: APP_STATE.permissions,
-            permissionRequests: APP_STATE.permissionRequests,
-            homeroomAssignments: APP_STATE.homeroomAssignments,
-            appName: APP_STATE.appName,
-            logoUrl: APP_STATE.logoUrl,
-            globalNotice: APP_STATE.globalNotice
-          },
-          materials: APP_STATE.materials,
-          materialSettings: APP_STATE.materialSettings,
-          events: APP_STATE.events,
-          materialsLoaded: APP_STATE.materialsLoaded,
-          eventsLoaded: APP_STATE.eventsLoaded
-        }));
+        var withoutLogs = function(students) {
+          return (students || []).map(function(student) {
+            return Object.assign({}, student, { logs: [] });
+          });
+        };
+        try {
+          localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify({
+            userId: APP_STATE.user.userId,
+            storedAt: Date.now(),
+            studentData: {
+              user: APP_STATE.user,
+              isAdmin: APP_STATE.isAdmin,
+              visibleStudents: withoutLogs(APP_STATE.visibleStudents),
+              searchableStudents: withoutLogs(APP_STATE.searchableStudents),
+              activeStudents: withoutLogs(APP_STATE.activeStudents),
+              allStudents: withoutLogs(APP_STATE.allStudents),
+              totalActiveStudentCount: APP_STATE.totalActiveStudentCount,
+              instructors: APP_STATE.instructors,
+              permissions: APP_STATE.permissions,
+              permissionRequests: APP_STATE.permissionRequests,
+              homeroomAssignments: APP_STATE.homeroomAssignments,
+              appName: APP_STATE.appName,
+              logoUrl: APP_STATE.logoUrl,
+              globalNotice: APP_STATE.globalNotice
+            },
+            materials: APP_STATE.materials,
+            materialSettings: APP_STATE.materialSettings,
+            events: APP_STATE.events,
+            materialsLoaded: APP_STATE.materialsLoaded,
+            eventsLoaded: APP_STATE.eventsLoaded
+          }));
+        } catch (error) {
+          if (window.console && console.warn) {
+            console.warn('Dashboard cache write skipped:', error);
+          }
+        }
       }
 
       function clearDashboardSnapshot_() {
@@ -19222,7 +19237,7 @@
             safePermissionGet(collections.permissions || 'studentPermissions'),
             safePendingPermissionRequestsGet(collections.permissionRequests || 'permissionRequests'),
             user.role === 'ADMIN' ? safeCollectionGet(collections.homerooms || 'studentHomerooms', 'homeroom') : Promise.resolve({ docs: [] }),
-            safeCollectionGet(collections.studentLogs || 'studentLogs', 'student log')
+            Promise.resolve({ docs: [] })
           ]);
           return contextDataPromise.then(function(adminResults) {
           var userSnapshot = adminResults[0];
@@ -19406,9 +19421,10 @@
           writeStoredSession();
           syncBranding();
           showAppOnly();
-          renderAll();
+          renderInitialAppView_();
           setNotice('Firebase 로그인으로 접속했습니다. 계정과 학생 목록을 Firestore에서 불러왔습니다.', 'success');
           loadGlobalNoticeViaFirebaseDirect_();
+          scheduleFirebaseStudentLogsLoad_();
           return null;
         });
       }
@@ -19444,7 +19460,7 @@
             showAppOnly();
             var hasSnapshot = hydrateDashboardSnapshot_(readDashboardSnapshot_());
             APP_STATE.studentDataLoading = !hasSnapshot;
-            renderAll();
+            renderInitialAppView_();
             setNotice(
               hasSnapshot
                 ? '로그인되었습니다. 저장된 화면을 먼저 표시하고 최신 데이터를 동기화합니다.'
@@ -19564,31 +19580,26 @@
             APP_STATE.studentDataLoading = false;
             hydrateStudentDataOnly(studentData);
             if (config.useStagedLoading) {
-              renderUserSummary();
-              renderStats();
-              renderStudents();
-              renderHomeroomView();
-              renderPermissionView();
-              renderJikboView();
-              switchView(APP_STATE.currentView);
               showAppOnly();
             }
 
             if (config.preloadCurrentView) {
               return ensureViewDataLoaded_(APP_STATE.currentView, { silent: true }).then(function() {
                 hydrateDashboard(studentData, null, null);
-                renderAll();
+                renderInitialAppView_();
                 writeDashboardSnapshot_();
                 saveDashboardSnapshotViaFirebaseDirect_(studentData);
                 loadGlobalNoticeViaFirebaseDirect_();
+                scheduleFirebaseStudentLogsLoad_();
               });
             }
 
             hydrateDashboard(studentData, null, null);
-            renderAll();
+            renderInitialAppView_();
             writeDashboardSnapshot_();
             saveDashboardSnapshotViaFirebaseDirect_(studentData);
             loadGlobalNoticeViaFirebaseDirect_();
+            scheduleFirebaseStudentLogsLoad_();
             return null;
           }).then(function() {
             APP_STATE.lastDashboardSyncAt = Date.now();
@@ -19621,20 +19632,13 @@
             APP_STATE.studentDataLoading = false;
             hydrateStudentDataOnly(studentData);
             if (config.useStagedLoading) {
-              renderUserSummary();
-              renderStats();
-              renderStudents();
-              renderHomeroomView();
-              renderPermissionView();
-              renderJikboView();
-              switchView(APP_STATE.currentView);
               showAppOnly();
             }
 
             if (config.preloadCurrentView) {
               return ensureViewDataLoaded_(APP_STATE.currentView, { silent: true }).then(function() {
                 hydrateDashboard(studentData, null, null);
-                renderAll();
+                renderInitialAppView_();
                 writeDashboardSnapshot_();
                 saveDashboardSnapshotViaFirebaseDirect_(studentData);
                 loadGlobalNoticeViaFirebaseDirect_();
@@ -19642,7 +19646,7 @@
             }
 
             hydrateDashboard(studentData, null, null);
-            renderAll();
+            renderInitialAppView_();
             writeDashboardSnapshot_();
             saveDashboardSnapshotViaFirebaseDirect_(studentData);
             loadGlobalNoticeViaFirebaseDirect_();
@@ -19999,6 +20003,66 @@
             allStudents: mergeFirebaseLogsIntoStudentList_(studentData.allStudents, logsByStudent)
           });
         });
+      }
+
+      function loadFirebaseStudentLogsInBackground_() {
+        if (!APP_STATE.token || APP_STATE.studentLogsLoading || APP_STATE.studentLogsLoaded) {
+          return Promise.resolve();
+        }
+        var state = APP_STATE.firebaseDirect || {};
+        if (!state.enabled || !state.firestore) {
+          return Promise.resolve();
+        }
+        APP_STATE.studentLogsLoading = true;
+        var collectionName = (state.collections && state.collections.studentLogs) || 'studentLogs';
+        var collection = state.firestore.collection(collectionName);
+        return firestoreGet_(collection, 'background:student logs', {
+          collection: collectionName,
+          scope: 'deferred'
+        }).then(function(snapshot) {
+          var logsByStudent = {};
+          (snapshot.docs || []).map(normalizeFirebaseStudentLogForApp_).filter(function(log) {
+            return log.studentId && log.content;
+          }).forEach(function(log) {
+            var studentId = String(log.studentId || '');
+            if (!logsByStudent[studentId]) {
+              logsByStudent[studentId] = [];
+            }
+            logsByStudent[studentId].push(log);
+          });
+          APP_STATE.visibleStudents = mergeFirebaseLogsIntoStudentList_(APP_STATE.visibleStudents, logsByStudent);
+          APP_STATE.searchableStudents = mergeFirebaseLogsIntoStudentList_(APP_STATE.searchableStudents, logsByStudent);
+          APP_STATE.activeStudents = mergeFirebaseLogsIntoStudentList_(APP_STATE.activeStudents, logsByStudent);
+          APP_STATE.allStudents = mergeFirebaseLogsIntoStudentList_(APP_STATE.allStudents, logsByStudent);
+          APP_STATE.studentLogsLoaded = true;
+          writeDashboardSnapshot_();
+          if (APP_STATE.currentView === 'students') {
+            renderStats();
+            renderStudentsAfterBackgroundDataChange_();
+          }
+        }).catch(function(error) {
+          if (window.console && console.warn) {
+            console.warn('Deferred Firebase student log load skipped:', error);
+          }
+        }).finally(function() {
+          APP_STATE.studentLogsLoading = false;
+        });
+      }
+
+      function scheduleFirebaseStudentLogsLoad_() {
+        if (APP_STATE.studentLogsLoadScheduled || APP_STATE.studentLogsLoading || APP_STATE.studentLogsLoaded || !APP_STATE.token) {
+          return;
+        }
+        APP_STATE.studentLogsLoadScheduled = true;
+        var run = function() {
+          APP_STATE.studentLogsLoadScheduled = false;
+          loadFirebaseStudentLogsInBackground_();
+        };
+        if (window.requestIdleCallback) {
+          window.requestIdleCallback(run, { timeout: 3000 });
+        } else {
+          window.setTimeout(run, 1200);
+        }
       }
 
       function hydrateFirebaseDirectState_(authData) {
@@ -22960,6 +23024,54 @@
         renderGlobalNoticeCard_();
         switchView(APP_STATE.currentView);
         renderPermissionRequestAlert_();
+      }
+
+      function renderCurrentViewContent_(viewName) {
+        if (viewName === 'students') {
+          renderStudents();
+        } else if (viewName === 'homeroom') {
+          renderHomeroomView();
+        } else if (viewName === 'permissions') {
+          renderPermissionView();
+        } else if (viewName === 'jikbo') {
+          renderJikboView();
+        } else if (viewName === 'events') {
+          renderEvents();
+        } else if (viewName === 'grades') {
+          renderGrades();
+        } else if (viewName === 'materials') {
+          renderMaterials();
+        }
+      }
+
+      function renderInitialAppView_() {
+        renderUserSummary();
+        renderStats();
+        renderGlobalNoticeCard_();
+        switchView(APP_STATE.currentView);
+        renderPermissionRequestAlert_();
+      }
+
+      function scheduleStudentSupplementPreload_() {
+        if (APP_STATE.studentSupplementPreloadScheduled || !APP_STATE.token || APP_STATE.studentDataLoading) {
+          return;
+        }
+        APP_STATE.studentSupplementPreloadScheduled = true;
+        var run = function() {
+          Promise.all([
+            ensureViewDataLoaded_('materials', { silent: true }),
+            ensureViewDataLoaded_('events', { silent: true })
+          ]).then(function() {
+            if (APP_STATE.currentView === 'students') {
+              renderStudentsAfterBackgroundDataChange_();
+            }
+          }).catch(function() {});
+        };
+        if (window.requestIdleCallback) {
+          window.requestIdleCallback(run, { timeout: 5000 });
+        } else {
+          window.setTimeout(run, 2500);
+        }
       }
 
       function renderUserSummary() {
@@ -39773,20 +39885,20 @@
         quickAddButton.textContent = viewName === 'materials' ? '자료 등록' : '학생 등록';
         syncMaterialOpenLogButton_();
         document.getElementById('openPermissionModalButton').classList.toggle('hidden', !APP_STATE.isAdmin || (viewName !== 'students' && viewName !== 'materials'));
-        ensureViewDataLoaded_(viewName);
-        if (viewName === 'students') {
-          ensureViewDataLoaded_('materials', { silent: true }).then(function() {
-            renderStudentsAfterBackgroundDataChange_();
-            return ensureViewDataLoaded_('events', { silent: true });
-          }).then(function() {
-            renderStudentsAfterBackgroundDataChange_();
-            if (!APP_STATE.isAdmin) {
-              return null;
+        renderCurrentViewContent_(viewName);
+        if (['materials', 'events', 'jikbo', 'grades'].indexOf(viewName) !== -1) {
+          ensureViewDataLoaded_(viewName, { silent: true }).then(function() {
+            if (APP_STATE.currentView === viewName) {
+              renderCurrentViewContent_(viewName);
             }
-            return ensureViewDataLoaded_('jikbo', { silent: true });
-          }).then(function() {
-            renderStudentsAfterBackgroundDataChange_();
-          }).catch(function() {});
+          }).catch(function(error) {
+            if (window.console && console.warn) {
+              console.warn('View data load failed:', viewName, error);
+            }
+          });
+        }
+        if (viewName === 'students') {
+          scheduleStudentSupplementPreload_();
         }
       }
 
@@ -39804,6 +39916,10 @@
         APP_STATE.studentLogEditing = null;
         APP_STATE.studentLogSavingRows = {};
         APP_STATE.studentLogReactionSaving = {};
+        APP_STATE.studentLogsLoading = false;
+        APP_STATE.studentLogsLoaded = false;
+        APP_STATE.studentLogsLoadScheduled = false;
+        APP_STATE.studentSupplementPreloadScheduled = false;
         APP_STATE.quickPermissionModalOpen = false;
         APP_STATE.quickPermissionTargetStudentId = '';
         APP_STATE.quickPermissionSelections = {};
