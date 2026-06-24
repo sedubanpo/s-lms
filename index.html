@@ -34208,21 +34208,7 @@
         if (override && override.applyMode === 'EXCLUDE') {
           return false;
         }
-        if (override && override.applyMode === 'INCLUDE') {
-          return true;
-        }
-        if (!subjectDefinition || subjectDefinition.isEnabled === false) {
-          return matchesJikboSubjectFallback_(student, eventItem.subjectName) ||
-            matchesJikboSubjectFallback_(student, eventItem.subjectCategory || eventItem.majorSubject) ||
-            shouldIncludeUnmappedJikboStudent_(student, permissionMap);
-        }
-        if (matchesJikboStudentKeywords_(student, subjectDefinition.studentSubjectKeywords || [])) {
-          return true;
-        }
-        if (hasJikboInstructorSubjectMatch_(student, subjectDefinition, permissionMap)) {
-          return true;
-        }
-        return shouldIncludeUnmappedJikboStudent_(student, permissionMap);
+        return Boolean(student && student.studentId && eventItem);
       }
 
       function matchesJikboStudentKeywords_(student, keywords) {
