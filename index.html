@@ -6095,17 +6095,18 @@
         gap: 4px;
         padding: 4px;
         border-radius: 10px;
-        border: 1px solid rgba(214, 226, 247, 0.9);
-        background: rgba(247, 250, 255, 0.92);
+        border: 1px solid rgba(148, 163, 184, 0.48);
+        background: rgba(226, 232, 240, 0.9);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
       }
 
       .jikbo-top-tab {
         min-height: 30px;
         padding: 6px 12px;
-        border: 0;
+        border: 1px solid transparent;
         border-radius: 7px;
-        background: transparent;
-        color: var(--text-soft);
+        background: rgba(255, 255, 255, 0.62);
+        color: #475569;
         font-size: 0.76rem;
         font-weight: 900;
         cursor: pointer;
@@ -6169,10 +6170,10 @@
       }
 
       .jikbo-exam-card {
-        flex: 0 0 252px;
+        flex: 0 0 300px;
         display: grid;
-        gap: 7px;
-        min-height: 128px;
+        gap: 8px;
+        min-height: 148px;
         padding: 12px;
         border-radius: 8px;
         border: 1px solid rgba(239, 68, 68, 0.16);
@@ -6206,6 +6207,25 @@
 
       .jikbo-exam-card strong {
         font-size: 0.84rem;
+      }
+
+      .jikbo-exam-card-schools {
+        display: grid;
+        gap: 6px;
+      }
+
+      .jikbo-exam-school-row {
+        display: grid;
+        gap: 5px;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .jikbo-exam-school-row strong {
+        color: var(--text-strong);
+        font-size: 0.76rem;
       }
 
       .jikbo-exam-card-meta {
@@ -6285,7 +6305,7 @@
 
       .jikbo-teacher-overview {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 260px;
+        grid-template-columns: minmax(0, 1fr) 240px;
         gap: 12px;
       }
 
@@ -6322,23 +6342,66 @@
       }
 
       .jikbo-teacher-card {
-        display: inline-grid;
-        gap: 3px;
-        min-width: 132px;
-        padding: 8px 10px;
+        display: grid;
+        gap: 9px;
+        min-width: 0;
+        padding: 12px;
         border-radius: 8px;
         border: 1px solid rgba(214, 226, 247, 0.86);
-        background: rgba(248, 251, 255, 0.92);
+        background: rgba(255, 255, 255, 0.92);
+      }
+
+      .jikbo-teacher-card.unassigned {
+        border-color: rgba(239, 68, 68, 0.24);
+        background: rgba(255, 247, 247, 0.96);
+      }
+
+      .jikbo-teacher-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
       }
 
       .jikbo-teacher-card strong {
-        font-size: 0.78rem;
+        font-size: 0.9rem;
         color: var(--text-strong);
       }
 
       .jikbo-teacher-card span {
         color: var(--text-soft);
         font-size: 0.68rem;
+      }
+
+      .jikbo-teacher-subject-strip,
+      .jikbo-teacher-schedule-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .jikbo-teacher-schedule-list {
+        display: grid;
+      }
+
+      .jikbo-teacher-schedule-item {
+        display: grid;
+        grid-template-columns: 72px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        padding: 7px 8px;
+        border-radius: 8px;
+        border: 1px solid rgba(226, 232, 240, 0.92);
+        background: rgba(248, 250, 252, 0.86);
+        font-size: 0.72rem;
+      }
+
+      .jikbo-teacher-schedule-item strong {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.72rem;
       }
 
       .jikbo-teacher-missing-list {
@@ -34466,11 +34529,7 @@
       }
 
       function buildJikboTimelineGroupKey_(eventItem) {
-        return [
-          eventItem && (eventItem.isoDate || eventItem.date) || '',
-          eventItem && eventItem.school || '',
-          eventItem && normalizeJikboGradeForClient_(eventItem.grade) || ''
-        ].join('|');
+        return eventItem && (eventItem.isoDate || eventItem.date) || '';
       }
 
       function buildJikboTimelineEvents_(events) {
@@ -34488,9 +34547,10 @@
             groupOrder.push(groupKey);
             groupMap[groupKey] = Object.assign({}, eventItem, {
               timelineKey: groupKey,
+              isoDate: eventItem.isoDate || eventItem.date || '',
               events: [],
-              subjects: [],
-              subjectMap: {},
+              schoolRows: [],
+              schoolMap: {},
               examTypes: []
             });
           }
@@ -34499,9 +34559,20 @@
           }
           var eventWithKey = Object.assign({}, eventItem, { eventKey: eventKey });
           groupMap[groupKey].events.push(eventWithKey);
-          if (eventItem.subjectName && !groupMap[groupKey].subjectMap[eventItem.subjectName]) {
-            groupMap[groupKey].subjectMap[eventItem.subjectName] = true;
-            groupMap[groupKey].subjects.push({
+          var schoolRowKey = [eventItem.school || '', normalizeJikboGradeForClient_(eventItem.grade)].join('|');
+          if (!groupMap[groupKey].schoolMap[schoolRowKey]) {
+            groupMap[groupKey].schoolMap[schoolRowKey] = {
+              school: eventItem.school || '',
+              grade: normalizeJikboGradeForClient_(eventItem.grade),
+              subjects: [],
+              subjectMap: {}
+            };
+            groupMap[groupKey].schoolRows.push(groupMap[groupKey].schoolMap[schoolRowKey]);
+          }
+          var schoolRow = groupMap[groupKey].schoolMap[schoolRowKey];
+          if (eventItem.subjectName && !schoolRow.subjectMap[eventItem.subjectName]) {
+            schoolRow.subjectMap[eventItem.subjectName] = true;
+            schoolRow.subjects.push({
               subjectName: eventItem.subjectName,
               toneClass: getSubjectToneClass_(eventItem.subjectName)
             });
@@ -34513,7 +34584,10 @@
         });
         return groupOrder.map(function(key) {
           var group = groupMap[key];
-          delete group.subjectMap;
+          group.schoolRows.forEach(function(row) {
+            delete row.subjectMap;
+          });
+          delete group.schoolMap;
           return group;
         });
       }
@@ -34548,14 +34622,23 @@
           timelineEvents.map(function(item) {
             var parsedDate = parseEventDateForClient_(item.isoDate);
             var isActive = item.timelineKey === activeKey;
-            var subjectBadges = (item.subjects || []).map(function(subject) {
-              return '<span class="jikbo-exam-subject-badge ' + escapeAttribute(subject.toneClass || getSubjectToneClass_(subject.subjectName)) + '">' + escapeHtml(subject.subjectName || '-') + '</span>';
+            var schoolRows = (item.schoolRows || []).slice(0, 4).map(function(row) {
+              var subjectBadges = (row.subjects || []).slice(0, 4).map(function(subject) {
+                return '<span class="jikbo-exam-subject-badge ' + escapeAttribute(subject.toneClass || getSubjectToneClass_(subject.subjectName)) + '">' + escapeHtml(subject.subjectName || '-') + '</span>';
+              }).join('');
+              return [
+                '<div class="jikbo-exam-school-row">',
+                '  <strong>' + escapeHtml([row.school || '-', formatJikboGradeLabel_(row.grade)].filter(Boolean).join(' ')) + '</strong>',
+                '  <div class="jikbo-exam-card-subjects">' + (subjectBadges || '<span class="jikbo-exam-subject-badge subject-other">과목 미지정</span>') + '</div>',
+                '</div>'
+              ].join('');
             }).join('');
+            var hiddenSchoolCount = Math.max(0, (item.schoolRows || []).length - 4);
             return [
               '<button type="button" role="listitem" class="jikbo-exam-card ' + (isActive ? 'active' : '') + '" data-jikbo-focus-exam="' + escapeAttribute(item.timelineKey) + '">',
               '  <div class="jikbo-exam-card-meta"><span class="jikbo-exam-card-date">' + escapeHtml(renderJikboCompactDateLabel_(parsedDate, item.isoDate)) + '</span><small>' + escapeHtml(String((item.events || []).length || 1)) + '과목</small></div>',
-              '  <strong>' + escapeHtml([item.school || '-', formatJikboGradeLabel_(item.grade)].filter(Boolean).join(' ')) + '</strong>',
-              '  <div class="jikbo-exam-card-subjects">' + (subjectBadges || '<span class="jikbo-exam-subject-badge subject-other">과목 미지정</span>') + '</div>',
+              '  <div class="jikbo-exam-card-schools">' + (schoolRows || '<div class="jikbo-exam-school-row"><strong>학교 미지정</strong></div>') + '</div>',
+              hiddenSchoolCount ? '  <small>외 ' + escapeHtml(String(hiddenSchoolCount)) + '개 학교/학년</small>' : '',
               '  <small>' + escapeHtml((item.examTypes || []).slice(0, 2).join(' / ') || item.examType || item.title || '내신 시험') + '</small>',
               '</button>'
             ].join('');
@@ -34567,19 +34650,28 @@
 
       function renderJikboTeacherOverview_(model) {
         var overview = buildJikboTeacherOverview_(model);
-        var subjectGroups = overview.subjects.slice(0, 8).map(function(subject) {
-          var teacherCards = subject.teachers.slice(0, 10).map(function(teacher) {
+        var teacherCards = overview.teachers.slice(0, 12).map(function(teacher) {
+          var subjectStrip = (teacher.subjects || []).slice(0, 6).map(function(subject) {
+            return '<span class="jikbo-chip-subject-badge ' + escapeAttribute(subject.toneClass || getSubjectToneClass_(subject.subjectName)) + '">' + escapeHtml(subject.subjectName || '-') + ' ' + escapeHtml(String(subject.count || 0)) + '</span>';
+          }).join('');
+          var previewRows = (teacher.items || []).slice(0, 5).map(function(item) {
+            var parsedDate = parseEventDateForClient_(item.dateKey);
+            var statusClass = getJikboProgressStatusClass_(item.progressStatus);
             return [
-              '<article class="jikbo-teacher-card">',
-              '  <strong>' + escapeHtml(teacher.name || '강사 미지정') + '</strong>',
-              '  <span>' + escapeHtml(String(teacher.count)) + '건 · 확정 ' + escapeHtml(String(teacher.confirmed)) + '건</span>',
-              '</article>'
+              '<div class="jikbo-teacher-schedule-item">',
+              '  <span>' + escapeHtml(renderJikboCompactDateLabel_(parsedDate, item.dateKey)) + '</span>',
+              '  <strong>' + escapeHtml([item.school || '-', formatJikboGradeLabel_(item.grade), item.studentName || '-'].filter(Boolean).join(' · ')) + '</strong>',
+              '  <span class="jikbo-status-badge ' + escapeAttribute(statusClass) + '">' + escapeHtml(item.subjectName || '-') + '</span>',
+              '</div>'
             ].join('');
           }).join('');
+          var hiddenCount = Math.max(0, Number(teacher.total || 0) - 5);
           return [
-            '<article class="jikbo-teacher-subject-group">',
-            '  <div class="jikbo-teacher-subject-head"><strong><span class="jikbo-chip-subject-badge ' + escapeAttribute(subject.toneClass) + '">' + escapeHtml(subject.subjectName) + '</span></strong><span class="jikbo-summary-badge">' + escapeHtml(String(subject.total)) + '건</span></div>',
-            '  <div class="jikbo-teacher-list">' + (teacherCards || '<div class="jikbo-summary-empty">강사 입력 없음</div>') + '</div>',
+            '<article class="jikbo-teacher-card ' + (teacher.isUnassigned ? 'unassigned' : '') + '">',
+            '  <div class="jikbo-teacher-card-head"><div><strong>' + escapeHtml(teacher.name || '강사 미입력') + '</strong><span>' + escapeHtml(String(teacher.confirmed || 0)) + '건 확정 · ' + escapeHtml(String(teacher.pending || 0)) + '건 미정</span></div><span class="jikbo-summary-badge ' + (teacher.isUnassigned ? 'alert' : '') + '">' + escapeHtml(String(teacher.total || 0)) + '건</span></div>',
+            '  <div class="jikbo-teacher-subject-strip">' + (subjectStrip || '<span class="helper-text">과목 없음</span>') + '</div>',
+            '  <div class="jikbo-teacher-schedule-list">' + (previewRows || '<div class="jikbo-summary-empty">표시할 직보가 없습니다.</div>') + '</div>',
+            hiddenCount ? '  <span class="helper-text">외 ' + escapeHtml(String(hiddenCount)) + '건</span>' : '',
             '</article>'
           ].join('');
         }).join('');
@@ -34587,9 +34679,9 @@
           return '<span class="jikbo-chip-subject-badge ' + escapeAttribute(subject.toneClass) + '">' + escapeHtml(subject.subjectName) + ' ' + escapeHtml(String(subject.count)) + '</span>';
         }).join('');
         return [
-          '<div class="jikbo-exam-timeline-head"><span class="jikbo-summary-badge">' + escapeHtml(String(overview.subjects.length)) + '개 과목</span><span class="jikbo-summary-badge">' + escapeHtml(String(overview.stats.total)) + '건</span></div>',
+          '<div class="jikbo-exam-timeline-head"><span class="jikbo-summary-badge">' + escapeHtml(String(overview.teachers.length)) + '명/상태</span><span class="jikbo-summary-badge">' + escapeHtml(String(overview.stats.total)) + '건</span></div>',
           '<div class="jikbo-teacher-overview">',
-          '  <div class="jikbo-teacher-groups">' + (subjectGroups || '<div class="jikbo-summary-empty">입력된 직보 강사가 없습니다.</div>') + '</div>',
+          '  <div class="jikbo-teacher-groups">' + (teacherCards || '<div class="jikbo-summary-empty">입력된 직보 강사가 없습니다.</div>') + '</div>',
           '  <div class="jikbo-teacher-stats">',
           renderJikboTeacherStat_('강사 입력', overview.stats.assigned + '건'),
           renderJikboTeacherStat_('강사 미입력', overview.stats.unassigned + '건'),
@@ -34604,6 +34696,19 @@
 
       function renderJikboTeacherStat_(label, value) {
         return '<div class="jikbo-teacher-stat"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>';
+      }
+
+      function getJikboProgressStatusClass_(status) {
+        if (status === '확정') {
+          return 'confirmed';
+        }
+        if (status === '휴강') {
+          return 'not-held';
+        }
+        if (status === '대체진행') {
+          return 'substitute';
+        }
+        return 'pending';
       }
 
       function buildJikboTeacherOverview_(model) {
@@ -34636,10 +34741,12 @@
                 if (!teacherMap[teacherKey]) {
                   teacherMap[teacherKey] = {
                     name: isAssigned ? teacherName : '강사 미입력',
+                    isUnassigned: !isAssigned,
                     total: 0,
                     confirmed: 0,
                     pending: 0,
-                    subjectMap: {}
+                    subjectMap: {},
+                    items: []
                   };
                 }
                 var teacher = teacherMap[teacherKey];
@@ -34651,6 +34758,14 @@
                 }
                 var subjectName = item.subjectName || '과목 미지정';
                 var subjectKey = normalizeSearchText(subjectName) || 'unknown';
+                teacher.items.push({
+                  dateKey: item.dateKey || dateKey,
+                  school: item.school || group.school || '',
+                  grade: item.grade || group.grade || '',
+                  studentName: item.studentName || (row.student && row.student.studentName) || '',
+                  subjectName: subjectName,
+                  progressStatus: item.progressStatus || '미정'
+                });
                 if (!teacher.subjectMap[subjectKey]) {
                   teacher.subjectMap[subjectKey] = {
                     subjectName: subjectName,
@@ -34706,6 +34821,12 @@
             return Number(b.count || 0) - Number(a.count || 0) ||
               String(a.subjectName || '').localeCompare(String(b.subjectName || ''), 'ko');
           });
+          teacher.items = (teacher.items || []).sort(function(a, b) {
+            return String(a.dateKey || '').localeCompare(String(b.dateKey || '')) ||
+              String(a.school || '').localeCompare(String(b.school || ''), 'ko') ||
+              String(a.grade || '').localeCompare(String(b.grade || ''), 'ko') ||
+              String(a.studentName || '').localeCompare(String(b.studentName || ''), 'ko');
+          });
           delete teacher.subjectMap;
           return teacher;
         }).sort(function(a, b) {
@@ -34759,9 +34880,8 @@
         var title = activeEvent
           ? [
               formatJikboRangeLabel_(activeEvent.isoDate),
-              activeEvent.school,
-              formatJikboGradeLabel_(activeEvent.grade),
-              (activeEvent.subjects || []).map(function(item) { return item.subjectName; }).filter(Boolean).join(', ')
+              String((activeEvent.schoolRows || []).length || 0) + '개 학교/학년',
+              String((activeEvent.events || []).length || 0) + '과목'
             ].filter(Boolean).join(' · ')
           : '선택된 시험 일정';
         return [
@@ -34794,9 +34914,6 @@
         });
         var result = [];
         (model.groups || []).forEach(function(group) {
-          if (group.school !== activeEvent.school || normalizeJikboGradeForClient_(group.grade) !== normalizeJikboGradeForClient_(activeEvent.grade)) {
-            return;
-          }
           (group.rows || []).forEach(function(row) {
             var rowJikbos = [];
             var hasExam = targetEvents.some(function(eventItem) {
