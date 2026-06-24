@@ -3547,7 +3547,7 @@
 
       .school-schedule-layout {
         display: grid;
-        grid-template-columns: minmax(220px, 240px) minmax(0, 1fr) minmax(300px, 330px);
+        grid-template-columns: minmax(220px, 240px) minmax(0, 1fr);
         gap: 14px;
         align-items: start;
       }
@@ -3567,6 +3567,14 @@
         padding: 12px;
         display: grid;
         gap: 14px;
+      }
+
+      .school-filter-panel .school-insight-panel {
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
       }
 
       .school-calendar-panel {
@@ -4505,11 +4513,6 @@
       @media (max-width: 1280px) {
         .school-schedule-layout {
           grid-template-columns: 220px minmax(0, 1fr);
-        }
-
-        .school-insight-panel {
-          grid-column: 1 / -1;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
       }
 
@@ -16896,6 +16899,7 @@
                     <div class="schedule-legend-grid" id="eventGradeLegendWrap"></div>
                     <div class="schedule-legend-grid" id="eventTypeLegendWrap"></div>
                   </section>
+                  <div id="eventInsightWrap" class="school-insight-panel"></div>
                 </aside>
 
                 <main class="events-main">
@@ -16904,8 +16908,6 @@
                   </section>
                   <div id="eventListWrap"></div>
                 </main>
-
-                <aside id="eventInsightWrap" class="school-insight-panel"></aside>
               </div>
             </section>
           </section>
@@ -35228,7 +35230,7 @@
         var visible = (visibleSchedules || []).length;
         document.getElementById('eventSearchSummary').textContent = keyword
           ? '검색 결과 ' + visible + '건 / 전체 ' + total + '건'
-          : '이번 달 표시 일정 ' + visible + '건';
+          : '달력 표시 일정 ' + visible + '건';
       }
 
       function renderEventFilters_() {
@@ -35451,7 +35453,7 @@
         };
         return [
           '<section class="school-filter-section">',
-          '  <div class="schedule-insight-title"><span>학년별 일정 요약 (' + escapeHtml(String(APP_STATE.calendarMonth + 1)) + '월)</span><button type="button" data-action="event-more">더보기</button></div>',
+          '  <div class="schedule-insight-title"><span>학년별 일정 요약 (' + escapeHtml(String(APP_STATE.calendarMonth + 1)) + '월 달력)</span><button type="button" data-action="event-more">더보기</button></div>',
           '  <div class="schedule-grade-summary">',
           renderGradeSummaryCard_('1학년', counts['1학년'], 'grade-1'),
           renderGradeSummaryCard_('2학년', counts['2학년'], 'grade-3'),
@@ -35470,7 +35472,7 @@
         var weekdays = ['일', '월', '화', '수', '목', '금', '토'];
         return [
           '<section class="school-filter-section">',
-          '  <div class="schedule-insight-title"><span>' + escapeHtml(String(APP_STATE.calendarMonth + 1)) + '월 내 일정 미리보기</span><button type="button" data-action="event-more">더보기</button></div>',
+          '  <div class="schedule-insight-title"><span>' + escapeHtml(String(APP_STATE.calendarMonth + 1)) + '월 달력 미리보기</span><button type="button" data-action="event-more">더보기</button></div>',
           '  <div class="mini-schedule-calendar">',
           '    <div class="mini-schedule-top"><button type="button" class="schedule-icon-button" data-action="prev-month" aria-label="이전 월"><i data-lucide="chevron-left"></i></button><span>' + escapeHtml(String(APP_STATE.calendarMonth + 1)) + '월</span><button type="button" class="schedule-icon-button" data-action="next-month" aria-label="다음 월"><i data-lucide="chevron-right"></i></button></div>',
           '    <div class="mini-schedule-grid">',
@@ -35571,6 +35573,23 @@
         return actual;
       }
 
+      function getCalendarGridDateRange_() {
+        var firstDay = new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth, 1);
+        var startOffset = firstDay.getDay();
+        var gridStart = new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth, 1 - startOffset);
+        var gridEnd = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + 41);
+        return {
+          start: formatDateKey_(gridStart),
+          end: formatDateKey_(gridEnd)
+        };
+      }
+
+      function isDateInCalendarGridRange_(dateKey) {
+        var range = getCalendarGridDateRange_();
+        var value = String(dateKey || '');
+        return value && value >= range.start && value <= range.end;
+      }
+
       function getFilteredSchoolSchedules_(options) {
         var config = options || {};
         var keyword = normalizeSearchText(config.ignoreKeyword ? '' : APP_STATE.eventSearchKeyword);
@@ -35578,9 +35597,7 @@
         var school = APP_STATE.eventSchoolFilter || '';
         var onlyExams = APP_STATE.eventOnlyExams !== false;
         return getAllSchoolSchedules_().filter(function(item) {
-          var parsed = parseEventDateForClient_(item.date);
-          var matchesMonth = parsed && parsed.getFullYear() === APP_STATE.calendarYear && parsed.getMonth() === APP_STATE.calendarMonth;
-          if (!matchesMonth) {
+          if (!isDateInCalendarGridRange_(item.date)) {
             return false;
           }
           if (region && getEventSchoolRegion_(item.school) !== region) {
@@ -35740,8 +35757,8 @@
       function ensureSelectedEventDate_(schedules) {
         var firstOfMonth = formatDateKey_(new Date(APP_STATE.calendarYear, APP_STATE.calendarMonth, 1));
         var selected = parseEventDateForClient_(APP_STATE.selectedEventDate || '');
-        var isSelectedInMonth = selected && selected.getFullYear() === APP_STATE.calendarYear && selected.getMonth() === APP_STATE.calendarMonth;
-        if (!isSelectedInMonth) {
+        var isSelectedInVisibleRange = selected && isDateInCalendarGridRange_(APP_STATE.selectedEventDate);
+        if (!isSelectedInVisibleRange) {
           var today = new Date();
           APP_STATE.selectedEventDate = today.getFullYear() === APP_STATE.calendarYear && today.getMonth() === APP_STATE.calendarMonth
             ? formatDateKey_(today)
@@ -35770,8 +35787,7 @@
 
       function getFavoriteSchools_() {
         var schedules = getAllSchoolSchedules_().filter(function(item) {
-          var parsed = parseEventDateForClient_(item.date);
-          return parsed && parsed.getFullYear() === APP_STATE.calendarYear && parsed.getMonth() === APP_STATE.calendarMonth;
+          return isDateInCalendarGridRange_(item.date);
         });
         var counts = {};
         schedules.forEach(function(item) {
