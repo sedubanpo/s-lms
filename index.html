@@ -33627,7 +33627,7 @@
       function renderJikboBoard_() {
         var monthLabel = formatCalendarMonthLabel_(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth);
         document.getElementById('jikboMonthTitle').textContent = monthLabel + ' 직보 보드';
-        document.getElementById('jikboMonthDescription').textContent = '주요일정의 시험 이벤트를 읽어 학교와 학년별 직보 배정을 월간 표로 정리합니다.';
+        document.getElementById('jikboMonthDescription').textContent = '재원생 전체를 기준으로 학교와 학년별 시험 일정 및 직보 배정을 월간 표로 정리합니다.';
         setInputValueIfNotActive_('jikboSearchInput', APP_STATE.jikboSearchKeyword || '');
         APP_STATE.jikboStatusDraftMap = {};
 
@@ -33763,6 +33763,23 @@
           activeDateKeyMap[item.isoDate] = true;
         });
 
+        (APP_STATE.activeStudents || []).forEach(function(student) {
+          if (!student || !student.studentId) {
+            return;
+          }
+          var school = String(student.school || '').trim();
+          var grade = normalizeJikboGradeForClient_(student.grade);
+          var groupKey = [school, grade].join('|');
+          if (!groupsByKey[groupKey]) {
+            groupsByKey[groupKey] = {
+              key: groupKey,
+              school: school,
+              grade: grade,
+              events: []
+            };
+          }
+        });
+
         var groups = Object.keys(groupsByKey).map(function(key) {
           return groupsByKey[key];
         }).sort(function(a, b) {
@@ -33770,6 +33787,7 @@
         }).map(function(group) {
           var groupMatchesKeyword = !keyword || normalizeSearchText(group.school).indexOf(keyword) !== -1;
           var isGroupExamFinished = isJikboGroupExamFinished_(group.events, todayKey);
+          var hasExamSchedule = group.events.length > 0;
           var students = APP_STATE.activeStudents.filter(function(student) {
             return isSameJikboSchoolGrade_(student.school, student.grade, group.school, group.grade);
           }).filter(function(student) {
@@ -33898,6 +33916,7 @@
               cellMap: cellMap,
               matchedExamCount: matchedExamCount,
               hasUnconfirmedJikbo: hasUnconfirmedJikbo,
+              hasExamSchedule: hasExamSchedule,
               isExamFinished: isGroupExamFinished
             };
           });
@@ -33911,6 +33930,7 @@
               },
               cellMap: {},
               matchedExamCount: 0,
+              hasExamSchedule: hasExamSchedule,
               isExamFinished: isGroupExamFinished
             });
           }
@@ -33926,7 +33946,10 @@
           group.rows = rows;
           group.rowCount = Math.max(rows.length, 1);
           group.events = visibleEvents;
-          group.eventRange = getJikboEventRange_(group.events);
+          group.hasExamSchedule = hasExamSchedule;
+          group.eventRange = hasExamSchedule
+            ? getJikboEventRange_(group.events)
+            : { startLabel: '미등록', endLabel: '미등록' };
           return group;
         }).filter(Boolean);
 
@@ -34339,7 +34362,7 @@
 
       function renderJikboBoardTable_(model) {
         if (!model.groups.length) {
-          return '<div class="empty-state">조건에 맞는 직보 데이터가 없습니다.<br>학교 일정에 등록된 내신 시험을 불러오지 못했거나, 해당 학교/학년에 연결된 학생과 과목 권한이 없습니다.</div>';
+          return '<div class="empty-state">조건에 맞는 재원생이 없습니다.<br>학생명 또는 학교 검색 조건을 확인해 주세요.</div>';
         }
 
         var schoolRowSpanMap = {};
@@ -34378,7 +34401,7 @@
                 (rowIndex === 0 ? '<td class="sticky-col sticky-start range-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.eventRange.startLabel) + '</td>' : ''),
                 (rowIndex === 0 ? '<td class="sticky-col sticky-end range-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.eventRange.endLabel) + '</td>' : ''),
                 (rowIndex === 0 ? '<td class="sticky-col sticky-grade grade-cell" rowspan="' + escapeAttribute(String(group.rowCount * 2)) + '">' + escapeHtml(group.grade || '-') + '</td>' : ''),
-                '<td class="sticky-col sticky-student student-cell split ' + (row.hasUnconfirmedJikbo ? 'has-unconfirmed-jikbo ' : '') + (row.isExamFinished ? 'exam-finished' : '') + '" rowspan="2">' + renderJikboStudentLabel_(row.student, row.matchedExamCount, row.hasUnconfirmedJikbo) + '<span class="jikbo-student-split-label">시험일정</span><span class="jikbo-student-split-label">직보</span></td>',
+                '<td class="sticky-col sticky-student student-cell split ' + (row.hasUnconfirmedJikbo || !row.hasExamSchedule ? 'has-unconfirmed-jikbo ' : '') + (row.isExamFinished ? 'exam-finished' : '') + '" rowspan="2">' + renderJikboStudentLabel_(row.student, row.matchedExamCount, row.hasUnconfirmedJikbo, row.hasExamSchedule) + '<span class="jikbo-student-split-label">시험일정</span><span class="jikbo-student-split-label">직보</span></td>',
                 model.monthDateKeys.map(function(dateKey, dateIndex) {
                   return '<td class="jikbo-day-cell ' + (isJikboWeekend_(model.monthDates[dateIndex]) ? 'weekend' : '') + '">' + renderJikboExamCell_(row.cellMap[dateKey]) + '</td>';
                 }).join(''),
@@ -34397,10 +34420,11 @@
         ].join('');
       }
 
-      function renderJikboStudentLabel_(student, matchedExamCount, hasUnconfirmedJikbo) {
+      function renderJikboStudentLabel_(student, matchedExamCount, hasUnconfirmedJikbo, hasExamSchedule) {
         return [
           '<div class="jikbo-student-name">' + escapeHtml(student.studentName || '-') + '</div>',
           '<div class="jikbo-student-meta">' + escapeHtml(student.subject || '과목 미지정') + ' · ' + escapeHtml(String(matchedExamCount || 0)) + '건</div>',
+          hasExamSchedule === false ? '<div class="jikbo-student-alert">시험 일정 미등록</div>' : '',
           hasUnconfirmedJikbo ? '<div class="jikbo-student-alert">직보 미확정</div>' : ''
         ].join('');
       }
