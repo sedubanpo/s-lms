@@ -184,6 +184,8 @@ Expected primary writes:
 
 Auth password updates must not be force-applied from the browser. The static app can update account metadata and produce a pending password/admin action for a separate privileged script if needed.
 
+Administrators may retrieve the operational password stored in the S-edu page `Teachers` sheet through the Apps Script action `getAccountManagementTeacherCredentials`. This is not a Firebase Auth password lookup: Firebase Auth never exposes password plaintext. The action must verify an S-LMS admin session or Firebase ID token with account-management permission before returning credentials.
+
 During the mixed Firebase + S-edu page period, teacher sheet sync jobs should target spreadsheet `1ByPeH0bZZrZDvW_yPkCpQCIuk724_Gt7uudUj_Ue8Ho`, tab `Teachers`, using these column names:
 
 - `비밀번호(ID)`

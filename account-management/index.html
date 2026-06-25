@@ -186,10 +186,12 @@
     .top-actions {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 8px;
     }
 
     .button {
+      flex: 0 0 auto;
       min-height: 36px;
       display: inline-flex;
       align-items: center;
@@ -202,6 +204,7 @@
       color: #27405f;
       font-size: 0.78rem;
       font-weight: 900;
+      white-space: nowrap;
       box-shadow: 0 2px 7px rgba(22, 42, 74, 0.05);
     }
 
@@ -594,6 +597,47 @@
     .auth-state.blocked {
       color: var(--red);
     }
+
+    @media (max-width: 1480px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .topbar > .top-actions {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: relative;
+        min-height: auto;
+      }
+
+      .sidebar-note {
+        position: static;
+        margin-top: 18px;
+      }
+
+      .main {
+        padding: 16px;
+      }
+
+      .auth-strip {
+        width: 100%;
+        flex-wrap: wrap;
+      }
+
+      .auth-strip .field,
+      .auth-strip .field.password {
+        width: min(100%, 240px);
+      }
+    }
   </style>
 </head>
 <body>
@@ -701,7 +745,7 @@
               </div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th style="width:120px;">학생명</th><th style="width:120px;">학교</th><th style="width:80px;">학년</th><th style="width:90px;">상태</th><th>메모</th><th style="width:120px;">변경</th></tr></thead>
+                  <thead><tr><th style="width:120px;">학생명</th><th style="width:190px;">학생 대표 ID</th><th style="width:120px;">학교</th><th style="width:80px;">학년</th><th style="width:90px;">상태</th><th>메모</th><th style="width:120px;">변경</th></tr></thead>
                   <tbody id="studentRows"></tbody>
                 </table>
               </div>
@@ -742,7 +786,7 @@
               </div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th style="width:120px;">강사명</th><th style="width:130px;">로그인 ID</th><th style="width:95px;">직급</th><th style="width:90px;">상태</th><th>앱 권한</th><th style="width:120px;">작업</th></tr></thead>
+                  <thead><tr><th style="width:120px;">강사명</th><th style="width:130px;">로그인 ID</th><th style="width:170px;">시트 저장 비밀번호</th><th style="width:95px;">직급</th><th style="width:90px;">상태</th><th>앱 권한</th><th style="width:120px;">작업</th></tr></thead>
                   <tbody id="teacherRows"></tbody>
                 </table>
               </div>
@@ -757,8 +801,9 @@
                 <div class="form-field"><label>과목/부서</label><input class="field" id="teacherSubjectInput" autocomplete="off"></div>
                 <div class="form-field"><label>직급</label><select class="select" id="teacherRoleInput"><option value="INSTRUCTOR">강사</option><option value="STAFF">실무자</option><option value="ADMIN">관리자</option><option value="DISABLED">비활성</option></select></div>
                 <div class="form-field"><label>상태</label><select class="select" id="teacherStatusInput"><option value="ACTIVE">활성</option><option value="DISABLED">비활성</option></select></div>
-                <div class="form-field"><label>비밀번호</label><input class="field password" id="teacherPasswordInput" type="password" autocomplete="new-password" placeholder="변경 시 입력"></div>
+                <div class="form-field"><label>새 비밀번호</label><input class="field password" id="teacherPasswordInput" type="password" autocomplete="new-password" placeholder="변경 시 입력"></div>
                 <div class="form-field"><label>Auth 후속 작업</label><select class="select" id="teacherAuthActionInput"><option value="">없음</option><option value="CREATE_AUTH_USER">Auth 사용자 생성 필요</option><option value="RESET_PASSWORD">비밀번호 변경 필요</option><option value="DISABLE_AUTH_USER">Auth 사용자 비활성 필요</option></select></div>
+                <div class="form-field full"><label>현재 시트 저장 비밀번호</label><div class="top-actions"><input class="field password" id="teacherCurrentPasswordInput" type="password" readonly placeholder="강사 계정을 선택하면 표시됩니다."><button class="button" id="toggleCurrentTeacherPasswordButton" type="button">보기</button></div><p class="help">Firebase Auth는 비밀번호 원문 조회를 지원하지 않습니다. 이 값은 관리자 인증 후 S-edu page `Teachers` 시트에서 불러온 운영용 비밀번호입니다.</p></div>
                 <div class="form-field full"><label>수업일지링크</label><input class="field" id="teacherLessonLogLinkInput" autocomplete="off" placeholder="https://forms..."></div>
                 <div class="form-field full"><label>업무페이지링크</label><input class="field" id="teacherWorkPageLinkInput" autocomplete="off" placeholder="https://west-orangutan..."></div>
                 <div class="form-field full"><label>일일시수조회링크</label><input class="field" id="teacherDailyHoursLinkInput" autocomplete="off" placeholder="https://docs.google.com/..."></div>
@@ -855,7 +900,9 @@
       firebaseReady: false,
       loading: false,
       editingStudentId: "",
-      editingTeacherUid: ""
+      editingTeacherUid: "",
+      teacherCredentials: {},
+      visibleTeacherPasswords: {}
     };
 
     function $(id) { return document.getElementById(id); }
@@ -1167,9 +1214,24 @@
     function normalizeStudent(doc) {
       const data = doc.data ? (doc.data() || {}) : doc;
       const status = String(data.status || (data.active === false || data.isActive === false ? "PAUSED" : "ACTIVE")).toUpperCase();
+      const aliases = Array.from(new Set([
+        data.canonicalStudentId,
+        data.synchroStudentId,
+        data.synchroSStudentId,
+        data.synchroSUuid,
+        data.synschroUuid,
+        data.uuid,
+        data.studentId,
+        data.id,
+        doc.id
+      ].concat(Array.isArray(data.studentIdAliases) ? data.studentIdAliases : [])
+        .map(value => String(value || "").trim())
+        .filter(Boolean)));
       return {
         studentId: data.studentId || data.id || doc.id || "",
         docId: doc.id || data.studentId || data.id || "",
+        studentIdAliases: aliases,
+        representativeId: chooseRepresentativeStudentId(aliases),
         name: data.name || data.studentName || "",
         school: data.school || "",
         grade: data.grade || "",
@@ -1179,6 +1241,26 @@
         updatedAt: data.updatedAt || "",
         updatedAtMs: Number(data.updatedAtMs || 0)
       };
+    }
+
+    function isUuid(value) {
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ""));
+    }
+
+    function chooseRepresentativeStudentId(aliases) {
+      const values = Array.from(new Set((aliases || []).map(value => String(value || "").trim()).filter(Boolean)));
+      return values.find(isUuid)
+        || values.find(value => /^ROW-\d+$/i.test(value))
+        || values.find(value => /^student_/i.test(value))
+        || values[0]
+        || "";
+    }
+
+    function studentIdTypeLabel(value) {
+      if (isUuid(value)) return "Synchro-S UUID";
+      if (/^ROW-\d+$/i.test(String(value || ""))) return "기존 ROW";
+      if (/^student_/i.test(String(value || ""))) return "과거 student";
+      return "기타";
     }
 
     function normalizeStudentIdentityPart(value) {
@@ -1221,10 +1303,43 @@
           byKey.set(student.studentId || student.docId || requestId("student"), student);
           return;
         }
-        const selected = chooseDisplayStudent(byKey.get(key), student);
-        byKey.set(key, selected);
+        const current = byKey.get(key);
+        const selected = chooseDisplayStudent(current, student);
+        const aliases = Array.from(new Set([]
+          .concat(current ? current.studentIdAliases || [] : [], student.studentIdAliases || [])
+          .concat(current ? [current.studentId, current.docId] : [], [student.studentId, student.docId])
+          .map(value => String(value || "").trim())
+          .filter(Boolean)));
+        byKey.set(key, Object.assign({}, selected, {
+          studentIdAliases: aliases,
+          representativeId: chooseRepresentativeStudentId(aliases)
+        }));
       });
       return Array.from(byKey.values());
+    }
+
+    async function loadTeacherCredentials() {
+      if (!state.isAdmin || !state.authUser || !state.teachers.length) {
+        state.teacherCredentials = {};
+        return;
+      }
+      const firebaseIdToken = await state.authUser.getIdToken();
+      const response = await fetch(SLMS_API_URL, {
+        method: "POST",
+        redirect: "follow",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "getAccountManagementTeacherCredentials",
+          firebaseIdToken,
+          loginIds: state.teachers.map(teacher => teacher.loginId).filter(Boolean)
+        })
+      });
+      const data = JSON.parse(await response.text());
+      if (!data.ok) throw new Error(data.message || "강사 비밀번호를 불러오지 못했습니다.");
+      state.teacherCredentials = {};
+      (data.credentials || []).forEach(item => {
+        state.teacherCredentials[canonicalLoginId(item.loginId)] = String(item.password || item.loginId || "");
+      });
     }
 
     async function loadFirestoreData() {
@@ -1265,6 +1380,12 @@
             permissions: accessDoc.permissions || {}
           };
         }).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+        try {
+          await loadTeacherCredentials();
+        } catch (credentialError) {
+          state.teacherCredentials = {};
+          addLocalAudit("강사 비밀번호 로드 실패", credentialError.message || String(credentialError));
+        }
         addLocalAudit("Firestore 로드", `학생 ${state.students.length}명, 계정 ${state.teachers.length}건을 불러왔습니다.${hiddenDuplicateCount ? ` 중복 학생 표시 ${hiddenDuplicateCount}건을 접었습니다.` : ""}`);
       } catch (error) {
         addLocalAudit("Firestore 로드 실패", error.message || String(error));
@@ -1366,11 +1487,13 @@
     async function writeStudent(db, item, now) {
       const user = state.operator || {};
       const draft = item.payload.student || {};
-      const studentId = String(draft.studentId || "").trim() || ("STU-" + base64Url([draft.name, draft.school, draft.grade, Date.now()].join("|")).slice(0, 90));
+      const studentId = String(draft.studentId || "").trim() || crypto.randomUUID();
       const active = draft.status === "ACTIVE" || draft.status === "RETURNING";
       const payload = {
         id: studentId,
         studentId,
+        canonicalStudentId: studentId,
+        studentIdAliases: [studentId],
         studentName: draft.name,
         name: draft.name,
         school: draft.school,
@@ -1685,11 +1808,12 @@
         $("studentSchoolFilter").innerHTML = `<option value="">전체 학교</option>` + schools.map(item => `<option value="${escapeHtml(item)}"${item === currentSchool ? " selected" : ""}>${escapeHtml(item)}</option>`).join("");
       }
       const rows = state.students.filter(student => {
-        const text = [student.name, student.school, student.grade, student.memo, student.studentId].join(" ").toLowerCase();
+        const text = [student.name, student.school, student.grade, student.memo, student.representativeId].concat(student.studentIdAliases || []).join(" ").toLowerCase();
         return (!keyword || text.includes(keyword)) && (!status || student.status === status) && (!school || student.school === school);
       }).map(student => `
         <tr>
           <td>${escapeHtml(student.name)}</td>
+          <td><strong>${escapeHtml(student.representativeId || student.studentId || "-")}</strong><br><span class="help">${escapeHtml(studentIdTypeLabel(student.representativeId || student.studentId))}</span></td>
           <td>${escapeHtml(student.school)}</td>
           <td>${escapeHtml(student.grade)}</td>
           <td><span class="status ${statusClass(student.status)}">${statusLabel(student.status)}</span></td>
@@ -1697,7 +1821,7 @@
           <td><button class="button" data-student-edit="${escapeHtml(student.studentId)}">상태 변경</button></td>
         </tr>
       `).join("");
-      $("studentRows").innerHTML = rows || `<tr><td colspan="6">${state.isAdmin ? "조건에 맞는 학생이 없습니다." : "관리자 로그인 후 Firestore 학생 목록을 불러옵니다."}</td></tr>`;
+      $("studentRows").innerHTML = rows || `<tr><td colspan="7">${state.isAdmin ? "조건에 맞는 학생이 없습니다." : "관리자 로그인 후 Firestore 학생 목록을 불러옵니다."}</td></tr>`;
     }
 
     function renderTeachers() {
@@ -1711,13 +1835,16 @@
         <tr>
           <td>${escapeHtml(teacher.name)}</td>
           <td>${escapeHtml(teacher.loginId)}</td>
+          <td>${state.teacherCredentials[canonicalLoginId(teacher.loginId)]
+            ? `<span data-teacher-password-value="${escapeHtml(teacher.uid)}">${state.visibleTeacherPasswords[teacher.uid] ? escapeHtml(state.teacherCredentials[canonicalLoginId(teacher.loginId)]) : "••••••••"}</span> <button class="button" type="button" data-toggle-teacher-password="${escapeHtml(teacher.uid)}">${state.visibleTeacherPasswords[teacher.uid] ? "숨김" : "보기"}</button>`
+            : `<span class="help">시트 정보 없음</span>`}</td>
           <td>${roleLabel(teacher.role)}</td>
           <td><span class="status ${statusClass(teacher.status)}">${statusLabel(teacher.status)}</span></td>
           <td>${escapeHtml((teacher.apps || []).join(", ") || "-")}</td>
           <td><button class="button" data-teacher-edit="${escapeHtml(teacher.uid)}">편집</button></td>
         </tr>
       `).join("");
-      $("teacherRows").innerHTML = rows || `<tr><td colspan="6">${state.isAdmin ? "조건에 맞는 강사 계정이 없습니다." : "관리자 로그인 후 Firestore 계정 목록을 불러옵니다."}</td></tr>`;
+      $("teacherRows").innerHTML = rows || `<tr><td colspan="7">${state.isAdmin ? "조건에 맞는 강사 계정이 없습니다." : "관리자 로그인 후 Firestore 계정 목록을 불러옵니다."}</td></tr>`;
     }
 
     function renderQueue() {
@@ -1823,6 +1950,9 @@
             $("teacherRoleInput").value = teacher.role;
             $("teacherStatusInput").value = teacher.status;
             $("teacherPasswordInput").value = "";
+            $("teacherCurrentPasswordInput").value = state.teacherCredentials[canonicalLoginId(teacher.loginId)] || "";
+            $("teacherCurrentPasswordInput").type = "password";
+            $("toggleCurrentTeacherPasswordButton").textContent = "보기";
             $("teacherAuthActionInput").value = "";
             $("teacherLessonLogLinkInput").value = teacher.lessonLogUrl || "";
             $("teacherWorkPageLinkInput").value = teacher.workPageUrl || "";
@@ -1838,6 +1968,12 @@
             $("permManageMaterials").checked = Boolean(permissions.canManageMaterials);
             setView("teachers");
           }
+        }
+        const passwordToggle = event.target.closest("[data-toggle-teacher-password]");
+        if (passwordToggle) {
+          const uid = passwordToggle.dataset.toggleTeacherPassword;
+          state.visibleTeacherPasswords[uid] = !state.visibleTeacherPasswords[uid];
+          renderTeachers();
         }
       });
       document.body.addEventListener("change", event => {
@@ -1884,7 +2020,16 @@
       $("newTeacherButton").addEventListener("click", () => {
         state.editingTeacherUid = "";
         $("teacherForm").reset();
+        $("teacherCurrentPasswordInput").value = "";
+        $("teacherCurrentPasswordInput").type = "password";
+        $("toggleCurrentTeacherPasswordButton").textContent = "보기";
         $("teacherNameInput").focus();
+      });
+      $("toggleCurrentTeacherPasswordButton").addEventListener("click", () => {
+        const input = $("teacherCurrentPasswordInput");
+        const showing = input.type === "text";
+        input.type = showing ? "password" : "text";
+        $("toggleCurrentTeacherPasswordButton").textContent = showing ? "보기" : "숨김";
       });
       $("saveSettingsButton").addEventListener("click", () => {
         setSettings({
