@@ -715,7 +715,7 @@
               <div class="panel-head"><div><h3>저장 경로</h3><p>정적 웹앱에서 Firebase Web SDK로 Firestore에 직접 저장합니다.</p></div></div>
               <div class="panel-body">
                 <div class="sync-lanes">
-                  <div class="lane"><strong>Primary Firestore</strong><span>students, users, userProfiles, userAppAccess, loginAliases</span></div>
+                  <div class="lane"><strong>Primary Firestore</strong><span>students, studentIdentityMappings, studentIdentityReviewQueue, users, userProfiles, userAppAccess</span></div>
                   <div class="lane"><strong>Pending actions</strong><span>accountManagementRequests, accountManagementAuditLogs, legacySheetSyncJobs. Auth/Sheets 후속 작업은 상태로 남깁니다.</span></div>
                 </div>
                 <div class="danger-note" style="margin-top:10px;">브라우저에는 Admin SDK, service account key, Google Sheets key를 넣지 않습니다.</div>
@@ -737,6 +737,7 @@
               <button class="button primary" id="newStudentButton">학생 등록 요청</button>
             </div>
             <div class="panel-body">
+              <div id="studentIdentityReviewPanel" class="danger-note" style="margin-bottom:14px;"></div>
               <div class="toolbar">
                 <input class="field" id="studentSearch" placeholder="학생명, 학교, 학년 검색">
                 <select class="select" id="studentStatusFilter"><option value="">전체 상태</option><option value="ACTIVE">등록</option><option value="PAUSED">중지</option><option value="RETURNING">복귀 예정</option></select>
@@ -882,15 +883,29 @@
       userProfiles: "userProfiles",
       userAppAccess: "userAppAccess",
       loginAliases: "loginAliases",
+      identityMappings: "studentIdentityMappings",
+      identityReviews: "studentIdentityReviewQueue",
       requests: "accountManagementRequests",
       audits: "accountManagementAuditLogs",
-      sheetJobs: "legacySheetSyncJobs"
+      sheetJobs: "legacySheetSyncJobs",
+      permissions: "studentPermissions",
+      homerooms: "studentHomerooms",
+      logs: "studentLogs",
+      grades: "studentGrades",
+      gradeHistories: "studentGradeHistories",
+      monthlyReports: "studentMonthlyReports",
+      permissionRequests: "permissionRequests",
+      jikboOverrides: "jikboStudentOverrides",
+      jikboStatuses: "jikboStatuses"
     };
 
     const state = {
       view: "dashboard",
       selectedQueueIds: {},
       students: [],
+      rawStudents: [],
+      identityMappings: [],
+      identityReviews: [],
       teachers: [],
       queue: [],
       audits: [],
@@ -1183,6 +1198,9 @@
       state.operator = null;
       state.isAdmin = false;
       state.students = [];
+      state.rawStudents = [];
+      state.identityMappings = [];
+      state.identityReviews = [];
       state.teachers = [];
       render();
       renderAuthState();
@@ -1230,13 +1248,17 @@
       return {
         studentId: data.studentId || data.id || doc.id || "",
         docId: doc.id || data.studentId || data.id || "",
+        canonicalStudentId: data.canonicalStudentId || "",
         studentIdAliases: aliases,
-        representativeId: chooseRepresentativeStudentId(aliases),
+        representativeId: data.canonicalStudentId || chooseRepresentativeStudentId(aliases),
         name: data.name || data.studentName || "",
         school: data.school || "",
         grade: data.grade || "",
         status: ["INACTIVE", "SUSPENDED"].includes(status) ? "PAUSED" : status,
         active: data.active !== false && data.isActive !== false && !["PAUSED", "STOPPED", "DISABLED", "INACTIVE"].includes(status),
+        identityStatus: String(data.identityStatus || "").toUpperCase(),
+        isAlias: data.isAlias === true || String(data.identityStatus || "").toUpperCase() === "ALIAS",
+        mergedInto: data.mergedInto || "",
         memo: data.memo || data.note || data.statusMemo || "",
         updatedAt: data.updatedAt || "",
         updatedAtMs: Number(data.updatedAtMs || 0)
@@ -1268,6 +1290,8 @@
     }
 
     function studentIdentityKey(student) {
+      const canonicalId = String(student.canonicalStudentId || student.mergedInto || "").trim();
+      if (canonicalId) return `canonical|${canonicalId}`;
       return [
         normalizeStudentIdentityPart(student.name),
         normalizeStudentIdentityPart(student.school),
@@ -1311,11 +1335,42 @@
           .map(value => String(value || "").trim())
           .filter(Boolean)));
         byKey.set(key, Object.assign({}, selected, {
+          studentId: selected.canonicalStudentId || selected.studentId,
+          canonicalStudentId: selected.canonicalStudentId || selected.studentId,
           studentIdAliases: aliases,
-          representativeId: chooseRepresentativeStudentId(aliases)
+          representativeId: selected.canonicalStudentId || chooseRepresentativeStudentId(aliases)
         }));
       });
       return Array.from(byKey.values());
+    }
+
+    function normalizeIdentityMapping(doc) {
+      const data = doc.data ? (doc.data() || {}) : doc;
+      return {
+        mappingId: doc.id || data.mappingId || "",
+        canonicalStudentId: String(data.canonicalStudentId || "").trim(),
+        aliasStudentIds: Array.isArray(data.aliasStudentIds) ? data.aliasStudentIds.map(String).filter(Boolean) : [],
+        studentName: data.studentName || "",
+        school: data.school || "",
+        grade: data.grade || "",
+        status: data.status || "ACTIVE",
+        confidence: data.confidence || ""
+      };
+    }
+
+    function normalizeIdentityReview(doc) {
+      const data = doc.data ? (doc.data() || {}) : doc;
+      return {
+        reviewId: doc.id || data.reviewId || "",
+        studentName: data.studentName || "",
+        school: data.school || "",
+        grade: data.grade || "",
+        category: data.category || "manual-review",
+        candidateIds: Array.isArray(data.candidateIds) ? data.candidateIds.map(String).filter(Boolean) : [],
+        reason: data.reason || "",
+        status: data.status || "PENDING",
+        resolvedCanonicalStudentId: data.resolvedCanonicalStudentId || ""
+      };
     }
 
     async function loadTeacherCredentials() {
@@ -1347,14 +1402,34 @@
       try {
         state.loading = true;
         const db = await getDb();
-        const [studentsSnap, usersSnap, profilesSnap, accessSnap] = await Promise.all([
+        const [studentsSnap, mappingsSnap, reviewsSnap, usersSnap, profilesSnap, accessSnap] = await Promise.all([
           db.collection(COLLECTIONS.students).get(),
+          db.collection(COLLECTIONS.identityMappings).get(),
+          db.collection(COLLECTIONS.identityReviews).get(),
           db.collection(COLLECTIONS.users).get(),
           db.collection(COLLECTIONS.userProfiles).get(),
           db.collection(COLLECTIONS.userAppAccess).get()
         ]);
-        const normalizedStudents = studentsSnap.docs.map(normalizeStudent);
-        state.students = dedupeStudents(normalizedStudents).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+        state.identityMappings = mappingsSnap.docs.map(normalizeIdentityMapping).filter(item => item.canonicalStudentId);
+        state.identityReviews = reviewsSnap.docs.map(normalizeIdentityReview);
+        const aliasToCanonical = new Map();
+        state.identityMappings.forEach(mapping => {
+          aliasToCanonical.set(mapping.canonicalStudentId, mapping.canonicalStudentId);
+          mapping.aliasStudentIds.forEach(aliasId => aliasToCanonical.set(aliasId, mapping.canonicalStudentId));
+        });
+        const normalizedStudents = studentsSnap.docs.map(normalizeStudent).map(student => {
+          const canonicalStudentId = student.canonicalStudentId || aliasToCanonical.get(student.studentId) || aliasToCanonical.get(student.docId) || "";
+          return Object.assign({}, student, {
+            canonicalStudentId,
+            representativeId: canonicalStudentId || student.representativeId,
+            studentIdAliases: Array.from(new Set([]
+              .concat(student.studentIdAliases || [], [student.studentId, student.docId, canonicalStudentId])
+              .filter(Boolean)))
+          });
+        });
+        state.rawStudents = normalizedStudents;
+        const visibleStudents = normalizedStudents.filter(student => !student.isAlias && student.identityStatus !== "ALIAS");
+        state.students = dedupeStudents(visibleStudents).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
         const hiddenDuplicateCount = Math.max(0, normalizedStudents.length - state.students.length);
         const profiles = {};
         const access = {};
@@ -1386,7 +1461,8 @@
           state.teacherCredentials = {};
           addLocalAudit("강사 비밀번호 로드 실패", credentialError.message || String(credentialError));
         }
-        addLocalAudit("Firestore 로드", `학생 ${state.students.length}명, 계정 ${state.teachers.length}건을 불러왔습니다.${hiddenDuplicateCount ? ` 중복 학생 표시 ${hiddenDuplicateCount}건을 접었습니다.` : ""}`);
+        const pendingReviewCount = state.identityReviews.filter(item => item.status === "PENDING").length;
+        addLocalAudit("Firestore 로드", `대표 학생 ${state.students.length}명, 계정 ${state.teachers.length}건, 학생 ID 검토 ${pendingReviewCount}건을 불러왔습니다.${hiddenDuplicateCount ? ` 별칭/중복 문서 ${hiddenDuplicateCount}건을 숨겼습니다.` : ""}`);
       } catch (error) {
         addLocalAudit("Firestore 로드 실패", error.message || String(error));
         toast("Firestore 로드 실패: " + (error.message || error));
@@ -1777,12 +1853,221 @@
       }
     }
 
+    function pendingIdentityReviews() {
+      return state.identityReviews.filter(item => String(item.status || "").toUpperCase() === "PENDING");
+    }
+
+    function identityReviewCandidateIds(review) {
+      const sameNameIds = state.rawStudents
+        .filter(student => normalizeStudentIdentityPart(student.name) === normalizeStudentIdentityPart(review.studentName))
+        .flatMap(student => [student.studentId, student.docId, student.canonicalStudentId]);
+      return Array.from(new Set([].concat(review.candidateIds || [], sameNameIds).map(String).filter(Boolean)));
+    }
+
+    function renderStudentIdentityReviews() {
+      const panel = $("studentIdentityReviewPanel");
+      if (!panel) return;
+      const reviews = pendingIdentityReviews();
+      if (!state.isAdmin) {
+        panel.innerHTML = "<strong>학생 ID 검토</strong><br>관리자 로그인 후 동명이인·중복 후보를 확인할 수 있습니다.";
+        return;
+      }
+      if (!reviews.length) {
+        panel.innerHTML = "<strong>학생 ID 검토 완료</strong><br>현재 대표 ID 확인이 필요한 항목이 없습니다.";
+        return;
+      }
+      panel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px;">
+          <div><strong>학생 ID 검토 대기 ${reviews.length}건</strong><br><span class="help">동명이인 가능성이 있어 자동 통합하지 않은 항목입니다. 실제 동일인일 때만 대표 ID를 선택하세요.</span></div>
+          <span class="status pending">${reviews.length}건</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>학생</th><th>판단 사유</th><th style="width:310px;">대표 ID 선택</th></tr></thead>
+            <tbody>${reviews.map(review => {
+              const candidateIds = identityReviewCandidateIds(review);
+              return `<tr>
+                <td><strong>${escapeHtml(review.studentName || "-")}</strong><br><span class="help">${escapeHtml([review.school, review.grade].filter(Boolean).join(" · ") || review.category)}</span></td>
+                <td>${escapeHtml(review.reason || review.category)}</td>
+                <td>
+                  <div style="display:flex;gap:8px;">
+                    <select class="select" data-review-canonical="${escapeHtml(review.reviewId)}">
+                      ${candidateIds.map(id => `<option value="${escapeHtml(id)}">${escapeHtml(id)} · ${escapeHtml(studentIdTypeLabel(id))}</option>`).join("")}
+                    </select>
+                    <button class="button primary" data-resolve-student-review="${escapeHtml(review.reviewId)}"${candidateIds.length < 2 ? " disabled" : ""}>대표 확정</button>
+                  </div>
+                </td>
+              </tr>`;
+            }).join("")}</tbody>
+          </table>
+        </div>`;
+    }
+
+    async function sha256Hex(value) {
+      const bytes = new TextEncoder().encode(String(value || ""));
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      return Array.from(new Uint8Array(digest)).map(byte => byte.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function resolveStudentIdentityReview(reviewId) {
+      const review = state.identityReviews.find(item => item.reviewId === reviewId);
+      const select = document.querySelector(`[data-review-canonical="${CSS.escape(reviewId)}"]`);
+      const canonicalStudentId = String(select && select.value || "").trim();
+      const candidateIds = identityReviewCandidateIds(review || {});
+      const aliasStudentIds = candidateIds.filter(id => id !== canonicalStudentId);
+      if (!review || !canonicalStudentId || !aliasStudentIds.length) {
+        toast("대표 ID와 통합 후보를 확인해 주세요.");
+        return;
+      }
+      if (!confirm(`${review.studentName} 학생의 대표 ID를 ${canonicalStudentId}(으)로 확정하고 ${aliasStudentIds.length}개 ID를 별칭으로 통합할까요?`)) return;
+
+      state.loading = true;
+      try {
+        const db = await getDb();
+        const allStudentIds = Array.from(new Set([canonicalStudentId].concat(aliasStudentIds)));
+        const sourceStudents = state.rawStudents.filter(student => allStudentIds.includes(student.docId) || allStudentIds.includes(student.studentId));
+        const canonicalStudent = sourceStudents.find(student => student.docId === canonicalStudentId || student.studentId === canonicalStudentId) || sourceStudents[0];
+        if (!canonicalStudent) throw new Error("대표 학생 문서를 찾을 수 없습니다.");
+
+        let batch = db.batch();
+        let batchCount = 0;
+        const queueSet = async (ref, payload, options = { merge: true }) => {
+          batch.set(ref, payload, options);
+          batchCount += 1;
+          if (batchCount >= 400) {
+            await batch.commit();
+            batch = db.batch();
+            batchCount = 0;
+          }
+        };
+        const flush = async () => {
+          if (batchCount) await batch.commit();
+          batchCount = 0;
+        };
+        const now = new Date().toISOString();
+        const mergedAliases = Array.from(new Set(allStudentIds.concat(sourceStudents.flatMap(student => student.studentIdAliases || []))));
+        await queueSet(db.collection(COLLECTIONS.students).doc(canonicalStudentId), {
+          id: canonicalStudentId,
+          studentId: canonicalStudentId,
+          canonicalStudentId,
+          studentIdAliases: mergedAliases,
+          name: canonicalStudent.name || review.studentName,
+          studentName: canonicalStudent.name || review.studentName,
+          school: canonicalStudent.school || review.school || "",
+          grade: canonicalStudent.grade || review.grade || "",
+          identityStatus: "CANONICAL",
+          isAlias: false,
+          managedBy: "account-management",
+          identityUpdatedAt: now,
+          identityUpdatedAtMs: Date.now()
+        });
+        for (const aliasId of aliasStudentIds) {
+          await queueSet(db.collection(COLLECTIONS.students).doc(aliasId), {
+            canonicalStudentId,
+            studentIdAliases: mergedAliases,
+            identityStatus: "ALIAS",
+            isAlias: true,
+            mergedInto: canonicalStudentId,
+            active: false,
+            isActive: false,
+            status: "MERGED",
+            managedBy: "account-management",
+            identityUpdatedAt: now,
+            identityUpdatedAtMs: Date.now()
+          });
+        }
+        const mappingHash = await sha256Hex(canonicalStudentId);
+        await queueSet(db.collection(COLLECTIONS.identityMappings).doc(`student_identity_${mappingHash.slice(0, 32)}`), {
+          canonicalStudentId,
+          aliasStudentIds,
+          allStudentIds: mergedAliases,
+          studentName: canonicalStudent.name || review.studentName,
+          school: canonicalStudent.school || review.school || "",
+          grade: canonicalStudent.grade || review.grade || "",
+          confidence: "manual",
+          status: "ACTIVE",
+          reason: `계정 관리 수동 확정: ${review.reason || review.category}`,
+          source: "account-management",
+          updatedAt: now,
+          updatedAtMs: Date.now()
+        });
+
+        const relatedReviews = state.identityReviews.filter(item => {
+          if (item.status !== "PENDING") return false;
+          const ids = identityReviewCandidateIds(item);
+          return normalizeStudentIdentityPart(item.studentName) === normalizeStudentIdentityPart(review.studentName) &&
+            ids.some(id => allStudentIds.includes(id));
+        });
+        for (const item of relatedReviews) {
+          await queueSet(db.collection(COLLECTIONS.identityReviews).doc(item.reviewId), {
+            status: "RESOLVED",
+            resolvedCanonicalStudentId: canonicalStudentId,
+            resolvedAliasStudentIds: aliasStudentIds,
+            resolvedAt: now,
+            resolvedBy: state.operator && state.operator.uid || "",
+            resolvedByName: state.operator && state.operator.name || ""
+          });
+        }
+
+        const referenceCollections = [
+          COLLECTIONS.logs,
+          COLLECTIONS.grades,
+          COLLECTIONS.gradeHistories,
+          COLLECTIONS.monthlyReports,
+          COLLECTIONS.permissionRequests,
+          COLLECTIONS.jikboOverrides,
+          COLLECTIONS.jikboStatuses,
+          COLLECTIONS.homerooms,
+          COLLECTIONS.permissions
+        ];
+        for (const aliasId of aliasStudentIds) {
+          for (const collectionName of referenceCollections) {
+            const snapshot = await db.collection(collectionName).where("studentId", "==", aliasId).get();
+            for (const doc of snapshot.docs) {
+              const source = doc.data() || {};
+              await queueSet(doc.ref, {
+                studentId: canonicalStudentId,
+                canonicalStudentId,
+                studentIdAliases: mergedAliases,
+                originalStudentId: aliasId,
+                identityMigratedAt: now,
+                identityMigratedBy: "account-management"
+              });
+              if (collectionName === COLLECTIONS.permissions) {
+                const instructorId = String(source.instructorId || (doc.id.includes("__") ? doc.id.slice(doc.id.indexOf("__") + 2) : "")).trim();
+                if (instructorId) {
+                  const permissionId = `${canonicalStudentId}__${instructorId}`;
+                  await queueSet(db.collection(COLLECTIONS.permissions).doc(permissionId), Object.assign({}, source, {
+                    permissionId,
+                    studentId: canonicalStudentId,
+                    canonicalStudentId,
+                    studentIdAliases: mergedAliases,
+                    instructorId,
+                    sourcePermissionId: doc.id
+                  }));
+                }
+              }
+            }
+          }
+        }
+        await flush();
+        addLocalAudit("학생 대표 ID 확정", `${review.studentName}: ${canonicalStudentId} · 별칭 ${aliasStudentIds.join(", ")}`);
+        await loadFirestoreData();
+        toast("대표 ID 통합을 완료했습니다.");
+      } catch (error) {
+        addLocalAudit("학생 대표 ID 확정 실패", error.message || String(error));
+        toast("통합 실패: " + (error.message || error));
+      } finally {
+        state.loading = false;
+      }
+    }
+
     function renderMetrics() {
       $("metricActiveStudents").textContent = state.students.filter(s => s.active !== false && s.status === "ACTIVE").length;
       $("metricPausedStudents").textContent = state.students.filter(s => s.status !== "ACTIVE").length;
       $("metricTeachers").textContent = state.teachers.length;
       $("metricQueue").textContent = state.queue.length;
-      $("metricReview").textContent = state.queue.filter(q => q.status !== "COMMITTED").length;
+      $("metricReview").textContent = state.queue.filter(q => q.status !== "COMMITTED").length + pendingIdentityReviews().length;
     }
 
     function renderDashboardQueue() {
@@ -1799,6 +2084,7 @@
     }
 
     function renderStudents() {
+      renderStudentIdentityReviews();
       const keyword = ($("studentSearch")?.value || "").trim().toLowerCase();
       const status = $("studentStatusFilter")?.value || "";
       const school = $("studentSchoolFilter")?.value || "";
@@ -1937,6 +2223,10 @@
             $("studentMemoInput").value = student.memo || "";
             setView("students");
           }
+        }
+        const identityResolve = event.target.closest("[data-resolve-student-review]");
+        if (identityResolve) {
+          resolveStudentIdentityReview(identityResolve.dataset.resolveStudentReview);
         }
         const teacherEdit = event.target.closest("[data-teacher-edit]");
         if (teacherEdit) {

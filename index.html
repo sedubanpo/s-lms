@@ -19202,8 +19202,19 @@
       function normalizeFirebaseStudentForApp_(doc) {
         var data = doc.data ? (doc.data() || {}) : (doc || {});
         var status = normalizeStudentStatusText_(data.status || data.studentStatus || data.state || '', data.active);
+        var sourceStudentId = String(data.id || data.studentId || (doc.id || '')).trim();
+        var canonicalStudentId = String(data.canonicalStudentId || data.mergedInto || '').trim();
+        var aliases = uniqueList_([sourceStudentId, canonicalStudentId]
+          .concat(Array.isArray(data.studentIdAliases) ? data.studentIdAliases : [])
+          .map(function(id) { return String(id || '').trim(); })
+          .filter(Boolean));
         return {
-          studentId: data.id || (doc.id || ''),
+          studentId: sourceStudentId,
+          canonicalStudentId: canonicalStudentId,
+          studentIdAliases: aliases,
+          identityStatus: String(data.identityStatus || '').toUpperCase(),
+          isAlias: data.isAlias === true || String(data.identityStatus || '').toUpperCase() === 'ALIAS',
+          mergedInto: String(data.mergedInto || ''),
           studentName: data.studentName || data.name || '',
           school: normalizeSchoolName_(data.school || ''),
           grade: data.grade || '',
@@ -23641,6 +23652,10 @@
         if (!student) {
           return '';
         }
+        var canonicalStudentId = String(student.canonicalStudentId || student.mergedInto || '').trim();
+        if (canonicalStudentId) {
+          return ['canonical', canonicalStudentId].join('|');
+        }
         var name = normalizeSearchText(student.studentName || student.name || '');
         var school = normalizeSchoolKey_(student.school || '');
         var grade = normalizeSearchText(student.grade || '');
@@ -23655,6 +23670,16 @@
           return 0;
         }
         var priority = 0;
+        var identityStatus = String(student.identityStatus || '').toUpperCase();
+        if (identityStatus === 'CANONICAL' || (
+          student.canonicalStudentId &&
+          String(student.canonicalStudentId) === String(student.studentId || student.id || '')
+        )) {
+          priority += 10000000000000000;
+        }
+        if (student.isAlias || identityStatus === 'ALIAS') {
+          priority -= 10000000000000000;
+        }
         if (String(student.studentId || '').indexOf('STU-') === 0) {
           priority += 1000000000000000;
         }
@@ -23679,11 +23704,12 @@
 
       function mergeStudentRecordsForDisplay_(current, incoming) {
         if (!current) {
-          var initialAliases = uniqueList_([incoming.studentId, incoming.id].concat(incoming.studentIdAliases || []).map(function(id) {
+          var initialAliases = uniqueList_([incoming.studentId, incoming.id, incoming.canonicalStudentId, incoming.mergedInto].concat(incoming.studentIdAliases || []).map(function(id) {
             return String(id || '').trim();
           }).filter(Boolean));
           return Object.assign({}, incoming, {
             school: normalizeSchoolName_(incoming.school || ''),
+            canonicalStudentId: incoming.canonicalStudentId || incoming.mergedInto || '',
             studentIdAliases: initialAliases
           });
         }
@@ -23692,7 +23718,7 @@
         }
         var primary = getStudentRecordPriority_(incoming) >= getStudentRecordPriority_(current) ? incoming : current;
         var secondary = primary === incoming ? current : incoming;
-        var aliases = uniqueList_([primary.studentId, primary.id, secondary.studentId, secondary.id]
+        var aliases = uniqueList_([primary.studentId, primary.id, primary.canonicalStudentId, primary.mergedInto, secondary.studentId, secondary.id, secondary.canonicalStudentId, secondary.mergedInto]
           .concat(primary.studentIdAliases || [], secondary.studentIdAliases || [])
           .map(function(id) { return String(id || '').trim(); })
           .filter(Boolean));
@@ -23711,7 +23737,8 @@
           }
         });
         return Object.assign({}, secondary, primary, {
-          studentId: primary.studentId || secondary.studentId || '',
+          studentId: primary.canonicalStudentId || secondary.canonicalStudentId || primary.studentId || secondary.studentId || '',
+          canonicalStudentId: primary.canonicalStudentId || secondary.canonicalStudentId || '',
           studentName: primary.studentName || secondary.studentName || '',
           school: normalizeSchoolName_(primary.school || secondary.school || ''),
           grade: primary.grade || secondary.grade || '',
@@ -23744,13 +23771,17 @@
       }
 
       function getStudentIdAliases_(student) {
-        return uniqueList_([student && student.studentId, student && student.id]
+        return uniqueList_([student && student.studentId, student && student.id, student && student.canonicalStudentId, student && student.mergedInto]
           .concat(student && student.studentIdAliases || [])
           .map(function(id) { return String(id || '').trim(); })
           .filter(Boolean));
       }
 
       function getCanonicalStudentId_(student) {
+        var explicitCanonicalId = String(student && (student.canonicalStudentId || student.mergedInto) || '').trim();
+        if (explicitCanonicalId) {
+          return explicitCanonicalId;
+        }
         var aliases = getStudentIdAliases_(student);
         return aliases.find(function(id) {
           return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
