@@ -16978,7 +16978,7 @@
         <div class="console-actions">
           <label class="console-search" for="globalSearchInput">
             <i data-lucide="search"></i>
-            <input id="globalSearchInput" type="search" placeholder="학생명, 학교, 태그 검색">
+            <input id="globalSearchInput" type="text" inputmode="search" autocomplete="off" placeholder="학생명, 학교, 태그 검색">
           </label>
           <span class="console-time"><span id="headerDateText">날짜</span> · <strong id="headerTimeText">00:00</strong></span>
           <button id="refreshButton" type="button" class="console-icon-button"><i data-lucide="refresh-cw"></i><span>동기화</span></button>
@@ -17157,7 +17157,7 @@
               <div class="jikbo-board-toolbar">
                 <div class="jikbo-board-search">
                   <label class="jikbo-board-search-label" for="jikboSearchInput">학교 / 학생 검색</label>
-                  <input id="jikboSearchInput" class="field-input" type="search" placeholder="예: 경원중, 송정현">
+                  <input id="jikboSearchInput" class="field-input" type="text" inputmode="search" autocomplete="off" placeholder="예: 경원중, 송정현">
                 </div>
               </div>
               <div id="jikboSummaryWrap" class="stats-grid jikbo-summary-grid"></div>
@@ -17360,7 +17360,7 @@
                     </label>
                     <label class="event-control-shell">
                       <i data-lucide="search"></i>
-                      <input id="eventSearchInput" class="field-input event-search-input" type="search" placeholder="학교명 검색">
+                      <input id="eventSearchInput" class="field-input event-search-input" type="text" inputmode="search" autocomplete="off" placeholder="학교명 검색">
                     </label>
                     <label class="event-checkbox-row">
                       <input id="eventExamOnlyToggle" type="checkbox" checked>
@@ -17489,7 +17489,7 @@
             <section class="material-console">
               <div class="material-search-console">
                 <div class="material-search-main">
-                  <input id="materialKeywordInput" class="field-input" type="search" placeholder="학교명, 과목, 파일명, 태그 검색">
+                  <input id="materialKeywordInput" class="field-input" type="text" inputmode="search" autocomplete="off" placeholder="학교명, 과목, 파일명, 태그 검색">
                   <div id="materialsPanelTabs" class="material-view-toggle"></div>
                   <select id="materialSortSelect" class="field-select material-sort-select">
                     <option value="recent">최근 등록순</option>
@@ -17995,6 +17995,7 @@
         materialSearchRenderTimer: null,
         isStudentSearchComposing: false,
         studentSearchRenderTimer: null,
+        studentSearchCompositionValue: '',
         materialYearTabsBySchool: {},
         editingMaterialRowNumber: '',
         materialOpenLogs: [],
@@ -18269,9 +18270,11 @@
         });
         document.getElementById('globalSearchInput').addEventListener('compositionstart', function() {
           APP_STATE.isStudentSearchComposing = true;
+          APP_STATE.studentSearchCompositionValue = document.getElementById('globalSearchInput').value || '';
         });
         document.getElementById('globalSearchInput').addEventListener('compositionend', function(event) {
           APP_STATE.isStudentSearchComposing = false;
+          APP_STATE.studentSearchCompositionValue = event.target ? (event.target.value || '') : '';
           handleGlobalStudentSearch_(event);
           scheduleStudentSearchRender_(30);
           flushPendingStudentRenderAfterComposition_();
@@ -18292,11 +18295,13 @@
         document.getElementById('studentList').addEventListener('compositionstart', function(event) {
           if (event.target.closest('[data-student-filter-input], [data-school-mode-search]')) {
             APP_STATE.isStudentSearchComposing = true;
+            APP_STATE.studentSearchCompositionValue = event.target.value || '';
           }
         });
         document.getElementById('studentList').addEventListener('compositionend', function(event) {
           if (event.target.closest('[data-student-filter-input], [data-school-mode-search]')) {
             APP_STATE.isStudentSearchComposing = false;
+            APP_STATE.studentSearchCompositionValue = event.target.value || '';
             handleStudentListInput_(event);
             scheduleStudentSearchRender_(30);
             flushPendingStudentRenderAfterComposition_();
@@ -23950,6 +23955,29 @@
         scheduleStudentSearchRender_(30);
       }
 
+      function isImeComposingEvent_(event) {
+        if (!event) {
+          return false;
+        }
+        if (event.isComposing) {
+          return true;
+        }
+        return APP_STATE.isStudentSearchComposing && event.target &&
+          event.target.closest && event.target.closest('[data-student-filter-input], #globalSearchInput, [data-school-mode-search]');
+      }
+
+      function syncStudentSearchInputs_(value, sourceInput) {
+        var nextValue = String(value || '');
+        var hiddenInput = document.getElementById('studentSearchInput');
+        var globalInput = document.getElementById('globalSearchInput');
+        if (hiddenInput && hiddenInput !== sourceInput) {
+          hiddenInput.value = nextValue;
+        }
+        if (globalInput && globalInput !== sourceInput && !APP_STATE.isStudentSearchComposing) {
+          globalInput.value = nextValue;
+        }
+      }
+
       function scheduleStudentSearchRender_(delay) {
         if (APP_STATE.studentSearchRenderTimer) {
           window.clearTimeout(APP_STATE.studentSearchRenderTimer);
@@ -24239,7 +24267,7 @@
       function renderStudentMobileFilterBar_(placeholder) {
         return [
           '<div class="mobile-filter-stack">',
-          '  <input class="field-input" data-student-filter-input type="search" value="' + escapeAttribute(document.getElementById('studentSearchInput').value || '') + '" placeholder="' + escapeAttribute(placeholder || '검색') + '">',
+          '  <input class="field-input" data-student-filter-input type="text" inputmode="search" autocomplete="off" value="' + escapeAttribute(document.getElementById('studentSearchInput').value || '') + '" placeholder="' + escapeAttribute(placeholder || '검색') + '">',
           '  <div class="mobile-filter-row">',
           '    <select class="field-select" data-student-school-select>' + buildStudentSchoolOptions_() + '</select>',
           '    <select class="field-select" data-student-tag-select>' + buildStudentTagOptions_() + '</select>',
@@ -24442,7 +24470,7 @@
           '  <button type="button" class="mini-button" data-action="export-student-index"><i data-lucide="download"></i> 내보내기</button>',
           '</div>',
           '<div class="filter-bar">',
-          '  <input class="field-input" data-student-filter-input type="search" value="' + escapeAttribute(document.getElementById('studentSearchInput').value || '') + '" placeholder="학생명, 학교, 태그 검색">',
+          '  <input class="field-input" data-student-filter-input type="text" inputmode="search" autocomplete="off" value="' + escapeAttribute(document.getElementById('studentSearchInput').value || '') + '" placeholder="학생명, 학교, 태그 검색">',
           '  <select class="field-select" data-student-school-select>' + buildStudentSchoolOptions_() + '</select>',
           '  <select class="field-select" data-student-tag-select>' + buildStudentTagOptions_() + '</select>',
           '  <select class="field-select" data-student-permission-status-select>' + buildStudentPermissionStatusOptions_() + '</select>',
@@ -24461,7 +24489,7 @@
           '    <span class="ops-chip blue">특이사항 검색</span>',
           '  </div>',
           '  <div class="filter-bar">',
-          '    <input class="field-input" data-student-filter-input type="search" value="' + escapeAttribute(document.getElementById('studentSearchInput').value || '') + '" placeholder="특이사항 검색: 학생명, 학교, 분류, 입력자, 내용">',
+          '    <input class="field-input" data-student-filter-input type="text" inputmode="search" autocomplete="off" value="' + escapeAttribute(document.getElementById('studentSearchInput').value || '') + '" placeholder="특이사항 검색: 학생명, 학교, 분류, 입력자, 내용">',
           '    <select class="field-select" data-student-school-select>' + buildStudentSchoolOptions_() + '</select>',
           '    <select class="field-select" data-student-tag-select>' + buildStudentTagOptions_() + '</select>',
           '    <select class="field-select" data-student-author-select>' + buildStudentAuthorOptions_() + '</select>',
@@ -28826,12 +28854,13 @@
 
       function handleGlobalStudentSearch_(event) {
         var value = event.target.value || '';
-        document.getElementById('studentSearchInput').value = value;
-        if (APP_STATE.currentView !== 'students') {
+        if (isImeComposingEvent_(event)) {
+          APP_STATE.studentSearchCompositionValue = value;
+          APP_STATE.pendingStudentRenderAfterComposition = true;
           return;
         }
-        if (APP_STATE.isStudentSearchComposing || event.isComposing) {
-          APP_STATE.pendingStudentRenderAfterComposition = true;
+        syncStudentSearchInputs_(value, event.target);
+        if (APP_STATE.currentView !== 'students') {
           return;
         }
         scheduleStudentSearchRender_(80);
@@ -28866,7 +28895,8 @@
         var schoolSearch = event.target.closest('[data-school-mode-search]');
         if (schoolSearch) {
           APP_STATE.schoolModeSearch = schoolSearch.value || '';
-          if (APP_STATE.isStudentSearchComposing || event.isComposing) {
+          if (isImeComposingEvent_(event)) {
+            APP_STATE.studentSearchCompositionValue = schoolSearch.value || '';
             APP_STATE.pendingStudentRenderAfterComposition = true;
             return;
           }
@@ -28878,12 +28908,12 @@
         if (!input) {
           return;
         }
-        document.getElementById('studentSearchInput').value = input.value || '';
-        document.getElementById('globalSearchInput').value = input.value || '';
-        if (APP_STATE.isStudentSearchComposing || event.isComposing) {
+        if (isImeComposingEvent_(event)) {
+          APP_STATE.studentSearchCompositionValue = input.value || '';
           APP_STATE.pendingStudentRenderAfterComposition = true;
           return;
         }
+        syncStudentSearchInputs_(input.value || '', input);
         scheduleStudentSearchRender_(80);
       }
 
