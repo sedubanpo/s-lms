@@ -137,6 +137,13 @@ Expected primary writes:
 
 The browser should block obvious same name + school + grade duplicates, but name-only matching is not enough for identity. Existing students should be edited by `studentId`.
 
+During the mixed migration period, exact duplicate new-student requests are blocked in two places:
+
+- Before adding to the local pending queue
+- Before committing selected queue items to Firestore
+
+An exact duplicate means the normalized `name + school + grade` are the same and no existing `studentId` is being edited. Real homonyms should be distinguished in the student name, such as `김민지b`, before creating a new account.
+
 ### Student Identity Merge And Delete
 
 Manual representative ID selection is an administrator-only Firestore operation.

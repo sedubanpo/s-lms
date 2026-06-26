@@ -1502,6 +1502,86 @@
       toast("대기열에 추가했습니다.");
     }
 
+    function normalizeStudentDuplicateValue(value) {
+      return String(value || "").trim().replace(/\s+/g, "").toLowerCase();
+    }
+
+    function studentDuplicateKey(student) {
+      return [
+        normalizeStudentDuplicateValue(student && (student.name || student.studentName)),
+        normalizeStudentDuplicateValue(student && student.school),
+        normalizeStudentDuplicateValue(student && student.grade)
+      ].join("|");
+    }
+
+    function isOpenQueueItem(item) {
+      return !["COMMITTED", "FAILED"].includes(String(item.status || "").toUpperCase());
+    }
+
+    function studentIdMatches(student, studentId) {
+      const target = String(studentId || "").trim();
+      if (!target) return false;
+      return studentIdsForRecord(student).includes(target);
+    }
+
+    function findExistingExactStudent(draft) {
+      const key = studentDuplicateKey(draft);
+      if (!key.replace(/\|/g, "")) return null;
+      return state.rawStudents.find(student => {
+        if (draft.studentId && studentIdMatches(student, draft.studentId)) return false;
+        return studentDuplicateKey(student) === key;
+      }) || null;
+    }
+
+    function findQueuedExactStudent(draft) {
+      const key = studentDuplicateKey(draft);
+      const draftStudentId = String(draft.studentId || "").trim();
+      return state.queue.find(item => {
+        if (item.type !== "student" || !isOpenQueueItem(item)) return false;
+        const queued = item.payload && item.payload.student || {};
+        const queuedStudentId = String(queued.studentId || "").trim();
+        if (draftStudentId && queuedStudentId === draftStudentId) return true;
+        if (draftStudentId || queuedStudentId) return false;
+        return studentDuplicateKey(queued) === key;
+      }) || null;
+    }
+
+    function validateStudentQueueDraft(draft) {
+      const queued = findQueuedExactStudent(draft);
+      if (queued) {
+        return draft.studentId
+          ? "이미 같은 학생의 상태 변경 요청이 대기열에 있습니다. 기존 대기열 항목을 먼저 저장하거나 제거해 주세요."
+          : "이미 같은 이름/학교/학년의 학생 등록 요청이 대기열에 있습니다. 동명이인은 이름 뒤 알파벳으로 구분해 주세요.";
+      }
+      if (!draft.studentId) {
+        const existing = findExistingExactStudent(draft);
+        if (existing) {
+          return `동일 이름/학교/학년 학생이 이미 있습니다: ${existing.name} · ${existing.school} ${existing.grade}. 기존 행에서 상태 변경을 눌러 주세요.`;
+        }
+      }
+      return "";
+    }
+
+    function validateSelectedStudentQueue(selected) {
+      const seenNewStudentKeys = new Map();
+      for (const item of selected) {
+        if (item.type !== "student" || !isOpenQueueItem(item)) continue;
+        const draft = item.payload && item.payload.student || {};
+        if (draft.studentId) continue;
+        const key = studentDuplicateKey(draft);
+        if (!key.replace(/\|/g, "")) continue;
+        if (seenNewStudentKeys.has(key)) {
+          return `${draft.name} · ${draft.school} ${draft.grade} 학생 등록 요청이 대기열에 중복으로 선택되어 있습니다. 하나만 남기고 저장해 주세요.`;
+        }
+        seenNewStudentKeys.set(key, item);
+        const existing = findExistingExactStudent(draft);
+        if (existing) {
+          return `${draft.name} · ${draft.school} ${draft.grade} 학생은 이미 Firestore에 있습니다. 새 등록 대신 기존 행의 상태 변경을 사용해 주세요.`;
+        }
+      }
+      return "";
+    }
+
     function queueStudentFromForm() {
       const name = $("studentNameInput").value.trim();
       const school = $("studentSchoolInput").value.trim();
@@ -1512,14 +1592,15 @@
         toast("학생명, 학교, 학년을 입력해 주세요.");
         return;
       }
-      const duplicate = !state.editingStudentId && state.students.find(item => item.name === name && item.school === school && item.grade === grade);
-      if (duplicate) {
-        toast("동일 이름/학교/학년 학생이 있습니다. 기존 행에서 상태 변경을 눌러 주세요.");
+      const draft = { studentId: state.editingStudentId, name, school, grade, status, memo };
+      const validationMessage = validateStudentQueueDraft(draft);
+      if (validationMessage) {
+        toast(validationMessage);
         return;
       }
       queueRequest("student", `${name} · ${school} ${grade} · ${statusLabel(status)}`, {
         action: "upsertStudentStatus",
-        student: { studentId: state.editingStudentId, name, school, grade, status, memo },
+        student: draft,
         requiredCollections: ["students"]
       });
       state.editingStudentId = "";
@@ -1822,6 +1903,14 @@
       }
       if (!state.isAdmin) {
         toast("관리자 권한으로 로그인해야 저장할 수 있습니다.");
+        return;
+      }
+      const studentValidationMessage = validateSelectedStudentQueue(selected);
+      if (studentValidationMessage) {
+        toast(studentValidationMessage);
+        addLocalAudit("학생 중복 저장 차단", studentValidationMessage);
+        saveState();
+        render();
         return;
       }
       try {
