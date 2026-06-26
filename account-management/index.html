@@ -220,6 +220,18 @@
       color: #b91c1c;
     }
 
+    .row-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .row-actions .button {
+      min-height: 30px;
+      padding: 0 9px;
+      font-size: 0.7rem;
+    }
+
     .button:disabled {
       cursor: not-allowed;
       opacity: 0.52;
@@ -746,7 +758,7 @@
               </div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th style="width:120px;">학생명</th><th style="width:190px;">학생 대표 ID</th><th style="width:120px;">학교</th><th style="width:80px;">학년</th><th style="width:90px;">상태</th><th>메모</th><th style="width:120px;">변경</th></tr></thead>
+                  <thead><tr><th style="width:120px;">학생명</th><th style="width:190px;">학생 대표 ID</th><th style="width:120px;">학교</th><th style="width:80px;">학년</th><th style="width:90px;">상태</th><th>메모</th><th style="width:250px;">작업</th></tr></thead>
                   <tbody id="studentRows"></tbody>
                 </table>
               </div>
@@ -917,7 +929,8 @@
       editingStudentId: "",
       editingTeacherUid: "",
       teacherCredentials: {},
-      visibleTeacherPasswords: {}
+      visibleTeacherPasswords: {},
+      studentIdentityReviewExpanded: false
     };
 
     function $(id) { return document.getElementById(id); }
@@ -1876,10 +1889,18 @@
         panel.innerHTML = "<strong>학생 ID 검토 완료</strong><br>현재 대표 ID 확인이 필요한 항목이 없습니다.";
         return;
       }
+      if (!state.studentIdentityReviewExpanded) {
+        panel.innerHTML = `
+          <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
+            <div><strong>학생 ID 검토 대기 ${reviews.length}건</strong><br><span class="help">동명이인 가능성이 있어 자동 통합하지 않은 항목입니다. 필요할 때만 펼쳐서 확인하세요.</span></div>
+            <button class="button primary" data-toggle-student-review>펼치기</button>
+          </div>`;
+        return;
+      }
       panel.innerHTML = `
         <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px;">
           <div><strong>학생 ID 검토 대기 ${reviews.length}건</strong><br><span class="help">동명이인 가능성이 있어 자동 통합하지 않은 항목입니다. 실제 동일인일 때만 대표 ID를 선택하세요.</span></div>
-          <span class="status pending">${reviews.length}건</span>
+          <div style="display:flex;gap:8px;align-items:center;"><span class="status pending">${reviews.length}건</span><button class="button" data-toggle-student-review>접기</button></div>
         </div>
         <div class="table-wrap">
           <table>
@@ -1909,17 +1930,45 @@
       return Array.from(new Uint8Array(digest)).map(byte => byte.toString(16).padStart(2, "0")).join("");
     }
 
-    async function resolveStudentIdentityReview(reviewId) {
-      const review = state.identityReviews.find(item => item.reviewId === reviewId);
-      const select = document.querySelector(`[data-review-canonical="${CSS.escape(reviewId)}"]`);
-      const canonicalStudentId = String(select && select.value || "").trim();
-      const candidateIds = identityReviewCandidateIds(review || {});
+    function findRawStudentById(studentId) {
+      const target = String(studentId || "").trim();
+      return state.rawStudents.find(student => [student.docId, student.studentId, student.canonicalStudentId, student.representativeId]
+        .map(value => String(value || "").trim())
+        .includes(target));
+    }
+
+    function studentIdsForRecord(student) {
+      if (!student) return [];
+      return Array.from(new Set([]
+        .concat(student.studentIdAliases || [], [student.docId, student.studentId, student.canonicalStudentId, student.representativeId])
+        .map(value => String(value || "").trim())
+        .filter(Boolean)));
+    }
+
+    function mergeCandidateIdsForStudent(canonicalStudentId) {
+      const canonicalStudent = findRawStudentById(canonicalStudentId);
+      if (!canonicalStudent) return [];
+      const nameKey = normalizeStudentIdentityPart(canonicalStudent.name);
+      const schoolKey = normalizeStudentIdentityPart(canonicalStudent.school);
+      const candidates = state.rawStudents.filter(student => {
+        if (student.isAlias || student.identityStatus === "ALIAS") return false;
+        if (normalizeStudentIdentityPart(student.name) !== nameKey) return false;
+        if (schoolKey && normalizeStudentIdentityPart(student.school) !== schoolKey) return false;
+        return true;
+      });
+      return Array.from(new Set(candidates.flatMap(studentIdsForRecord)));
+    }
+
+    async function mergeStudentIdentity(options) {
+      const canonicalStudentId = String(options.canonicalStudentId || "").trim();
+      const candidateIds = Array.from(new Set((options.candidateIds || []).map(String).filter(Boolean)));
       const aliasStudentIds = candidateIds.filter(id => id !== canonicalStudentId);
-      if (!review || !canonicalStudentId || !aliasStudentIds.length) {
+      if (!canonicalStudentId || !aliasStudentIds.length) {
         toast("대표 ID와 통합 후보를 확인해 주세요.");
         return;
       }
-      if (!confirm(`${review.studentName} 학생의 대표 ID를 ${canonicalStudentId}(으)로 확정하고 ${aliasStudentIds.length}개 ID를 별칭으로 통합할까요?`)) return;
+      const targetName = options.studentName || (findRawStudentById(canonicalStudentId) || {}).name || "선택 학생";
+      if (!confirm(`${targetName} 학생의 대표 ID를 ${canonicalStudentId}(으)로 확정하고 ${aliasStudentIds.length}개 ID를 별칭으로 통합할까요?\n\n통합된 ID는 학생 목록에서 숨겨지고, 성적/로그/권한 참조는 대표 ID로 갱신됩니다.`)) return;
 
       state.loading = true;
       try {
@@ -1951,10 +2000,10 @@
           studentId: canonicalStudentId,
           canonicalStudentId,
           studentIdAliases: mergedAliases,
-          name: canonicalStudent.name || review.studentName,
-          studentName: canonicalStudent.name || review.studentName,
-          school: canonicalStudent.school || review.school || "",
-          grade: canonicalStudent.grade || review.grade || "",
+          name: canonicalStudent.name || options.studentName || "",
+          studentName: canonicalStudent.name || options.studentName || "",
+          school: canonicalStudent.school || options.school || "",
+          grade: canonicalStudent.grade || options.grade || "",
           identityStatus: "CANONICAL",
           isAlias: false,
           managedBy: "account-management",
@@ -1981,21 +2030,21 @@
           canonicalStudentId,
           aliasStudentIds,
           allStudentIds: mergedAliases,
-          studentName: canonicalStudent.name || review.studentName,
-          school: canonicalStudent.school || review.school || "",
-          grade: canonicalStudent.grade || review.grade || "",
+          studentName: canonicalStudent.name || options.studentName || "",
+          school: canonicalStudent.school || options.school || "",
+          grade: canonicalStudent.grade || options.grade || "",
           confidence: "manual",
           status: "ACTIVE",
-          reason: `계정 관리 수동 확정: ${review.reason || review.category}`,
+          reason: `계정 관리 수동 확정: ${options.reason || "student-list"}`,
           source: "account-management",
           updatedAt: now,
           updatedAtMs: Date.now()
         });
 
         const relatedReviews = state.identityReviews.filter(item => {
-          if (item.status !== "PENDING") return false;
+          if (String(item.status || "").toUpperCase() !== "PENDING") return false;
           const ids = identityReviewCandidateIds(item);
-          return normalizeStudentIdentityPart(item.studentName) === normalizeStudentIdentityPart(review.studentName) &&
+          return normalizeStudentIdentityPart(item.studentName) === normalizeStudentIdentityPart(targetName) &&
             ids.some(id => allStudentIds.includes(id));
         });
         for (const item of relatedReviews) {
@@ -2051,12 +2100,84 @@
           }
         }
         await flush();
-        addLocalAudit("학생 대표 ID 확정", `${review.studentName}: ${canonicalStudentId} · 별칭 ${aliasStudentIds.join(", ")}`);
+        addLocalAudit("학생 대표 ID 확정", `${targetName}: ${canonicalStudentId} · 별칭 ${aliasStudentIds.join(", ")}`);
         await loadFirestoreData();
         toast("대표 ID 통합을 완료했습니다.");
       } catch (error) {
         addLocalAudit("학생 대표 ID 확정 실패", error.message || String(error));
         toast("통합 실패: " + (error.message || error));
+      } finally {
+        state.loading = false;
+      }
+    }
+
+    async function resolveStudentIdentityReview(reviewId) {
+      const review = state.identityReviews.find(item => item.reviewId === reviewId);
+      const select = document.querySelector(`[data-review-canonical="${CSS.escape(reviewId)}"]`);
+      const canonicalStudentId = String(select && select.value || "").trim();
+      const candidateIds = identityReviewCandidateIds(review || {});
+      if (!review) {
+        toast("검토 항목을 찾을 수 없습니다.");
+        return;
+      }
+      await mergeStudentIdentity({
+        canonicalStudentId,
+        candidateIds,
+        studentName: review.studentName,
+        school: review.school,
+        grade: review.grade,
+        reason: review.reason || review.category
+      });
+    }
+
+    async function mergeStudentFromList(studentId) {
+      const student = findRawStudentById(studentId);
+      const candidateIds = mergeCandidateIdsForStudent(studentId);
+      await mergeStudentIdentity({
+        canonicalStudentId: studentId,
+        candidateIds,
+        studentName: student && student.name,
+        school: student && student.school,
+        grade: student && student.grade,
+        reason: "학생 목록에서 대표 ID 직접 선택"
+      });
+    }
+
+    async function deleteStudentDocument(studentId) {
+      if (!state.isAdmin) {
+        toast("관리자 권한으로 로그인해야 삭제할 수 있습니다.");
+        return;
+      }
+      const student = findRawStudentById(studentId) || state.students.find(item => item.studentId === studentId || item.representativeId === studentId);
+      if (!student) {
+        toast("삭제할 학생 문서를 찾을 수 없습니다.");
+        return;
+      }
+      const docId = String(student.docId || student.studentId || studentId).trim();
+      const label = `${student.name || "-"} · ${docId}`;
+      const typed = prompt(`${label} 학생 문서를 Firestore students에서 삭제합니다.\n\n성적/로그 참조는 자동 삭제하지 않습니다. 정말 삭제하려면 아래에 '삭제'라고 입력하세요.`);
+      if (typed !== "삭제") return;
+      state.loading = true;
+      try {
+        const db = await getDb();
+        const now = new Date().toISOString();
+        await Promise.all([
+          db.collection(COLLECTIONS.students).doc(docId).delete(),
+          db.collection(COLLECTIONS.audits).doc(requestId("audit")).set({
+            type: "student-delete",
+            summary: `학생 문서 삭제: ${label}`,
+            studentId: docId,
+            operatorUid: state.operator && state.operator.uid || "",
+            operatorName: state.operator && state.operator.name || "",
+            createdAt: now
+          })
+        ]);
+        addLocalAudit("학생 문서 삭제", label);
+        await loadFirestoreData();
+        toast("학생 문서를 삭제했습니다.");
+      } catch (error) {
+        addLocalAudit("학생 문서 삭제 실패", error.message || String(error));
+        toast("삭제 실패: " + (error.message || error));
       } finally {
         state.loading = false;
       }
@@ -2096,17 +2217,27 @@
       const rows = state.students.filter(student => {
         const text = [student.name, student.school, student.grade, student.memo, student.representativeId].concat(student.studentIdAliases || []).join(" ").toLowerCase();
         return (!keyword || text.includes(keyword)) && (!status || student.status === status) && (!school || student.school === school);
-      }).map(student => `
+      }).map(student => {
+        const representativeId = student.representativeId || student.studentId || "";
+        const candidateCount = mergeCandidateIdsForStudent(representativeId).length;
+        return `
         <tr>
           <td>${escapeHtml(student.name)}</td>
-          <td><strong>${escapeHtml(student.representativeId || student.studentId || "-")}</strong><br><span class="help">${escapeHtml(studentIdTypeLabel(student.representativeId || student.studentId))}</span></td>
+          <td><strong>${escapeHtml(representativeId || "-")}</strong><br><span class="help">${escapeHtml(studentIdTypeLabel(representativeId))}</span></td>
           <td>${escapeHtml(student.school)}</td>
           <td>${escapeHtml(student.grade)}</td>
           <td><span class="status ${statusClass(student.status)}">${statusLabel(student.status)}</span></td>
           <td>${escapeHtml(student.memo || "-")}</td>
-          <td><button class="button" data-student-edit="${escapeHtml(student.studentId)}">상태 변경</button></td>
+          <td>
+            <div class="row-actions">
+              <button class="button" data-student-edit="${escapeHtml(student.studentId)}">상태 변경</button>
+              <button class="button primary" data-student-merge="${escapeHtml(representativeId)}"${candidateCount < 2 ? " disabled" : ""}>대표 통합</button>
+              <button class="button danger" data-student-delete="${escapeHtml(student.docId || student.studentId)}">삭제</button>
+            </div>
+          </td>
         </tr>
-      `).join("");
+      `;
+      }).join("");
       $("studentRows").innerHTML = rows || `<tr><td colspan="7">${state.isAdmin ? "조건에 맞는 학생이 없습니다." : "관리자 로그인 후 Firestore 학생 목록을 불러옵니다."}</td></tr>`;
     }
 
@@ -2204,6 +2335,11 @@
       document.body.addEventListener("click", event => {
         const shortcut = event.target.closest("[data-view-shortcut]");
         if (shortcut) setView(shortcut.dataset.viewShortcut);
+        const reviewToggle = event.target.closest("[data-toggle-student-review]");
+        if (reviewToggle) {
+          state.studentIdentityReviewExpanded = !state.studentIdentityReviewExpanded;
+          renderStudentIdentityReviews();
+        }
         const remove = event.target.closest("[data-remove-queue]");
         if (remove) {
           state.queue = state.queue.filter(item => item.id !== remove.dataset.removeQueue);
@@ -2223,6 +2359,14 @@
             $("studentMemoInput").value = student.memo || "";
             setView("students");
           }
+        }
+        const studentMerge = event.target.closest("[data-student-merge]");
+        if (studentMerge) {
+          mergeStudentFromList(studentMerge.dataset.studentMerge);
+        }
+        const studentDelete = event.target.closest("[data-student-delete]");
+        if (studentDelete) {
+          deleteStudentDocument(studentDelete.dataset.studentDelete);
         }
         const identityResolve = event.target.closest("[data-resolve-student-review]");
         if (identityResolve) {

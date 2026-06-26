@@ -137,6 +137,20 @@ Expected primary writes:
 
 The browser should block obvious same name + school + grade duplicates, but name-only matching is not enough for identity. Existing students should be edited by `studentId`.
 
+### Student Identity Merge And Delete
+
+Manual representative ID selection is an administrator-only Firestore operation.
+
+Expected primary writes for representative merge:
+
+- Canonical `students/{representativeId}` with `identityStatus: "CANONICAL"` and merged `studentIdAliases`
+- Alias `students/{aliasId}` documents with `identityStatus: "ALIAS"`, `isAlias: true`, `mergedInto`, and inactive/merged status
+- `studentIdentityMappings`
+- Matching `studentIdentityReviewQueue` items marked `RESOLVED`
+- Student reference collections updated from alias IDs to the representative ID
+
+Student deletion deletes only the selected `students/{studentId}` document and writes an audit log. It intentionally does not cascade-delete grades, logs, permissions, or spreadsheet rows.
+
 ### Teacher Account Upsert
 
 ```json

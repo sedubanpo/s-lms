@@ -73,6 +73,8 @@ Before copying to GitHub Pages, verify:
 - Teacher metadata includes S-edu page legacy fields: `수업일지링크`, `업무페이지링크`, `일일시수조회링크`, `프로필 이미지`, and optional password follow-up.
 - The teacher list can reveal the password stored in the S-edu page `Teachers` sheet only after Apps Script verifies the Firebase administrator. Confirm that the UI labels this as a sheet-stored password, not a Firebase Auth password.
 - Student lists display a representative identity, preferring Synchro-S UUID, then `ROW-*`, then historical `student_*`, while preserving all known aliases.
+- Student ID review starts collapsed, and representative merge hides alias student documents without deleting their audit trail.
+- Student document deletion requires explicit confirmation and does not cascade-delete linked grades/logs/permissions.
 - Student and teacher changes create `legacySheetSyncJobs` so the S-edu page spreadsheet mirror can be processed by a privileged Apps Script, script runner, or later server worker.
 - Auth follow-up actions create pending request metadata instead of trying to create/delete Auth users in the browser.
 
