@@ -21832,12 +21832,14 @@
           }
           return null;
         });
-        var apiPromise = apiRequest('getEvents', { token: APP_STATE.token }).catch(function(error) {
-          if (window.console && console.warn) {
-            console.warn('Jikbo Firebase event merge skipped API source:', error);
-          }
-          return null;
-        });
+        var apiPromise = isFirebaseSessionToken_(APP_STATE.token)
+          ? Promise.resolve(null)
+          : apiRequest('getEvents', { token: APP_STATE.token }).catch(function(error) {
+              if (window.console && console.warn) {
+                console.warn('Jikbo Firebase event merge skipped API source:', error);
+              }
+              return null;
+            });
         return Promise.all([directPromise, apiPromise]).then(function(results) {
           var directEventData = results[0] || null;
           var apiEventData = results[1] || null;
