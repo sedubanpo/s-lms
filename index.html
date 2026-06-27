@@ -21725,6 +21725,79 @@
         });
       }
 
+      function buildEventMergeKeyForJikbo_(item, index) {
+        var normalized = normalizeEventToSchedule_(item, index);
+        if (normalized) {
+          return [
+            normalizeSchoolName_(normalized.school),
+            normalizeJikboGradeForClient_(normalized.grade),
+            String(normalized.date || ''),
+            normalizeSearchText(normalized.subject),
+            normalizeSearchText(normalized.title)
+          ].join('|');
+        }
+        return [
+          String(item && (item.eventId || item.id || item.rowNumber) || ''),
+          String(item && (item.isoDate || item.date || item.eventDate) || ''),
+          normalizeSearchText(item && (item.target || item.school || item.targetSchool)),
+          normalizeSearchText(item && (item.title || item.subjectName || item.selectedSubject || item.detailSubject))
+        ].join('|');
+      }
+
+      function mergeEventRowsForJikbo_(eventLists) {
+        var map = {};
+        (eventLists || []).forEach(function(list) {
+          (list || []).forEach(function(item, index) {
+            if (!item) {
+              return;
+            }
+            var key = buildEventMergeKeyForJikbo_(item, index);
+            if (!key || key === '||||') {
+              return;
+            }
+            map[key] = Object.assign({}, map[key] || {}, item);
+          });
+        });
+        return Object.keys(map).map(function(key) {
+          return map[key];
+        }).sort(compareEventsForClient_);
+      }
+
+      function loadEventsForJikboBoard_() {
+        if (!APP_STATE.token) {
+          return Promise.resolve(null);
+        }
+        var directPromise = loadEventsViaFirebaseDirect_().catch(function(error) {
+          if (window.console && console.warn) {
+            console.warn('Jikbo Firebase event merge skipped direct source:', error);
+          }
+          return null;
+        });
+        var apiPromise = apiRequest('getEvents', { token: APP_STATE.token }).catch(function(error) {
+          if (window.console && console.warn) {
+            console.warn('Jikbo Firebase event merge skipped API source:', error);
+          }
+          return null;
+        });
+        return Promise.all([directPromise, apiPromise]).then(function(results) {
+          var directEventData = results[0] || null;
+          var apiEventData = results[1] || null;
+          var mergedEvents = mergeEventRowsForJikbo_([
+            directEventData && directEventData.events,
+            apiEventData && apiEventData.events,
+            APP_STATE.events || []
+          ]);
+          if (!mergedEvents.length) {
+            return directEventData || apiEventData || null;
+          }
+          return Object.assign({}, directEventData || {}, apiEventData || {}, {
+            ok: true,
+            events: mergedEvents,
+            globalNotice: (apiEventData && apiEventData.globalNotice) || (directEventData && directEventData.globalNotice) || APP_STATE.globalNotice
+          });
+        });
+      }
+
       function buildEventPayloadFromForm_(isEditing) {
         var now = new Date();
         var rowNumber = String(APP_STATE.editingEventRowNumber || '').trim();
@@ -22088,7 +22161,7 @@
             readJikboCollectionViaFirebaseDirect_(state, 'subjects', normalizeJikboSubjectFirebaseData_),
             readJikboCollectionViaFirebaseDirect_(state, 'overrides', normalizeJikboOverrideFirebaseData_),
             readJikboCollectionViaFirebaseDirect_(state, 'statuses', normalizeJikboStatusFirebaseData_),
-            loadEventsViaFirebaseDirect_().catch(function() { return null; })
+            loadEventsForJikboBoard_().catch(function() { return null; })
           ]).then(function(results) {
             var subjectDefinitions = results[0].filter(function(item) { return item.subjectName; });
             var studentOverrides = results[1].filter(function(item) { return item.studentId && item.subjectName; });
