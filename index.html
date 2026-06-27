@@ -37469,9 +37469,10 @@
       }
 
       function getJikboExamEventsForCurrentMonth_() {
-        var sourceEvents = (APP_STATE.jikboExamEvents && APP_STATE.jikboExamEvents.length)
-          ? APP_STATE.jikboExamEvents
-          : buildJikboExamEventsFromEvents_(APP_STATE.events || []);
+        var sourceEvents = mergeJikboExamEventsWithLoadedEvents_(APP_STATE.jikboExamEvents || []);
+        if (!sourceEvents.length) {
+          sourceEvents = buildJikboExamEventsFromEvents_(APP_STATE.events || []);
+        }
         var rangeStart = new Date(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth, 1);
         rangeStart.setDate(rangeStart.getDate() - 3);
         var rangeEnd = new Date(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth + 1, 0);
