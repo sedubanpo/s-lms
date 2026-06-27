@@ -21947,12 +21947,14 @@
               grade: target.grade || schedule.grade
             };
           }
-          var eventType = String(eventItem.eventType || eventItem.category || '').trim();
-          var majorSubject = String(eventItem.majorSubject || eventItem.subjectCategory || eventItem.subjectArea || '').trim();
-          var selectedSubject = String(eventItem.selectedSubject || eventItem.detailSubject || eventItem.subjectName || '').trim();
-          var subjectName = eventType === '내신'
+          var isNormalizedExamSchedule = schedule && schedule.scheduleType === '내신 시험';
+          var eventType = String(eventItem.eventType || eventItem.category || (schedule && schedule.eventType) || '').trim();
+          var majorSubject = String(eventItem.majorSubject || eventItem.subjectCategory || eventItem.subjectArea || (schedule && schedule.majorSubject) || '').trim();
+          var selectedSubject = String(eventItem.selectedSubject || eventItem.detailSubject || (eventType === '내신' ? eventItem.subjectName : '') || (schedule && schedule.selectedSubject) || '').trim();
+          var normalizedSubjectName = isNormalizedExamSchedule && schedule && schedule.subject ? String(schedule.subject || '').trim() : '';
+          var subjectName = normalizedSubjectName || (eventType === '내신'
             ? formatEventExamSubjectLabel_(majorSubject || inferMajorSubjectFromLabel_(eventItem.title || selectedSubject), selectedSubject || inferSelectedSubjectFromLabel_(eventItem.title || ''))
-            : String(eventItem.subjectName || eventItem.title || '').trim();
+            : String(eventItem.subjectName || eventItem.title || '').trim());
           if (!subjectName && schedule && schedule.subject) {
             subjectName = schedule.subject;
           }
@@ -21962,7 +21964,7 @@
           if (!target.school || !target.grade || !subjectName) {
             return null;
           }
-          if (eventType !== '내신' && (!schedule || schedule.scheduleType !== '내신 시험') && !isJikboExamEventText_(title + ' ' + note + ' ' + examType)) {
+          if (eventType !== '내신' && !isNormalizedExamSchedule && !isJikboExamEventText_(title + ' ' + note + ' ' + examType)) {
             return null;
           }
           return {
@@ -21976,8 +21978,8 @@
             selectedSubject: selectedSubject || inferSelectedSubjectFromLabel_(subjectName),
             eventType: eventType,
             examType: examType || title,
-            date: eventItem.date || eventItem.isoDate || '',
-            isoDate: eventItem.isoDate || formatDateInputValue_(eventItem.date),
+            date: eventItem.date || eventItem.isoDate || (schedule && schedule.date) || '',
+            isoDate: eventItem.isoDate || formatDateInputValue_(eventItem.date) || (schedule && schedule.date) || '',
             title: title,
             note: note
           };
