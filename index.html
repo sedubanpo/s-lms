@@ -23706,6 +23706,7 @@
       }
 
       function hydrateJikboData_(jikboData) {
+        jikboData = filterJikboDataForCurrentAccess_(jikboData || {});
         APP_STATE.jikboSubjectDefinitions = jikboData && jikboData.subjectDefinitions ? jikboData.subjectDefinitions : [];
         APP_STATE.jikboStudentOverrides = jikboData && jikboData.studentOverrides ? jikboData.studentOverrides : [];
         APP_STATE.jikboExamEvents = (jikboData && jikboData.examEvents ? jikboData.examEvents : []).map(function(item) {
@@ -23717,6 +23718,44 @@
           return Object.assign({}, item, {
             school: normalizeSchoolName_(item && item.school)
           });
+        });
+      }
+
+      function filterJikboDataForCurrentAccess_(jikboData) {
+        if (APP_STATE.isAdmin) {
+          return jikboData || {};
+        }
+        var allowedStudentIds = {};
+        var allowedSchoolGrades = {};
+        var allowedSchools = {};
+        (APP_STATE.visibleStudents || []).forEach(function(student) {
+          getStudentIdAliases_(student).forEach(function(id) {
+            if (id) {
+              allowedStudentIds[String(id)] = true;
+            }
+          });
+          var school = normalizeSchoolName_(student.school || student.schoolName || '');
+          var grade = normalizeJikboGradeForClient_(student.grade || student.schoolGrade || '');
+          if (school) {
+            allowedSchools[school] = true;
+            allowedSchoolGrades[[school, grade].join('|')] = true;
+          }
+        });
+        var isAllowedStudentRow = function(item) {
+          var aliases = getStudentIdAliases_(item || {});
+          return aliases.some(function(id) {
+            return allowedStudentIds[String(id || '')];
+          });
+        };
+        var isAllowedExamRow = function(item) {
+          var school = normalizeSchoolName_(item && item.school);
+          var grade = normalizeJikboGradeForClient_(item && item.grade);
+          return Boolean(school && (allowedSchoolGrades[[school, grade].join('|')] || (!grade && allowedSchools[school])));
+        };
+        return Object.assign({}, jikboData || {}, {
+          studentOverrides: (jikboData.studentOverrides || []).filter(isAllowedStudentRow),
+          scheduleStatuses: (jikboData.scheduleStatuses || []).filter(isAllowedStudentRow),
+          examEvents: (jikboData.examEvents || []).filter(isAllowedExamRow)
         });
       }
 
