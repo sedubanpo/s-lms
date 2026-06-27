@@ -35054,10 +35054,10 @@
             String(a.studentName || '').localeCompare(String(b.studentName || ''), 'ko') ||
             String(a.subjectName || '').localeCompare(String(b.subjectName || ''), 'ko');
         });
-        var anchorDate = items.map(function(item) {
-          return parseEventDateForClient_(item.scheduleDate);
-        }).filter(Boolean)[0] ||
-          parseEventDateForClient_(anchorDateOverride) ||
+        var anchorDate = parseEventDateForClient_(anchorDateOverride) ||
+          items.map(function(item) {
+            return parseEventDateForClient_(item.scheduleDate);
+          }).filter(Boolean)[0] ||
           new Date(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth, 1);
         var weekStart = getMondayOfWeek_(anchorDate);
         var weekDates = [];
