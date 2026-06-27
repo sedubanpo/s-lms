@@ -21798,6 +21798,22 @@
         });
       }
 
+      function refreshJikboEventSources_() {
+        return loadEventsForJikboBoard_().then(function(eventData) {
+          var events = eventData && eventData.events ? eventData.events : (APP_STATE.events || []);
+          if (events && events.length) {
+            APP_STATE.events = events;
+            APP_STATE.eventsLoaded = true;
+          }
+          APP_STATE.jikboExamEvents = buildJikboExamEventsFromEvents_(APP_STATE.events || []);
+          if (eventData && eventData.globalNotice) {
+            hydrateGlobalNotice_(eventData.globalNotice);
+          }
+          writeDashboardSnapshot_();
+          return APP_STATE.jikboExamEvents;
+        });
+      }
+
       function buildEventPayloadFromForm_(isEditing) {
         var now = new Date();
         var rowNumber = String(APP_STATE.editingEventRowNumber || '').trim();
@@ -22103,9 +22119,7 @@
         });
         buildJikboExamEventsFromEvents_(APP_STATE.events || []).forEach(function(item) {
           var key = buildJikboExamEventMergeKey_(item);
-          if (!map[key]) {
-            map[key] = normalizeJikboExamEventForClient_(item);
-          }
+          map[key] = normalizeJikboExamEventForClient_(item);
         });
         return Object.keys(map).map(function(key) {
           return map[key];
@@ -22115,6 +22129,21 @@
             String(a.grade || '').localeCompare(String(b.grade || '')) ||
             String(a.subjectName || '').localeCompare(String(b.subjectName || ''), 'ko');
         });
+      }
+
+      function getMergedJikboExamEventsFromCurrentSchedules_() {
+        return mergeJikboExamEventsWithLoadedEvents_(APP_STATE.jikboExamEvents || []);
+      }
+
+      function invalidateJikboExamCache_(options) {
+        var config = options || {};
+        APP_STATE.jikboLoaded = false;
+        APP_STATE.jikboExamEvents = [];
+        if (config.clearLoadingState) {
+          APP_STATE.jikboLoading = false;
+          APP_STATE.jikboLoadPromise = null;
+          APP_STATE.jikboBoardLoadPromise = null;
+        }
       }
 
       function isJikboExamEventText_(value) {
@@ -22161,19 +22190,14 @@
             readJikboCollectionViaFirebaseDirect_(state, 'subjects', normalizeJikboSubjectFirebaseData_),
             readJikboCollectionViaFirebaseDirect_(state, 'overrides', normalizeJikboOverrideFirebaseData_),
             readJikboCollectionViaFirebaseDirect_(state, 'statuses', normalizeJikboStatusFirebaseData_),
-            loadEventsForJikboBoard_().catch(function() { return null; })
+            refreshJikboEventSources_().catch(function() { return null; })
           ]).then(function(results) {
             var subjectDefinitions = results[0].filter(function(item) { return item.subjectName; });
             var studentOverrides = results[1].filter(function(item) { return item.studentId && item.subjectName; });
             var scheduleStatuses = results[2].filter(function(item) {
               return item.studentId && item.subjectName && item.examDate && item.jikboDate;
             });
-            var eventData = results[3] || null;
-            var events = eventData && eventData.events ? eventData.events : (APP_STATE.events || []);
-            if (eventData && eventData.events) {
-              APP_STATE.events = eventData.events;
-              APP_STATE.eventsLoaded = true;
-            }
+            var events = APP_STATE.events || [];
             var examEvents = buildJikboExamEventsFromEvents_(events);
             if (!subjectDefinitions.length && !studentOverrides.length && !scheduleStatuses.length && !examEvents.length) {
               return null;
@@ -24134,6 +24158,7 @@
               APP_STATE.events = eventData && eventData.events ? eventData.events : [];
               hydrateGlobalNotice_(eventData && eventData.globalNotice);
               APP_STATE.eventsLoaded = true;
+              invalidateJikboExamCache_();
               writeDashboardSnapshot_();
               if (!config.silent) {
                 renderEvents();
@@ -24152,7 +24177,17 @@
             return Promise.resolve();
           }
           if (APP_STATE.jikboLoaded) {
-            return Promise.resolve();
+            return refreshJikboEventSources_()
+              .catch(function(error) {
+                if (window.console && console.warn) {
+                  console.warn('Jikbo event source refresh skipped:', error);
+                }
+              })
+              .then(function() {
+                if (!config.silent && APP_STATE.currentView === 'jikbo') {
+                  renderJikboView();
+                }
+              });
           }
           if (APP_STATE.jikboLoading) {
             return APP_STATE.jikboLoadPromise || Promise.resolve();
@@ -37554,7 +37589,7 @@
       }
 
       function getJikboExamEventsForCurrentMonth_() {
-        var sourceEvents = mergeJikboExamEventsWithLoadedEvents_(APP_STATE.jikboExamEvents || []);
+        var sourceEvents = getMergedJikboExamEventsFromCurrentSchedules_();
         if (!sourceEvents.length) {
           sourceEvents = buildJikboExamEventsFromEvents_(APP_STATE.events || []);
         }
