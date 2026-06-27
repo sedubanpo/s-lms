@@ -22059,6 +22059,7 @@
           return {
             rowNumber: eventItem.rowNumber || eventItem.eventId || '',
             eventId: eventItem.eventId || '',
+            source: 'school-schedule',
             school: normalizeSchoolName_(target.school),
             grade: normalizeJikboGradeForClient_(target.grade),
             subjectName: subjectName,
@@ -36151,7 +36152,11 @@
       }
 
       function buildJikboBoardModel_() {
-        var monthEventList = getJikboExamEventsForCurrentMonth_();
+        var monthEventList = mergeJikboExamEventsWithLoadedEvents_(getJikboExamEventsForCurrentMonth_()).filter(function(item) {
+          var examDateKey = item.isoDate || item.date;
+          var jikboDateKey = getJikboPreviousDateKey_(examDateKey);
+          return isJikboDateInSelectedBoardRange_(examDateKey) || isJikboDateInSelectedBoardRange_(jikboDateKey);
+        });
         var subjectDefinitionMap = getJikboSubjectDefinitionMap_();
         var overrideMap = getJikboOverrideMap_();
         var statusMap = getJikboStatusMap_();
@@ -36519,11 +36524,35 @@
           return group;
         }).filter(Boolean);
 
-        var monthDates = buildJikboContinuousDateRange_(Object.keys(activeDateKeyMap));
+        var monthDateSourceKeys = Object.keys(activeDateKeyMap);
+        var monthDates;
+        if (keyword) {
+          var focusedDateKeyMap = {};
+          monthDateSourceKeys.forEach(function(dateKey) {
+            if (String(dateKey || '') >= todayKey) {
+              focusedDateKeyMap[dateKey] = true;
+            }
+          });
+          focusedDateKeyMap[todayKey] = true;
+          var focusedMinimumEnd = parseEventDateForClient_(todayKey);
+          if (focusedMinimumEnd) {
+            focusedMinimumEnd.setDate(focusedMinimumEnd.getDate() + 10);
+            focusedDateKeyMap[formatDateKey_(focusedMinimumEnd)] = true;
+          }
+          monthDates = buildJikboContinuousDateRange_(Object.keys(focusedDateKeyMap));
+        } else {
+          monthDates = buildJikboContinuousDateRange_(monthDateSourceKeys);
+        }
         var monthDateKeys = monthDates.map(function(date) { return formatDateKey_(date); });
 
         if (!monthDates.length) {
-          monthDates = buildJikboContinuousDateRange_(uniqueList_(monthEventList.map(function(item) { return item.isoDate; }).filter(Boolean)).sort());
+          var fallbackDateKeys = uniqueList_(monthEventList.map(function(item) { return item.isoDate; }).filter(Boolean)).sort();
+          if (keyword) {
+            fallbackDateKeys = uniqueList_(fallbackDateKeys.filter(function(dateKey) {
+              return String(dateKey || '') >= todayKey;
+            }).concat([todayKey])).sort();
+          }
+          monthDates = buildJikboContinuousDateRange_(fallbackDateKeys);
           monthDateKeys = monthDates.map(function(date) { return formatDateKey_(date); });
         }
 
@@ -37861,7 +37890,7 @@
       }
 
       function shouldIncludeJikboSubject_(student, eventItem, subjectDefinition, override, permissionMap) {
-        if (override && override.applyMode === 'EXCLUDE') {
+        if (override && override.applyMode === 'EXCLUDE' && eventItem && eventItem.source !== 'school-schedule') {
           return false;
         }
         return Boolean(student && student.studentId && eventItem);
