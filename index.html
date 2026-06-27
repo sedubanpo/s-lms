@@ -7469,6 +7469,85 @@
         background: rgba(255, 255, 255, 0.86);
       }
 
+      .jikbo-timetable-modal-card {
+        width: min(1180px, calc(100vw - 44px));
+      }
+
+      .jikbo-timetable-modal-card .modal-top {
+        align-items: flex-start;
+        gap: 18px;
+      }
+
+      .jikbo-teacher-modal-tools {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex: 0 1 320px;
+        min-width: min(320px, 100%);
+        margin-right: 48px;
+      }
+
+      .jikbo-teacher-timetable-search {
+        width: 100%;
+        min-height: 40px;
+        padding: 10px 14px;
+        border: 1px solid rgba(148, 163, 184, 0.34);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--text-strong);
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 800;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+      }
+
+      .jikbo-teacher-timetable-search:focus {
+        outline: none;
+        border-color: rgba(37, 99, 235, 0.54);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12), 0 14px 28px rgba(15, 23, 42, 0.1);
+      }
+
+      .jikbo-teacher-multiweek-wrap {
+        display: grid;
+        gap: 12px;
+      }
+
+      .jikbo-teacher-multiweek-scroll {
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+        padding: 2px 2px 14px;
+      }
+
+      .jikbo-teacher-week-panel {
+        flex: 0 0 min(920px, calc(100vw - 110px));
+        scroll-snap-align: start;
+        display: grid;
+        gap: 8px;
+      }
+
+      .jikbo-teacher-week-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 0 2px;
+      }
+
+      .jikbo-teacher-week-panel-head strong {
+        color: var(--text-strong);
+        font-size: 0.92rem;
+        font-weight: 950;
+      }
+
+      .jikbo-teacher-week-panel-head span {
+        color: var(--text-soft);
+        font-size: 0.74rem;
+        font-weight: 900;
+      }
+
       .jikbo-timetable-table {
         width: 100%;
         min-width: 920px;
@@ -18261,6 +18340,7 @@
             <h3 id="jikboTimetableModalTitle">직보 주간 시간표</h3>
             <p id="jikboTimetableModalDescription">학생별 직보 진행일, 과목, 강사, 시간을 주간표로 확인합니다.</p>
           </div>
+          <div id="jikboTimetableModalTools" class="jikbo-teacher-modal-tools hidden"></div>
           <button id="closeJikboTimetableModalButton" type="button" class="icon-button" aria-label="직보 시간표창 닫기">×</button>
         </div>
         <div id="jikboTimetableModalBody" class="modal-body jikbo-timetable-modal-body"></div>
@@ -18587,6 +18667,9 @@
         jikboSearchKeyword: '',
         isJikboSearchComposing: false,
         jikboSearchRenderTimer: null,
+        selectedJikboTeacherTimetableKey: '',
+        jikboTeacherTimetableSearchKeyword: '',
+        isJikboTeacherTimetableSearchComposing: false,
         jikboTopPanelMode: 'school',
         isJikboExamCalendarCollapsed: true,
         selectedJikboStatusKey: '',
@@ -18814,6 +18897,9 @@
         document.getElementById('jikboStatusModal').addEventListener('click', handleJikboStatusModalBackdropClick_);
         document.getElementById('closeJikboTimetableModalButton').addEventListener('click', closeJikboTimetableModal_);
         document.getElementById('jikboTimetableModal').addEventListener('click', handleJikboTimetableModalBackdropClick_);
+        document.getElementById('jikboTimetableModal').addEventListener('input', handleJikboTimetableModalInput_);
+        document.getElementById('jikboTimetableModal').addEventListener('compositionstart', handleJikboTimetableModalCompositionStart_);
+        document.getElementById('jikboTimetableModal').addEventListener('compositionend', handleJikboTimetableModalCompositionEnd_);
         document.getElementById('jikboStatusProgressInput').addEventListener('change', syncJikboStatusFormMode_);
         document.getElementById('saveJikboStatusButton').addEventListener('click', handleJikboStatusSave_);
         document.getElementById('closeJikboAssignmentModalButton').addEventListener('click', closeJikboAssignmentModal_);
@@ -34704,8 +34790,16 @@
       }
 
       function closeJikboTimetableModal_() {
+        APP_STATE.selectedJikboTeacherTimetableKey = '';
+        APP_STATE.jikboTeacherTimetableSearchKeyword = '';
+        APP_STATE.isJikboTeacherTimetableSearchComposing = false;
         document.getElementById('jikboTimetableModal').classList.add('hidden');
         document.getElementById('jikboTimetableModalBody').innerHTML = '';
+        var tools = document.getElementById('jikboTimetableModalTools');
+        if (tools) {
+          tools.innerHTML = '';
+          tools.classList.add('hidden');
+        }
       }
 
       function handleJikboTimetableModalBackdropClick_(event) {
@@ -34717,12 +34811,19 @@
       function openJikboStudentTimetableModal_(studentId) {
         var model = APP_STATE.currentJikboBoardModel || buildJikboBoardModel_();
         var payload = buildJikboStudentTimetablePayload_(model, studentId);
+        APP_STATE.selectedJikboTeacherTimetableKey = '';
+        APP_STATE.jikboTeacherTimetableSearchKeyword = '';
         document.getElementById('jikboTimetableModalTitle').textContent = (payload.student.studentName || '학생') + ' 직보 주간 시간표';
         document.getElementById('jikboTimetableModalDescription').textContent = [
           payload.student.school || '',
           formatJikboGradeLabel_(payload.student.grade || ''),
           payload.weekLabel || ''
         ].filter(Boolean).join(' · ') || '학생별 직보 진행일, 과목, 강사, 시간을 주간표로 확인합니다.';
+        var tools = document.getElementById('jikboTimetableModalTools');
+        if (tools) {
+          tools.innerHTML = '';
+          tools.classList.add('hidden');
+        }
         document.getElementById('jikboTimetableModalBody').innerHTML = renderJikboStudentTimetable_(payload);
         document.getElementById('jikboTimetableModal').classList.remove('hidden');
         renderLucideIcons_();
@@ -34731,13 +34832,75 @@
       function openJikboTeacherTimetableModal_(teacherKey) {
         var model = APP_STATE.currentJikboBoardModel || buildJikboBoardModel_();
         var payload = buildJikboTeacherTimetablePayload_(model, teacherKey, APP_STATE.isAdmin ? '' : getJikboTeacherSelfAnchorDate_(model));
+        APP_STATE.selectedJikboTeacherTimetableKey = teacherKey;
+        APP_STATE.jikboTeacherTimetableSearchKeyword = '';
         document.getElementById('jikboTimetableModalTitle').textContent = (payload.teacher.name || '강사') + ' 강사 직보 주간 시간표';
         document.getElementById('jikboTimetableModalDescription').textContent = [
           payload.teacher.total ? String(payload.teacher.total) + '건 전체' : '',
-          payload.weekLabel || ''
+          payload.dateRangeLabel || payload.weekLabel || ''
         ].filter(Boolean).join(' · ') || '강사별 직보 진행일, 학생, 과목, 시간을 주간표로 확인합니다.';
-        document.getElementById('jikboTimetableModalBody').innerHTML = renderJikboStudentTimetable_(payload);
+        renderJikboTeacherTimetableModalTools_();
+        document.getElementById('jikboTimetableModalBody').innerHTML = APP_STATE.isAdmin
+          ? renderJikboTeacherTimetableMultiweek_(payload)
+          : renderJikboStudentTimetable_(payload);
         document.getElementById('jikboTimetableModal').classList.remove('hidden');
+        renderLucideIcons_();
+      }
+
+      function renderJikboTeacherTimetableModalTools_() {
+        var tools = document.getElementById('jikboTimetableModalTools');
+        if (!tools) {
+          return;
+        }
+        if (!APP_STATE.selectedJikboTeacherTimetableKey || !APP_STATE.isAdmin) {
+          tools.innerHTML = '';
+          tools.classList.add('hidden');
+          return;
+        }
+        tools.classList.remove('hidden');
+        tools.innerHTML = '<input id="jikboTeacherTimetableSearchInput" class="jikbo-teacher-timetable-search" type="search" placeholder="학생명 또는 학교명 검색" autocomplete="off" value="' + escapeAttribute(APP_STATE.jikboTeacherTimetableSearchKeyword || '') + '" aria-label="강사 직보 시간표 학생명 또는 학교명 검색">';
+      }
+
+      function handleJikboTimetableModalInput_(event) {
+        var input = event.target && event.target.closest ? event.target.closest('#jikboTeacherTimetableSearchInput') : null;
+        if (!input) {
+          return;
+        }
+        APP_STATE.jikboTeacherTimetableSearchKeyword = input.value || '';
+        if (APP_STATE.isJikboTeacherTimetableSearchComposing || event.isComposing) {
+          return;
+        }
+        rerenderJikboTeacherTimetableModal_();
+      }
+
+      function handleJikboTimetableModalCompositionStart_(event) {
+        if (event.target && event.target.matches && event.target.matches('#jikboTeacherTimetableSearchInput')) {
+          APP_STATE.isJikboTeacherTimetableSearchComposing = true;
+        }
+      }
+
+      function handleJikboTimetableModalCompositionEnd_(event) {
+        if (!(event.target && event.target.matches && event.target.matches('#jikboTeacherTimetableSearchInput'))) {
+          return;
+        }
+        APP_STATE.isJikboTeacherTimetableSearchComposing = false;
+        APP_STATE.jikboTeacherTimetableSearchKeyword = event.target.value || '';
+        rerenderJikboTeacherTimetableModal_();
+      }
+
+      function rerenderJikboTeacherTimetableModal_() {
+        var teacherKey = APP_STATE.selectedJikboTeacherTimetableKey || '';
+        if (!teacherKey || !APP_STATE.isAdmin || document.getElementById('jikboTimetableModal').classList.contains('hidden')) {
+          return;
+        }
+        var model = APP_STATE.currentJikboBoardModel || buildJikboBoardModel_();
+        var payload = buildJikboTeacherTimetablePayload_(model, teacherKey, '');
+        document.getElementById('jikboTimetableModalDescription').textContent = [
+          payload.teacher.total ? String(payload.teacher.total) + '건 전체' : '',
+          payload.dateRangeLabel || payload.weekLabel || '',
+          APP_STATE.jikboTeacherTimetableSearchKeyword ? '검색 적용' : ''
+        ].filter(Boolean).join(' · ') || '강사별 직보 진행일, 학생, 과목, 시간을 주간표로 확인합니다.';
+        document.getElementById('jikboTimetableModalBody').innerHTML = renderJikboTeacherTimetableMultiweek_(payload);
         renderLucideIcons_();
       }
 
@@ -34903,8 +35066,21 @@
           weekStart: weekStart,
           weekDates: weekDates,
           weekDateKeys: weekDates.map(formatDateKey_),
-          weekLabel: formatJikboTimetableWeekLabel_(weekDates)
+          weekLabel: formatJikboTimetableWeekLabel_(weekDates),
+          dateRangeLabel: formatJikboTimetableItemRangeLabel_(items)
         };
+      }
+
+      function formatJikboTimetableItemRangeLabel_(items) {
+        var dates = (items || []).map(function(item) {
+          return parseEventDateForClient_(item.scheduleDate);
+        }).filter(Boolean).sort(function(a, b) {
+          return a.getTime() - b.getTime();
+        });
+        if (!dates.length) {
+          return '';
+        }
+        return formatJikboTimetableWeekLabel_([dates[0], dates[dates.length - 1]]);
       }
 
       function getMondayOfWeek_(date) {
@@ -35016,6 +35192,103 @@
           tableHtml,
           floatingItems.length ? renderJikboFloatingTimetableList_('시간 미정 직보', floatingItems) : '',
           outsideItems.length ? renderJikboFloatingTimetableList_('다른 주 직보', outsideItems) : ''
+        ].join('');
+      }
+
+      function filterJikboTeacherTimetableItems_(items) {
+        var keyword = normalizeSearchText(APP_STATE.jikboTeacherTimetableSearchKeyword || '');
+        if (!keyword) {
+          return items || [];
+        }
+        return (items || []).filter(function(item) {
+          var haystack = normalizeSearchText([
+            item.studentName,
+            item.displayInstructorName,
+            item.school,
+            item.subjectName,
+            item.progressStatus
+          ].filter(Boolean).join(' '));
+          return haystack.indexOf(keyword) !== -1;
+        });
+      }
+
+      function buildJikboTeacherTimetableWeekPayloads_(payload, items) {
+        var dates = (items || []).map(function(item) {
+          return parseEventDateForClient_(item.scheduleDate);
+        }).filter(Boolean);
+        if (!dates.length) {
+          return [];
+        }
+        dates.sort(function(a, b) { return a.getTime() - b.getTime(); });
+        var firstWeek = getMondayOfWeek_(dates[0]);
+        var lastWeek = getMondayOfWeek_(dates[dates.length - 1]);
+        var weeks = [];
+        for (var cursor = new Date(firstWeek); cursor.getTime() <= lastWeek.getTime(); cursor.setDate(cursor.getDate() + 7)) {
+          var weekStart = new Date(cursor);
+          var weekDates = [];
+          var weekDateMap = {};
+          for (var index = 0; index < 7; index += 1) {
+            var day = new Date(weekStart);
+            day.setDate(weekStart.getDate() + index);
+            weekDates.push(day);
+            weekDateMap[formatDateKey_(day)] = true;
+          }
+          var weekItems = (items || []).filter(function(item) {
+            return weekDateMap[item.scheduleDate];
+          });
+          weeks.push(Object.assign({}, payload, {
+            items: weekItems,
+            weekStart: weekStart,
+            weekDates: weekDates,
+            weekDateKeys: weekDates.map(formatDateKey_),
+            weekLabel: formatJikboTimetableWeekLabel_(weekDates)
+          }));
+        }
+        return weeks;
+      }
+
+      function renderJikboTeacherTimetableMultiweek_(payload) {
+        var sourceItems = payload.items || [];
+        var items = filterJikboTeacherTimetableItems_(sourceItems);
+        var keyword = APP_STATE.jikboTeacherTimetableSearchKeyword || '';
+        if (!items.length) {
+          return '<div class="empty-state">' + (keyword ? '검색 결과가 없습니다.<br>학생명 또는 학교명을 다시 확인해 주세요.' : '표시할 직보 일정이 없습니다.<br>직보 진행일과 시간을 먼저 입력해 주세요.') + '</div>';
+        }
+        var weeks = buildJikboTeacherTimetableWeekPayloads_(payload, items);
+        var timedItems = items.filter(function(item) {
+          return parseJikboTimeToMinutes_(item.startTime || item.confirmedTime) !== null;
+        });
+        var floatingItems = items.filter(function(item) {
+          return parseJikboTimeToMinutes_(item.startTime || item.confirmedTime) === null;
+        });
+        var summary = [
+          '<div class="jikbo-timetable-summary">',
+          '<span class="jikbo-summary-badge">' + escapeHtml(String(items.length)) + (keyword ? '건 검색 결과' : '건 표시') + '</span>',
+          keyword ? '<span class="jikbo-summary-badge">' + escapeHtml(String(sourceItems.length)) + '건 전체 중</span>' : '',
+          '<span class="jikbo-summary-badge">' + escapeHtml(String(weeks.length)) + '개 주차</span>',
+          floatingItems.length ? '<span class="jikbo-summary-badge alert">' + escapeHtml(String(floatingItems.length)) + '건 시간 미정</span>' : '',
+          '</div>'
+        ].join('');
+        var weekPanels = weeks.map(function(weekPayload) {
+          var weekItems = weekPayload.items || [];
+          var hourRows = getJikboTimetableHourRows_(weekItems);
+          return [
+            '<section class="jikbo-teacher-week-panel" aria-label="' + escapeAttribute(weekPayload.weekLabel || '직보 주간표') + '">',
+            '<div class="jikbo-teacher-week-panel-head"><strong>' + escapeHtml(weekPayload.weekLabel || '-') + '</strong><span>' + escapeHtml(String(weekItems.length)) + '건</span></div>',
+            hourRows.length
+              ? renderJikboStudentTimetableGrid_(weekPayload, weekItems, hourRows)
+              : '<div class="empty-state">이 주에 시간까지 입력된 직보가 없습니다.</div>',
+            '</section>'
+          ].join('');
+        }).join('');
+        return [
+          '<div class="jikbo-teacher-multiweek-wrap">',
+          summary,
+          timedItems.length
+            ? '<div class="jikbo-teacher-multiweek-scroll" aria-label="강사 직보 여러 주차 시간표">' + weekPanels + '</div>'
+            : '<div class="empty-state">시간까지 입력된 직보가 없습니다.<br>시간 미정 항목은 아래 목록에서 확인하세요.</div>',
+          floatingItems.length ? renderJikboFloatingTimetableList_('시간 미정 직보', floatingItems) : '',
+          '</div>'
         ].join('');
       }
 
