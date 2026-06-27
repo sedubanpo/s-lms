@@ -21643,12 +21643,19 @@
         var examType = String(data.examType || '');
         var majorSubject = String(data.majorSubject || data.subjectCategory || data.subjectArea || '');
         var selectedSubject = String(data.selectedSubject || data.detailSubject || data.subjectName || '');
+        var school = normalizeSchoolName_(data.school || data.targetSchool || data.eventSchool || '');
+        var grade = String(data.grade || data.targetGrade || data.schoolGrade || '').replace(/학년/g, '').trim();
+        var target = normalizeEventTargetSchoolName_(data.target || data.targetSchool || data.school || '');
         return {
           eventId: String(data.eventId || docId || ''),
           rowNumber: rowNumber,
           date: date,
           isoDate: String(data.isoDate || (parsedDate ? formatDateKey_(parsedDate) : '')),
-          target: normalizeEventTargetSchoolName_(data.target || data.targetSchool || data.school || ''),
+          target: target,
+          school: school,
+          grade: grade,
+          targetSchool: school,
+          targetGrade: grade,
           eventType: eventType,
           category: eventType,
           eventName: eventType || rawEventName,
@@ -21969,6 +21976,58 @@
         }).sort(function(a, b) {
           return String(a.isoDate || '').localeCompare(String(b.isoDate || '')) ||
             String(a.school || '').localeCompare(String(b.school || ''), 'ko') ||
+            String(a.subjectName || '').localeCompare(String(b.subjectName || ''), 'ko');
+        });
+      }
+
+      function normalizeJikboExamEventForClient_(item) {
+        item = item || {};
+        var target = parseEventTargetForStudentConsole_(item);
+        var school = normalizeSchoolName_(item.school || target.school || '');
+        var grade = normalizeJikboGradeForClient_(item.grade || target.grade || '');
+        var subjectName = String(item.subjectName || item.title || '').trim();
+        var isoDate = item.isoDate || formatDateInputValue_(item.date || item.eventDate || '');
+        return Object.assign({}, item, {
+          rowNumber: item.rowNumber || item.eventId || [school, grade, isoDate, subjectName].filter(Boolean).join('|'),
+          eventId: item.eventId || '',
+          school: school,
+          grade: grade,
+          subjectName: subjectName,
+          isoDate: isoDate,
+          date: item.date || isoDate
+        });
+      }
+
+      function buildJikboExamEventMergeKey_(item) {
+        var normalized = normalizeJikboExamEventForClient_(item);
+        return [
+          normalizeSearchText(normalized.school),
+          normalizeJikboGradeForClient_(normalized.grade),
+          String(normalized.isoDate || ''),
+          normalizeSearchText(normalized.subjectName)
+        ].join('|');
+      }
+
+      function mergeJikboExamEventsWithLoadedEvents_(examEvents) {
+        var map = {};
+        (examEvents || []).map(normalizeJikboExamEventForClient_).forEach(function(item) {
+          if (!item.school || !item.grade || !item.isoDate || !item.subjectName) {
+            return;
+          }
+          map[buildJikboExamEventMergeKey_(item)] = item;
+        });
+        buildJikboExamEventsFromEvents_(APP_STATE.events || []).forEach(function(item) {
+          var key = buildJikboExamEventMergeKey_(item);
+          if (!map[key]) {
+            map[key] = normalizeJikboExamEventForClient_(item);
+          }
+        });
+        return Object.keys(map).map(function(key) {
+          return map[key];
+        }).sort(function(a, b) {
+          return String(a.isoDate || '').localeCompare(String(b.isoDate || '')) ||
+            String(a.school || '').localeCompare(String(b.school || ''), 'ko') ||
+            String(a.grade || '').localeCompare(String(b.grade || '')) ||
             String(a.subjectName || '').localeCompare(String(b.subjectName || ''), 'ko');
         });
       }
@@ -23843,11 +23902,7 @@
         jikboData = filterJikboDataForCurrentAccess_(jikboData || {});
         APP_STATE.jikboSubjectDefinitions = jikboData && jikboData.subjectDefinitions ? jikboData.subjectDefinitions : [];
         APP_STATE.jikboStudentOverrides = jikboData && jikboData.studentOverrides ? jikboData.studentOverrides : [];
-        APP_STATE.jikboExamEvents = (jikboData && jikboData.examEvents ? jikboData.examEvents : []).map(function(item) {
-          return Object.assign({}, item, {
-            school: normalizeSchoolName_(item && item.school)
-          });
-        });
+        APP_STATE.jikboExamEvents = mergeJikboExamEventsWithLoadedEvents_(jikboData && jikboData.examEvents ? jikboData.examEvents : []);
         APP_STATE.jikboScheduleStatuses = (jikboData && jikboData.scheduleStatuses ? jikboData.scheduleStatuses : []).map(function(item) {
           return Object.assign({}, item, {
             school: normalizeSchoolName_(item && item.school)
@@ -39088,6 +39143,12 @@
           return null;
         }
         var target = parseScheduleTarget_(item.target || item.school || item.targetSchool || '');
+        if ((!target.school || target.grade === '공통') && (item.school || item.targetSchool || item.grade || item.targetGrade)) {
+          target = {
+            school: normalizeSchoolName_(target.school || item.school || item.targetSchool || ''),
+            grade: String(item.grade || item.targetGrade || target.grade || '공통').replace(/학년/g, '').trim() || '공통'
+          };
+        }
         var eventType = String(item.eventType || item.category || item.eventName || '').trim();
         var majorSubject = String(item.majorSubject || item.subjectCategory || item.subjectArea || '').trim();
         var selectedSubject = String(item.selectedSubject || item.detailSubject || item.subjectName || '').trim();
@@ -39100,7 +39161,7 @@
         var scheduleType = normalizeEventTypeToScheduleType_(eventType, [subject, title, item.note].join(' '));
         var dateKey = formatDateKey_(parsed);
         var school = target.school || item.school || '학교 미지정';
-        var grade = target.grade || '공통';
+        var grade = target.grade || item.grade || item.targetGrade || '공통';
         return {
           id: String(item.rowNumber || item.id || ('event-' + index)),
           rowNumber: item.rowNumber || '',
