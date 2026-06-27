@@ -6041,6 +6041,17 @@
         align-items: flex-start;
       }
 
+      #view-jikbo.jikbo-teacher-only > .panel-shell > .panel-head,
+      #view-jikbo.jikbo-teacher-only #jikboPanelTabs,
+      #view-jikbo.jikbo-teacher-only .jikbo-board-top,
+      #view-jikbo.jikbo-teacher-only .jikbo-board-toolbar {
+        display: none;
+      }
+
+      #view-jikbo.jikbo-teacher-only .jikbo-summary-grid {
+        margin-top: 0;
+      }
+
       .jikbo-summary-grid {
         grid-template-columns: 1fr;
         margin: 12px 0;
@@ -34512,7 +34523,7 @@
         };
       }
 
-      function buildJikboTeacherTimetablePayload_(model, teacherKey) {
+      function buildJikboTeacherTimetablePayload_(model, teacherKey, anchorDateOverride) {
         var targetKey = String(teacherKey || '');
         var teacher = {
           key: targetKey,
@@ -34577,7 +34588,9 @@
         });
         var anchorDate = items.map(function(item) {
           return parseEventDateForClient_(item.scheduleDate);
-        }).filter(Boolean)[0] || new Date(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth, 1);
+        }).filter(Boolean)[0] ||
+          parseEventDateForClient_(anchorDateOverride) ||
+          new Date(APP_STATE.jikboCalendarYear, APP_STATE.jikboCalendarMonth, 1);
         var weekStart = getMondayOfWeek_(anchorDate);
         var weekDates = [];
         for (var i = 0; i < 7; i += 1) {
@@ -35459,6 +35472,10 @@
           }
           return;
         }
+        var jikboView = document.getElementById('view-jikbo');
+        if (jikboView) {
+          jikboView.classList.toggle('jikbo-teacher-only', !APP_STATE.isAdmin);
+        }
         if (!APP_STATE.isAdmin) {
           APP_STATE.jikboPanelMode = 'board';
           APP_STATE.jikboTopPanelMode = 'teacher';
@@ -35484,7 +35501,7 @@
       function renderJikboPanelTabs_() {
         if (!APP_STATE.isAdmin) {
           document.getElementById('jikboPanelTabs').innerHTML = [
-            '<button type="button" class="material-subtab-button active" data-jikbo-panel="board">내 직보 보드</button>'
+            '<button type="button" class="material-subtab-button active" data-jikbo-panel="board">내 주간 직보 시간표</button>'
           ].join('');
           return;
         }
@@ -35732,6 +35749,10 @@
         var model = buildJikboBoardModel_();
         APP_STATE.currentJikboBoardModel = model;
         renderJikboSummary_(model);
+        if (!APP_STATE.isAdmin) {
+          document.getElementById('jikboBoardWrap').innerHTML = '';
+          return;
+        }
         document.getElementById('jikboBoardWrap').innerHTML = renderJikboBoardTable_(model);
       }
 
@@ -36229,6 +36250,11 @@
         var summary = model && model.summary ? model.summary : {};
         var hasAnyJikboData = Number(stats.examCount || 0) > 0 || Number(stats.jikboCount || 0) > 0 || (model && model.groups && model.groups.length);
         APP_STATE.jikboSummaryDraftMap = {};
+        if (!APP_STATE.isAdmin) {
+          APP_STATE.selectedJikboSummaryPanel = '';
+          document.getElementById('jikboSummaryWrap').innerHTML = renderJikboTeacherSelfTimetable_(model);
+          return;
+        }
         var panelMap = {
           todayJikbos: {
             title: '오늘 직보',
@@ -36289,7 +36315,6 @@
         APP_STATE.selectedJikboSummaryPanel = activePanel;
 
         document.getElementById('jikboSummaryWrap').innerHTML = [
-          !APP_STATE.isAdmin ? renderJikboTeacherSelfTimetable_(model) : '',
           renderJikboTopPanel_(model),
           '<div class="jikbo-summary-cards">',
           panelOrder.map(function(key) {
@@ -36321,6 +36346,15 @@
         return normalizeSearchText(candidates.filter(Boolean)[0] || '');
       }
 
+      function getJikboTeacherSelfAnchorDate_(model) {
+        var today = new Date();
+        if (today.getFullYear() === APP_STATE.jikboCalendarYear && today.getMonth() === APP_STATE.jikboCalendarMonth) {
+          return formatDateKey_(today);
+        }
+        var firstMonthDate = model && model.monthDates && model.monthDates.length ? model.monthDates[0] : null;
+        return firstMonthDate ? formatDateKey_(firstMonthDate) : formatDateKey_(today);
+      }
+
       function renderJikboTeacherSelfTimetable_(model) {
         var teacherKey = getCurrentJikboTeacherKey_();
         if (!teacherKey) {
@@ -36331,7 +36365,7 @@
             '</section>'
           ].join('');
         }
-        var payload = buildJikboTeacherTimetablePayload_(model, teacherKey);
+        var payload = buildJikboTeacherTimetablePayload_(model, teacherKey, getJikboTeacherSelfAnchorDate_(model));
         var titleName = payload.teacher.name || (APP_STATE.user && APP_STATE.user.name) || '내';
         return [
           '<section class="jikbo-exam-timeline-wrap glass-panel" aria-label="내 강사 직보 주간 시간표">',
