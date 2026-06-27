@@ -17382,7 +17382,7 @@
           </button>
           <button type="button" id="jikboNavButton" class="side-nav-button" data-view="jikbo">
             <span class="nav-indicator"></span>
-            <span class="side-nav-label">직보 구성 <span class="admin-nav-badge">관리자 전용</span></span>
+            <span class="side-nav-label">직보 구성</span>
           </button>
           <button type="button" class="side-nav-button" data-view="events">
             <span class="nav-indicator"></span>
@@ -18920,8 +18920,8 @@
             if (viewName === 'homeroom' && !APP_STATE.isAdmin) {
               setNotice('담임 학생 메뉴는 관리자만 사용할 수 있습니다.', 'warning');
             }
-            if (viewName === 'jikbo' && !APP_STATE.isAdmin) {
-              setNotice('직보 매니저는 관리자만 사용할 수 있습니다.', 'warning');
+            if (viewName === 'jikbo' && !canAccessJikboView_()) {
+              setNotice('직보 구성 메뉴를 사용할 권한이 없습니다.', 'warning');
             }
             switchView(viewName);
           });
@@ -21896,7 +21896,7 @@
         }
         return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
           state = state || APP_STATE.firebaseDirect || {};
-          if (!APP_STATE.isAdmin || !state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('jikboRead')) {
+          if (!state.enabled || !state.firestore || !isFirebaseDirectFeatureEnabled_('jikboRead')) {
             return null;
           }
           if (!isFirebaseDirectAuthReusable_(state)) {
@@ -23835,7 +23835,7 @@
         }
 
         if (viewName === 'jikbo') {
-          if (!APP_STATE.isAdmin) {
+          if (!canAccessJikboView_()) {
             return Promise.resolve();
           }
           if (APP_STATE.jikboLoaded) {
@@ -24018,6 +24018,7 @@
 
       function renderUserSummary() {
         var user = APP_STATE.user || {};
+        var canAccessJikbo = canAccessJikboView_();
         document.getElementById('userNameText').textContent = user.name || '로그인 필요';
         document.getElementById('headerUserName').textContent = user.name || '로그인 사용자';
         document.getElementById('greetingText').textContent = getGreetingText_();
@@ -24032,19 +24033,24 @@
         document.getElementById('mobileHomeroomNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('permissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('mobilePermissionNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
-        document.getElementById('jikboNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
-        document.getElementById('mobileJikboNavButton').classList.toggle('hidden', !APP_STATE.isAdmin);
+        document.getElementById('jikboNavButton').classList.toggle('hidden', !canAccessJikbo);
+        document.getElementById('mobileJikboNavButton').classList.toggle('hidden', !canAccessJikbo);
         document.getElementById('openPermissionModalButton').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('quickAddStudentButton').classList.toggle('hidden', !APP_STATE.isAdmin || (APP_STATE.currentView !== 'students' && APP_STATE.currentView !== 'materials'));
         syncMaterialOpenLogButton_();
         document.getElementById('view-homeroom').classList.toggle('hidden', !APP_STATE.isAdmin);
         document.getElementById('view-permissions').classList.toggle('hidden', !APP_STATE.isAdmin);
-        document.getElementById('view-jikbo').classList.toggle('hidden', !APP_STATE.isAdmin);
+        document.getElementById('view-jikbo').classList.toggle('hidden', !canAccessJikbo);
         document.getElementById('materialsCreatePanel').classList.toggle('hidden', !APP_STATE.isAdmin || !APP_STATE.materialCreateOpen);
 
-        if (!APP_STATE.isAdmin && (APP_STATE.currentView === 'permissions' || APP_STATE.currentView === 'homeroom' || APP_STATE.currentView === 'jikbo')) {
+        if (!APP_STATE.isAdmin && (APP_STATE.currentView === 'permissions' || APP_STATE.currentView === 'homeroom')) {
           APP_STATE.currentView = 'students';
         }
+      }
+
+      function canAccessJikboView_() {
+        var role = APP_STATE.user && APP_STATE.user.role ? String(APP_STATE.user.role).toUpperCase() : '';
+        return APP_STATE.isAdmin || role === 'INSTRUCTOR' || role === 'STAFF';
       }
 
       function getGreetingText_() {
@@ -35408,16 +35414,20 @@
       }
 
       function renderJikboView() {
-        if (!APP_STATE.isAdmin) {
+        if (!canAccessJikboView_()) {
           if (APP_STATE.currentView === 'jikbo') {
             APP_STATE.currentView = 'students';
           }
           return;
         }
+        if (!APP_STATE.isAdmin) {
+          APP_STATE.jikboPanelMode = 'board';
+          APP_STATE.jikboTopPanelMode = 'teacher';
+        }
 
         renderJikboPanelTabs_();
         document.getElementById('jikboBoardPanel').classList.toggle('hidden', APP_STATE.jikboPanelMode !== 'board');
-        document.getElementById('jikboManagerPanel').classList.toggle('hidden', APP_STATE.jikboPanelMode !== 'manager');
+        document.getElementById('jikboManagerPanel').classList.toggle('hidden', !APP_STATE.isAdmin || APP_STATE.jikboPanelMode !== 'manager');
 
         if (APP_STATE.jikboPanelMode === 'board') {
           renderJikboBoard_();
@@ -35433,6 +35443,12 @@
       }
 
       function renderJikboPanelTabs_() {
+        if (!APP_STATE.isAdmin) {
+          document.getElementById('jikboPanelTabs').innerHTML = [
+            '<button type="button" class="material-subtab-button active" data-jikbo-panel="board">내 직보 보드</button>'
+          ].join('');
+          return;
+        }
         document.getElementById('jikboPanelTabs').innerHTML = [
           '<button type="button" class="material-subtab-button ' + (APP_STATE.jikboPanelMode === 'board' ? 'active' : '') + '" data-jikbo-panel="board">직보 보드</button>',
           '<button type="button" class="material-subtab-button ' + (APP_STATE.jikboPanelMode === 'manager' ? 'active' : '') + '" data-jikbo-panel="manager">과목 매니저</button>'
@@ -35445,6 +35461,9 @@
           return;
         }
         APP_STATE.jikboPanelMode = button.getAttribute('data-jikbo-panel') || 'board';
+        if (!APP_STATE.isAdmin) {
+          APP_STATE.jikboPanelMode = 'board';
+        }
         renderJikboView();
       }
 
@@ -35496,30 +35515,50 @@
 
         var subjectEditButton = event.target.closest('[data-jikbo-subject-edit]');
         if (subjectEditButton) {
+          if (!APP_STATE.isAdmin) {
+            setNotice('강사 계정에서는 직보 설정을 수정할 수 없습니다.', 'warning');
+            return;
+          }
           enterJikboSubjectEditMode_(subjectEditButton.getAttribute('data-jikbo-subject-edit'));
           return;
         }
 
         var subjectDeleteButton = event.target.closest('[data-jikbo-subject-delete]');
         if (subjectDeleteButton) {
+          if (!APP_STATE.isAdmin) {
+            setNotice('강사 계정에서는 직보 설정을 수정할 수 없습니다.', 'warning');
+            return;
+          }
           handleJikboSubjectDelete_(subjectDeleteButton.getAttribute('data-jikbo-subject-delete'));
           return;
         }
 
         var overrideEditButton = event.target.closest('[data-jikbo-override-edit]');
         if (overrideEditButton) {
+          if (!APP_STATE.isAdmin) {
+            setNotice('강사 계정에서는 학생별 직보 예외를 수정할 수 없습니다.', 'warning');
+            return;
+          }
           enterJikboOverrideEditMode_(overrideEditButton.getAttribute('data-jikbo-override-edit'));
           return;
         }
 
         var overrideDeleteButton = event.target.closest('[data-jikbo-override-delete]');
         if (overrideDeleteButton) {
+          if (!APP_STATE.isAdmin) {
+            setNotice('강사 계정에서는 학생별 직보 예외를 수정할 수 없습니다.', 'warning');
+            return;
+          }
           handleJikboOverrideDelete_(overrideDeleteButton.getAttribute('data-jikbo-override-delete'));
           return;
         }
 
         var assignInstructorButton = event.target.closest('[data-jikbo-assign-instructor]');
         if (assignInstructorButton) {
+          if (!APP_STATE.isAdmin) {
+            setNotice('강사 계정에서는 직보 강사 배정을 수정할 수 없습니다.', 'warning');
+            return;
+          }
           handleJikboQuickInstructorAssign_(assignInstructorButton);
           return;
         }
@@ -35577,6 +35616,10 @@
 
         var summaryItemButton = event.target.closest('[data-jikbo-summary-student]');
         if (summaryItemButton) {
+          if (!APP_STATE.isAdmin) {
+            setNotice('강사 계정에서는 직보 배정 편집을 열 수 없습니다.', 'warning');
+            return;
+          }
           openJikboAssignmentModal_(summaryItemButton.getAttribute('data-jikbo-summary-student') || '');
           return;
         }
@@ -35589,6 +35632,10 @@
 
         var statusButton = event.target.closest('[data-jikbo-status-open]');
         if (statusButton) {
+          if (!APP_STATE.isAdmin) {
+            setNotice('강사 계정에서는 직보 상태를 수정할 수 없습니다.', 'warning');
+            return;
+          }
           openJikboStatusModal_(statusButton);
           return;
         }
@@ -35607,6 +35654,10 @@
 
         var manualStatusButton = event.target.closest('[data-jikbo-manual-open]');
         if (manualStatusButton) {
+          if (!APP_STATE.isAdmin) {
+            setNotice('강사 계정에서는 직보를 직접 입력할 수 없습니다.', 'warning');
+            return;
+          }
           openManualJikboStatusModal_(manualStatusButton);
         }
       }
@@ -36199,6 +36250,7 @@
         APP_STATE.selectedJikboSummaryPanel = activePanel;
 
         document.getElementById('jikboSummaryWrap').innerHTML = [
+          !APP_STATE.isAdmin ? renderJikboTeacherSelfTimetable_(model) : '',
           renderJikboTopPanel_(model),
           '<div class="jikbo-summary-cards">',
           panelOrder.map(function(key) {
@@ -36209,8 +36261,49 @@
         ].join('');
       }
 
+      function getCurrentJikboTeacherKey_() {
+        var user = APP_STATE.user || {};
+        var candidates = [
+          user.name,
+          user.displayName,
+          user.userName,
+          user.instructorName,
+          user.teacherName
+        ];
+        var fromInstructorList = (APP_STATE.instructors || []).find(function(instructor) {
+          return currentUserMatchesInstructorIdentifier_(instructor.userId) ||
+            currentUserMatchesInstructorIdentifier_(instructor.loginId) ||
+            currentUserMatchesInstructorIdentifier_(instructor.instructorId) ||
+            currentUserMatchesInstructorIdentifier_(instructor.teacherId);
+        });
+        if (fromInstructorList) {
+          candidates.unshift(fromInstructorList.name || fromInstructorList.displayName || fromInstructorList.userName);
+        }
+        return normalizeSearchText(candidates.filter(Boolean)[0] || '');
+      }
+
+      function renderJikboTeacherSelfTimetable_(model) {
+        var teacherKey = getCurrentJikboTeacherKey_();
+        if (!teacherKey) {
+          return [
+            '<section class="jikbo-exam-timeline-wrap glass-panel" aria-label="내 강사 직보 주간 시간표">',
+            '<div class="jikbo-top-panel-head"><div class="jikbo-top-panel-title"><strong>내 직보 주간 시간표</strong><span>현재 계정과 연결된 강사명을 확인할 수 없습니다.</span></div></div>',
+            '<div class="jikbo-summary-empty">계정 프로필의 강사명을 확인해 주세요.</div>',
+            '</section>'
+          ].join('');
+        }
+        var payload = buildJikboTeacherTimetablePayload_(model, teacherKey);
+        var titleName = payload.teacher.name || (APP_STATE.user && APP_STATE.user.name) || '내';
+        return [
+          '<section class="jikbo-exam-timeline-wrap glass-panel" aria-label="내 강사 직보 주간 시간표">',
+          '<div class="jikbo-top-panel-head"><div class="jikbo-top-panel-title"><strong>' + escapeHtml(titleName) + ' 강사 직보 주간 시간표</strong><span>' + escapeHtml((payload.teacher.total ? String(payload.teacher.total) + '건 전체 · ' : '') + (payload.weekLabel || '')) + '</span></div><div class="jikbo-top-panel-actions"><button type="button" class="jikbo-teacher-timetable-button" data-jikbo-teacher-timetable="' + escapeAttribute(teacherKey) + '" title="큰 화면으로 보기" aria-label="내 직보 주간 시간표 큰 화면으로 보기"><span class="jikbo-timetable-button-icon" aria-hidden="true">📅</span></button></div></div>',
+          payload.items.length ? renderJikboStudentTimetable_(payload) : '<div class="jikbo-summary-empty">이번 주에 표시할 내 직보가 없습니다.</div>',
+          '</section>'
+        ].join('');
+      }
+
       function renderJikboTopPanel_(model) {
-        var mode = APP_STATE.jikboTopPanelMode === 'teacher' ? 'teacher' : 'school';
+        var mode = !APP_STATE.isAdmin ? 'teacher' : (APP_STATE.jikboTopPanelMode === 'teacher' ? 'teacher' : 'school');
         var isExamCalendarCollapsed = mode === 'school' && APP_STATE.isJikboExamCalendarCollapsed;
         var title = mode === 'teacher' ? '강사별 직보 현황' : '시험 일정 달력';
         var description = mode === 'teacher'
@@ -36246,6 +36339,13 @@
       }
 
       function renderJikboTopTabs_(mode) {
+        if (!APP_STATE.isAdmin) {
+          return [
+            '<div class="jikbo-top-tabs" role="tablist" aria-label="직보 상단 보기">',
+            '  <button type="button" class="jikbo-top-tab active" data-jikbo-top-tab="teacher" role="tab" aria-selected="true">내 강사별</button>',
+            '</div>'
+          ].join('');
+        }
         return [
           '<div class="jikbo-top-tabs" role="tablist" aria-label="직보 상단 보기">',
           '  <button type="button" class="jikbo-top-tab ' + (mode === 'school' ? 'active' : '') + '" data-jikbo-top-tab="school" role="tab" aria-selected="' + (mode === 'school' ? 'true' : 'false') + '">학교별</button>',
@@ -36441,6 +36541,21 @@
 
       function renderJikboTeacherOverview_(model) {
         var overview = buildJikboTeacherOverview_(model);
+        if (!APP_STATE.isAdmin) {
+          var currentTeacherKey = getCurrentJikboTeacherKey_();
+          overview.teachers = (overview.teachers || []).filter(function(teacher) {
+            return !teacher.isUnassigned && teacher.key === currentTeacherKey;
+          });
+          var selfTeacher = overview.teachers[0] || null;
+          overview.stats = {
+            total: selfTeacher ? Number(selfTeacher.total || 0) : 0,
+            assigned: selfTeacher ? Number(selfTeacher.total || 0) : 0,
+            unassigned: 0,
+            confirmed: selfTeacher ? Number(selfTeacher.confirmed || 0) : 0,
+            pending: selfTeacher ? Number(selfTeacher.pending || 0) : 0
+          };
+          overview.missingSubjects = [];
+        }
         var teacherCards = overview.teachers.slice(0, 12).map(function(teacher) {
           var subjectStrip = (teacher.subjects || []).slice(0, 6).map(function(subject) {
             return '<span class="jikbo-chip-subject-badge ' + escapeAttribute(subject.toneClass || getSubjectToneClass_(subject.subjectName)) + '">' + escapeHtml(subject.subjectName || '-') + ' ' + escapeHtml(String(subject.count || 0)) + '</span>';
@@ -36477,12 +36592,12 @@
           '<div class="jikbo-teacher-overview">',
           '  <div class="jikbo-teacher-groups">' + (teacherCards || '<div class="jikbo-summary-empty">입력된 직보 강사가 없습니다.</div>') + '</div>',
           '  <div class="jikbo-teacher-stats">',
-          renderJikboTeacherStat_('강사 입력', overview.stats.assigned + '건'),
-          renderJikboTeacherStat_('강사 미입력', overview.stats.unassigned + '건'),
+          renderJikboTeacherStat_(APP_STATE.isAdmin ? '강사 입력' : '내 직보', overview.stats.assigned + '건'),
+          APP_STATE.isAdmin ? renderJikboTeacherStat_('강사 미입력', overview.stats.unassigned + '건') : '',
           renderJikboTeacherStat_('확정', overview.stats.confirmed + '건'),
           renderJikboTeacherStat_('미정/미확정', overview.stats.pending + '건'),
-          '<div class="jikbo-teacher-stat"><span>미입력 과목</span><strong>' + escapeHtml(String(overview.missingSubjects.length)) + '개</strong></div>',
-          '<div class="jikbo-teacher-missing-list">' + (missingChips || '<span class="helper-text">미입력 과목 없음</span>') + '</div>',
+          APP_STATE.isAdmin ? '<div class="jikbo-teacher-stat"><span>미입력 과목</span><strong>' + escapeHtml(String(overview.missingSubjects.length)) + '개</strong></div>' : '',
+          APP_STATE.isAdmin ? '<div class="jikbo-teacher-missing-list">' + (missingChips || '<span class="helper-text">미입력 과목 없음</span>') + '</div>' : '',
           '  </div>',
           '</div>'
         ].join('');
@@ -36966,6 +37081,13 @@
           }
           if (item.note) {
             detailParts.push('비고: ' + item.note);
+          }
+          if (!APP_STATE.isAdmin) {
+            return '<div class="jikbo-inline-status readonly" data-jikbo-inline-status="' + escapeAttribute(statusKey) + '">' +
+              '<button type="button" class="jikbo-chip class ' + escapeAttribute(statusClass + ' ' + subjectToneClass + (item.isActualDateShifted ? ' actual-shifted' : '')) + '"' +
+              (item.note ? ' title="' + escapeAttribute(item.note) + '"' : '') +
+              '><span class="jikbo-chip-subject-badge ' + escapeAttribute(subjectToneClass) + '">' + escapeHtml(item.subjectName || '-') + '</span><span class="jikbo-chip-meta">' + escapeHtml(detailParts.filter(Boolean).join(' · ')) + '</span></button>' +
+            '</div>';
           }
           return '<div class="jikbo-inline-status" data-jikbo-inline-status="' + escapeAttribute(statusKey) + '">' +
             '<button type="button" class="jikbo-chip class ' + escapeAttribute(statusClass + ' ' + subjectToneClass + (item.isActualDateShifted ? ' actual-shifted' : '')) + '"' +
@@ -42448,7 +42570,10 @@
       }
 
       function switchView(viewName) {
-        if ((viewName === 'permissions' || viewName === 'homeroom' || viewName === 'jikbo') && !APP_STATE.isAdmin) {
+        if ((viewName === 'permissions' || viewName === 'homeroom') && !APP_STATE.isAdmin) {
+          viewName = 'students';
+        }
+        if (viewName === 'jikbo' && !canAccessJikboView_()) {
           viewName = 'students';
         }
 
