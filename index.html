@@ -21938,21 +21938,31 @@
       }
 
       function buildJikboExamEventsFromEvents_(events) {
-        return (events || []).map(function(eventItem) {
+        return (events || []).map(function(eventItem, index) {
+          var schedule = normalizeEventToSchedule_(eventItem, index);
           var target = parseEventTargetForStudentConsole_(eventItem);
+          if ((!target.school || !target.grade) && schedule) {
+            target = {
+              school: target.school || schedule.school,
+              grade: target.grade || schedule.grade
+            };
+          }
           var eventType = String(eventItem.eventType || eventItem.category || '').trim();
           var majorSubject = String(eventItem.majorSubject || eventItem.subjectCategory || eventItem.subjectArea || '').trim();
           var selectedSubject = String(eventItem.selectedSubject || eventItem.detailSubject || eventItem.subjectName || '').trim();
           var subjectName = eventType === '내신'
             ? formatEventExamSubjectLabel_(majorSubject || inferMajorSubjectFromLabel_(eventItem.title || selectedSubject), selectedSubject || inferSelectedSubjectFromLabel_(eventItem.title || ''))
             : String(eventItem.subjectName || eventItem.title || '').trim();
+          if (!subjectName && schedule && schedule.subject) {
+            subjectName = schedule.subject;
+          }
           var examType = String(eventItem.examType || eventItem.note || '').trim();
           var title = String(eventItem.title || '').trim();
           var note = String(eventItem.note || '').trim();
           if (!target.school || !target.grade || !subjectName) {
             return null;
           }
-          if (eventType !== '내신' && !isJikboExamEventText_(title + ' ' + note + ' ' + examType)) {
+          if (eventType !== '내신' && (!schedule || schedule.scheduleType !== '내신 시험') && !isJikboExamEventText_(title + ' ' + note + ' ' + examType)) {
             return null;
           }
           return {
