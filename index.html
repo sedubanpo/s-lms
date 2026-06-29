@@ -7776,6 +7776,15 @@
         font-size: 0.86rem;
       }
 
+      .jikbo-timetable-week-head {
+        min-width: 826px;
+        padding: 9px 10px !important;
+        background: rgba(239, 246, 255, 0.98) !important;
+        color: #1d4ed8 !important;
+        font-size: 0.78rem;
+        font-weight: 950;
+      }
+
       .jikbo-timetable-date-head span {
         display: block;
         margin-top: 3px;
@@ -35283,7 +35292,7 @@
         document.getElementById('jikboTimetableModalDescription').textContent = [
           payload.student.school || '',
           formatJikboGradeLabel_(payload.student.grade || ''),
-          payload.weekLabel || ''
+          payload.dateRangeLabel || payload.weekLabel || ''
         ].filter(Boolean).join(' · ') || '학생별 직보 진행일, 과목, 강사, 시간을 주간표로 확인합니다.';
         var tools = document.getElementById('jikboTimetableModalTools');
         if (tools) {
@@ -35564,7 +35573,8 @@
           weekStart: weekStart,
           weekDates: weekDates,
           weekDateKeys: weekDates.map(formatDateKey_),
-          weekLabel: formatJikboTimetableWeekLabel_(weekDates)
+          weekLabel: formatJikboTimetableWeekLabel_(weekDates),
+          dateRangeLabel: formatJikboTimetableItemRangeLabel_(items)
         };
       }
 
@@ -35674,6 +35684,41 @@
         return base;
       }
 
+      function getJikboTimetableFullWeekDates_(items) {
+        var dates = (items || []).map(function(item) {
+          return parseEventDateForClient_(item.scheduleDate);
+        }).filter(Boolean).sort(function(a, b) {
+          return a.getTime() - b.getTime();
+        });
+        if (!dates.length) {
+          return [];
+        }
+        var start = getMondayOfWeek_(dates[0]);
+        var end = getMondayOfWeek_(dates[dates.length - 1]);
+        end.setDate(end.getDate() + 6);
+        var result = [];
+        var cursor = new Date(start);
+        while (cursor.getTime() <= end.getTime()) {
+          result.push(new Date(cursor));
+          cursor.setDate(cursor.getDate() + 1);
+        }
+        return result;
+      }
+
+      function getJikboTimetableWeekGroups_(dates) {
+        var groups = [];
+        for (var i = 0; i < (dates || []).length; i += 7) {
+          var weekDates = dates.slice(i, i + 7);
+          if (weekDates.length) {
+            groups.push({
+              label: formatJikboTimetableWeekLabel_(weekDates),
+              span: weekDates.length
+            });
+          }
+        }
+        return groups;
+      }
+
       function formatJikboTimetableWeekLabel_(weekDates) {
         if (!weekDates || !weekDates.length) {
           return '';
@@ -35752,29 +35797,34 @@
         if (!items.length) {
           return '<div class="empty-state">표시할 직보 일정이 없습니다.<br>직보 진행일과 시간을 먼저 입력해 주세요.</div>';
         }
-        var weekMap = {};
-        (payload.weekDateKeys || []).forEach(function(key) { weekMap[key] = true; });
-        var weekItems = items.filter(function(item) { return weekMap[item.scheduleDate]; });
-        var outsideItems = items.filter(function(item) { return !weekMap[item.scheduleDate]; });
-        var hourRows = getJikboTimetableHourRows_(weekItems);
+        var allWeekDates = getJikboTimetableFullWeekDates_(items);
+        var timetablePayload = Object.assign({}, payload, {
+          weekDates: allWeekDates,
+          weekDateKeys: allWeekDates.map(formatDateKey_),
+          weekGroups: getJikboTimetableWeekGroups_(allWeekDates)
+        });
+        var floatingItems = items.filter(function(item) {
+          return parseJikboTimeToMinutes_(item.startTime || item.confirmedTime) === null;
+        });
+        var timedItems = items.filter(function(item) {
+          return parseJikboTimeToMinutes_(item.startTime || item.confirmedTime) !== null;
+        });
+        var hourRows = getJikboTimetableHourRows_(items);
         var summary = [
           '<div class="jikbo-timetable-summary">',
           '<span class="jikbo-summary-badge">' + escapeHtml(String(items.length)) + '건 전체</span>',
-          '<span class="jikbo-summary-badge">' + escapeHtml(String(weekItems.length)) + '건 주간표</span>',
-          outsideItems.length ? '<span class="jikbo-summary-badge alert">' + escapeHtml(String(outsideItems.length)) + '건 다른 주</span>' : '',
+          '<span class="jikbo-summary-badge">' + escapeHtml(String(timedItems.length)) + '건 시간표</span>',
+          '<span class="jikbo-summary-badge">' + escapeHtml(String(timetablePayload.weekGroups.length)) + '개 주차</span>',
+          floatingItems.length ? '<span class="jikbo-summary-badge alert">' + escapeHtml(String(floatingItems.length)) + '건 시간 미정</span>' : '',
           '</div>'
         ].join('');
         var tableHtml = hourRows.length
-          ? renderJikboStudentTimetableGrid_(payload, weekItems, hourRows)
-          : '<div class="empty-state">이 주에 시간까지 입력된 직보가 없습니다.<br>시간 미정 항목은 아래 목록에서 확인하세요.</div>';
-        var floatingItems = weekItems.filter(function(item) {
-          return parseJikboTimeToMinutes_(item.startTime || item.confirmedTime) === null;
-        });
+          ? renderJikboStudentTimetableGrid_(timetablePayload, items, hourRows)
+          : '<div class="empty-state">시간까지 입력된 직보가 없습니다.<br>시간 미정 항목은 아래 목록에서 확인하세요.</div>';
         return [
           summary,
           tableHtml,
-          floatingItems.length ? renderJikboFloatingTimetableList_('시간 미정 직보', floatingItems) : '',
-          outsideItems.length ? renderJikboFloatingTimetableList_('다른 주 직보', outsideItems) : ''
+          floatingItems.length ? renderJikboFloatingTimetableList_('시간 미정 직보', floatingItems) : ''
         ].join('');
       }
 
@@ -35840,10 +35890,17 @@
       }
 
       function renderJikboStudentTimetableGrid_(payload, weekItems, hourRows) {
+        var weekGroups = payload.weekGroups || [];
         return [
           '<div class="jikbo-timetable-shell">',
           '<table class="jikbo-timetable-table">',
-          '<thead><tr><th class="jikbo-timetable-time-head">시간<br><span class="helper-text">구간</span></th>',
+          '<thead>',
+          weekGroups.length > 1
+            ? '<tr><th class="jikbo-timetable-time-head"></th>' + weekGroups.map(function(group) {
+                return '<th class="jikbo-timetable-week-head" colspan="' + escapeAttribute(group.span) + '">' + escapeHtml(group.label || '-') + '</th>';
+              }).join('') + '</tr>'
+            : '',
+          '<tr><th class="jikbo-timetable-time-head">시간<br><span class="helper-text">구간</span></th>',
           (payload.weekDates || []).map(function(date) {
             var weekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
             var weekendClass = isJikboWeekend_(date) ? ' weekend' : '';
