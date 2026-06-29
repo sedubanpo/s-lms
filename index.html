@@ -8604,12 +8604,64 @@
       }
 
       .student-log-author-tabs {
+        display: grid;
+        grid-template-columns: 138px minmax(0, 1fr);
+        align-items: start;
+        gap: 8px 10px;
+        padding: 0 16px 12px;
+        overflow: visible;
+      }
+
+      .student-log-author-tab-all {
+        align-self: stretch;
+        justify-content: center;
+        border-radius: 10px;
+      }
+
+      .student-log-author-subject-stack {
+        display: grid;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .student-log-author-subject-group {
+        display: grid;
+        grid-template-columns: 82px minmax(0, 1fr);
+        align-items: start;
+        gap: 8px;
+        min-width: 0;
+        padding: 8px;
+        border: 1px solid var(--author-border, #d8e3f4);
+        border-radius: 12px;
+        background: var(--author-bg, #f8fafc);
+      }
+
+      .student-log-author-subject-label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        min-height: 32px;
+        padding: 0 8px;
+        border-radius: 9px;
+        background: rgba(255, 255, 255, 0.82);
+        color: var(--author-color, #475569);
+        font-size: 0.72rem;
+        font-weight: 950;
+        white-space: nowrap;
+      }
+
+      .student-log-author-subject-label svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .student-log-author-subject-tabs {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
         gap: 6px;
-        padding: 0 16px 12px;
-        overflow: visible;
+        min-width: 0;
       }
 
       .student-log-author-tab {
@@ -25570,7 +25622,7 @@
           '    <select class="field-select" data-student-author-select>' + buildStudentAuthorOptions_() + '</select>',
           '  </div>',
           renderStudentActivePermissionFilter_(),
-          renderStudentLogAuthorTabs_(),
+          renderStudentLogAuthorTabs_({ compact: true }),
           rows.length ? '<div class="mobile-log-card-list">' + rows.map(renderStudentMobileLogCard_).join('') + '</div>' : (emptyHtml || '<div class="student-log-list-empty">검색 조건에 맞는 특이사항 기록이 없습니다.</div>'),
           '</section>'
         ].join('');
@@ -25915,18 +25967,41 @@
         })).join('');
       }
 
-      function renderStudentLogAuthorTabs_() {
+      function renderStudentLogAuthorTabs_(options) {
+        var config = options || {};
         var current = APP_STATE.studentLogAuthorFilter || '';
         var authors = getStudentLogAuthorGroups_();
         var totalCount = authors.reduce(function(total, item) {
           return total + item.count;
         }, 0);
-        var tabs = [
-          '<button type="button" class="student-log-author-tab ' + (!current ? 'active' : '') + '" data-student-author-tab=""><i data-lucide="folder"></i>전체 작성자<span>' + escapeHtml(String(totalCount)) + '</span></button>'
-        ].concat(authors.map(function(item) {
-          return '<button type="button" class="student-log-author-tab ' + (item.key === current ? 'active' : '') + '" data-student-author-tab="' + escapeAttribute(item.key) + '"><i data-lucide="folder"></i>' + escapeHtml(item.label) + '<span>' + escapeHtml(String(item.count)) + '</span></button>';
-        }));
-        return '<div class="student-log-author-tabs" aria-label="상담 기록 작성자별 폴더">' + tabs.join('') + '</div>';
+        var grouped = groupStudentLogAuthorsBySubject_(authors);
+        var allButton = '<button type="button" class="student-log-author-tab student-log-author-tab-all ' + (!current ? 'active' : '') + '" data-student-author-tab=""><i data-lucide="folder"></i>전체 작성자<span>' + escapeHtml(String(totalCount)) + '</span></button>';
+        if (config.compact) {
+          return '<div class="student-log-author-tabs compact" aria-label="상담 기록 작성자별 폴더">' + allButton + authors.map(renderStudentLogAuthorTabButton_).join('') + '</div>';
+        }
+        return [
+          '<div class="student-log-author-tabs" aria-label="상담 기록 작성자별 폴더">',
+          allButton,
+          '<div class="student-log-author-subject-stack">',
+          grouped.map(function(group) {
+            var visual = getSubjectVisual_(group.subject);
+            return [
+              '<section class="student-log-author-subject-group" style="' + escapeAttribute(buildSubjectVisualStyle_(visual, 'author')) + '">',
+              '  <div class="student-log-author-subject-label"><i data-lucide="' + escapeAttribute(visual.icon) + '"></i>' + escapeHtml(group.subject) + '</div>',
+              '  <div class="student-log-author-subject-tabs">',
+                   group.authors.map(renderStudentLogAuthorTabButton_).join(''),
+              '  </div>',
+              '</section>'
+            ].join('');
+          }).join(''),
+          '</div>',
+          '</div>'
+        ].join('');
+      }
+
+      function renderStudentLogAuthorTabButton_(item) {
+        var current = APP_STATE.studentLogAuthorFilter || '';
+        return '<button type="button" class="student-log-author-tab ' + (item.key === current ? 'active' : '') + '" data-student-author-tab="' + escapeAttribute(item.key) + '"><i data-lucide="folder"></i>' + escapeHtml(item.label) + '<span>' + escapeHtml(String(item.count)) + '</span></button>';
       }
 
       function getStudentLogAuthorGroups_() {
@@ -25938,9 +26013,12 @@
               return;
             }
             if (!map[key]) {
+              var subject = getStudentLogAuthorSubjectGroup_(log, student);
               map[key] = {
                 key: key,
                 label: getStudentLogAuthorFilterLabel_(log),
+                subject: subject,
+                subjectOrder: getStudentLogAuthorSubjectOrder_(subject),
                 count: 0
               };
             }
@@ -25950,16 +26028,13 @@
         return Object.keys(map).map(function(key) {
           return map[key];
         }).sort(function(a, b) {
-          return String(a.label || '').localeCompare(String(b.label || ''), 'ko');
+          return (a.subjectOrder || 99) - (b.subjectOrder || 99) ||
+            String(a.label || '').localeCompare(String(b.label || ''), 'ko');
         });
       }
 
       function getStudentLogAuthorFilterKey_(log) {
-        var id = String(log && log.createdById || '').trim();
-        if (id) {
-          return 'id:' + id;
-        }
-        return 'name:' + normalizeSearchText(log && log.createdByName || '관리자');
+        return 'author:' + normalizeSearchText(getStudentLogAuthorFilterLabel_(log));
       }
 
       function getStudentLogAuthorFilterLabel_(log) {
@@ -25969,6 +26044,56 @@
           return name || '관리자 계정';
         }
         return (name || '강사') + ' 강사';
+      }
+
+      function getStudentLogAuthorSubjectGroup_(log, student) {
+        if ((log && log.createdByRole || '').toUpperCase() === 'ADMIN' || isAcademyAdminAuthor_(log, log && log.createdByName)) {
+          return '기타';
+        }
+        var subject = resolveLogAuthorSubject_(log, student);
+        return normalizeStudentLogSubjectFamily_(subject);
+      }
+
+      function normalizeStudentLogSubjectFamily_(subject) {
+        var text = normalizeSearchText(subject || '');
+        var subjectOrder = ['국어', '수학', '영어', '과학', '사회'];
+        for (var i = 0; i < subjectOrder.length; i += 1) {
+          if (text.indexOf(normalizeSearchText(subjectOrder[i])) !== -1) {
+            return subjectOrder[i];
+          }
+        }
+        if (['물리', '화학', '생명', '생물', '지구'].some(function(keyword) { return text.indexOf(normalizeSearchText(keyword)) !== -1; })) {
+          return '과학';
+        }
+        if (['한국사', '세계사', '동아시아사', '윤리', '지리', '사회문화', '정치', '경제'].some(function(keyword) { return text.indexOf(normalizeSearchText(keyword)) !== -1; })) {
+          return '사회';
+        }
+        return '기타';
+      }
+
+      function getStudentLogAuthorSubjectOrder_(subject) {
+        var order = ['국어', '수학', '영어', '과학', '사회', '기타'];
+        var index = order.indexOf(subject || '기타');
+        return index === -1 ? order.length : index;
+      }
+
+      function groupStudentLogAuthorsBySubject_(authors) {
+        var map = {};
+        (authors || []).forEach(function(author) {
+          var subject = author.subject || '기타';
+          if (!map[subject]) {
+            map[subject] = [];
+          }
+          map[subject].push(author);
+        });
+        return ['국어', '수학', '영어', '과학', '사회', '기타'].filter(function(subject) {
+          return map[subject] && map[subject].length;
+        }).map(function(subject) {
+          return {
+            subject: subject,
+            authors: map[subject]
+          };
+        });
       }
 
       function renderStudentIndexTable_(students) {
