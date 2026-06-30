@@ -6375,6 +6375,41 @@
         -webkit-line-clamp: 2;
       }
 
+      .jikbo-summary-authorized-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 2px;
+      }
+
+      .jikbo-summary-authorized-label {
+        color: var(--text-soft);
+        font-size: 0.68rem;
+        font-weight: 900;
+      }
+
+      .jikbo-authorized-instructor-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        max-width: 100%;
+        padding: 3px 7px;
+        border: 1px solid var(--subject-border, rgba(203, 213, 225, 0.9));
+        border-radius: 999px;
+        background: var(--subject-bg, rgba(248, 250, 252, 0.96));
+        color: var(--subject-color, var(--text-strong));
+        font-size: 0.68rem;
+        font-weight: 950;
+        line-height: 1.2;
+      }
+
+      .jikbo-authorized-instructor-badge svg {
+        width: 12px;
+        height: 12px;
+        flex: 0 0 auto;
+      }
+
       .jikbo-summary-status-badges {
         display: inline-flex;
         flex-wrap: wrap;
@@ -37365,9 +37400,11 @@
         renderJikboSummary_(model);
         if (!APP_STATE.isAdmin) {
           document.getElementById('jikboBoardWrap').innerHTML = '';
+          renderLucideIcons_();
           return;
         }
         document.getElementById('jikboBoardWrap').innerHTML = renderJikboBoardTable_(model);
+        renderLucideIcons_();
       }
 
       function isJikboBoardDataReady_() {
@@ -37653,7 +37690,7 @@
                 if (resolvedJikbo.status === 'missing-subject' || resolvedJikbo.status === 'unassigned') {
                   stats.warningCount += 1;
                 }
-                collectJikboScheduleSummaryItem_(summary, summarySeenMap, resolvedJikbo, todayKey, tomorrowKey);
+                collectJikboScheduleSummaryItem_(summary, summarySeenMap, resolvedJikbo, todayKey, tomorrowKey, permissionMap);
               });
             });
 
@@ -37690,7 +37727,7 @@
               }
               cellMap[manualDate].jikbos.push(manualJikbo);
               stats.jikboCount += 1;
-              collectJikboScheduleSummaryItem_(summary, summarySeenMap, manualJikbo, todayKey, tomorrowKey);
+              collectJikboScheduleSummaryItem_(summary, summarySeenMap, manualJikbo, todayKey, tomorrowKey, permissionMap);
             });
 
             if (matchedExamCount > 0) {
@@ -38324,11 +38361,12 @@
           return '<button type="button" class="jikbo-summary-detail-item clickable alert" data-jikbo-summary-missing-school="' + escapeAttribute(item.key) + '"><div class="jikbo-summary-detail-item-title">' + renderJikboSummaryItemTitle_(item, panel) + renderJikboSummaryItemBadges_(item, panel) + '</div><div class="jikbo-summary-detail-item-meta">' + escapeHtml(item.meta || '명단 보기') + '</div></button>';
         }
         var statusClass = item && item.progressStatus ? getJikboSummaryStatusClass_(item.progressStatus) : '';
+        var authorizedHtml = renderJikboSummaryAuthorizedInstructors_(item, panel);
         if (item && item.statusKey && item.draft && APP_STATE.isAdmin) {
           APP_STATE.jikboStatusDraftMap[item.statusKey] = item.draft;
-          return '<button type="button" class="jikbo-summary-detail-item clickable ' + escapeAttribute(statusClass) + '" data-jikbo-summary-status-open="' + escapeAttribute(item.statusKey) + '"><div class="jikbo-summary-detail-item-title">' + renderJikboSummaryItemTitle_(item, panel) + renderJikboSummaryItemBadges_(item, panel) + '</div><div class="jikbo-summary-detail-item-meta">' + escapeHtml(item.meta || '') + '</div></button>';
+          return '<button type="button" class="jikbo-summary-detail-item clickable ' + escapeAttribute(statusClass) + '" data-jikbo-summary-status-open="' + escapeAttribute(item.statusKey) + '"><div class="jikbo-summary-detail-item-title">' + renderJikboSummaryItemTitle_(item, panel) + renderJikboSummaryItemBadges_(item, panel) + '</div><div class="jikbo-summary-detail-item-meta">' + escapeHtml(item.meta || '') + '</div>' + authorizedHtml + '</button>';
         }
-        return '<article class="jikbo-summary-detail-item ' + (panel.alert ? 'alert ' : '') + escapeAttribute(statusClass) + '"><div class="jikbo-summary-detail-item-title">' + renderJikboSummaryItemTitle_(item, panel) + renderJikboSummaryItemBadges_(item, panel) + '</div><div class="jikbo-summary-detail-item-meta">' + escapeHtml(item && item.meta || '') + '</div></article>';
+        return '<article class="jikbo-summary-detail-item ' + (panel.alert ? 'alert ' : '') + escapeAttribute(statusClass) + '"><div class="jikbo-summary-detail-item-title">' + renderJikboSummaryItemTitle_(item, panel) + renderJikboSummaryItemBadges_(item, panel) + '</div><div class="jikbo-summary-detail-item-meta">' + escapeHtml(item && item.meta || '') + '</div>' + authorizedHtml + '</article>';
       }
 
       function renderJikboSummaryItemTitle_(item, panel) {
@@ -38339,6 +38377,22 @@
           return '<span class="jikbo-student-name-inline"><span>' + escapeHtml(studentName || '-') + '</span>' + renderJikboStudentTimetableButton_(item.studentId, studentName, true) + (remainder ? '<span>· ' + escapeHtml(remainder) + '</span>' : '') + '</span>';
         }
         return '<span>' + title + '</span>';
+      }
+
+      function renderJikboSummaryAuthorizedInstructors_(item, panel) {
+        if (!(panel && (panel.panelKey === 'todayJikbos' || panel.panelKey === 'tomorrowJikbos') && item && item.authorizedInstructors && item.authorizedInstructors.length)) {
+          return '';
+        }
+        var badges = item.authorizedInstructors.slice(0, 6).map(function(instructor) {
+          var subjectLabel = instructor.subject || instructor.subjectLabel || item.subjectName || '';
+          var visual = getSubjectVisual_(subjectLabel);
+          return '<span class="jikbo-authorized-instructor-badge" style="' + escapeAttribute(buildSubjectVisualStyle_(visual)) + '" title="' + escapeAttribute([instructor.name || instructor.userId || '강사', subjectLabel].filter(Boolean).join(' · ')) + '"><i data-lucide="' + escapeAttribute(visual.icon) + '"></i>' + escapeHtml(instructor.name || instructor.userId || '강사') + '</span>';
+        });
+        var hiddenCount = Math.max(0, item.authorizedInstructors.length - 6);
+        if (hiddenCount) {
+          badges.push('<span class="jikbo-authorized-instructor-badge">+' + escapeHtml(String(hiddenCount)) + '</span>');
+        }
+        return '<div class="jikbo-summary-authorized-row"><span class="jikbo-summary-authorized-label">권한 강사</span>' + badges.join('') + '</div>';
       }
 
       function buildJikboTimelineEventKey_(eventItem) {
@@ -38954,7 +39008,54 @@
         });
       }
 
-      function collectJikboScheduleSummaryItem_(summary, seenMap, item, todayKey, tomorrowKey) {
+      function getJikboAuthorizedInstructorsForStudent_(item, permissionMap) {
+        var student = findAnyStudentById_(item && item.studentId) || {
+          studentId: item && item.studentId || '',
+          studentName: item && item.studentName || '',
+          school: item && item.school || '',
+          grade: item && item.grade || ''
+        };
+        var allowedIds = getPermissionInstructorIdsForStudent_(permissionMap || getPermissionMap(), student);
+        if (!allowedIds.length) {
+          return [];
+        }
+        var subjectDefinition = null;
+        var subjectMap = getJikboSubjectDefinitionMap_();
+        var subjectKey = normalizeSearchText(item && item.subjectName);
+        if (subjectKey && subjectMap[subjectKey]) {
+          subjectDefinition = subjectMap[subjectKey];
+        }
+        var categories = subjectDefinition && subjectDefinition.instructorSubjectCategories && subjectDefinition.instructorSubjectCategories.length
+          ? subjectDefinition.instructorSubjectCategories
+          : [item && item.subjectName || ''];
+        var seen = {};
+        return (APP_STATE.instructors || []).filter(function(instructor) {
+          return allowedIds.some(function(id) {
+            return isInstructorIdentifierInCandidates_(id, instructor) || sameInstructorIdentifier_(instructor && instructor.userId, id);
+          });
+        }).map(function(instructor) {
+          var subject = instructor.subject || instructor.department || '';
+          return {
+            userId: instructor.userId || instructor.loginId || '',
+            name: instructor.name || instructor.displayName || instructor.userName || instructor.userId || '강사',
+            subject: subject,
+            isSubjectMatch: matchesJikboInstructorCategories_(subject, categories)
+          };
+        }).filter(function(instructor) {
+          var key = [instructor.userId || '', instructor.name || '', instructor.subject || ''].join('|');
+          if (seen[key]) {
+            return false;
+          }
+          seen[key] = true;
+          return true;
+        }).sort(function(a, b) {
+          return (b.isSubjectMatch ? 1 : 0) - (a.isSubjectMatch ? 1 : 0) ||
+            String(a.subject || '').localeCompare(String(b.subject || ''), 'ko') ||
+            String(a.name || '').localeCompare(String(b.name || ''), 'ko');
+        });
+      }
+
+      function collectJikboScheduleSummaryItem_(summary, seenMap, item, todayKey, tomorrowKey, permissionMap) {
         if (!item || !item.studentId || !item.dateKey) {
           return;
         }
@@ -38970,6 +39071,7 @@
         var progressStatus = item.progressStatus || '미정';
         var statusDraft = createJikboStatusDraftFromItem_(item) || {};
         var isUnconfirmed = isUnconfirmedJikboScheduleItem_({ progressStatus: progressStatus });
+        var authorizedInstructors = item.authorizedInstructors || getJikboAuthorizedInstructorsForStudent_(item, permissionMap);
         summary[bucket].push({
           title: [item.studentName || '-', item.subjectName || '-'].join(' · '),
           meta: [
@@ -38996,6 +39098,7 @@
           endTime: item.endTime || '',
           progressStatus: progressStatus,
           note: item.note || '',
+          authorizedInstructors: authorizedInstructors,
           preview: [item.studentName || '-', item.subjectName || '-'].join(' · ')
         });
       }
