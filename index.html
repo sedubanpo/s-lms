@@ -38865,12 +38865,26 @@
         return item && item.progressStatus === '확정';
       }
 
+      function isUnconfirmedJikboScheduleItem_(item) {
+        return item && (item.progressStatus === '미확정' || item.progressStatus === '미진행');
+      }
+
+      function getJikboScheduleSummarySortGroup_(item) {
+        if (isConfirmedJikboScheduleItem_(item)) {
+          return 0;
+        }
+        if (isUnconfirmedJikboScheduleItem_(item)) {
+          return 2;
+        }
+        return 1;
+      }
+
       function sortJikboScheduleSummaryItems_(items) {
         return (items || []).slice().sort(function(a, b) {
-          var aConfirmed = isConfirmedJikboScheduleItem_(a) ? 0 : 1;
-          var bConfirmed = isConfirmedJikboScheduleItem_(b) ? 0 : 1;
-          if (aConfirmed !== bConfirmed) {
-            return aConfirmed - bConfirmed;
+          var aGroup = getJikboScheduleSummarySortGroup_(a);
+          var bGroup = getJikboScheduleSummarySortGroup_(b);
+          if (aGroup !== bGroup) {
+            return aGroup - bGroup;
           }
           return String(a.startTime || a.confirmedTime || '').localeCompare(String(b.startTime || b.confirmedTime || '')) ||
             String(a.school || '').localeCompare(String(b.school || ''), 'ko') ||
@@ -38955,6 +38969,7 @@
         seenMap[bucket][key] = true;
         var progressStatus = item.progressStatus || '미정';
         var statusDraft = createJikboStatusDraftFromItem_(item) || {};
+        var isUnconfirmed = isUnconfirmedJikboScheduleItem_({ progressStatus: progressStatus });
         summary[bucket].push({
           title: [item.studentName || '-', item.subjectName || '-'].join(' · '),
           meta: [
@@ -38964,7 +38979,8 @@
               ? [item.startTime || item.confirmedTime, item.endTime].filter(Boolean).join('-')
               : '',
             item.actualDate && item.actualDate !== item.dateKey ? '진행일 ' + item.actualDate : '',
-            progressStatus === '대체진행' && item.substituteDate ? '대체 ' + item.substituteDate : ''
+            progressStatus === '대체진행' && item.substituteDate ? '대체 ' + item.substituteDate : '',
+            isUnconfirmed && item.note ? '비고: ' + item.note : ''
           ].filter(Boolean).join(' · '),
           studentId: item.studentId,
           studentName: item.studentName,
@@ -38979,6 +38995,7 @@
           startTime: item.startTime || item.confirmedTime || '',
           endTime: item.endTime || '',
           progressStatus: progressStatus,
+          note: item.note || '',
           preview: [item.studentName || '-', item.subjectName || '-'].join(' · ')
         });
       }
