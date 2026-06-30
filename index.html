@@ -6281,6 +6281,77 @@
         -webkit-line-clamp: initial;
       }
 
+      .jikbo-summary-exam-school-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .jikbo-summary-exam-school-group {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid rgba(203, 213, 225, 0.72);
+        border-radius: 14px;
+        background: rgba(248, 251, 255, 0.9);
+      }
+
+      .jikbo-summary-exam-school-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .jikbo-summary-exam-school-head strong {
+        font-size: 0.86rem;
+        font-weight: 950;
+        color: var(--text-strong);
+      }
+
+      .jikbo-summary-exam-grade-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 8px;
+      }
+
+      .jikbo-summary-exam-grade-item {
+        display: grid;
+        gap: 5px;
+        min-height: 76px;
+        padding: 10px 11px;
+        border: 1px solid var(--grade-border, rgba(203, 213, 225, 0.9));
+        border-radius: 12px;
+        background: var(--grade-bg, rgba(248, 250, 252, 0.96));
+        color: var(--grade-text, var(--text-strong));
+      }
+
+      .jikbo-summary-exam-grade-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 0.82rem;
+        font-weight: 950;
+      }
+
+      .jikbo-summary-exam-grade-pill {
+        flex: 0 0 auto;
+        padding: 3px 7px;
+        border: 1px solid var(--grade-border, rgba(203, 213, 225, 0.9));
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--grade-text, var(--text-strong));
+        font-size: 0.68rem;
+        font-weight: 950;
+        white-space: nowrap;
+      }
+
+      .jikbo-summary-exam-grade-meta {
+        color: var(--text-soft);
+        font-size: 0.74rem;
+        line-height: 1.4;
+      }
+
       .jikbo-summary-detail-item-title {
         display: flex;
         align-items: center;
@@ -37889,21 +37960,26 @@
             count: (summary.tomorrowJikbos || []).length,
             items: sortJikboScheduleSummaryItems_(summary.tomorrowJikbos || []),
             emptyText: '내일 직보 학생이 없습니다.',
-            compactGrid: true
+            compactGrid: true,
+            panelKey: 'tomorrowJikbos'
           },
           todayExams: {
             title: '오늘 시험',
             description: '오늘 시험 학교와 과목',
             count: (summary.todayExams || []).length,
             items: summary.todayExams || [],
-            emptyText: '오늘 시험 일정이 없습니다.'
+            emptyText: '오늘 시험 일정이 없습니다.',
+            panelKey: 'todayExams',
+            examGroup: true
           },
           tomorrowExams: {
             title: '내일 시험',
             description: '내일 시험 학교와 과목',
             count: (summary.tomorrowExams || []).length,
             items: summary.tomorrowExams || [],
-            emptyText: '내일 시험 일정이 없습니다.'
+            emptyText: '내일 시험 일정이 없습니다.',
+            panelKey: 'tomorrowExams',
+            examGroup: true
           },
           missingExamSchools: {
             title: '시험 미확인 학교',
@@ -38127,11 +38203,88 @@
         if (panel.panelKey === 'todayJikbos') {
           return renderJikboTodaySummaryDetailItems_(panel);
         }
+        if (panel.examGroup) {
+          return renderJikboExamSummaryGroups_(panel.items || []);
+        }
         return '<div class="jikbo-summary-detail-list ' + (panel.compactGrid ? 'compact-grid' : '') + (panel.panelKey === 'missingExamSchools' ? ' missing-school-grid' : '') + '">' +
           (panel.items || []).map(function(item) {
             return renderJikboSummaryDetailItem_(item, panel);
           }).join('') +
         '</div>';
+      }
+
+      function renderJikboExamSummaryGroups_(items) {
+        var groups = groupJikboExamSummaryItemsBySchool_(items || []);
+        if (!groups.length) {
+          return '<div class="jikbo-summary-empty">표시할 시험 일정이 없습니다.</div>';
+        }
+        return '<div class="jikbo-summary-exam-school-list">' + groups.map(function(group) {
+          return [
+            '<section class="jikbo-summary-exam-school-group">',
+            '  <div class="jikbo-summary-exam-school-head"><strong>' + renderSchoolNameWithLogo_(group.school || '-') + '</strong><span class="jikbo-summary-badge">' + escapeHtml(String(group.items.length)) + '건</span></div>',
+            '  <div class="jikbo-summary-exam-grade-list">',
+                 group.items.map(renderJikboExamSummaryGradeItem_).join(''),
+            '  </div>',
+            '</section>'
+          ].join('');
+        }).join('') + '</div>';
+      }
+
+      function groupJikboExamSummaryItemsBySchool_(items) {
+        var map = {};
+        var order = [];
+        (items || []).slice().sort(function(a, b) {
+          return String(a.school || '').localeCompare(String(b.school || ''), 'ko') ||
+            compareJikboGradeLabels_(a.grade, b.grade) ||
+            String(a.subjectName || a.title || '').localeCompare(String(b.subjectName || b.title || ''), 'ko');
+        }).forEach(function(item) {
+          var school = item.school || '-';
+          var key = normalizeSchoolKey_(school) || school;
+          if (!map[key]) {
+            map[key] = {
+              school: school,
+              items: []
+            };
+            order.push(key);
+          }
+          map[key].items.push(item);
+        });
+        return order.map(function(key) {
+          return map[key];
+        });
+      }
+
+      function renderJikboExamSummaryGradeItem_(item) {
+        var gradeLabel = formatJikboGradeLabel_(item && item.grade) || '학년 미지정';
+        var toneClass = getJikboExamGradeToneClass_(item && item.grade);
+        return [
+          '<article class="jikbo-summary-exam-grade-item ' + escapeAttribute(toneClass) + '">',
+          '  <div class="jikbo-summary-exam-grade-title"><span>' + escapeHtml(item && item.subjectName || item && item.title || '-') + '</span><span class="jikbo-summary-exam-grade-pill">' + escapeHtml(gradeLabel) + '</span></div>',
+          '  <div class="jikbo-summary-exam-grade-meta">' + escapeHtml(item && item.meta || item && item.examType || '-') + '</div>',
+          '</article>'
+        ].join('');
+      }
+
+      function getJikboExamGradeToneClass_(grade) {
+        var normalized = normalizeJikboGradeForClient_(grade);
+        if (normalized === '1') {
+          return 'grade-1';
+        }
+        if (normalized === '2') {
+          return 'grade-2';
+        }
+        if (normalized === '3') {
+          return 'grade-3';
+        }
+        return 'grade-common';
+      }
+
+      function compareJikboGradeLabels_(a, b) {
+        var order = { '1': 1, '2': 2, '3': 3, '전학년': 4 };
+        var aKey = normalizeJikboGradeForClient_(a);
+        var bKey = normalizeJikboGradeForClient_(b);
+        return (order[aKey] || 99) - (order[bKey] || 99) ||
+          String(aKey || '').localeCompare(String(bKey || ''), 'ko');
       }
 
       function renderJikboTodaySummaryDetailItems_(panel) {
@@ -38180,7 +38333,7 @@
 
       function renderJikboSummaryItemTitle_(item, panel) {
         var title = escapeHtml(item && item.title || '-');
-        if (panel && panel.panelKey === 'todayJikbos' && item && item.studentId) {
+        if (panel && (panel.panelKey === 'todayJikbos' || panel.panelKey === 'tomorrowJikbos') && item && item.studentId) {
           var studentName = item.studentName || (item.title ? String(item.title).split(' · ')[0] : '');
           var remainder = item.subjectName || '';
           return '<span class="jikbo-student-name-inline"><span>' + escapeHtml(studentName || '-') + '</span>' + renderJikboStudentTimetableButton_(item.studentId, studentName, true) + (remainder ? '<span>· ' + escapeHtml(remainder) + '</span>' : '') + '</span>';
@@ -38846,6 +38999,11 @@
         summary[bucket].push({
           title: [eventItem.school || '-', formatJikboGradeLabel_(eventItem.grade)].filter(Boolean).join(' '),
           meta: [eventItem.subjectName || '-', eventItem.examType || eventItem.isoDate].filter(Boolean).join(' · '),
+          school: eventItem.school || '',
+          grade: normalizeJikboGradeForClient_(eventItem.grade),
+          subjectName: eventItem.subjectName || '',
+          examType: eventItem.examType || '',
+          dateKey: eventItem.isoDate,
           preview: [eventItem.school || '-', eventItem.subjectName || '-'].join(' · ')
         });
       }
