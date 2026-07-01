@@ -7981,6 +7981,10 @@
       }
 
       .jikbo-timetable-student-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
         color: var(--text-strong);
         font-size: 0.76rem !important;
         line-height: 1.28;
@@ -35659,6 +35663,11 @@
       }
 
       function handleJikboTimetableModalBackdropClick_(event) {
+        var timetableButton = event.target && event.target.closest ? event.target.closest('[data-jikbo-student-timetable]') : null;
+        if (timetableButton) {
+          openJikboStudentTimetableModal_(timetableButton.getAttribute('data-jikbo-student-timetable') || '');
+          return;
+        }
         var actionButton = event.target && event.target.closest ? event.target.closest('[data-jikbo-teacher-modal-week]') : null;
         if (actionButton) {
           handleJikboTeacherTimetableModalWeekAction_(actionButton.getAttribute('data-jikbo-teacher-modal-week') || '');
@@ -36398,10 +36407,12 @@
           var noteButton = item.note
             ? '<button type="button" class="jikbo-timetable-note-button" aria-label="비고 보기" title="' + escapeAttribute(item.note) + '"><span aria-hidden="true">📝</span><span class="jikbo-timetable-note-detail">' + escapeHtml(item.note) + '</span></button>'
             : '';
+          var studentTitle = escapeHtml(item.displayInstructorName || '학생 미지정') +
+            renderJikboStudentTimetableButton_(item.studentId, item.studentName || item.displayInstructorName, false);
           return [
             '<div class="jikbo-timetable-item teacher-mode ' + escapeAttribute(item.toneClass || getSubjectToneClass_(item.subjectName)) + '">',
             '<span class="jikbo-timetable-time-badge">' + escapeHtml(timeText) + '</span>',
-            '<strong class="jikbo-timetable-student-title">' + escapeHtml(item.displayInstructorName || '학생 미지정') + '</strong>',
+            '<strong class="jikbo-timetable-student-title">' + studentTitle + '</strong>',
             '<div class="jikbo-timetable-item-meta">',
             '<span class="jikbo-timetable-subject-label">' + escapeHtml(item.subjectName || '과목 미지정') + '</span>',
             '<span class="jikbo-timetable-status-label">' + escapeHtml(item.progressStatus || '미정') + '</span>',
@@ -37861,7 +37872,6 @@
             };
           }
           groupsByKey[groupKey].events.push(Object.assign({}, item, { school: normalizedSchool }));
-          activeDateKeyMap[item.isoDate] = true;
         });
 
         Object.keys(studentsByGroupKey).forEach(function(groupKey) {
@@ -37913,6 +37923,13 @@
           var rows = students.map(function(student) {
             var cellMap = {};
             var matchedExamCount = 0;
+            var rowVisibleEventRows = {};
+            var rowVisibleEvents = [];
+            var rowExamSummaryEvents = [];
+            var rowScheduleSummaryItems = [];
+            var rowActiveDateKeys = {};
+            var rowJikboCount = 0;
+            var rowWarningCount = 0;
 
             group.events.forEach(function(eventItem) {
               var subjectDefinition = resolveJikboSubjectDefinition_(eventItem, subjectDefinitionMap) || buildJikboFallbackSubjectDefinition_(eventItem);
@@ -37924,10 +37941,12 @@
               }
 
               matchedExamCount += 1;
-              if (!visibleEventRows[eventItem.rowNumber]) {
-                visibleEventRows[eventItem.rowNumber] = true;
-                visibleEvents.push(eventItem);
+              rowActiveDateKeys[eventItem.isoDate] = true;
+              if (!rowVisibleEventRows[eventItem.rowNumber]) {
+                rowVisibleEventRows[eventItem.rowNumber] = true;
+                rowVisibleEvents.push(eventItem);
               }
+              rowExamSummaryEvents.push(eventItem);
 
               if (!cellMap[eventItem.isoDate]) {
                 cellMap[eventItem.isoDate] = { exams: [], jikbos: [] };
@@ -37939,20 +37958,19 @@
                 isDefined: Boolean(subjectDefinition && subjectDefinition.isEnabled !== false),
                 examType: eventItem.examType || ''
               });
-              collectJikboExamSummaryItem_(summary, summarySeenMap, eventItem, todayKey, tomorrowKey);
 
               resolveJikboInstructorDisplay_(student, eventItem, subjectDefinition, override, permissionMap).forEach(function(resolvedJikbo) {
                 applyJikboStatusMeta_(resolvedJikbo, statusMap);
-                activeDateKeyMap[resolvedJikbo.dateKey] = true;
+                rowActiveDateKeys[resolvedJikbo.dateKey] = true;
                 if (!cellMap[resolvedJikbo.dateKey]) {
                   cellMap[resolvedJikbo.dateKey] = { exams: [], jikbos: [] };
                 }
                 cellMap[resolvedJikbo.dateKey].jikbos.push(resolvedJikbo);
-                stats.jikboCount += 1;
+                rowJikboCount += 1;
                 if (resolvedJikbo.status === 'missing-subject' || resolvedJikbo.status === 'unassigned') {
-                  stats.warningCount += 1;
+                  rowWarningCount += 1;
                 }
-                collectJikboScheduleSummaryItem_(summary, summarySeenMap, resolvedJikbo, todayKey, tomorrowKey, permissionMap);
+                rowScheduleSummaryItems.push(resolvedJikbo);
               });
             });
 
@@ -37983,14 +38001,43 @@
               if (alreadyRendered) {
                 return;
               }
-              activeDateKeyMap[manualDate] = true;
+              rowActiveDateKeys[manualDate] = true;
               if (!cellMap[manualDate]) {
                 cellMap[manualDate] = { exams: [], jikbos: [] };
               }
               cellMap[manualDate].jikbos.push(manualJikbo);
-              stats.jikboCount += 1;
-              collectJikboScheduleSummaryItem_(summary, summarySeenMap, manualJikbo, todayKey, tomorrowKey, permissionMap);
+              rowJikboCount += 1;
+              rowScheduleSummaryItems.push(manualJikbo);
             });
+
+            var canCreateJikboForStudent = APP_STATE.isAdmin || isJikboStudentVisibleToCurrentUser_(student && student.studentId);
+            var canEditExistingJikboForStudent = Object.keys(cellMap).some(function(dateKey) {
+              var cell = cellMap[dateKey] || {};
+              return (cell.jikbos || []).some(function(item) {
+                return canCurrentUserEditJikboStatus_(item);
+              });
+            });
+            if (!APP_STATE.isAdmin && !canCreateJikboForStudent && !canEditExistingJikboForStudent) {
+              return null;
+            }
+
+            rowVisibleEvents.forEach(function(eventItem) {
+              if (!visibleEventRows[eventItem.rowNumber]) {
+                visibleEventRows[eventItem.rowNumber] = true;
+                visibleEvents.push(eventItem);
+              }
+            });
+            rowExamSummaryEvents.forEach(function(eventItem) {
+              collectJikboExamSummaryItem_(summary, summarySeenMap, eventItem, todayKey, tomorrowKey);
+            });
+            rowScheduleSummaryItems.forEach(function(item) {
+              collectJikboScheduleSummaryItem_(summary, summarySeenMap, item, todayKey, tomorrowKey, permissionMap);
+            });
+            Object.keys(rowActiveDateKeys).forEach(function(dateKey) {
+              activeDateKeyMap[dateKey] = true;
+            });
+            stats.jikboCount += rowJikboCount;
+            stats.warningCount += rowWarningCount;
 
             if (matchedExamCount > 0) {
               stats.matchedStudentCount += 1;
@@ -38063,7 +38110,7 @@
               isExamFinished: isGroupExamFinished,
               isHiddenStudent: Boolean(hiddenStudentMap[String(student && student.studentId || '')])
             };
-          });
+          }).filter(Boolean);
 
           if (!rows.length) {
             return null;
@@ -38073,7 +38120,7 @@
             return null;
           }
 
-          if (!hasExamSchedule && students.length) {
+          if (!hasExamSchedule && rows.length) {
             var missingSchoolName = group.school || '학교 미입력';
             var missingSchoolKey = normalizeSearchText(missingSchoolName) || missingSchoolName;
             if (!missingExamSchoolMap[missingSchoolKey]) {
@@ -38087,7 +38134,8 @@
               };
             }
             var missingSchoolEntry = missingExamSchoolMap[missingSchoolKey];
-            var missingStudents = students.map(function(student) {
+            var missingStudents = rows.map(function(row) {
+              var student = row.student || {};
               var studentItem = {
                 studentId: student.studentId || '',
                 studentName: student.studentName || '-',
@@ -38394,7 +38442,7 @@
         var titleName = payload.teacher.name || (APP_STATE.user && APP_STATE.user.name) || '내';
         return [
           '<section class="jikbo-exam-timeline-wrap glass-panel" aria-label="내 강사 직보 주간 시간표">',
-          '<div class="jikbo-top-panel-head jikbo-teacher-self-head"><div class="jikbo-top-panel-title"><strong>' + escapeHtml(titleName) + ' 강사 직보 주간 시간표</strong><span>' + escapeHtml(payload.teacher.total ? String(payload.teacher.total) + '건 전체' : '주간 단위로 내 직보 일정을 확인합니다.') + '</span></div>' + renderJikboTeacherWeekNavigator_(payload) + '<div class="jikbo-top-panel-actions"><button type="button" class="jikbo-teacher-timetable-button" data-jikbo-teacher-timetable="' + escapeAttribute(teacherKey) + '" title="큰 화면으로 보기" aria-label="내 직보 주간 시간표 큰 화면으로 보기"><span class="jikbo-timetable-button-icon" aria-hidden="true">📅</span></button></div></div>',
+          '<div class="jikbo-top-panel-head jikbo-teacher-self-head"><div class="jikbo-top-panel-title"><strong>' + escapeHtml(titleName) + ' 강사 직보 주간 시간표</strong><span>' + escapeHtml(payload.teacher.total ? String(payload.teacher.total) + '건 전체' : '주간 단위로 내 직보 일정을 확인합니다.') + '</span></div>' + renderJikboTeacherWeekNavigator_(payload) + '<div class="jikbo-top-panel-actions"><button type="button" class="jikbo-teacher-timetable-button" data-jikbo-teacher-timetable="' + escapeAttribute(teacherKey) + '" title="큰 화면으로 보기" aria-label="내 직보 주간 시간표 큰 화면으로 보기"><i data-lucide="calendar-days" aria-hidden="true"></i></button></div></div>',
           payload.items.length ? renderJikboStudentTimetable_(payload) : '<div class="jikbo-summary-empty">선택한 주에 표시할 내 직보가 없습니다. 가운데 날짜 조정으로 다른 주를 확인해 주세요.</div>',
           '</section>'
         ].join('');
@@ -38822,7 +38870,7 @@
           }).join('');
           var hiddenCount = Math.max(0, Number(teacher.total || 0) - 5);
           var teacherTimetableButton = !teacher.isUnassigned
-            ? '<button type="button" class="jikbo-teacher-timetable-button" data-jikbo-teacher-timetable="' + escapeAttribute(teacher.key || normalizeSearchText(teacher.name || '')) + '" title="강사 직보 주간 시간표" aria-label="' + escapeAttribute((teacher.name || '강사') + ' 강사 직보 주간 시간표 열기') + '"><span class="jikbo-timetable-button-icon" aria-hidden="true">📅</span></button>'
+            ? '<button type="button" class="jikbo-teacher-timetable-button" data-jikbo-teacher-timetable="' + escapeAttribute(teacher.key || normalizeSearchText(teacher.name || '')) + '" title="강사 직보 주간 시간표" aria-label="' + escapeAttribute((teacher.name || '강사') + ' 강사 직보 주간 시간표 열기') + '"><i data-lucide="calendar-days" aria-hidden="true"></i></button>'
             : '';
           return [
             '<article class="jikbo-teacher-card ' + (teacher.isUnassigned ? 'unassigned' : '') + '">',
@@ -39498,9 +39546,9 @@
         }
         var label = (studentName || '학생') + ' 직보 주간 시간표 열기';
         if (asSpan) {
-          return '<span class="jikbo-student-timetable-button" role="button" tabindex="0" data-jikbo-student-timetable="' + escapeAttribute(studentId) + '" title="직보 주간 시간표" aria-label="' + escapeAttribute(label) + '"><span class="jikbo-timetable-button-icon" aria-hidden="true">📅</span></span>';
+          return '<span class="jikbo-student-timetable-button" role="button" tabindex="0" data-jikbo-student-timetable="' + escapeAttribute(studentId) + '" title="직보 주간 시간표" aria-label="' + escapeAttribute(label) + '"><i data-lucide="calendar-days" aria-hidden="true"></i></span>';
         }
-        return '<button type="button" class="jikbo-student-timetable-button" data-jikbo-student-timetable="' + escapeAttribute(studentId) + '" title="직보 주간 시간표" aria-label="' + escapeAttribute(label) + '"><span class="jikbo-timetable-button-icon" aria-hidden="true">📅</span></button>';
+        return '<button type="button" class="jikbo-student-timetable-button" data-jikbo-student-timetable="' + escapeAttribute(studentId) + '" title="직보 주간 시간표" aria-label="' + escapeAttribute(label) + '"><i data-lucide="calendar-days" aria-hidden="true"></i></button>';
       }
 
       function renderJikboExamCell_(cell) {
