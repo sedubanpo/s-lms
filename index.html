@@ -18141,6 +18141,20 @@
               <div id="jikboBoardWrap"></div>
             </div>
 
+            <div id="jikboHistoryPanel" class="hidden">
+              <div class="jikbo-manager-stack">
+                <section class="dense-table-shell">
+                  <div class="panel-head">
+                    <div>
+                      <h3>직보 수정 이력</h3>
+                      <p>강사와 관리자가 저장한 직보 변경 내역을 시간순으로 확인합니다.</p>
+                    </div>
+                  </div>
+                  <div id="jikboChangeLogTableWrap"></div>
+                </section>
+              </div>
+            </div>
+
             <div id="jikboManagerPanel" class="hidden">
               <div class="jikbo-manager-stack">
                 <section class="dense-table-shell">
@@ -18235,16 +18249,6 @@
                     </div>
                   </div>
                   <div id="jikboUnassignedAssignmentWrap"></div>
-                </section>
-
-                <section class="dense-table-shell">
-                  <div class="panel-head">
-                    <div>
-                      <h3>직보 수정 이력</h3>
-                      <p>강사와 관리자가 저장한 직보 변경 내역을 시간순으로 확인합니다.</p>
-                    </div>
-                  </div>
-                  <div id="jikboChangeLogTableWrap"></div>
                 </section>
               </div>
             </div>
@@ -22867,8 +22871,17 @@
           if (!docId) {
             throw new Error('삭제할 직보 상태 문서 ID를 찾을 수 없습니다.');
           }
+          var deleteLog = buildJikboStatusDeleteLog_(payload);
           return state.firestore.collection(getJikboFirebaseCollectionName_('statuses')).doc(docId).delete()
             .then(function() {
+              return state.firestore.collection(getJikboFirebaseCollectionName_('changeLogs')).doc(deleteLog.logId).set(deleteLog, { merge: true }).catch(function(error) {
+                if (window.console && console.warn) {
+                  console.warn('Firebase jikbo delete change log save skipped:', error);
+                }
+              });
+            })
+            .then(function() {
+              APP_STATE.jikboChangeLogs = normalizeJikboChangeLogList_((APP_STATE.jikboChangeLogs || []).concat([deleteLog]));
               deleteJikboScheduleStatusLocal_(payload);
               return {
                 ok: true,
@@ -22980,6 +22993,57 @@
         };
       }
 
+      function formatJikboOverrideInputSummary_(item) {
+        item = item || {};
+        return [
+          '적용 ' + (item.applyMode || 'INCLUDE'),
+          item.overrideDate ? '직보일 ' + item.overrideDate : '',
+          item.instructorName ? '강사 ' + item.instructorName : '',
+          item.subjectName ? '과목 ' + item.subjectName : ''
+        ].filter(Boolean).join(' / ');
+      }
+
+      function buildJikboOverrideChangeLog_(previous, next, action) {
+        next = next || {};
+        var now = new Date();
+        var nowMs = now.getTime();
+        var labels = {
+          applyMode: '적용',
+          overrideDate: '직보일',
+          instructorName: '강사',
+          subjectName: '과목'
+        };
+        var changeSummary = '';
+        if (action === 'delete') {
+          changeSummary = '직보 매칭 삭제';
+        } else if (!previous || !previous.studentId) {
+          changeSummary = '직보 매칭 등록';
+        } else {
+          changeSummary = Object.keys(labels).filter(function(key) {
+            return String(previous[key] || '') !== String(next[key] || '');
+          }).map(function(key) {
+            return labels[key] + ': ' + (previous[key] || '-') + ' > ' + (next[key] || '-');
+          }).join(', ') || '직보 매칭 재저장';
+        }
+        return {
+          logId: buildJikboFirebaseDocId_('JIKBO_CHANGE', [next.overrideId || next.rowNumber || '', action || 'override', nowMs, getJikboCurrentUserId_()]),
+          changedAt: now.toISOString(),
+          changedAtMs: nowMs,
+          changedBy: getJikboCurrentUserId_(),
+          changedByName: getJikboCurrentUserName_() || getJikboCurrentUserId_(),
+          changedByRole: getJikboCurrentUserRole_(),
+          action: action || (previous && previous.studentId ? 'override-update' : 'override-create'),
+          studentId: next.studentId || '',
+          studentName: next.studentName || '',
+          school: '',
+          grade: '',
+          subjectName: next.subjectName || '',
+          instructorName: next.instructorName || '',
+          changeSummary: changeSummary,
+          inputSummary: formatJikboOverrideInputSummary_(next)
+        };
+      }
+
       function saveJikboOverrideViaFirebaseDirect_(params) {
         return prepareFirebaseDirectAuth_({ silent: true }).then(function(state) {
           state = state || APP_STATE.firebaseDirect || {};
@@ -22990,7 +23054,16 @@
           if (!payload.studentId || !payload.subjectName) {
             throw new Error('학생과 과목을 선택해 주세요.');
           }
-          return state.firestore.collection(getJikboFirebaseCollectionName_('overrides')).doc(payload.overrideId).set(payload, { merge: true })
+          var previous = findJikboOverrideByRow_(payload.rowNumber) || findJikboOverrideForStudentSubject_(payload.studentId, payload.subjectName) || null;
+          var changeLog = buildJikboOverrideChangeLog_(previous, payload, previous && previous.studentId ? 'override-update' : 'override-create');
+          return Promise.all([
+              state.firestore.collection(getJikboFirebaseCollectionName_('overrides')).doc(payload.overrideId).set(payload, { merge: true }),
+              state.firestore.collection(getJikboFirebaseCollectionName_('changeLogs')).doc(changeLog.logId).set(changeLog, { merge: true }).catch(function(error) {
+                if (window.console && console.warn) {
+                  console.warn('Firebase jikbo override change log save skipped:', error);
+                }
+              })
+            ])
             .then(loadJikboViaFirebaseDirect_)
             .then(function(result) {
               return Object.assign({}, result || {}, { message: '학생별 직보 예외가 Firebase에 저장되었습니다.' });
@@ -23006,7 +23079,18 @@
           }
           var item = findJikboOverrideByRow_(rowNumber);
           var docId = item && item.overrideId ? item.overrideId : buildJikboFirebaseDocId_('JIKBO_OVERRIDE', rowNumber);
+          var changeLog = item ? buildJikboOverrideChangeLog_(item, item, 'delete') : null;
           return state.firestore.collection(getJikboFirebaseCollectionName_('overrides')).doc(docId).delete()
+            .then(function() {
+              if (!changeLog) {
+                return null;
+              }
+              return state.firestore.collection(getJikboFirebaseCollectionName_('changeLogs')).doc(changeLog.logId).set(changeLog, { merge: true }).catch(function(error) {
+                if (window.console && console.warn) {
+                  console.warn('Firebase jikbo override delete change log save skipped:', error);
+                }
+              });
+            })
             .then(loadJikboViaFirebaseDirect_)
             .then(function(result) {
               return Object.assign({}, result || {}, { message: '학생별 직보 예외가 Firebase에서 삭제되었습니다.' });
@@ -23113,6 +23197,29 @@
         }).map(function(key) {
           return labels[key] + ': ' + (before[key] || '-') + ' > ' + (after[key] || '-');
         }).join(', ') || '입력값 재저장';
+      }
+
+      function buildJikboStatusDeleteLog_(payload) {
+        payload = payload || {};
+        var now = new Date();
+        var nowMs = now.getTime();
+        return {
+          logId: buildJikboFirebaseDocId_('JIKBO_CHANGE', [payload.statusId || '', 'delete', nowMs, getJikboCurrentUserId_()]),
+          changedAt: now.toISOString(),
+          changedAtMs: nowMs,
+          changedBy: getJikboCurrentUserId_(),
+          changedByName: getJikboCurrentUserName_() || getJikboCurrentUserId_(),
+          changedByRole: getJikboCurrentUserRole_(),
+          action: 'delete',
+          studentId: payload.studentId || '',
+          studentName: payload.studentName || '',
+          school: payload.school || '',
+          grade: payload.grade || '',
+          subjectName: payload.subjectName || '',
+          instructorName: payload.progressInstructorName || payload.instructorName || '',
+          changeSummary: '직보 일정 삭제',
+          inputSummary: formatJikboStatusInputSummary_(payload)
+        };
       }
 
       function withJikboStatusChangeLog_(payload, draft, action) {
@@ -37310,14 +37417,22 @@
         if (!APP_STATE.isAdmin) {
           APP_STATE.jikboPanelMode = 'board';
           APP_STATE.jikboTopPanelMode = 'teacher';
+        } else if (['board', 'history', 'manager'].indexOf(APP_STATE.jikboPanelMode) === -1) {
+          APP_STATE.jikboPanelMode = 'board';
         }
 
         renderJikboPanelTabs_();
         document.getElementById('jikboBoardPanel').classList.toggle('hidden', APP_STATE.jikboPanelMode !== 'board');
+        document.getElementById('jikboHistoryPanel').classList.toggle('hidden', !APP_STATE.isAdmin || APP_STATE.jikboPanelMode !== 'history');
         document.getElementById('jikboManagerPanel').classList.toggle('hidden', !APP_STATE.isAdmin || APP_STATE.jikboPanelMode !== 'manager');
 
         if (APP_STATE.jikboPanelMode === 'board') {
           renderJikboBoard_();
+          return;
+        }
+
+        if (APP_STATE.jikboPanelMode === 'history') {
+          renderJikboChangeLogTable_();
           return;
         }
 
@@ -37327,7 +37442,6 @@
         renderJikboSubjectTable_();
         renderJikboOverrideTable_();
         renderJikboUnassignedAssignmentTable_();
-        renderJikboChangeLogTable_();
       }
 
       function renderJikboPanelTabs_() {
@@ -37339,7 +37453,8 @@
         }
         document.getElementById('jikboPanelTabs').innerHTML = [
           '<button type="button" class="material-subtab-button ' + (APP_STATE.jikboPanelMode === 'board' ? 'active' : '') + '" data-jikbo-panel="board">직보 보드</button>',
-          '<button type="button" class="material-subtab-button ' + (APP_STATE.jikboPanelMode === 'manager' ? 'active' : '') + '" data-jikbo-panel="manager">과목 매니저 / 이력</button>'
+          '<button type="button" class="material-subtab-button ' + (APP_STATE.jikboPanelMode === 'history' ? 'active' : '') + '" data-jikbo-panel="history">수정 내역</button>',
+          '<button type="button" class="material-subtab-button ' + (APP_STATE.jikboPanelMode === 'manager' ? 'active' : '') + '" data-jikbo-panel="manager">과목매니저</button>'
         ].join('');
       }
 
@@ -37350,6 +37465,8 @@
         }
         APP_STATE.jikboPanelMode = button.getAttribute('data-jikbo-panel') || 'board';
         if (!APP_STATE.isAdmin) {
+          APP_STATE.jikboPanelMode = 'board';
+        } else if (['board', 'history', 'manager'].indexOf(APP_STATE.jikboPanelMode) === -1) {
           APP_STATE.jikboPanelMode = 'board';
         }
         renderJikboView();
