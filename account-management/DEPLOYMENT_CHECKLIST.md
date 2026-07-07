@@ -69,6 +69,9 @@ Before copying to GitHub Pages, verify:
 - Login succeeds with a Firebase admin account.
 - Non-admin accounts cannot write through Firestore rules.
 - Student create/status update writes the expected `students` fields.
+- Student create/status update can store `birthYear`, auto-fill the current grade label, and add the request to the pending queue before commit.
+- Birth-year managed students with stale `gradeCalculatedForYear` are surfaced in the student status submenu so annual rollover updates can be added to the pending queue.
+- Transition grades, especially elementary 6 to middle 1 and middle 3 to high 1, show a school-confirmation warning before rollover.
 - Teacher metadata update writes `users`, `userProfiles`, `userAppAccess`, and `loginAliases`.
 - Teacher metadata includes S-edu page legacy fields: `수업일지링크`, `업무페이지링크`, `일일시수조회링크`, `프로필 이미지`, and optional password follow-up.
 - The teacher list can reveal the password stored in the S-edu page `Teachers` sheet only after Apps Script verifies the Firebase administrator. Confirm that the UI labels this as a sheet-stored password, not a Firebase Auth password.

@@ -120,7 +120,13 @@ For the no-Blaze release, handle those as one of:
     "student": {
       "name": "김나린",
       "school": "세화여고",
-      "grade": "3",
+      "birthYear": "2010",
+      "birthYearNumber": 2010,
+      "grade": "1",
+      "schoolLevel": "HIGH",
+      "gradeLabel": "고등학교 1학년",
+      "gradeCalculatedForYear": 2026,
+      "gradeAutoManaged": true,
       "status": "ACTIVE",
       "memo": "상태 변경 사유"
     },
@@ -143,6 +149,22 @@ During the mixed migration period, exact duplicate new-student requests are bloc
 - Before committing selected queue items to Firestore
 
 An exact duplicate means the normalized `name + school + grade` are the same and no existing `studentId` is being edited. Real homonyms should be distinguished in the student name, such as `김민지b`, before creating a new account.
+
+Birth-year managed students may include these additional fields:
+
+- `birthYear`: operator-entered birth year string
+- `birthYearNumber`: normalized birth year number
+- `schoolLevel`: `PRESCHOOL`, `ELEMENTARY`, `MIDDLE`, `HIGH`, or `GRADUATED`
+- `gradeLabel`: display label such as `고등학교 1학년`
+- `gradeCalculatedForYear`: calendar year used for the current grade calculation
+- `gradeAutoManaged`: true when the app should review the student for annual grade rollover
+
+The grade formula is `currentYear - birthYear - 6`. For example, in 2026, a 2010-born student is `고등학교 1학년`. The static app cannot run a background scheduler by itself, so it detects stale `gradeCalculatedForYear` values when the account-management page is opened and lets the operator add the yearly rollover updates to the pending queue.
+
+Transition grades require school confirmation in the student status UI:
+
+- Elementary 6 to middle 1
+- Middle 3 to high 1
 
 ### Student Identity Merge And Delete
 

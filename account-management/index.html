@@ -376,6 +376,44 @@
       font-weight: 900;
     }
 
+    .form-note,
+    .sub-panel {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbff;
+      color: #36506f;
+      font-size: 0.72rem;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .sub-panel {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .sub-panel strong,
+    .form-note strong {
+      display: block;
+      color: #17365d;
+      font-size: 0.78rem;
+      font-weight: 950;
+    }
+
+    .sub-panel.warning {
+      border-color: #fed7aa;
+      background: #fff7ed;
+    }
+
+    .sub-panel.ok {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+    }
+
     .help {
       color: var(--muted);
       font-size: 0.68rem;
@@ -750,6 +788,7 @@
             </div>
             <div class="panel-body">
               <div id="studentIdentityReviewPanel" class="danger-note" style="margin-bottom:14px;"></div>
+              <div id="studentGradeRolloverPanel"></div>
               <div class="toolbar">
                 <input class="field" id="studentSearch" placeholder="학생명, 학교, 학년 검색">
                 <select class="select" id="studentStatusFilter"><option value="">전체 상태</option><option value="ACTIVE">등록</option><option value="PAUSED">중지</option><option value="RETURNING">복귀 예정</option></select>
@@ -758,7 +797,7 @@
               </div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th style="width:120px;">학생명</th><th style="width:190px;">학생 대표 ID</th><th style="width:120px;">학교</th><th style="width:80px;">학년</th><th style="width:90px;">상태</th><th>메모</th><th style="width:250px;">작업</th></tr></thead>
+                  <thead><tr><th style="width:120px;">학생명</th><th style="width:190px;">학생 대표 ID</th><th style="width:120px;">학교</th><th style="width:78px;">생년</th><th style="width:110px;">학년</th><th style="width:90px;">상태</th><th>메모</th><th style="width:250px;">작업</th></tr></thead>
                   <tbody id="studentRows"></tbody>
                 </table>
               </div>
@@ -770,12 +809,14 @@
               <form id="studentForm" class="form-grid" onsubmit="return false;">
                 <div class="form-field"><label>학생명</label><input class="field" id="studentNameInput" autocomplete="off"></div>
                 <div class="form-field"><label>학교</label><input class="field" id="studentSchoolInput" autocomplete="off"></div>
+                <div class="form-field"><label>생년</label><input class="field" id="studentBirthYearInput" inputmode="numeric" placeholder="예: 2010" autocomplete="off"></div>
                 <div class="form-field"><label>학년</label><input class="field" id="studentGradeInput" autocomplete="off"></div>
                 <div class="form-field"><label>상태</label><select class="select" id="studentStatusInput"><option value="ACTIVE">등록</option><option value="PAUSED">중지</option><option value="RETURNING">복귀 예정</option><option value="HOLD">보류</option><option value="STOPPED">퇴원</option></select></div>
+                <div class="form-field full"><div class="form-note" id="studentGradeHelper"><strong>생년 기반 학년 자동 계산</strong>생년을 입력하면 1월 1일 기준 학년을 계산해 학년 입력값에 반영합니다.</div></div>
                 <div class="form-field full"><label>메모</label><textarea class="textarea" id="studentMemoInput" placeholder="상태 변경 사유, 복귀 예정일, 중복 확인 메모"></textarea></div>
                 <div class="form-field full">
-                  <button class="button primary" id="queueStudentButton">학생 변경 대기열 추가</button>
-                  <p class="help">학생 생성/상태 변경은 Firestore `students`에 저장합니다. Sheets 미러링이 필요하면 pending action으로 남깁니다.</p>
+                  <button class="button primary" id="queueStudentButton">학생 등록/수정 대기열 포함</button>
+                  <p class="help">입력 후 버튼을 누르면 자동으로 반영 대기열에 선택 상태로 포함됩니다. 최종 반영은 `선택 요청 저장`에서 처리합니다.</p>
                 </div>
               </form>
             </div>
@@ -1267,6 +1308,12 @@
         name: data.name || data.studentName || "",
         school: data.school || "",
         grade: data.grade || "",
+        birthYear: normalizeBirthYear(data.birthYear || data.birthYearNumber),
+        birthYearNumber: data.birthYearNumber || (normalizeBirthYear(data.birthYear) ? Number(data.birthYear) : ""),
+        schoolLevel: data.schoolLevel || "",
+        gradeLabel: data.gradeLabel || "",
+        gradeCalculatedForYear: data.gradeCalculatedForYear || "",
+        gradeAutoManaged: data.gradeAutoManaged === true,
         status: ["INACTIVE", "SUSPENDED"].includes(status) ? "PAUSED" : status,
         active: data.active !== false && data.isActive !== false && !["PAUSED", "STOPPED", "DISABLED", "INACTIVE"].includes(status),
         identityStatus: String(data.identityStatus || "").toUpperCase(),
@@ -1582,29 +1629,169 @@
       return "";
     }
 
+    function currentAcademicYear() {
+      return new Date().getFullYear();
+    }
+
+    function normalizeBirthYear(value) {
+      const year = Number(String(value || "").trim());
+      if (!Number.isInteger(year) || year < 1990 || year > currentAcademicYear() + 1) return "";
+      return String(year);
+    }
+
+    function gradeInfoFromBirthYear(birthYear, year = currentAcademicYear()) {
+      const normalized = normalizeBirthYear(birthYear);
+      if (!normalized) return null;
+      const gradeIndex = Number(year) - Number(normalized) - 6;
+      if (gradeIndex < 1) {
+        return { birthYear: normalized, schoolLevel: "PRESCHOOL", grade: "", gradeLabel: "취학 전", transitionRequired: false, calculatedForYear: year };
+      }
+      if (gradeIndex <= 6) {
+        return { birthYear: normalized, schoolLevel: "ELEMENTARY", grade: String(gradeIndex), gradeLabel: `초등학교 ${gradeIndex}학년`, transitionRequired: gradeIndex === 6, calculatedForYear: year };
+      }
+      if (gradeIndex <= 9) {
+        const grade = gradeIndex - 6;
+        return { birthYear: normalized, schoolLevel: "MIDDLE", grade: String(grade), gradeLabel: `중학교 ${grade}학년`, transitionRequired: grade === 3, calculatedForYear: year };
+      }
+      if (gradeIndex <= 12) {
+        const grade = gradeIndex - 9;
+        return { birthYear: normalized, schoolLevel: "HIGH", grade: String(grade), gradeLabel: `고등학교 ${grade}학년`, transitionRequired: grade === 1, calculatedForYear: year };
+      }
+      return { birthYear: normalized, schoolLevel: "GRADUATED", grade: "", gradeLabel: "졸업/재수 이상", transitionRequired: false, calculatedForYear: year };
+    }
+
+    function displayBirthYear(student) {
+      const year = normalizeBirthYear(student && (student.birthYear || student.birthYearNumber));
+      return year ? `${year}` : "-";
+    }
+
+    function studentGradeDisplay(student) {
+      const label = student && student.gradeLabel || "";
+      return label || (student && student.grade ? `${student.grade}학년` : "-");
+    }
+
+    function gradeNeedsRollover(student) {
+      const info = gradeInfoFromBirthYear(student && student.birthYear);
+      if (!info || !info.grade) return false;
+      return String(student.grade || "") !== info.grade ||
+        String(student.gradeCalculatedForYear || "") !== String(info.calculatedForYear) ||
+        String(student.schoolLevel || "") !== info.schoolLevel;
+    }
+
+    function transitionSchoolWarning(student) {
+      const info = gradeInfoFromBirthYear(student && student.birthYear);
+      if (!info) return "";
+      const school = String(student && student.school || "").trim();
+      if (!school && ["MIDDLE", "HIGH"].includes(info.schoolLevel)) return `${student.name || "학생"}: ${info.gradeLabel} 진학 대상입니다. 학교를 반드시 입력해 주세요.`;
+      return "";
+    }
+
+    function updateStudentGradeHelper() {
+      const helper = $("studentGradeHelper");
+      if (!helper) return;
+      const info = gradeInfoFromBirthYear($("studentBirthYearInput").value);
+      if (!info) {
+        helper.innerHTML = "<strong>생년 기반 학년 자동 계산</strong>생년을 입력하면 1월 1일 기준 학년을 계산해 학년 입력값에 반영합니다.";
+        return;
+      }
+      if (info.grade) $("studentGradeInput").value = info.grade;
+      const transitionText = info.transitionRequired || ["MIDDLE", "HIGH"].includes(info.schoolLevel)
+        ? "진학 구간입니다. 초6→중1, 중3→고1이 되는 해에는 학교명을 반드시 확인하세요."
+        : "생년 기준 학년이 자동으로 입력되었습니다.";
+      helper.innerHTML = `<strong>${info.birthYear}년생 · ${info.gradeLabel}</strong>${currentAcademicYear()}년 1월 1일 기준입니다. ${transitionText}`;
+    }
+
     function queueStudentFromForm() {
       const name = $("studentNameInput").value.trim();
       const school = $("studentSchoolInput").value.trim();
-      const grade = $("studentGradeInput").value.trim();
+      const birthYear = normalizeBirthYear($("studentBirthYearInput").value);
+      const gradeInfo = gradeInfoFromBirthYear(birthYear);
+      const grade = (gradeInfo && gradeInfo.grade) || $("studentGradeInput").value.trim();
       const status = $("studentStatusInput").value;
       const memo = $("studentMemoInput").value.trim();
       if (!name || !school || !grade) {
         toast("학생명, 학교, 학년을 입력해 주세요.");
         return;
       }
-      const draft = { studentId: state.editingStudentId, name, school, grade, status, memo };
+      if ($("studentBirthYearInput").value.trim() && !birthYear) {
+        toast("생년은 1990년 이후의 4자리 연도로 입력해 주세요.");
+        return;
+      }
+      const draft = {
+        studentId: state.editingStudentId,
+        name,
+        school,
+        grade,
+        birthYear,
+        birthYearNumber: birthYear ? Number(birthYear) : "",
+        schoolLevel: gradeInfo ? gradeInfo.schoolLevel : "",
+        gradeLabel: gradeInfo ? gradeInfo.gradeLabel : "",
+        gradeCalculatedForYear: gradeInfo ? gradeInfo.calculatedForYear : "",
+        gradeAutoManaged: Boolean(gradeInfo),
+        status,
+        memo
+      };
       const validationMessage = validateStudentQueueDraft(draft);
       if (validationMessage) {
         toast(validationMessage);
         return;
       }
-      queueRequest("student", `${name} · ${school} ${grade} · ${statusLabel(status)}`, {
+      const gradeSummary = draft.gradeLabel || `${grade}학년`;
+      queueRequest("student", `${name} · ${school} ${gradeSummary} · ${statusLabel(status)}`, {
         action: "upsertStudentStatus",
         student: draft,
         requiredCollections: ["students"]
       });
       state.editingStudentId = "";
       $("studentForm").reset();
+      updateStudentGradeHelper();
+    }
+
+    function queueGradeRolloverUpdates() {
+      const candidates = state.students.filter(gradeNeedsRollover);
+      if (!candidates.length) {
+        toast("갱신할 학년 정보가 없습니다.");
+        return;
+      }
+      let queuedCount = 0;
+      for (const student of candidates) {
+        const info = gradeInfoFromBirthYear(student.birthYear);
+        if (!info || !info.grade) continue;
+        const draft = {
+          studentId: student.studentId,
+          name: student.name,
+          school: student.school,
+          grade: info.grade,
+          birthYear: info.birthYear,
+          birthYearNumber: Number(info.birthYear),
+          schoolLevel: info.schoolLevel,
+          gradeLabel: info.gradeLabel,
+          gradeCalculatedForYear: info.calculatedForYear,
+          gradeAutoManaged: true,
+          status: student.status || "ACTIVE",
+          memo: student.memo || ""
+        };
+        if (validateStudentQueueDraft(draft)) continue;
+        const item = {
+          id: requestId("student"),
+          type: "student",
+          summary: `${student.name} · ${info.gradeLabel} 자동 갱신`,
+          payload: {
+            action: "upsertStudentStatus",
+            student: draft,
+            requiredCollections: ["students"]
+          },
+          targets: ["firestore", "sheetSync", "pendingAction"],
+          status: "DRAFT",
+          createdAt: new Date().toISOString()
+        };
+        state.queue.unshift(item);
+        state.selectedQueueIds[item.id] = true;
+        queuedCount += 1;
+      }
+      saveState();
+      render();
+      toast(queuedCount ? `${queuedCount}건의 학년 갱신 요청을 대기열에 추가했습니다.` : "이미 대기열에 있는 학생은 중복 추가하지 않았습니다.");
     }
 
     function queueTeacherFromForm() {
@@ -1668,6 +1855,12 @@
         name: draft.name,
         school: draft.school,
         grade: draft.grade,
+        birthYear: draft.birthYear || "",
+        birthYearNumber: draft.birthYearNumber || null,
+        schoolLevel: draft.schoolLevel || "",
+        gradeLabel: draft.gradeLabel || "",
+        gradeCalculatedForYear: draft.gradeCalculatedForYear || "",
+        gradeAutoManaged: Boolean(draft.gradeAutoManaged),
         status: draft.status,
         active,
         isActive: active,
@@ -2013,6 +2206,34 @@
         </div>`;
     }
 
+    function renderStudentGradeRolloverPanel() {
+      const panel = $("studentGradeRolloverPanel");
+      if (!panel) return;
+      if (!state.isAdmin) {
+        panel.innerHTML = "";
+        return;
+      }
+      const managedStudents = state.students.filter(student => normalizeBirthYear(student.birthYear));
+      const needsUpdate = managedStudents.filter(gradeNeedsRollover);
+      const schoolWarnings = managedStudents.map(transitionSchoolWarning).filter(Boolean);
+      if (!managedStudents.length) {
+        panel.innerHTML = `
+          <div class="sub-panel">
+            <div><strong>학년 자동 갱신</strong><span>생년을 입력한 학생은 매년 1월 1일 기준으로 학년을 계산합니다. 초6→중1, 중3→고1 진학 시 학교명을 확인하세요.</span></div>
+          </div>`;
+        return;
+      }
+      const panelClass = needsUpdate.length || schoolWarnings.length ? "sub-panel warning" : "sub-panel ok";
+      const detail = schoolWarnings[0] || (needsUpdate.length
+        ? `${needsUpdate.length}명의 학년 정보를 ${currentAcademicYear()}년 기준으로 갱신할 수 있습니다.`
+        : `${managedStudents.length}명의 생년 기반 학년 정보가 올해 기준입니다.`);
+      panel.innerHTML = `
+        <div class="${panelClass}">
+          <div><strong>학년 자동 갱신</strong><span>${escapeHtml(detail)}</span></div>
+          ${needsUpdate.length ? `<button class="button primary" data-queue-grade-rollover>갱신 대기열 추가</button>` : `<span class="status active">정상</span>`}
+        </div>`;
+    }
+
     async function sha256Hex(value) {
       const bytes = new TextEncoder().encode(String(value || ""));
       const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -2295,6 +2516,7 @@
 
     function renderStudents() {
       renderStudentIdentityReviews();
+      renderStudentGradeRolloverPanel();
       const keyword = ($("studentSearch")?.value || "").trim().toLowerCase();
       const status = $("studentStatusFilter")?.value || "";
       const school = $("studentSchoolFilter")?.value || "";
@@ -2304,7 +2526,7 @@
         $("studentSchoolFilter").innerHTML = `<option value="">전체 학교</option>` + schools.map(item => `<option value="${escapeHtml(item)}"${item === currentSchool ? " selected" : ""}>${escapeHtml(item)}</option>`).join("");
       }
       const rows = state.students.filter(student => {
-        const text = [student.name, student.school, student.grade, student.memo, student.representativeId].concat(student.studentIdAliases || []).join(" ").toLowerCase();
+        const text = [student.name, student.school, student.grade, student.birthYear, student.gradeLabel, student.memo, student.representativeId].concat(student.studentIdAliases || []).join(" ").toLowerCase();
         return (!keyword || text.includes(keyword)) && (!status || student.status === status) && (!school || student.school === school);
       }).map(student => {
         const representativeId = student.representativeId || student.studentId || "";
@@ -2314,7 +2536,8 @@
           <td>${escapeHtml(student.name)}</td>
           <td><strong>${escapeHtml(representativeId || "-")}</strong><br><span class="help">${escapeHtml(studentIdTypeLabel(representativeId))}</span></td>
           <td>${escapeHtml(student.school)}</td>
-          <td>${escapeHtml(student.grade)}</td>
+          <td>${escapeHtml(displayBirthYear(student))}</td>
+          <td><strong>${escapeHtml(student.grade || "-")}</strong><br><span class="help">${escapeHtml(studentGradeDisplay(student))}</span></td>
           <td><span class="status ${statusClass(student.status)}">${statusLabel(student.status)}</span></td>
           <td>${escapeHtml(student.memo || "-")}</td>
           <td>
@@ -2327,7 +2550,7 @@
         </tr>
       `;
       }).join("");
-      $("studentRows").innerHTML = rows || `<tr><td colspan="7">${state.isAdmin ? "조건에 맞는 학생이 없습니다." : "관리자 로그인 후 Firestore 학생 목록을 불러옵니다."}</td></tr>`;
+      $("studentRows").innerHTML = rows || `<tr><td colspan="8">${state.isAdmin ? "조건에 맞는 학생이 없습니다." : "관리자 로그인 후 Firestore 학생 목록을 불러옵니다."}</td></tr>`;
     }
 
     function renderTeachers() {
@@ -2443,9 +2666,11 @@
             state.editingStudentId = student.studentId;
             $("studentNameInput").value = student.name;
             $("studentSchoolInput").value = student.school;
+            $("studentBirthYearInput").value = student.birthYear || "";
             $("studentGradeInput").value = student.grade;
             $("studentStatusInput").value = student.status;
             $("studentMemoInput").value = student.memo || "";
+            updateStudentGradeHelper();
             setView("students");
           }
         }
@@ -2456,6 +2681,10 @@
         const studentDelete = event.target.closest("[data-student-delete]");
         if (studentDelete) {
           deleteStudentDocument(studentDelete.dataset.studentDelete);
+        }
+        const gradeRollover = event.target.closest("[data-queue-grade-rollover]");
+        if (gradeRollover) {
+          queueGradeRolloverUpdates();
         }
         const identityResolve = event.target.closest("[data-resolve-student-review]");
         if (identityResolve) {
@@ -2507,6 +2736,7 @@
       });
       ["studentSearch", "studentStatusFilter", "studentSchoolFilter"].forEach(id => $(id).addEventListener("input", renderStudents));
       ["teacherSearch", "teacherRoleFilter", "teacherAppFilter"].forEach(id => $(id).addEventListener("input", renderTeachers));
+      $("studentBirthYearInput").addEventListener("input", updateStudentGradeHelper);
       $("authPasswordInput").addEventListener("keydown", event => { if (event.key === "Enter") login(); });
       $("loginButton").addEventListener("click", login);
       $("logoutButton").addEventListener("click", logout);
@@ -2538,6 +2768,7 @@
       $("newStudentButton").addEventListener("click", () => {
         state.editingStudentId = "";
         $("studentForm").reset();
+        updateStudentGradeHelper();
         $("studentNameInput").focus();
       });
       $("newTeacherButton").addEventListener("click", () => {
