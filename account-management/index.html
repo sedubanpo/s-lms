@@ -1514,6 +1514,7 @@
         state.teachers = usersSnap.docs.map(doc => {
           const user = doc.data() || {};
           const profile = profiles[doc.id] || {};
+          const links = profile.links || {};
           const accessDoc = access[doc.id] || {};
           return {
             uid: doc.id,
@@ -1522,9 +1523,9 @@
             subject: profile.department || (profile.subjects || []).join(", ") || "",
             role: String(user.role || "INSTRUCTOR").toUpperCase(),
             status: user.status || "ACTIVE",
-            lessonLogUrl: profile.lessonLogUrl || profile.lessonLogLink || profile.teachingLogUrl || "",
-            workPageUrl: profile.workPageUrl || profile.workPageLink || profile.workUrl || "",
-            dailyHoursUrl: profile.dailyHoursUrl || profile.dailyHoursLink || profile.dailyHoursUrlLink || "",
+            lessonLogUrl: profile.lessonLogUrl || profile.lessonLogLink || profile.teachingLogUrl || links.lessonLog || "",
+            workPageUrl: profile.workPageUrl || profile.workPageLink || profile.workUrl || links.workPage || "",
+            dailyHoursUrl: profile.dailyHoursUrl || profile.dailyHoursLink || profile.dailyHoursUrlLink || links.dailyHours || "",
             profileImageUrl: profile.profileImageUrl || profile.profileImage || profile.photoURL || "",
             apps: appsToArray(accessDoc.apps || {}),
             appMap: accessDoc.apps || {},
@@ -1992,6 +1993,11 @@
           dailyHoursLink: draft.dailyHoursUrl || "",
           profileImageUrl: draft.profileImageUrl || "",
           profileImage: draft.profileImageUrl || "",
+          links: {
+            lessonLog: draft.lessonLogUrl || "",
+            workPage: draft.workPageUrl || "",
+            dailyHours: draft.dailyHoursUrl || ""
+          },
           updatedAt: now,
           updatedBy: user.uid || ""
         }, { merge: true }),
