@@ -95,12 +95,13 @@ Do not put Firebase Admin SDK or service account keys in the browser.
 
 Operations that still need a separate privileged path:
 
-- Creating/deleting Firebase Auth users directly
+- Deleting Firebase Auth users directly
 - Force-changing another user's Auth password
 - Writing to Google Sheets after leaving Apps Script
 
 For the no-Blaze release, handle those as one of:
 
+- creating new Firebase Auth users through a secondary Firebase Auth browser instance before Firestore commit
 - existing S-LMS-compatible Firestore metadata updates only
 - manual/admin migration script
 - later paid server endpoint if the workflow truly requires it
@@ -223,9 +224,10 @@ Expected primary writes:
 - Firestore `loginAliases`
 - Audit log
 - `legacySheetSyncJobs` pending job for the S-edu page spreadsheet mirror
-- Optional pending admin action when Auth work is needed
+- Firebase Auth user creation first for new teacher accounts
+- Optional pending admin action only for Auth reset/disable work
 
-Auth password updates must not be force-applied from the browser. The static app can update account metadata and produce a pending password/admin action for a separate privileged script if needed.
+New teacher requests must create the Firebase Auth user first. If Auth creation fails, the app must not mark the request committed and must not continue to Firestore or Sheets writes. Auth password updates and user disable/delete operations must not be force-applied from the browser; use a separate privileged script, Firebase Console, or later server endpoint for those.
 
 Administrators may retrieve the operational password stored in the S-edu page `Teachers` sheet through the Apps Script action `getAccountManagementTeacherCredentials`. This is not a Firebase Auth password lookup: Firebase Auth never exposes password plaintext. The action must verify an S-LMS admin session or Firebase ID token with account-management permission before returning credentials.
 
@@ -247,8 +249,8 @@ During the mixed Firebase + S-edu page period, teacher sheet sync jobs should ta
 {
   "ok": true,
   "requestId": "teacher-...",
-  "committedTargets": ["firebase"],
-  "pendingTargets": ["CREATE_AUTH_USER"],
+  "committedTargets": ["firebaseAuth", "firestore", "spreadsheet"],
+  "pendingTargets": [],
   "auditLogId": "audit-...",
   "dataVersion": "2026-06-12T00:00:00.000Z"
 }

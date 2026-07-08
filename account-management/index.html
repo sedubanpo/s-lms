@@ -855,8 +855,8 @@
                 <div class="form-field"><label>과목/부서</label><input class="field" id="teacherSubjectInput" autocomplete="off"></div>
                 <div class="form-field"><label>직급</label><select class="select" id="teacherRoleInput"><option value="INSTRUCTOR">강사</option><option value="STAFF">실무자</option><option value="ADMIN">관리자</option><option value="DISABLED">비활성</option></select></div>
                 <div class="form-field"><label>상태</label><select class="select" id="teacherStatusInput"><option value="ACTIVE">활성</option><option value="DISABLED">비활성</option></select></div>
-                <div class="form-field"><label>새 비밀번호</label><input class="field password" id="teacherPasswordInput" type="password" autocomplete="new-password" placeholder="변경 시 입력"></div>
-                <div class="form-field"><label>Auth 후속 작업</label><select class="select" id="teacherAuthActionInput"><option value="">없음</option><option value="CREATE_AUTH_USER">Auth 사용자 생성 필요</option><option value="RESET_PASSWORD">비밀번호 변경 필요</option><option value="DISABLE_AUTH_USER">Auth 사용자 비활성 필요</option></select></div>
+                <div class="form-field"><label>새 비밀번호</label><input class="field password" id="teacherPasswordInput" type="password" autocomplete="new-password" placeholder="신규는 미입력 시 로그인 ID"></div>
+                <div class="form-field"><label>Auth 작업</label><select class="select" id="teacherAuthActionInput"><option value="">없음</option><option value="CREATE_AUTH_USER">Auth 사용자 생성</option><option value="RESET_PASSWORD">비밀번호 변경 필요</option><option value="DISABLE_AUTH_USER">Auth 사용자 비활성 필요</option></select></div>
                 <div class="form-field full"><label>현재 시트 저장 비밀번호</label><div class="top-actions"><input class="field password" id="teacherCurrentPasswordInput" type="password" readonly placeholder="강사 계정을 선택하면 표시됩니다."><button class="button" id="toggleCurrentTeacherPasswordButton" type="button">보기</button></div><p class="help">Firebase Auth는 비밀번호 원문 조회를 지원하지 않습니다. 이 값은 관리자 인증 후 S-edu page `Teachers` 시트에서 불러온 운영용 비밀번호입니다.</p></div>
                 <div class="form-field full"><label>수업일지링크</label><input class="field" id="teacherLessonLogLinkInput" autocomplete="off" placeholder="https://forms..."></div>
                 <div class="form-field full"><label>업무페이지링크</label><input class="field" id="teacherWorkPageLinkInput" autocomplete="off" placeholder="https://west-orangutan..."></div>
@@ -867,7 +867,7 @@
                 <div class="form-field full"><label>메모</label><textarea class="textarea" id="teacherMemoInput" placeholder="계정 생성 사유, 권한 변경 사유, 비밀번호 전달 메모"></textarea></div>
                 <div class="form-field full">
                   <button class="button primary" id="queueTeacherButton">강사 변경 대기열 추가</button>
-                  <p class="help">S-LMS 관리자 세션이 있으면 S-edu page에 즉시 반영하고, 없으면 Sheets sync job으로 남깁니다.</p>
+                  <p class="help">신규 강사는 Firebase Auth 생성 성공 후 Firestore와 S-edu page 동기화로 넘어갑니다. 비밀번호 변경/비활성은 관리자 스크립트에서 처리해야 합니다.</p>
                 </div>
               </form>
             </div>
@@ -909,7 +909,7 @@
             <div class="panel-head"><div><h3>No-Blaze 원칙</h3><p>Functions와 Admin SDK 없이 릴리스합니다.</p></div></div>
             <div class="panel-body">
               <div class="audit-item"><strong>직접 저장</strong><span>관리자 로그인 후 Firestore rules가 허용하는 문서만 저장합니다.</span></div>
-              <div class="audit-item" style="margin-top:8px;"><strong>후속 작업</strong><span>Auth 작업은 accountManagementRequests에 남기고, Sheets 작업은 S-LMS 세션이 있으면 즉시 반영합니다.</span></div>
+              <div class="audit-item" style="margin-top:8px;"><strong>Auth 선반영</strong><span>신규 강사 계정은 Firebase Auth 생성이 성공해야 Firestore와 Sheets 저장으로 넘어갑니다.</span></div>
               <div class="audit-item" style="margin-top:8px;"><strong>보안</strong><span>관리자 권한은 users/userAppAccess 문서와 Firestore rules로 확인합니다.</span></div>
             </div>
           </aside>
@@ -1156,6 +1156,22 @@
     async function getAuth() {
       const app = await initFirebase();
       return app.auth();
+    }
+
+    async function getSecondaryAuth() {
+      await initFirebase();
+      let app;
+      try {
+        app = firebase.app("account-management-auth-worker");
+      } catch (error) {
+        app = firebase.initializeApp(FIREBASE_CONFIG, "account-management-auth-worker");
+      }
+      const auth = app.auth();
+      const persistence = firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence
+        ? firebase.auth.Auth.Persistence.NONE
+        : null;
+      if (persistence) await auth.setPersistence(persistence);
+      return auth;
     }
 
     async function resolveLoginEmail(identifier) {
@@ -1800,8 +1816,8 @@
       const subject = $("teacherSubjectInput").value.trim();
       const role = $("teacherRoleInput").value;
       const status = $("teacherStatusInput").value;
-      const password = $("teacherPasswordInput").value.trim();
-      const authAction = password ? "RESET_PASSWORD" : $("teacherAuthActionInput").value;
+      let password = $("teacherPasswordInput").value.trim();
+      let authAction = $("teacherAuthActionInput").value;
       const lessonLogUrl = $("teacherLessonLogLinkInput").value.trim();
       const workPageUrl = $("teacherWorkPageLinkInput").value.trim();
       const dailyHoursUrl = $("teacherDailyHoursLinkInput").value.trim();
@@ -1809,10 +1825,6 @@
       const memo = $("teacherMemoInput").value.trim();
       if (!name || !loginId || loginId.length < 8) {
         toast("강사명과 로그인 ID를 확인해 주세요.");
-        return;
-      }
-      if (password && password.length < 6) {
-        toast("Firebase Auth 비밀번호는 6자 이상이어야 합니다.");
         return;
       }
       const apps = {
@@ -1829,6 +1841,16 @@
         canManageSchedules: $("permManageMaterials").checked
       };
       const existing = state.editingTeacherUid || (state.teachers.find(item => item.loginId === loginId) || {}).uid || "";
+      if (!existing) {
+        authAction = "CREATE_AUTH_USER";
+        if (!password) password = loginId;
+      } else if (password) {
+        authAction = "RESET_PASSWORD";
+      }
+      if (password && password.length < 6) {
+        toast("Firebase Auth 비밀번호는 6자 이상이어야 합니다.");
+        return;
+      }
       queueRequest("teacher", `${name} · ${roleLabel(role)} · ${loginId}`, {
         action: "upsertTeacherMetadata",
         teacher: { uid: existing, name, loginId, subject, role, status, apps, permissions, authAction, lessonLogUrl, workPageUrl, dailyHoursUrl, profileImageUrl, password, memo },
@@ -1881,11 +1903,64 @@
       return studentId;
     }
 
+    function teacherAuthAction(item) {
+      return String(item && item.payload && item.payload.teacher && item.payload.teacher.authAction || "").trim();
+    }
+
+    async function createTeacherAuthUser(item) {
+      const teacher = item.payload.teacher || {};
+      const loginId = canonicalLoginId(teacher.loginId);
+      const email = authEmailForLoginId(loginId);
+      const password = String(teacher.password || loginId || "").trim();
+      if (!password || password.length < 6) {
+        throw new Error(`${teacher.name || loginId} Firebase Auth 생성 비밀번호는 6자 이상이어야 합니다.`);
+      }
+      const secondaryAuth = await getSecondaryAuth();
+      try {
+        const credential = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+        const user = credential && credential.user;
+        const uid = user && user.uid || "";
+        if (!uid) throw new Error("생성된 Firebase Auth UID를 확인할 수 없습니다.");
+        const previousUid = String(teacher.uid || "").trim();
+        if (previousUid && previousUid !== uid) teacher.previousMetadataUid = previousUid;
+        teacher.uid = uid;
+        teacher.email = email;
+        teacher.authAction = "";
+        teacher.authStatus = "CREATED";
+        teacher.authCreatedAt = new Date().toISOString();
+        return { ok: true, action: "CREATE_AUTH_USER", uid, email };
+      } catch (error) {
+        if (error && error.code === "auth/email-already-in-use") {
+          throw new Error(`${teacher.name || loginId} Firebase Auth 계정이 이미 있습니다. 비밀번호가 맞지 않는 경우 Firebase 관리자 콘솔 또는 관리 스크립트에서 비밀번호를 재설정한 뒤 저장해 주세요.`);
+        }
+        throw error;
+      } finally {
+        await secondaryAuth.signOut().catch(() => {});
+      }
+    }
+
+    async function prepareTeacherAuthForCommit(item) {
+      if (item.type !== "teacher") return null;
+      const action = teacherAuthAction(item);
+      if (!action) return null;
+      if (action === "CREATE_AUTH_USER") {
+        return createTeacherAuthUser(item);
+      }
+      throw new Error("Firebase Auth 비밀번호 변경/비활성 작업은 브라우저에서 완료할 수 없습니다. 관리자 스크립트 또는 Firebase Console에서 Auth 작업을 먼저 처리해 주세요.");
+    }
+
+    function validateSelectedTeacherAuthActions(selected) {
+      const blocked = selected.find(item => item.type === "teacher" && ["RESET_PASSWORD", "DISABLE_AUTH_USER"].includes(teacherAuthAction(item)));
+      if (!blocked) return "";
+      const teacher = blocked.payload && blocked.payload.teacher || {};
+      return `${teacher.name || teacher.loginId || "강사"}의 Firebase Auth 비밀번호 변경/비활성 작업은 브라우저에서 완료할 수 없습니다. Firebase Console 또는 관리자 스크립트로 먼저 처리해 주세요.`;
+    }
+
     async function writeTeacher(db, item, now) {
       const user = state.operator || {};
       const draft = item.payload.teacher || {};
       const uid = String(draft.uid || "").trim() || uidForLoginId(draft.loginId);
-      const email = authEmailForLoginId(draft.loginId);
+      const email = draft.email || authEmailForLoginId(draft.loginId);
       const apps = Object.assign(defaultApps(draft.role), draft.apps || {});
       const permissions = Object.assign(defaultPermissions(draft.role), draft.permissions || {});
       await Promise.all([
@@ -1936,6 +2011,14 @@
           updatedAt: now
         }, { merge: true });
       }));
+      const previousUid = String(draft.previousMetadataUid || "").trim();
+      if (previousUid && previousUid !== uid && previousUid === uidForLoginId(draft.loginId)) {
+        await Promise.all([
+          db.collection(COLLECTIONS.users).doc(previousUid).delete(),
+          db.collection(COLLECTIONS.userProfiles).doc(previousUid).delete(),
+          db.collection(COLLECTIONS.userAppAccess).doc(previousUid).delete()
+        ]);
+      }
       return uid;
     }
 
@@ -1957,7 +2040,7 @@
         requestPayload.pendingAdminAction = {
           type: item.payload.teacher.authAction,
           status: "PENDING",
-          reason: "Firebase Auth 사용자 생성/비밀번호 변경/비활성은 권한 있는 서버 또는 수동 관리자 작업 필요"
+          reason: "Firebase Auth 비밀번호 변경/비활성은 권한 있는 서버, Firebase Console, 또는 수동 관리자 작업 필요"
         };
       }
       const writes = [
@@ -2106,6 +2189,14 @@
         render();
         return;
       }
+      const teacherAuthValidationMessage = validateSelectedTeacherAuthActions(selected);
+      if (teacherAuthValidationMessage) {
+        toast(teacherAuthValidationMessage);
+        addLocalAudit("강사 Auth 저장 차단", teacherAuthValidationMessage);
+        saveState();
+        render();
+        return;
+      }
       try {
         state.loading = true;
         const db = await getDb();
@@ -2114,6 +2205,11 @@
           const result = { status: "COMMITTED", committedTargets: ["firestore"], pendingTargets: [] };
           if (item.type === "student") result.documentId = await writeStudent(db, item, now);
           if (item.type === "teacher") {
+            const authResult = await prepareTeacherAuthForCommit(item);
+            if (authResult && authResult.ok) {
+              result.auth = authResult;
+              result.committedTargets.unshift("firebaseAuth");
+            }
             result.documentId = await writeTeacher(db, item, now);
             if (item.payload.teacher && item.payload.teacher.authAction) result.pendingTargets.push(item.payload.teacher.authAction);
           }

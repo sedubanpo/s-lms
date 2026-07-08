@@ -72,6 +72,7 @@ Before copying to GitHub Pages, verify:
 - Student create/status update can store `birthYear`, auto-fill the current grade label, and add the request to the pending queue before commit.
 - Birth-year managed students with stale `gradeCalculatedForYear` are surfaced in the student status submenu so annual rollover updates can be added to the pending queue.
 - Transition grades, especially elementary 6 to middle 1 and middle 3 to high 1, show a school-confirmation warning before rollover.
+- New teacher creation creates the Firebase Auth user before writing `users`, `userProfiles`, `userAppAccess`, `loginAliases`, or Sheets sync data.
 - Teacher metadata update writes `users`, `userProfiles`, `userAppAccess`, and `loginAliases`.
 - Teacher metadata includes S-edu page legacy fields: `수업일지링크`, `업무페이지링크`, `일일시수조회링크`, `프로필 이미지`, and optional password follow-up.
 - The teacher list can reveal the password stored in the S-edu page `Teachers` sheet only after Apps Script verifies the Firebase administrator. Confirm that the UI labels this as a sheet-stored password, not a Firebase Auth password.
@@ -80,7 +81,7 @@ Before copying to GitHub Pages, verify:
 - Student ID review starts collapsed, and representative merge hides alias student documents without deleting their audit trail.
 - Student document deletion requires explicit confirmation and does not cascade-delete linked grades/logs/permissions.
 - Student and teacher changes create `legacySheetSyncJobs` so the S-edu page spreadsheet mirror can be processed by a privileged Apps Script, script runner, or later server worker.
-- Auth follow-up actions create pending request metadata instead of trying to create/delete Auth users in the browser.
+- Auth reset/disable actions are blocked from being marked complete in the browser and must be handled by Firebase Console or a privileged admin script.
 
 ## Mixed Firebase + Spreadsheet Constraint
 
