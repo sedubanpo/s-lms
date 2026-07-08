@@ -262,7 +262,7 @@ The static app writes commit metadata to:
 - `accountManagementAuditLogs`
 - `legacySheetSyncJobs`
 
-If Firebase succeeds but Auth or Sheets work remains, leave the request with a pending admin action rather than trying to use Admin SDK credentials in the browser.
+If Firestore succeeds but Sheets work remains, leave the request with a pending sync job rather than trying to use Admin SDK credentials in the browser.
 
 Future server-only mirror failures can use:
 
@@ -270,10 +270,10 @@ Future server-only mirror failures can use:
 {
   "ok": false,
   "status": "mirror-queue-failed",
-  "committedTargets": ["firebase"],
+  "committedTargets": ["firestore"],
   "failedTargets": ["spreadsheet"],
   "rollbackPlan": [
-    { "target": "firebase", "action": "restorePreviousSnapshot" }
+    { "target": "firestore", "action": "restorePreviousSnapshot" }
   ]
 }
 ```
