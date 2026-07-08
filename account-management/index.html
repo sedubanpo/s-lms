@@ -1847,6 +1847,9 @@
       } else if (password) {
         authAction = "RESET_PASSWORD";
       }
+      if (authAction === "CREATE_AUTH_USER" && !password) {
+        password = loginId;
+      }
       if (password && password.length < 6) {
         toast("Firebase Auth 비밀번호는 6자 이상이어야 합니다.");
         return;
