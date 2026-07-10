@@ -576,6 +576,66 @@
       transform: translateY(0);
     }
 
+    .busy-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8, 26, 52, 0.22);
+      backdrop-filter: blur(2px);
+    }
+
+    .busy-overlay.show {
+      display: flex;
+    }
+
+    .busy-card {
+      width: min(360px, calc(100vw - 48px));
+      padding: 18px;
+      border: 1px solid rgba(219, 229, 243, 0.9);
+      border-radius: 10px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .busy-spinner {
+      width: 32px;
+      height: 32px;
+      margin: 0 auto 10px;
+      border: 3px solid #dbeafe;
+      border-top-color: var(--blue);
+      border-radius: 999px;
+      animation: spin 0.78s linear infinite;
+    }
+
+    .busy-card strong {
+      display: block;
+      color: var(--navy);
+      font-size: 0.9rem;
+      font-weight: 950;
+    }
+
+    .busy-card span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .button[disabled] {
+      cursor: wait;
+      opacity: 0.62;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     .drawer {
       display: grid;
       gap: 12px;
@@ -919,6 +979,13 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <div class="busy-overlay" id="busyOverlay" aria-live="polite" aria-hidden="true">
+    <div class="busy-card">
+      <div class="busy-spinner" aria-hidden="true"></div>
+      <strong id="busyTitle">처리 중입니다</strong>
+      <span id="busyMessage">잠시만 기다려 주세요.</span>
+    </div>
+  </div>
 
   <script>
     const STORAGE_KEY = "seduAccountManagementStateV2";
@@ -967,6 +1034,8 @@
       isAdmin: false,
       firebaseReady: false,
       loading: false,
+      loadingType: "",
+      loadingMessage: "",
       editingStudentId: "",
       editingTeacherUid: "",
       teacherCredentials: {},
@@ -1012,6 +1081,40 @@
       el.classList.add("show");
       clearTimeout(toast.timer);
       toast.timer = setTimeout(() => el.classList.remove("show"), 2800);
+    }
+
+    function updateBusyState() {
+      const overlay = $("busyOverlay");
+      if (overlay) {
+        overlay.classList.toggle("show", Boolean(state.loading));
+        overlay.setAttribute("aria-hidden", state.loading ? "false" : "true");
+      }
+      if ($("busyTitle")) $("busyTitle").textContent = state.loadingType === "merge" ? "대표 ID 통합 중" : state.loadingType === "queue" ? "선택 요청 저장 중" : "처리 중입니다";
+      if ($("busyMessage")) $("busyMessage").textContent = state.loadingMessage || "Firestore와 연동 데이터를 확인하고 있습니다. 잠시만 기다려 주세요.";
+      const queueBusy = state.loading && state.loadingType === "queue";
+      ["submitQueueButton", "submitQueueButton2"].forEach(id => {
+        const button = $(id);
+        if (!button) return;
+        button.disabled = state.loading;
+        button.textContent = queueBusy ? "저장 중..." : "선택 요청 저장";
+      });
+      document.querySelectorAll("[data-student-merge], [data-resolve-student-review], [data-queue-grade-rollover]").forEach(button => {
+        button.disabled = state.loading;
+      });
+    }
+
+    function setBusy(type, message) {
+      state.loading = true;
+      state.loadingType = type || "";
+      state.loadingMessage = message || "";
+      updateBusyState();
+    }
+
+    function clearBusy() {
+      state.loading = false;
+      state.loadingType = "";
+      state.loadingMessage = "";
+      updateBusyState();
     }
 
     function escapeHtml(value) {
@@ -2207,7 +2310,7 @@
         return;
       }
       try {
-        state.loading = true;
+        setBusy("queue", `${selected.length}건의 선택 요청을 저장하고 있습니다. Firestore와 Sheets 동기화가 끝날 때까지 잠시만 기다려 주세요.`);
         const db = await getDb();
         const now = new Date().toISOString();
         for (const item of selected) {
@@ -2249,7 +2352,7 @@
         render();
         toast("저장 실패: " + (error.message || error));
       } finally {
-        state.loading = false;
+        clearBusy();
       }
     }
 
@@ -2385,7 +2488,7 @@
       const targetName = options.studentName || (findRawStudentById(canonicalStudentId) || {}).name || "선택 학생";
       if (!confirm(`${targetName} 학생의 대표 ID를 ${canonicalStudentId}(으)로 확정하고 ${aliasStudentIds.length}개 ID를 별칭으로 통합할까요?\n\n통합된 ID는 학생 목록에서 숨겨지고, 성적/로그/권한 참조는 대표 ID로 갱신됩니다.`)) return;
 
-      state.loading = true;
+      setBusy("merge", `${targetName} 학생의 대표 ID를 확정하고 관련 성적, 로그, 권한 참조를 갱신하고 있습니다.`);
       try {
         const db = await getDb();
         const allStudentIds = Array.from(new Set([canonicalStudentId].concat(aliasStudentIds)));
@@ -2522,7 +2625,7 @@
         addLocalAudit("학생 대표 ID 확정 실패", error.message || String(error));
         toast("통합 실패: " + (error.message || error));
       } finally {
-        state.loading = false;
+        clearBusy();
       }
     }
 
@@ -2735,6 +2838,7 @@
       renderAudits();
       if (state.view === "settings") renderSettings();
       renderAuthState();
+      updateBusyState();
     }
 
     function exportQueue() {
