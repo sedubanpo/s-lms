@@ -872,11 +872,14 @@
                 <div class="form-field"><label>생년</label><input class="field" id="studentBirthYearInput" inputmode="numeric" placeholder="예: 2010" autocomplete="off"></div>
                 <div class="form-field"><label>학년</label><input class="field" id="studentGradeInput" autocomplete="off"></div>
                 <div class="form-field"><label>상태</label><select class="select" id="studentStatusInput"><option value="ACTIVE">등록</option><option value="PAUSED">중지</option><option value="RETURNING">복귀 예정</option><option value="HOLD">보류</option><option value="STOPPED">퇴원</option></select></div>
+                <div class="form-field"><label>학생 연락처</label><input class="field" id="studentContactInput" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000"></div>
+                <div class="form-field"><label>부 연락처</label><input class="field" id="studentFatherContactInput" inputmode="tel" autocomplete="off" placeholder="010-0000-0000"></div>
+                <div class="form-field"><label>모 연락처</label><input class="field" id="studentMotherContactInput" inputmode="tel" autocomplete="off" placeholder="010-0000-0000"></div>
                 <div class="form-field full"><div class="form-note" id="studentGradeHelper"><strong>생년 기반 학년 자동 계산</strong>생년을 입력하면 1월 1일 기준 학년을 계산해 학년 입력값에 반영합니다.</div></div>
                 <div class="form-field full"><label>메모</label><textarea class="textarea" id="studentMemoInput" placeholder="상태 변경 사유, 복귀 예정일, 중복 확인 메모"></textarea></div>
                 <div class="form-field full">
                   <button class="button primary" id="queueStudentButton">학생 등록/수정 대기열 포함</button>
-                  <p class="help">입력 후 버튼을 누르면 자동으로 반영 대기열에 선택 상태로 포함됩니다. 최종 반영은 `선택 요청 저장`에서 처리합니다.</p>
+                  <p class="help">입력 후 대기열에 추가하고, 관리자 세션이면 해당 요청만 즉시 Firestore와 Sheets에 반영합니다. 실패한 요청은 대기열에 남아 재시도할 수 있습니다.</p>
                 </div>
               </form>
             </div>
@@ -1100,6 +1103,13 @@
       });
       document.querySelectorAll("[data-student-merge], [data-resolve-student-review], [data-queue-grade-rollover]").forEach(button => {
         button.disabled = state.loading;
+      });
+      ["queueStudentButton", "queueTeacherButton"].forEach(id => {
+        const button = $(id);
+        if (!button) return;
+        button.disabled = state.loading;
+        if (id === "queueStudentButton") button.textContent = queueBusy ? "학생 정보 반영 중..." : "학생 등록/수정 대기열 포함";
+        if (id === "queueTeacherButton") button.textContent = queueBusy ? "강사 계정 반영 중..." : "강사 변경 대기열 추가";
       });
     }
 
@@ -1433,6 +1443,12 @@
         gradeLabel: data.gradeLabel || "",
         gradeCalculatedForYear: data.gradeCalculatedForYear || "",
         gradeAutoManaged: data.gradeAutoManaged === true,
+        studentContact: data.studentContact || data.studentPhone || data.phone || "",
+        studentPhone: data.studentPhone || data.studentContact || data.phone || "",
+        fatherContact: data.fatherContact || data.fatherPhone || "",
+        fatherPhone: data.fatherPhone || data.fatherContact || "",
+        motherContact: data.motherContact || data.motherPhone || "",
+        motherPhone: data.motherPhone || data.motherContact || "",
         status: ["INACTIVE", "SUSPENDED"].includes(status) ? "PAUSED" : status,
         active: data.active !== false && data.isActive !== false && !["PAUSED", "STOPPED", "DISABLED", "INACTIVE"].includes(status),
         identityStatus: String(data.identityStatus || "").toUpperCase(),
@@ -1667,6 +1683,16 @@
       saveState();
       render();
       toast("대기열에 추가했습니다.");
+      return item;
+    }
+
+    async function autoSubmitQueuedItem(item) {
+      if (!item) return;
+      if (!state.isAdmin) {
+        toast("대기열에 추가했습니다. 관리자 로그인 후 자동 업로드를 시작합니다.");
+        return;
+      }
+      await submitQueue([item]);
     }
 
     function normalizeStudentDuplicateValue(value) {
@@ -1821,13 +1847,16 @@
       helper.innerHTML = `<strong>${info.birthYear}년생 · ${info.gradeLabel}</strong>${currentAcademicYear()}년 1월 1일 기준입니다. ${transitionText}`;
     }
 
-    function queueStudentFromForm() {
+    async function queueStudentFromForm() {
       const name = $("studentNameInput").value.trim();
       const school = $("studentSchoolInput").value.trim();
       const birthYear = normalizeBirthYear($("studentBirthYearInput").value);
       const gradeInfo = gradeInfoFromBirthYear(birthYear);
       const grade = (gradeInfo && gradeInfo.grade) || $("studentGradeInput").value.trim();
       const status = $("studentStatusInput").value;
+      const studentContact = $("studentContactInput").value.trim();
+      const fatherContact = $("studentFatherContactInput").value.trim();
+      const motherContact = $("studentMotherContactInput").value.trim();
       const memo = $("studentMemoInput").value.trim();
       if (!name || !school || !grade) {
         toast("학생명, 학교, 학년을 입력해 주세요.");
@@ -1849,6 +1878,12 @@
         gradeCalculatedForYear: gradeInfo ? gradeInfo.calculatedForYear : "",
         gradeAutoManaged: Boolean(gradeInfo),
         status,
+        studentContact,
+        studentPhone: studentContact,
+        fatherContact,
+        fatherPhone: fatherContact,
+        motherContact,
+        motherPhone: motherContact,
         memo
       };
       const validationMessage = validateStudentQueueDraft(draft);
@@ -1857,7 +1892,7 @@
         return;
       }
       const gradeSummary = draft.gradeLabel || `${grade}학년`;
-      queueRequest("student", `${name} · ${school} ${gradeSummary} · ${statusLabel(status)}`, {
+      const item = queueRequest("student", `${name} · ${school} ${gradeSummary} · ${statusLabel(status)}`, {
         action: "upsertStudentStatus",
         student: draft,
         requiredCollections: ["students"]
@@ -1865,6 +1900,7 @@
       state.editingStudentId = "";
       $("studentForm").reset();
       updateStudentGradeHelper();
+      await autoSubmitQueuedItem(item);
     }
 
     function queueGradeRolloverUpdates() {
@@ -1888,6 +1924,12 @@
           gradeLabel: info.gradeLabel,
           gradeCalculatedForYear: info.calculatedForYear,
           gradeAutoManaged: true,
+          studentContact: student.studentContact || student.studentPhone || "",
+          studentPhone: student.studentContact || student.studentPhone || "",
+          fatherContact: student.fatherContact || student.fatherPhone || "",
+          fatherPhone: student.fatherContact || student.fatherPhone || "",
+          motherContact: student.motherContact || student.motherPhone || "",
+          motherPhone: student.motherContact || student.motherPhone || "",
           status: student.status || "ACTIVE",
           memo: student.memo || ""
         };
@@ -1914,7 +1956,7 @@
       toast(queuedCount ? `${queuedCount}건의 학년 갱신 요청을 대기열에 추가했습니다.` : "이미 대기열에 있는 학생은 중복 추가하지 않았습니다.");
     }
 
-    function queueTeacherFromForm() {
+    async function queueTeacherFromForm() {
       const name = $("teacherNameInput").value.trim();
       const loginId = canonicalLoginId($("teacherLoginInput").value);
       const subject = $("teacherSubjectInput").value.trim();
@@ -1958,7 +2000,7 @@
         toast("Firebase Auth 비밀번호는 6자 이상이어야 합니다.");
         return;
       }
-      queueRequest("teacher", `${name} · ${roleLabel(role)} · ${loginId}`, {
+      const item = queueRequest("teacher", `${name} · ${roleLabel(role)} · ${loginId}`, {
         action: "upsertTeacherMetadata",
         teacher: { uid: existing, name, loginId, subject, role, status, apps, permissions, authAction, lessonLogUrl, workPageUrl, dailyHoursUrl, profileImageUrl, password, memo },
         requiredCollections: ["users", "userProfiles", "userAppAccess", "loginAliases"]
@@ -1968,6 +2010,7 @@
       $("appSLms").checked = true;
       $("appTeacher").checked = true;
       $("appLive").checked = true;
+      await autoSubmitQueuedItem(item);
     }
 
     async function writeStudent(db, item, now) {
@@ -1990,6 +2033,12 @@
         gradeLabel: draft.gradeLabel || "",
         gradeCalculatedForYear: draft.gradeCalculatedForYear || "",
         gradeAutoManaged: Boolean(draft.gradeAutoManaged),
+        studentContact: draft.studentContact || draft.studentPhone || "",
+        studentPhone: draft.studentContact || draft.studentPhone || "",
+        fatherContact: draft.fatherContact || draft.fatherPhone || "",
+        fatherPhone: draft.fatherContact || draft.fatherPhone || "",
+        motherContact: draft.motherContact || draft.motherPhone || "",
+        motherPhone: draft.motherContact || draft.motherPhone || "",
         status: draft.status,
         active,
         isActive: active,
@@ -2275,8 +2324,11 @@
       return data;
     }
 
-    async function submitQueue() {
-      const selected = state.queue.filter(item => state.selectedQueueIds[item.id]);
+    async function submitQueue(itemsToSubmit) {
+      if (state.loading) return;
+      const selected = Array.isArray(itemsToSubmit)
+        ? itemsToSubmit.filter(item => item && state.queue.some(queued => queued.id === item.id))
+        : state.queue.filter(item => state.selectedQueueIds[item.id]);
       if (!selected.length) {
         toast("저장할 요청을 선택해 주세요.");
         return;
@@ -2522,6 +2574,12 @@
           studentName: canonicalStudent.name || options.studentName || "",
           school: canonicalStudent.school || options.school || "",
           grade: canonicalStudent.grade || options.grade || "",
+          studentContact: canonicalStudent.studentContact || canonicalStudent.studentPhone || "",
+          studentPhone: canonicalStudent.studentContact || canonicalStudent.studentPhone || "",
+          fatherContact: canonicalStudent.fatherContact || canonicalStudent.fatherPhone || "",
+          fatherPhone: canonicalStudent.fatherContact || canonicalStudent.fatherPhone || "",
+          motherContact: canonicalStudent.motherContact || canonicalStudent.motherPhone || "",
+          motherPhone: canonicalStudent.motherContact || canonicalStudent.motherPhone || "",
           identityStatus: "CANONICAL",
           isAlias: false,
           managedBy: "account-management",
@@ -2878,6 +2936,9 @@
             $("studentBirthYearInput").value = student.birthYear || "";
             $("studentGradeInput").value = student.grade;
             $("studentStatusInput").value = student.status;
+            $("studentContactInput").value = student.studentContact || student.studentPhone || "";
+            $("studentFatherContactInput").value = student.fatherContact || student.fatherPhone || "";
+            $("studentMotherContactInput").value = student.motherContact || student.motherPhone || "";
             $("studentMemoInput").value = student.memo || "";
             updateStudentGradeHelper();
             setView("students");
