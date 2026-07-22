@@ -1022,6 +1022,7 @@
       projectId: "fir-lms-prod"
     };
     const TEACHER_PROVISION_URL = "https://asia-northeast3-fir-lms-prod.cloudfunctions.net/provisionTeacherAccount";
+    const STUDENT_PROVISION_URL = "https://asia-northeast3-fir-lms-prod.cloudfunctions.net/provisionStudentAccount";
     const COLLECTIONS = {
       students: "students",
       users: "users",
@@ -1214,7 +1215,7 @@
       if (status === "STOPPED") return "퇴원";
       if (status === "DISABLED") return "비활성";
       if (status === "COMMITTED") return "저장 완료";
-      if (status === "PARTIAL") return "권한 연결 필요";
+      if (status === "PARTIAL") return "연결 재시도 필요";
       if (status === "DRY_RUN_OK") return "검증 완료";
       if (status === "FAILED") return "실패";
       return status || "대기";
@@ -2020,50 +2021,53 @@
       await autoSubmitQueuedItem(item);
     }
 
-    async function writeStudent(db, item, now) {
-      const user = state.operator || {};
-      const draft = item.payload.student || {};
-      const studentId = String(draft.studentId || "").trim() || crypto.randomUUID();
-      const active = draft.status === "ACTIVE" || draft.status === "RETURNING";
-      const payload = {
-        id: studentId,
-        studentId,
-        canonicalStudentId: studentId,
-        studentIdAliases: [studentId],
-        studentName: draft.name,
-        name: draft.name,
-        school: draft.school,
-        grade: draft.grade,
-        birthYear: draft.birthYear || "",
-        birthYearNumber: draft.birthYearNumber || null,
-        schoolLevel: draft.schoolLevel || "",
-        gradeLabel: draft.gradeLabel || "",
-        gradeCalculatedForYear: draft.gradeCalculatedForYear || "",
-        gradeAutoManaged: Boolean(draft.gradeAutoManaged),
-        studentContact: draft.studentContact || draft.studentPhone || "",
-        studentPhone: draft.studentContact || draft.studentPhone || "",
-        fatherContact: draft.fatherContact || draft.fatherPhone || "",
-        fatherPhone: draft.fatherContact || draft.fatherPhone || "",
-        motherContact: draft.motherContact || draft.motherPhone || "",
-        motherPhone: draft.motherContact || draft.motherPhone || "",
-        status: draft.status,
-        active,
-        isActive: active,
-        memo: draft.memo || "",
-        updatedAt: now,
-        updatedAtMs: Date.now(),
-        updatedBy: user.uid || "",
-        updatedById: user.uid || "",
-        updatedByName: user.name || ""
-      };
-      if (!draft.studentId) {
-        payload.createdAt = now;
-        payload.createdAtMs = Date.now();
-        payload.registeredAt = now;
-        payload.registeredAtMs = Date.now();
+    async function provisionStudentAccount(item) {
+      const auth = await getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Firebase 관리자 로그인이 필요합니다.");
+      const idToken = await currentUser.getIdToken();
+      const student = Object.assign({}, item.payload.student || {});
+      if (item.projectionAllowCreate === undefined) {
+        item.projectionAllowCreate = !String(student.studentId || "").trim();
       }
-      await db.collection(COLLECTIONS.students).doc(studentId).set(payload, { merge: true });
-      return studentId;
+      if (!String(student.studentId || "").trim()) {
+        student.studentId = crypto.randomUUID();
+      }
+      student.canonicalStudentId = student.studentId;
+      item.payload.student.studentId = student.studentId;
+      item.payload.student.canonicalStudentId = student.studentId;
+      const response = await fetch(STUDENT_PROVISION_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          requestId: item.provisioningJobId || item.id,
+          student,
+          allowCreate: item.projectionAllowCreate === true
+        })
+      });
+      const text = await response.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (error) {
+        throw new Error("학생 원장 연결 서버 응답을 확인할 수 없습니다.");
+      }
+      item.provisioningJobId = data.jobId || item.provisioningJobId || item.id;
+      item.provisioningStages = data.stages || item.provisioningStages || {};
+      item.failedStage = data.failedStage || "";
+      item.lastError = data.message || "";
+      if (!response.ok || !data.ok || data.status !== "COMPLETED") {
+        item.status = "PARTIAL";
+        const provisionError = new Error(data.message || "학생 원장 또는 시간표 ID 연결이 일부 단계에서 실패했습니다.");
+        provisionError.preserveQueueStatus = true;
+        provisionError.operationLabel = "학생 원장 연결";
+        throw provisionError;
+      }
+      item.status = "COMMITTED";
+      return data;
     }
 
     function teacherAuthAction(item) {
@@ -2325,7 +2329,15 @@
         const now = new Date().toISOString();
         for (const item of selected) {
           const result = { status: "COMMITTED", committedTargets: ["firestore"], pendingTargets: [] };
-          if (item.type === "student") result.documentId = await writeStudent(db, item, now);
+          if (item.type === "student") {
+            const provisioned = await provisionStudentAccount(item);
+            result.documentId = provisioned.studentId;
+            result.supabaseStudentId = provisioned.supabaseStudentId;
+            result.provisioningStages = provisioned.stages;
+            result.committedTargets = ["firestore", "supabase"];
+            applyCommittedItem(item, result, now);
+            continue;
+          }
           if (item.type === "teacher") {
             const requiresProvisioning = teacherAuthAction(item) === "PROVISION_ACCOUNT" || item.status === "PARTIAL";
             if (requiresProvisioning) {
@@ -2352,23 +2364,23 @@
         selected.forEach(item => {
           if (item.status !== "COMMITTED" && item.status !== "PARTIAL") item.status = "FAILED";
         });
-        addLocalAudit(error.preserveQueueStatus ? "강사 권한 연결 부분 실패" : "Firestore 저장 실패", error.message || String(error));
+        addLocalAudit(error.preserveQueueStatus ? `${error.operationLabel || "권한 연결"} 부분 실패` : "Firestore 저장 실패", error.message || String(error));
         saveState();
         render();
-        toast((error.preserveQueueStatus ? "권한 연결 재시도가 필요합니다: " : "저장 실패: ") + (error.message || error));
+        toast((error.preserveQueueStatus ? `${error.operationLabel || "연결"} 재시도가 필요합니다: ` : "저장 실패: ") + (error.message || error));
       } finally {
         clearBusy();
       }
     }
 
-    async function retryTeacherProvision(itemId) {
-      const item = state.queue.find(queueItem => queueItem.id === itemId && queueItem.type === "teacher");
+    async function retryProvision(itemId) {
+      const item = state.queue.find(queueItem => queueItem.id === itemId && queueItem.status === "PARTIAL");
       if (!item) {
-        toast("재시도할 강사 요청을 찾을 수 없습니다.");
+        toast("재시도할 연결 요청을 찾을 수 없습니다.");
         return;
       }
       state.selectedQueueIds[item.id] = true;
-      await submitQueue([item], { retryPermissions: true });
+      await submitQueue([item], { retryPermissions: item.type === "teacher" });
     }
 
     function pendingIdentityReviews() {
@@ -2806,16 +2818,19 @@
     }
 
     function renderProvisionStages(item) {
-      if (item.type !== "teacher") {
-        return (item.targets || []).map(target => `<span class="status pending">${escapeHtml(target)}</span>`).join(" ");
-      }
       const stages = item.provisioningStages || {};
-      const definitions = [
+      const definitions = item.type === "teacher" ? [
         ["auth", "Auth"],
         ["claims", "Claim"],
         ["firestore", "Firestore"],
         ["supabase", "Supabase"]
+      ] : [
+        ["firestore", "Firebase 원장"],
+        ["supabase", "시간표 ID"]
       ];
+      if (!Object.keys(stages).length && item.type !== "teacher") {
+        return (item.targets || []).map(target => `<span class="status pending">${escapeHtml(target)}</span>`).join(" ");
+      }
       return `<div class="provision-stages">${definitions.map(([key, label]) => {
         const status = String(stages[key] && stages[key].status || "PENDING").toUpperCase();
         const css = status === "COMPLETED" ? "active" : status === "FAILED" ? "stopped" : "pending";
@@ -2832,7 +2847,7 @@
           <td>${escapeHtml(item.summary)}<br><span class="help">${escapeHtml(item.lastError || item.id)}</span></td>
           <td>${renderProvisionStages(item)}</td>
           <td><span class="status ${statusClass(item.status)}">${item.status === "DRAFT" ? "검토 대기" : statusLabel(item.status)}</span></td>
-          <td><div class="row-actions">${item.type === "teacher" && item.status === "PARTIAL" ? `<button class="button primary provision-retry" data-retry-teacher-provision="${escapeHtml(item.id)}">권한 연결 재시도</button>` : ""}<button class="button danger" data-remove-queue="${escapeHtml(item.id)}">제거</button></div></td>
+          <td><div class="row-actions">${item.status === "PARTIAL" ? `<button class="button primary provision-retry" data-retry-provision="${escapeHtml(item.id)}">연결 재시도</button>` : ""}<button class="button danger" data-remove-queue="${escapeHtml(item.id)}">제거</button></div></td>
         </tr>
       `).join("");
       $("queueRows").innerHTML = rows || `<tr><td colspan="6">대기열이 비어 있습니다.</td></tr>`;
@@ -2909,9 +2924,9 @@
           saveState();
           render();
         }
-        const provisionRetry = event.target.closest("[data-retry-teacher-provision]");
+        const provisionRetry = event.target.closest("[data-retry-provision]");
         if (provisionRetry) {
-          retryTeacherProvision(provisionRetry.dataset.retryTeacherProvision);
+          retryProvision(provisionRetry.dataset.retryProvision);
         }
         const studentEdit = event.target.closest("[data-student-edit]");
         if (studentEdit) {
