@@ -482,6 +482,29 @@
     .status.pending { background: #eff6ff; color: #1d4ed8; }
     .status.draft { background: #f1f5f9; color: #475569; }
 
+    .provision-stages {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      min-width: 260px;
+    }
+
+    .provision-stage {
+      min-width: auto;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .provision-retry {
+      min-height: 40px;
+      transition-property: transform, box-shadow;
+      transition-duration: 160ms;
+      transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .provision-retry:active:not(:disabled) {
+      transform: scale(0.96);
+    }
+
     .sync-lanes {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -919,18 +942,18 @@
                 <div class="form-field"><label>직급</label><select class="select" id="teacherRoleInput"><option value="INSTRUCTOR">강사</option><option value="STAFF">실무자</option><option value="ADMIN">관리자</option><option value="DISABLED">비활성</option></select></div>
                 <div class="form-field"><label>상태</label><select class="select" id="teacherStatusInput"><option value="ACTIVE">활성</option><option value="DISABLED">비활성</option></select></div>
                 <div class="form-field"><label>새 비밀번호</label><input class="field password" id="teacherPasswordInput" type="password" autocomplete="new-password" placeholder="신규는 미입력 시 로그인 ID"></div>
-                <div class="form-field"><label>Auth 작업</label><select class="select" id="teacherAuthActionInput"><option value="">없음</option><option value="CREATE_AUTH_USER">Auth 사용자 생성</option><option value="RESET_PASSWORD">비밀번호 변경 필요</option><option value="DISABLE_AUTH_USER">Auth 사용자 비활성 필요</option></select></div>
+                <div class="form-field"><label>Auth 작업</label><select class="select" id="teacherAuthActionInput"><option value="">없음</option><option value="PROVISION_ACCOUNT">신규 계정 전체 생성</option><option value="RESET_PASSWORD">비밀번호 변경 필요</option><option value="DISABLE_AUTH_USER">Auth 사용자 비활성 필요</option></select></div>
                 <div class="form-field full"><div class="form-note"><strong>Firebase Auth</strong>현재 비밀번호는 조회할 수 없습니다. 신규 계정은 입력한 비밀번호로 생성되며, 기존 계정은 관리자 비밀번호 재설정 절차를 사용합니다.</div></div>
                 <div class="form-field full"><label>수업일지링크</label><input class="field" id="teacherLessonLogLinkInput" autocomplete="off" placeholder="https://forms..."></div>
                 <div class="form-field full"><label>업무페이지링크</label><input class="field" id="teacherWorkPageLinkInput" autocomplete="off" placeholder="https://west-orangutan..."></div>
                 <div class="form-field full"><label>일일시수조회링크</label><input class="field" id="teacherDailyHoursLinkInput" autocomplete="off" placeholder="https://docs.google.com/..."></div>
                 <div class="form-field full"><label>프로필이미지</label><input class="field" id="teacherProfileImageInput" autocomplete="off" placeholder="https://github.com/..."></div>
-                <div class="form-field full"><label>앱 권한</label><div class="sync-lanes"><label><input type="checkbox" id="appSLms" checked> S-LMS</label><label><input type="checkbox" id="appTeacher" checked> 강사 포털</label><label><input type="checkbox" id="appDesk"> 데스크</label><label><input type="checkbox" id="appLive" checked> 라이브 시간표</label></div></div>
+                <div class="form-field full"><label>앱 권한</label><div class="sync-lanes"><label><input type="checkbox" id="appSLms" checked> S-LMS</label><label><input type="checkbox" id="appTeacher" checked> 강사 포털</label><label><input type="checkbox" id="appDesk"> 데스크</label><label><input type="checkbox" id="appLive" checked> 라이브 시간표</label><label><input type="checkbox" id="appSynchro" checked> 싱크로에스</label></div></div>
                 <div class="form-field full"><label>세부 권한</label><div class="sync-lanes"><label><input type="checkbox" id="permManageAccounts"> 계정 관리</label><label><input type="checkbox" id="permEditGrades"> 성적 입력</label><label><input type="checkbox" id="permDeleteGrades"> 성적 삭제</label><label><input type="checkbox" id="permManageMaterials"> 자료 관리</label></div></div>
                 <div class="form-field full"><label>메모</label><textarea class="textarea" id="teacherMemoInput" placeholder="계정 생성 사유, 권한 변경 사유, 비밀번호 전달 메모"></textarea></div>
                 <div class="form-field full">
                   <button class="button primary" id="queueTeacherButton">강사 변경 대기열 추가</button>
-                  <p class="help">신규 강사는 Firebase Auth 생성 성공 후 Firestore 계정 문서를 저장합니다. 비밀번호 변경/비활성은 관리자 스크립트에서 처리해야 합니다.</p>
+                  <p class="help">신규 강사는 Auth, custom claim, Firestore, Supabase 권한 연결이 모두 완료된 뒤에만 생성 완료로 표시합니다.</p>
                 </div>
               </form>
             </div>
@@ -947,7 +970,7 @@
           <div class="panel-body">
             <div class="table-wrap">
               <table>
-                <thead><tr><th style="width:42px;"></th><th style="width:120px;">유형</th><th>요청 내용</th><th style="width:180px;">대상 저장소</th><th style="width:140px;">검증 상태</th><th style="width:110px;">제거</th></tr></thead>
+                <thead><tr><th style="width:42px;"></th><th style="width:100px;">유형</th><th>요청 내용</th><th style="width:320px;">단계 상태</th><th style="width:130px;">처리 상태</th><th style="width:190px;">작업</th></tr></thead>
                 <tbody id="queueRows"></tbody>
               </table>
             </div>
@@ -998,6 +1021,7 @@
       authDomain: "fir-lms-prod.firebaseapp.com",
       projectId: "fir-lms-prod"
     };
+    const TEACHER_PROVISION_URL = "https://asia-northeast3-fir-lms-prod.cloudfunctions.net/provisionTeacherAccount";
     const COLLECTIONS = {
       students: "students",
       users: "users",
@@ -1038,6 +1062,7 @@
       loadingMessage: "",
       editingStudentId: "",
       editingTeacherUid: "",
+      teacherProvisionSecrets: {},
       studentIdentityReviewExpanded: false
     };
 
@@ -1046,9 +1071,20 @@
     function loadState() {
       try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-        state.queue = Array.isArray(saved.queue) ? saved.queue.map(item => Object.assign({}, item, {
-          targets: ["firestore", "audit"]
-        })) : [];
+        state.queue = Array.isArray(saved.queue) ? saved.queue.map(item => {
+          const payload = Object.assign({}, item.payload || {});
+          if (payload.teacher) {
+            payload.teacher = Object.assign({}, payload.teacher);
+            delete payload.teacher.password;
+            if (!payload.teacher.uid && payload.teacher.authAction === "CREATE_AUTH_USER") {
+              payload.teacher.authAction = "PROVISION_ACCOUNT";
+            }
+          }
+          const targets = item.type === "teacher"
+            ? ["firebaseAuth", "customClaims", "firestore", "supabase"]
+            : ["firestore", "audit"];
+          return Object.assign({}, item, { payload, targets });
+        }) : [];
         state.audits = Array.isArray(saved.audits) ? saved.audits : [];
         state.selectedQueueIds = saved.selectedQueueIds || {};
       } catch (error) {}
@@ -1098,7 +1134,7 @@
         button.disabled = state.loading;
         button.textContent = queueBusy ? "저장 중..." : "선택 요청 저장";
       });
-      document.querySelectorAll("[data-student-merge], [data-resolve-student-review], [data-queue-grade-rollover]").forEach(button => {
+      document.querySelectorAll("[data-student-merge], [data-resolve-student-review], [data-queue-grade-rollover], [data-retry-teacher-provision]").forEach(button => {
         button.disabled = state.loading;
       });
       ["queueStudentButton", "queueTeacherButton"].forEach(id => {
@@ -1178,6 +1214,7 @@
       if (status === "STOPPED") return "퇴원";
       if (status === "DISABLED") return "비활성";
       if (status === "COMMITTED") return "저장 완료";
+      if (status === "PARTIAL") return "권한 연결 필요";
       if (status === "DRY_RUN_OK") return "검증 완료";
       if (status === "FAILED") return "실패";
       return status || "대기";
@@ -1187,6 +1224,7 @@
       if (status === "ACTIVE" || status === "COMMITTED") return "active";
       if (status === "PAUSED" || status === "RETURNING" || status === "HOLD") return "paused";
       if (status === "STOPPED" || status === "DISABLED" || status === "FAILED") return "stopped";
+      if (status === "PARTIAL") return "paused";
       if (status === "DRAFT") return "draft";
       return "pending";
     }
@@ -1215,7 +1253,8 @@
         sLms: true,
         teacherPortal: role !== "STAFF",
         deskPortal: role === "ADMIN" || role === "STAFF",
-        liveTimetable: role !== "STAFF"
+        liveTimetable: role !== "STAFF",
+        synchroS: true
       };
     }
 
@@ -1266,22 +1305,6 @@
     async function getAuth() {
       const app = await initFirebase();
       return app.auth();
-    }
-
-    async function getSecondaryAuth() {
-      await initFirebase();
-      let app;
-      try {
-        app = firebase.app("account-management-auth-worker");
-      } catch (error) {
-        app = firebase.initializeApp(FIREBASE_CONFIG, "account-management-auth-worker");
-      }
-      const auth = app.auth();
-      const persistence = firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence
-        ? firebase.auth.Auth.Persistence.NONE
-        : null;
-      if (persistence) await auth.setPersistence(persistence);
-      return auth;
     }
 
     async function resolveLoginEmail(identifier) {
@@ -1653,7 +1676,9 @@
         type,
         summary,
         payload,
-        targets: ["firestore", "audit"],
+        targets: type === "teacher"
+          ? ["firebaseAuth", "customClaims", "firestore", "supabase"]
+          : ["firestore", "audit"],
         status: "DRAFT",
         createdAt: new Date().toISOString()
       };
@@ -1956,7 +1981,8 @@
         sLms: $("appSLms").checked,
         teacherPortal: $("appTeacher").checked,
         deskPortal: $("appDesk").checked,
-        liveTimetable: $("appLive").checked
+        liveTimetable: $("appLive").checked,
+        synchroS: $("appSynchro").checked
       };
       const permissions = {
         canManageAccounts: $("permManageAccounts").checked,
@@ -1967,12 +1993,12 @@
       };
       const existing = state.editingTeacherUid || (state.teachers.find(item => item.loginId === loginId) || {}).uid || "";
       if (!existing) {
-        authAction = "CREATE_AUTH_USER";
+        authAction = "PROVISION_ACCOUNT";
         if (!password) password = loginId;
       } else if (password) {
         authAction = "RESET_PASSWORD";
       }
-      if (authAction === "CREATE_AUTH_USER" && !password) {
+      if (authAction === "PROVISION_ACCOUNT" && !password) {
         password = loginId;
       }
       if (password && password.length < 6) {
@@ -1981,14 +2007,16 @@
       }
       const item = queueRequest("teacher", `${name} · ${roleLabel(role)} · ${loginId}`, {
         action: "upsertTeacherMetadata",
-        teacher: { uid: existing, name, loginId, subject, role, status, apps, permissions, authAction, lessonLogUrl, workPageUrl, dailyHoursUrl, profileImageUrl, password, memo },
+        teacher: { uid: existing, name, loginId, subject, role, status, apps, permissions, authAction, lessonLogUrl, workPageUrl, dailyHoursUrl, profileImageUrl, memo },
         requiredCollections: ["users", "userProfiles", "userAppAccess", "loginAliases"]
       });
+      if (!existing) state.teacherProvisionSecrets[item.id] = password;
       state.editingTeacherUid = "";
       $("teacherForm").reset();
       $("appSLms").checked = true;
       $("appTeacher").checked = true;
       $("appLive").checked = true;
+      $("appSynchro").checked = true;
       await autoSubmitQueuedItem(item);
     }
 
@@ -2042,46 +2070,49 @@
       return String(item && item.payload && item.payload.teacher && item.payload.teacher.authAction || "").trim();
     }
 
-    async function createTeacherAuthUser(item) {
-      const teacher = item.payload.teacher || {};
-      const loginId = canonicalLoginId(teacher.loginId);
-      const email = authEmailForLoginId(loginId);
-      const password = String(teacher.password || loginId || "").trim();
-      if (!password || password.length < 6) {
-        throw new Error(`${teacher.name || loginId} Firebase Auth 생성 비밀번호는 6자 이상이어야 합니다.`);
-      }
-      const secondaryAuth = await getSecondaryAuth();
+    async function provisionTeacherAccount(item, retryPermissions) {
+      const auth = await getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Firebase 관리자 로그인이 필요합니다.");
+      const idToken = await currentUser.getIdToken();
+      const teacher = Object.assign({}, item.payload.teacher || {});
+      delete teacher.password;
+      const response = await fetch(TEACHER_PROVISION_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          requestId: item.provisioningJobId || item.id,
+          teacher,
+          password: state.teacherProvisionSecrets[item.id] || "",
+          retryPermissions: Boolean(retryPermissions)
+        })
+      });
+      const text = await response.text();
+      let data;
       try {
-        const credential = await secondaryAuth.createUserWithEmailAndPassword(email, password);
-        const user = credential && credential.user;
-        const uid = user && user.uid || "";
-        if (!uid) throw new Error("생성된 Firebase Auth UID를 확인할 수 없습니다.");
-        const previousUid = String(teacher.uid || "").trim();
-        if (previousUid && previousUid !== uid) teacher.previousMetadataUid = previousUid;
-        teacher.uid = uid;
-        teacher.email = email;
-        teacher.authAction = "";
-        teacher.authStatus = "CREATED";
-        teacher.authCreatedAt = new Date().toISOString();
-        return { ok: true, action: "CREATE_AUTH_USER", uid, email };
+        data = text ? JSON.parse(text) : {};
       } catch (error) {
-        if (error && error.code === "auth/email-already-in-use") {
-          throw new Error(`${teacher.name || loginId} Firebase Auth 계정이 이미 있습니다. 비밀번호가 맞지 않는 경우 Firebase 관리자 콘솔 또는 관리 스크립트에서 비밀번호를 재설정한 뒤 저장해 주세요.`);
-        }
-        throw error;
-      } finally {
-        await secondaryAuth.signOut().catch(() => {});
+        throw new Error("권한 연결 서버 응답을 확인할 수 없습니다.");
       }
-    }
-
-    async function prepareTeacherAuthForCommit(item) {
-      if (item.type !== "teacher") return null;
-      const action = teacherAuthAction(item);
-      if (!action) return null;
-      if (action === "CREATE_AUTH_USER") {
-        return createTeacherAuthUser(item);
+      item.provisioningJobId = data.jobId || item.provisioningJobId || item.id;
+      item.provisioningStages = data.stages || item.provisioningStages || {};
+      item.failedStage = data.failedStage || "";
+      item.lastError = data.message || "";
+      if (!response.ok || !data.ok || data.status !== "COMPLETED") {
+        item.status = "PARTIAL";
+        const provisionError = new Error(data.message || "강사 권한 연결이 일부 단계에서 실패했습니다.");
+        provisionError.preserveQueueStatus = true;
+        throw provisionError;
       }
-      throw new Error("Firebase Auth 비밀번호 변경/비활성 작업은 브라우저에서 완료할 수 없습니다. 관리자 스크립트 또는 Firebase Console에서 Auth 작업을 먼저 처리해 주세요.");
+      delete state.teacherProvisionSecrets[item.id];
+      item.payload.teacher.uid = data.uid;
+      item.payload.teacher.email = data.email;
+      item.payload.teacher.authAction = "";
+      item.status = "COMMITTED";
+      return data;
     }
 
     function validateSelectedTeacherAuthActions(selected) {
@@ -2251,7 +2282,7 @@
       ]);
     }
 
-    async function submitQueue(itemsToSubmit) {
+    async function submitQueue(itemsToSubmit, options = {}) {
       if (state.loading) return;
       const selected = Array.isArray(itemsToSubmit)
         ? itemsToSubmit.filter(item => item && state.queue.some(queued => queued.id === item.id))
@@ -2289,17 +2320,22 @@
         return;
       }
       try {
-        setBusy("queue", `${selected.length}건의 선택 요청을 Firestore에 저장하고 있습니다.`);
+        setBusy("queue", `${selected.length}건의 계정 요청을 단계별로 처리하고 있습니다.`);
         const db = await getDb();
         const now = new Date().toISOString();
         for (const item of selected) {
           const result = { status: "COMMITTED", committedTargets: ["firestore"], pendingTargets: [] };
           if (item.type === "student") result.documentId = await writeStudent(db, item, now);
           if (item.type === "teacher") {
-            const authResult = await prepareTeacherAuthForCommit(item);
-            if (authResult && authResult.ok) {
-              result.auth = authResult;
-              result.committedTargets.unshift("firebaseAuth");
+            const requiresProvisioning = teacherAuthAction(item) === "PROVISION_ACCOUNT" || item.status === "PARTIAL";
+            if (requiresProvisioning) {
+              const provisioned = await provisionTeacherAccount(item, options.retryPermissions === true);
+              result.documentId = provisioned.uid;
+              result.auth = { ok: true, uid: provisioned.uid, email: provisioned.email };
+              result.provisioningStages = provisioned.stages;
+              result.committedTargets = ["firebaseAuth", "customClaims", "firestore", "supabase"];
+              applyCommittedItem(item, result, now);
+              continue;
             }
             result.documentId = await writeTeacher(db, item, now);
             if (item.payload.teacher && item.payload.teacher.authAction) result.pendingTargets.push(item.payload.teacher.authAction);
@@ -2308,21 +2344,31 @@
           applyCommittedItem(item, result, now);
           item.status = "COMMITTED";
         }
-        addLocalAudit("Firestore 저장", `${selected.length}건을 Firestore에 저장했습니다.`);
+        addLocalAudit("계정 요청 완료", `${selected.length}건의 선택 요청을 완료했습니다.`);
         saveState();
         render();
         toast("선택 요청을 저장했습니다.");
       } catch (error) {
         selected.forEach(item => {
-          if (item.status !== "COMMITTED") item.status = "FAILED";
+          if (item.status !== "COMMITTED" && item.status !== "PARTIAL") item.status = "FAILED";
         });
-        addLocalAudit("Firestore 저장 실패", error.message || String(error));
+        addLocalAudit(error.preserveQueueStatus ? "강사 권한 연결 부분 실패" : "Firestore 저장 실패", error.message || String(error));
         saveState();
         render();
-        toast("저장 실패: " + (error.message || error));
+        toast((error.preserveQueueStatus ? "권한 연결 재시도가 필요합니다: " : "저장 실패: ") + (error.message || error));
       } finally {
         clearBusy();
       }
+    }
+
+    async function retryTeacherProvision(itemId) {
+      const item = state.queue.find(queueItem => queueItem.id === itemId && queueItem.type === "teacher");
+      if (!item) {
+        toast("재시도할 강사 요청을 찾을 수 없습니다.");
+        return;
+      }
+      state.selectedQueueIds[item.id] = true;
+      await submitQueue([item], { retryPermissions: true });
     }
 
     function pendingIdentityReviews() {
@@ -2759,15 +2805,34 @@
       $("teacherRows").innerHTML = rows || `<tr><td colspan="7">${state.isAdmin ? "조건에 맞는 강사 계정이 없습니다." : "관리자 로그인 후 Firestore 계정 목록을 불러옵니다."}</td></tr>`;
     }
 
+    function renderProvisionStages(item) {
+      if (item.type !== "teacher") {
+        return (item.targets || []).map(target => `<span class="status pending">${escapeHtml(target)}</span>`).join(" ");
+      }
+      const stages = item.provisioningStages || {};
+      const definitions = [
+        ["auth", "Auth"],
+        ["claims", "Claim"],
+        ["firestore", "Firestore"],
+        ["supabase", "Supabase"]
+      ];
+      return `<div class="provision-stages">${definitions.map(([key, label]) => {
+        const status = String(stages[key] && stages[key].status || "PENDING").toUpperCase();
+        const css = status === "COMPLETED" ? "active" : status === "FAILED" ? "stopped" : "pending";
+        const suffix = status === "COMPLETED" ? "완료" : status === "FAILED" ? "실패" : "대기";
+        return `<span class="status provision-stage ${css}" title="${escapeHtml(stages[key] && stages[key].message || "")}">${label} ${suffix}</span>`;
+      }).join("")}</div>`;
+    }
+
     function renderQueue() {
       const rows = state.queue.map(item => `
         <tr>
           <td><input type="checkbox" data-queue-check="${escapeHtml(item.id)}" ${state.selectedQueueIds[item.id] ? "checked" : ""}></td>
           <td>${item.type === "teacher" ? "강사" : "학생"}</td>
-          <td>${escapeHtml(item.summary)}<br><span class="help">${escapeHtml(item.id)}</span></td>
-          <td>${item.targets.map(target => `<span class="status pending">${target}</span>`).join(" ")}</td>
+          <td>${escapeHtml(item.summary)}<br><span class="help">${escapeHtml(item.lastError || item.id)}</span></td>
+          <td>${renderProvisionStages(item)}</td>
           <td><span class="status ${statusClass(item.status)}">${item.status === "DRAFT" ? "검토 대기" : statusLabel(item.status)}</span></td>
-          <td><button class="button danger" data-remove-queue="${escapeHtml(item.id)}">제거</button></td>
+          <td><div class="row-actions">${item.type === "teacher" && item.status === "PARTIAL" ? `<button class="button primary provision-retry" data-retry-teacher-provision="${escapeHtml(item.id)}">권한 연결 재시도</button>` : ""}<button class="button danger" data-remove-queue="${escapeHtml(item.id)}">제거</button></div></td>
         </tr>
       `).join("");
       $("queueRows").innerHTML = rows || `<tr><td colspan="6">대기열이 비어 있습니다.</td></tr>`;
@@ -2838,10 +2903,15 @@
         }
         const remove = event.target.closest("[data-remove-queue]");
         if (remove) {
+          delete state.teacherProvisionSecrets[remove.dataset.removeQueue];
           state.queue = state.queue.filter(item => item.id !== remove.dataset.removeQueue);
           delete state.selectedQueueIds[remove.dataset.removeQueue];
           saveState();
           render();
+        }
+        const provisionRetry = event.target.closest("[data-retry-teacher-provision]");
+        if (provisionRetry) {
+          retryTeacherProvision(provisionRetry.dataset.retryTeacherProvision);
         }
         const studentEdit = event.target.closest("[data-student-edit]");
         if (studentEdit) {
@@ -2898,6 +2968,7 @@
             $("appTeacher").checked = (teacher.apps || []).includes("teacherPortal");
             $("appDesk").checked = (teacher.apps || []).includes("deskPortal");
             $("appLive").checked = (teacher.apps || []).includes("liveTimetable");
+            $("appSynchro").checked = (teacher.apps || []).includes("synchroS");
             $("permManageAccounts").checked = Boolean(permissions.canManageAccounts);
             $("permEditGrades").checked = Boolean(permissions.canEditGrades);
             $("permDeleteGrades").checked = Boolean(permissions.canDeleteGrades);
@@ -2927,6 +2998,7 @@
       $("clearQueueButton").addEventListener("click", () => {
         state.queue = [];
         state.selectedQueueIds = {};
+        state.teacherProvisionSecrets = {};
         saveState();
         render();
         toast("대기열을 비웠습니다.");
