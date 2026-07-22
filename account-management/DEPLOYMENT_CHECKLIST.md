@@ -52,7 +52,17 @@ npm --prefix functions run check
 npx firebase-tools login
 npm --prefix functions run verify:student-projection
 npx firebase-tools deploy --only functions:provisionStudentAccount --project fir-lms-prod
+npx firebase-tools deploy --only functions:provisionTeacherAccount --project fir-lms-prod
 ```
+
+### Runtime baseline
+
+- Runtime: Node.js 22 (`firebase.json` and `functions/package.json` must agree)
+- `firebase-functions`: 6.6.0 stable
+- `firebase-admin`: 13.10.0 stable
+- Avoid release candidates and major-version upgrades during a runtime-only maintenance pass.
+
+Before deployment, run the checks under an actual Node.js 22 process. Deploy the student function first, verify CORS and unauthenticated rejection, then deploy the teacher function. Deploy the batch scaffold only if it is separately enabled for production. If a deployment regression appears, restore the last known package lock and runtime settings from the previous revision and redeploy before making any data-layer changes.
 
 ## Required Approvals / Permissions
 
