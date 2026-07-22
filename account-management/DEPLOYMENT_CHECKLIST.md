@@ -4,9 +4,9 @@ Date: 2026-06-12
 
 ## Current Deployment Choice
 
-Use GitHub Pages or other static hosting for the first production release.
+Use GitHub Pages for the operator UI and authenticated Firebase Functions for privileged identity projection.
 
-Do not require Firebase Blaze for the first release. S-LMS already handles admin-only student/account document writes from the browser through Firebase Web SDK + Firestore security rules, so Account Management should follow that no-Blaze path first.
+Student registration/status writes and teacher provisioning must pass through their server functions. The browser must not directly commit the canonical student write and then independently guess a Supabase match.
 
 Firebase Hosting + Cloud Functions is optional later only if we truly need privileged server operations.
 
@@ -22,10 +22,10 @@ Firebase Hosting + Cloud Functions is optional later only if we truly need privi
 
 The current static app supports:
 
-- `apply`: writes admin-approved changes directly to Firestore through Firebase Web SDK
+- `apply`: calls the authenticated student or teacher provisioning function
 - `dry-run`: validates queued payloads locally without writing
 
-`apply` relies on Firebase Auth and Firestore security rules. Do not deploy until admin-only writes for the required collections are confirmed.
+`apply` relies on Firebase Auth plus `requireAccountAdmin` in Functions. Student projection is Firestore-first and records a retryable `PARTIAL` job if Supabase is unavailable or an immutable ID needs review.
 
 ## No-Blaze Deployment
 
@@ -41,16 +41,17 @@ git commit -m "Update account management static app"
 git push
 ```
 
-## Optional Firebase Commands
+## Firebase Function Deployment
 
-Do not run these for the current release. Only use them if we later choose Firebase Hosting / Cloud Functions and accept the Blaze requirement for Functions:
+Validate and deploy the privileged functions before pushing a UI that calls them:
 
 ```bash
 cd "/Users/anjongseong/Documents/New project/account-management"
 npm --prefix functions install
 npm --prefix functions run check
 npx firebase-tools login
-npx firebase-tools deploy --only functions:accountManagementBatch,hosting
+npm --prefix functions run verify:student-projection
+npx firebase-tools deploy --only functions:provisionStudentAccount --project fir-lms-prod
 ```
 
 ## Required Approvals / Permissions

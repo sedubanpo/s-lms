@@ -1,4 +1,19 @@
-# Account Management Direct Firestore Contract
+# Account Management Identity Projection Contract
+
+## Current production path (2026-07-22)
+
+Student registration and status changes no longer use a direct browser write as the authoritative apply path. The Account Management UI calls the authenticated `provisionStudentAccount` Firebase Function.
+
+The function applies one immutable `studentId` in this order:
+
+1. Merge the canonical record into Firestore `students/{studentId}`.
+2. Update the Supabase `students` row linked by `firebase_student_id`, or by the same UUID primary key.
+3. For a genuinely new student only, insert the Supabase row with the same UUID.
+4. Mark the provisioning job `COMPLETED`, or retain `PARTIAL` stage details for an idempotent retry.
+
+Names are never used to choose a Supabase identity. An existing Firestore student without an ID link is left in `PARTIAL` with `STUDENT_ID_REVIEW_REQUIRED`; timetable foreign keys are not rewritten automatically.
+
+This section supersedes the older direct-browser apply notes below, which remain as migration history.
 
 Date: 2026-06-10
 
