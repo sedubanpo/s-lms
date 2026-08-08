@@ -758,6 +758,221 @@
       line-height: 1.45;
     }
 
+    .icon-workspace {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .icon-tabs {
+      display: inline-grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #eef3f9;
+    }
+
+    .icon-tab {
+      min-height: 34px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #526a87;
+      font-size: 0.74rem;
+      font-weight: 900;
+    }
+
+    .icon-tab.active {
+      background: #ffffff;
+      color: var(--navy);
+      box-shadow: 0 2px 7px rgba(22, 42, 74, 0.08);
+    }
+
+    .icon-upload-box {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbff;
+    }
+
+    .icon-dropzone {
+      min-height: 168px;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      border: 1px dashed #9fb5d0;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #526a87;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .icon-dropzone.dragging {
+      border-color: var(--blue);
+      background: #eff6ff;
+    }
+
+    .icon-dropzone input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+    }
+
+    .icon-preview {
+      width: 84px;
+      height: 84px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      object-fit: contain;
+    }
+
+    .icon-dropzone strong,
+    .icon-dropzone span {
+      display: block;
+    }
+
+    .icon-dropzone strong {
+      color: #17365d;
+      font-size: 0.8rem;
+      font-weight: 950;
+    }
+
+    .icon-dropzone span {
+      margin-top: 5px;
+      font-size: 0.68rem;
+      font-weight: 750;
+      line-height: 1.45;
+    }
+
+    .icon-progress {
+      width: 100%;
+      height: 8px;
+      accent-color: var(--blue);
+    }
+
+    .icon-library-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 150px;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .icon-library-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .icon-asset-card {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr) 32px;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .icon-asset-image,
+    .person-icon {
+      flex: 0 0 auto;
+      object-fit: contain;
+      background: #f8fbff;
+    }
+
+    .icon-asset-image {
+      width: 52px;
+      height: 52px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .icon-asset-copy {
+      min-width: 0;
+    }
+
+    .icon-asset-copy strong,
+    .icon-asset-copy span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .icon-asset-copy strong {
+      color: #17365d;
+      font-size: 0.76rem;
+      font-weight: 950;
+    }
+
+    .icon-asset-copy span {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.64rem;
+      font-weight: 750;
+    }
+
+    .icon-delete-button {
+      width: 32px;
+      min-height: 32px;
+      padding: 0;
+      color: var(--red);
+    }
+
+    .person-name {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .person-icon,
+    .person-icon-fallback {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+    }
+
+    .person-icon-fallback {
+      display: inline-grid;
+      place-items: center;
+      background: #e8f0fb;
+      color: #234a77;
+      font-size: 0.66rem;
+      font-weight: 950;
+    }
+
+    .icon-empty {
+      grid-column: 1 / -1;
+      min-height: 180px;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      background: #fbfdff;
+      text-align: center;
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
     .split-actions {
       display: flex;
       flex-wrap: wrap;
@@ -934,6 +1149,10 @@
       .topbar > .top-actions {
         width: 100%;
       }
+
+      .icon-library-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 900px) {
@@ -1037,6 +1256,15 @@
       .weekday-selector {
         grid-template-columns: repeat(4, minmax(0, 1fr));
       }
+
+      .icon-workspace,
+      .icon-library-head {
+        grid-template-columns: 1fr;
+      }
+
+      .icon-library-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -1057,6 +1285,7 @@
         <button class="nav-button" data-view="students">학생 상태 관리 <small>등록/중지</small></button>
         <button class="nav-button" data-view="teachers">강사 계정 관리 <small>계정/권한</small></button>
         <button class="nav-button" data-view="staff">실무자 계정 관리 <small>근무/권한</small></button>
+        <button class="nav-button" data-view="icons">아이콘 관리 <small>공통 자산</small></button>
         <button class="nav-button" data-view="queue">반영 대기열 <small>감사</small></button>
         <button class="nav-button" data-view="settings">연동 상태 <small>Firebase</small></button>
       </nav>
@@ -1319,6 +1548,60 @@
         </div>
       </section>
 
+      <section id="iconsView" class="hidden">
+        <section class="panel">
+          <div class="panel-head">
+            <div><h3>공통 아이콘 라이브러리</h3><p>등록한 아이콘을 데스크포털, S-LMS, 라이브시간표, 싱크로에스에서 같은 연결 키로 사용합니다.</p></div>
+            <button class="button" id="seedStaffIconsButton">직급 기본 아이콘 적용</button>
+          </div>
+          <div class="panel-body">
+            <div class="icon-tabs" role="tablist" aria-label="아이콘 분류">
+              <button class="icon-tab active" type="button" role="tab" aria-selected="true" data-icon-category="PERSON">인물 아이콘</button>
+              <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-category="SCHOOL">학교 엠블럼</button>
+              <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-category="SUBJECT">과목 아이콘</button>
+            </div>
+            <div class="icon-workspace" style="margin-top:12px;">
+              <form class="icon-upload-box" id="iconUploadForm" onsubmit="return false;">
+                <label class="icon-dropzone" id="iconDropzone">
+                  <input id="iconFileInput" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+                  <span>
+                    <img class="icon-preview" id="iconPreview" alt="선택한 아이콘 미리보기" hidden>
+                    <strong id="iconFilePrompt">이미지 파일 선택</strong>
+                    <span>PNG, JPG, WebP, SVG · 최대 2MB</span>
+                  </span>
+                </label>
+                <div class="form-field" id="iconPersonTargetField">
+                  <label for="iconPersonTargetInput">연결 대상</label>
+                  <select class="select" id="iconPersonTargetInput"></select>
+                </div>
+                <div class="form-field" id="iconNamedTargetField" hidden>
+                  <label for="iconNamedTargetInput" id="iconNamedTargetLabel">학교명</label>
+                  <input class="field" id="iconNamedTargetInput" autocomplete="off" placeholder="예: 세화고">
+                </div>
+                <div class="form-field">
+                  <label for="iconDisplayNameInput">표시 이름</label>
+                  <input class="field" id="iconDisplayNameInput" autocomplete="off" placeholder="연결 대상 이름을 자동으로 사용합니다">
+                </div>
+                <div class="form-field">
+                  <label for="iconAliasesInput">다른 표기</label>
+                  <input class="field" id="iconAliasesInput" autocomplete="off" placeholder="쉼표로 구분 · 예: 세화고등학교, 세화고">
+                </div>
+                <progress class="icon-progress" id="iconUploadProgress" max="100" value="0" hidden></progress>
+                <button class="button primary" id="uploadIconButton" type="button">아이콘 업로드</button>
+                <p class="help" id="iconUploadHelp">같은 연결 대상에 다시 올리면 새 파일로 교체됩니다.</p>
+              </form>
+              <div>
+                <div class="icon-library-head">
+                  <input class="field" id="iconSearchInput" placeholder="이름, 연결 키 검색">
+                  <select class="select" id="iconCategoryFilter"><option value="">전체 분류</option><option value="PERSON">인물 아이콘</option><option value="SCHOOL">학교 엠블럼</option><option value="SUBJECT">과목 아이콘</option></select>
+                </div>
+                <div class="icon-library-grid" id="iconLibraryGrid"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+
       <section id="queueView" class="hidden">
         <section class="panel">
           <div class="panel-head">
@@ -1377,11 +1660,23 @@
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyCFM21ZxgwIYwmjRPaAOp5bL9Kprqiyppg",
       authDomain: "fir-lms-prod.firebaseapp.com",
-      projectId: "fir-lms-prod"
+      projectId: "fir-lms-prod",
+      storageBucket: "fir-lms-prod.firebasestorage.app"
     };
     const TEACHER_PROVISION_URL = "https://asia-northeast3-fir-lms-prod.cloudfunctions.net/provisionTeacherAccount";
     const STUDENT_PROVISION_URL = "https://asia-northeast3-fir-lms-prod.cloudfunctions.net/provisionStudentAccount";
     const STAFF_POSITIONS = ["대표", "원장", "부원장", "센터장", "실장", "과장", "대리", "주임", "사원"];
+    const STAFF_ICON_STYLES = {
+      "대표": { label: "표", color: "#7c3aed" },
+      "원장": { label: "원", color: "#0f766e" },
+      "부원장": { label: "부", color: "#0369a1" },
+      "센터장": { label: "센", color: "#1d4ed8" },
+      "실장": { label: "실", color: "#047857" },
+      "과장": { label: "과", color: "#b45309" },
+      "대리": { label: "대", color: "#c2410c" },
+      "주임": { label: "주", color: "#be123c" },
+      "사원": { label: "사", color: "#475569" }
+    };
     const WORKDAY_LABELS = { MON: "월", TUE: "화", WED: "수", THU: "목", FRI: "금", SAT: "토", SUN: "일" };
     const COLLECTIONS = {
       students: "students",
@@ -1401,7 +1696,8 @@
       monthlyReports: "studentMonthlyReports",
       permissionRequests: "permissionRequests",
       jikboOverrides: "jikboStudentOverrides",
-      jikboStatuses: "jikboStatuses"
+      jikboStatuses: "jikboStatuses",
+      sharedIcons: "sharedIconAssets"
     };
 
     const state = {
@@ -1413,6 +1709,7 @@
       identityReviews: [],
       teachers: [],
       staff: [],
+      icons: [],
       queue: [],
       audits: [],
       authUser: null,
@@ -1430,6 +1727,10 @@
       editingTeacherUid: "",
       editingStaffUid: "",
       staffEditorOpen: false,
+      iconCategory: "PERSON",
+      iconFile: null,
+      iconPreviewUrl: "",
+      iconUploading: false,
       teacherProvisionSecrets: {},
       studentIdentityReviewExpanded: false
     };
@@ -1661,6 +1962,7 @@
       await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js", () => !!(window.firebase && firebase.initializeApp));
       await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js", () => !!(window.firebase && firebase.auth));
       await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js", () => !!(window.firebase && firebase.firestore));
+      await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js", () => !!(window.firebase && firebase.storage));
       let app;
       try { app = firebase.app("account-management"); } catch (error) { app = firebase.initializeApp(FIREBASE_CONFIG, "account-management"); }
       state.firebaseReady = true;
@@ -1675,6 +1977,11 @@
     async function getAuth() {
       const app = await initFirebase();
       return app.auth();
+    }
+
+    async function getStorage() {
+      const app = await initFirebase();
+      return app.storage();
     }
 
     async function resolveLoginEmail(identifier) {
@@ -2029,6 +2336,33 @@
       state.teachers = accounts.filter(account => account.role !== "STAFF");
     }
 
+    function normalizeIconAsset(doc) {
+      const data = doc.data() || {};
+      return {
+        id: doc.id,
+        category: String(data.category || "").toUpperCase(),
+        targetType: data.targetType || "NAMED",
+        lookupKey: data.lookupKey || "",
+        displayName: data.displayName || data.lookupKey || doc.id,
+        aliases: Array.isArray(data.aliases) ? data.aliases : [],
+        imageUrl: data.imageUrl || data.downloadURL || "",
+        storagePath: data.storagePath || "",
+        contentType: data.contentType || "",
+        size: Number(data.size || 0),
+        status: data.status || "ACTIVE",
+        createdAt: data.createdAt || null,
+        updatedAt: data.updatedAt || data.createdAt || null,
+        updatedByName: data.updatedByName || ""
+      };
+    }
+
+    async function loadIconData(db) {
+      const snapshot = await db.collection(COLLECTIONS.sharedIcons).get();
+      state.icons = snapshot.docs.map(normalizeIconAsset).filter(icon => icon.lookupKey && icon.status !== "DELETED")
+        .sort((a, b) => String(a.displayName).localeCompare(String(b.displayName), "ko"));
+      populateIconPersonTargets();
+    }
+
     async function loadFirestoreData() {
       if (!state.isAdmin) return;
       try {
@@ -2036,10 +2370,11 @@
         const db = await getDb();
         const [hiddenDuplicateCount] = await Promise.all([
           loadStudentData(db),
-          loadTeacherData(db)
+          loadTeacherData(db),
+          loadIconData(db)
         ]);
         const pendingReviewCount = state.identityReviews.filter(item => item.status === "PENDING").length;
-        addLocalAudit("Firestore 로드", `대표 학생 ${state.students.length}명, 강사 ${state.teachers.length}명, 실무자 ${state.staff.length}명, 학생 ID 검토 ${pendingReviewCount}건을 불러왔습니다.${hiddenDuplicateCount ? ` 별칭/중복 문서 ${hiddenDuplicateCount}건을 숨겼습니다.` : ""}`);
+        addLocalAudit("Firestore 로드", `대표 학생 ${state.students.length}명, 강사 ${state.teachers.length}명, 실무자 ${state.staff.length}명, 공통 아이콘 ${state.icons.length}개, 학생 ID 검토 ${pendingReviewCount}건을 불러왔습니다.${hiddenDuplicateCount ? ` 별칭/중복 문서 ${hiddenDuplicateCount}건을 숨겼습니다.` : ""}`);
       } catch (error) {
         addLocalAudit("Firestore 로드 실패", error.message || String(error));
         toast("Firestore 로드 실패: " + (error.message || error));
@@ -3698,6 +4033,285 @@
       return { deskPortal: "데스크", sLms: "S-LMS", teacherPortal: "강사포털", liveTimetable: "라이브", synchroS: "싱크로에스" }[app] || app;
     }
 
+    function normalizedIconName(value) {
+      return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
+    }
+
+    function iconCategorySlug(category) {
+      return { PERSON: "people", SCHOOL: "schools", SUBJECT: "subjects" }[category] || "other";
+    }
+
+    function iconCategoryLabel(category) {
+      return { PERSON: "인물 아이콘", SCHOOL: "학교 엠블럼", SUBJECT: "과목 아이콘" }[category] || category;
+    }
+
+    function iconTargetDescriptor() {
+      if (state.iconCategory === "PERSON") {
+        const select = $("iconPersonTargetInput");
+        const lookupKey = select.value;
+        const option = select.options[select.selectedIndex];
+        if (!lookupKey) throw new Error("연결할 인물 또는 직급을 선택해 주세요.");
+        return {
+          lookupKey,
+          targetType: lookupKey.startsWith("staff-position:") ? "STAFF_POSITION" : "USER",
+          displayName: option ? option.textContent.replace(/^직급 · |^사용자 · /, "") : lookupKey
+        };
+      }
+      const rawName = $("iconNamedTargetInput").value.trim();
+      if (!rawName) throw new Error(state.iconCategory === "SCHOOL" ? "학교명을 입력해 주세요." : "과목명을 입력해 주세요.");
+      const prefix = state.iconCategory === "SCHOOL" ? "school" : "subject";
+      return { lookupKey: `${prefix}:${normalizedIconName(rawName)}`, targetType: "NAMED", displayName: rawName };
+    }
+
+    function populateIconPersonTargets() {
+      const select = $("iconPersonTargetInput");
+      if (!select) return;
+      const currentValue = select.value;
+      const positionOptions = STAFF_POSITIONS.map(position => `<option value="staff-position:${escapeHtml(position)}">직급 · ${escapeHtml(position)}</option>`).join("");
+      const people = [].concat(state.staff || [], state.teachers || []).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+      const userOptions = people.map(person => `<option value="user:${escapeHtml(person.uid)}">사용자 · ${escapeHtml(person.name)}${person.staffPosition ? ` (${escapeHtml(person.staffPosition)})` : person.subject ? ` (${escapeHtml(person.subject)})` : ""}</option>`).join("");
+      select.innerHTML = `<optgroup label="실무자 직급">${positionOptions}</optgroup>${userOptions ? `<optgroup label="개별 사용자">${userOptions}</optgroup>` : ""}`;
+      if (Array.from(select.options).some(option => option.value === currentValue)) select.value = currentValue;
+    }
+
+    function setIconCategory(category) {
+      state.iconCategory = category;
+      document.querySelectorAll("[data-icon-category]").forEach(button => {
+        const active = button.dataset.iconCategory === category;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", String(active));
+      });
+      $("iconPersonTargetField").hidden = category !== "PERSON";
+      $("iconNamedTargetField").hidden = category === "PERSON";
+      $("iconNamedTargetLabel").textContent = category === "SCHOOL" ? "학교명" : "과목명";
+      $("iconNamedTargetInput").placeholder = category === "SCHOOL" ? "예: 세화고" : "예: 수학";
+      $("iconCategoryFilter").value = category;
+      renderIconLibrary();
+    }
+
+    function resetIconUploadForm() {
+      state.iconFile = null;
+      if (state.iconPreviewUrl) URL.revokeObjectURL(state.iconPreviewUrl);
+      state.iconPreviewUrl = "";
+      $("iconFileInput").value = "";
+      $("iconPreview").hidden = true;
+      $("iconPreview").removeAttribute("src");
+      $("iconFilePrompt").textContent = "이미지 파일 선택";
+      $("iconDisplayNameInput").value = "";
+      $("iconAliasesInput").value = "";
+      $("iconUploadProgress").hidden = true;
+      $("iconUploadProgress").value = 0;
+    }
+
+    function selectIconFile(file) {
+      if (!file) return;
+      const allowed = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+      if (!allowed.includes(file.type)) {
+        toast("PNG, JPG, WebP, SVG 파일만 업로드할 수 있습니다.");
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        toast("아이콘 파일은 2MB 이하여야 합니다.");
+        return;
+      }
+      if (state.iconPreviewUrl) URL.revokeObjectURL(state.iconPreviewUrl);
+      state.iconFile = file;
+      state.iconPreviewUrl = URL.createObjectURL(file);
+      $("iconPreview").src = state.iconPreviewUrl;
+      $("iconPreview").hidden = false;
+      $("iconFilePrompt").textContent = file.name;
+    }
+
+    function setIconUploadBusy(busy, message) {
+      state.iconUploading = busy;
+      $("uploadIconButton").disabled = busy;
+      $("seedStaffIconsButton").disabled = busy;
+      $("iconUploadHelp").textContent = message || "같은 연결 대상에 다시 올리면 새 파일로 교체됩니다.";
+      $("iconUploadProgress").hidden = !busy;
+      if (!busy) $("iconUploadProgress").value = 0;
+    }
+
+    function uploadTaskPromise(task, progressStart, progressSpan) {
+      return new Promise((resolve, reject) => {
+        task.on("state_changed", snapshot => {
+          const ratio = snapshot.totalBytes ? snapshot.bytesTransferred / snapshot.totalBytes : 0;
+          $("iconUploadProgress").value = progressStart + ratio * progressSpan;
+        }, reject, () => resolve(task.snapshot));
+      });
+    }
+
+    async function saveSharedIconFile(file, descriptor, progressStart = 0, progressSpan = 100) {
+      if (!state.isAdmin) throw new Error("관리자 로그인 후 아이콘을 업로드할 수 있습니다.");
+      const db = await getDb();
+      const storage = await getStorage();
+      const documentId = (await sha256Hex(descriptor.lookupKey)).slice(0, 32);
+      const existing = state.icons.find(icon => icon.lookupKey === descriptor.lookupKey);
+      const extension = file.type === "image/svg+xml" ? "svg" : file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const storagePath = `shared-icons/${iconCategorySlug(descriptor.category)}/${documentId}/${Date.now()}.${extension}`;
+      const storageRef = storage.ref(storagePath);
+      const task = storageRef.put(file, {
+        contentType: file.type,
+        customMetadata: { lookupKey: descriptor.lookupKey, category: descriptor.category }
+      });
+      await uploadTaskPromise(task, progressStart, progressSpan * 0.82);
+      const imageUrl = await storageRef.getDownloadURL();
+      const now = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection(COLLECTIONS.sharedIcons).doc(documentId).set({
+        schemaVersion: 1,
+        category: descriptor.category,
+        targetType: descriptor.targetType,
+        lookupKey: descriptor.lookupKey,
+        displayName: descriptor.displayName,
+        aliases: descriptor.aliases || [],
+        imageUrl,
+        storagePath,
+        contentType: file.type,
+        size: file.size,
+        status: "ACTIVE",
+        updatedAt: now,
+        updatedBy: state.authUser.uid,
+        updatedByName: state.operator && state.operator.name || "관리자",
+        createdAt: existing ? (existing.createdAt || now) : now,
+        source: descriptor.source || "UPLOAD"
+      }, { merge: true });
+      $("iconUploadProgress").value = progressStart + progressSpan;
+      if (existing && existing.storagePath && existing.storagePath !== storagePath) {
+        try { await storage.ref(existing.storagePath).delete(); } catch (error) { if (error.code !== "storage/object-not-found") console.warn(error); }
+      }
+    }
+
+    async function uploadIconFromForm() {
+      if (state.iconUploading) return;
+      let failureMessage = "";
+      try {
+        if (!state.iconFile) throw new Error("업로드할 이미지 파일을 선택해 주세요.");
+        const target = iconTargetDescriptor();
+        const aliases = $("iconAliasesInput").value.split(",").map(value => value.trim()).filter(Boolean);
+        setIconUploadBusy(true, "Firebase Storage에 업로드하고 공통 연결 키를 저장하는 중입니다.");
+        await saveSharedIconFile(state.iconFile, Object.assign({}, target, {
+          category: state.iconCategory,
+          displayName: $("iconDisplayNameInput").value.trim() || target.displayName,
+          aliases
+        }));
+        await loadIconData(await getDb());
+        resetIconUploadForm();
+        render();
+        toast("공통 아이콘을 저장했습니다.");
+      } catch (error) {
+        toast("아이콘 저장 실패: " + (error.message || error));
+        failureMessage = `저장하지 못했습니다. ${error.message || error}`;
+      } finally {
+        setIconUploadBusy(false, failureMessage);
+      }
+    }
+
+    function staffPositionSvg(position) {
+      const style = STAFF_ICON_STYLES[position] || { label: position.slice(0, 1), color: "#475569" };
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" rx="26" fill="${style.color}"/><path d="M24 34h80v54c0 10-8 18-18 18H42c-10 0-18-8-18-18V34Z" fill="#fff" fill-opacity=".16"/><path d="M34 24h60v20H34z" fill="#fff" fill-opacity=".3"/><text x="64" y="82" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" font-weight="700" fill="#fff">${style.label}</text></svg>`;
+      return new File([svg], `staff-position-${position}.svg`, { type: "image/svg+xml" });
+    }
+
+    async function seedStaffPositionIcons() {
+      if (state.iconUploading) return;
+      if (!state.isAdmin) return toast("관리자 로그인 후 기본 아이콘을 적용할 수 있습니다.");
+      const replaceCount = STAFF_POSITIONS.filter(position => state.icons.some(icon => icon.lookupKey === `staff-position:${position}`)).length;
+      if (replaceCount && !confirm(`이미 등록된 직급 아이콘 ${replaceCount}개도 기본 아이콘으로 교체할까요?`)) return;
+      let failureMessage = "";
+      try {
+        setIconUploadBusy(true, "직급별 기본 아이콘 9개를 만드는 중입니다.");
+        for (let index = 0; index < STAFF_POSITIONS.length; index += 1) {
+          const position = STAFF_POSITIONS[index];
+          const span = 100 / STAFF_POSITIONS.length;
+          await saveSharedIconFile(staffPositionSvg(position), {
+            category: "PERSON",
+            targetType: "STAFF_POSITION",
+            lookupKey: `staff-position:${position}`,
+            displayName: `${position} 직급`,
+            aliases: [position],
+            source: "DEFAULT_STAFF_POSITION"
+          }, index * span, span);
+        }
+        await loadIconData(await getDb());
+        render();
+        toast("직급별 기본 아이콘 9개를 적용했습니다.");
+      } catch (error) {
+        toast("기본 아이콘 적용 실패: " + (error.message || error));
+        failureMessage = `적용하지 못했습니다. ${error.message || error}`;
+      } finally {
+        setIconUploadBusy(false, failureMessage);
+      }
+    }
+
+    async function deleteSharedIcon(iconId) {
+      const icon = state.icons.find(item => item.id === iconId);
+      if (!icon || !state.isAdmin) return;
+      if (!confirm(`${icon.displayName} 아이콘을 삭제할까요? 연결된 앱에서는 기본 표시로 돌아갑니다.`)) return;
+      try {
+        setIconUploadBusy(true, "아이콘 파일과 연결 정보를 삭제하는 중입니다.");
+        const storage = await getStorage();
+        if (icon.storagePath) {
+          try { await storage.ref(icon.storagePath).delete(); } catch (error) { if (error.code !== "storage/object-not-found") throw error; }
+        }
+        const db = await getDb();
+        await db.collection(COLLECTIONS.sharedIcons).doc(icon.id).delete();
+        await loadIconData(db);
+        render();
+        toast("아이콘을 삭제했습니다.");
+      } catch (error) {
+        toast("아이콘 삭제 실패: " + (error.message || error));
+      } finally {
+        setIconUploadBusy(false);
+      }
+    }
+
+    function sharedIconForPerson(person) {
+      return state.icons.find(icon => icon.lookupKey === `user:${person.uid}`)
+        || state.icons.find(icon => icon.lookupKey === `staff-position:${person.staffPosition}`)
+        || null;
+    }
+
+    function renderPersonName(person) {
+      const icon = sharedIconForPerson(person);
+      const positionStyle = STAFF_ICON_STYLES[person.staffPosition] || { label: String(person.name || "?").slice(0, 1), color: "#475569" };
+      const visual = icon && icon.imageUrl
+        ? `<img class="person-icon" src="${escapeHtml(icon.imageUrl)}" alt="${escapeHtml(icon.displayName)}">`
+        : `<span class="person-icon-fallback" style="background:${positionStyle.color}18;color:${positionStyle.color};border-color:${positionStyle.color}40;" aria-hidden="true">${escapeHtml(positionStyle.label)}</span>`;
+      return `<span class="person-name">${visual}<strong>${escapeHtml(person.name)}</strong></span>`;
+    }
+
+    function iconUpdatedLabel(value) {
+      const date = value && typeof value.toDate === "function" ? value.toDate() : value ? new Date(value) : null;
+      if (!date || Number.isNaN(date.getTime())) return "방금 저장";
+      return new Intl.DateTimeFormat("ko-KR", { year: "2-digit", month: "numeric", day: "numeric" }).format(date);
+    }
+
+    function renderIconLibrary() {
+      const grid = $("iconLibraryGrid");
+      if (!grid) return;
+      const keyword = ($("iconSearchInput")?.value || "").trim().toLowerCase();
+      const category = $("iconCategoryFilter")?.value || "";
+      const icons = state.icons.filter(icon => {
+        const text = [icon.displayName, icon.lookupKey].concat(icon.aliases || []).join(" ").toLowerCase();
+        return (!keyword || text.includes(keyword)) && (!category || icon.category === category);
+      });
+      if (!icons.length) {
+        grid.innerHTML = `<div class="icon-empty">${state.isAdmin ? "이 분류에 등록된 아이콘이 없습니다. 왼쪽에서 첫 아이콘을 업로드해 주세요." : "관리자 로그인 후 공통 아이콘을 불러옵니다."}</div>`;
+        return;
+      }
+      grid.innerHTML = icons.map(icon => `
+        <article class="icon-asset-card">
+          <img class="icon-asset-image" src="${escapeHtml(icon.imageUrl)}" alt="${escapeHtml(icon.displayName)}">
+          <div class="icon-asset-copy">
+            <strong>${escapeHtml(icon.displayName)}</strong>
+            <span>${escapeHtml(iconCategoryLabel(icon.category))}</span>
+            <span title="${escapeHtml(icon.lookupKey)}">${escapeHtml(icon.lookupKey)}</span>
+            <span>${escapeHtml(iconUpdatedLabel(icon.updatedAt))}${icon.updatedByName ? ` · ${escapeHtml(icon.updatedByName)}` : ""}</span>
+          </div>
+          <button class="button icon-delete-button" type="button" data-icon-delete="${escapeHtml(icon.id)}" title="아이콘 삭제" aria-label="${escapeHtml(icon.displayName)} 아이콘 삭제">×</button>
+        </article>
+      `).join("");
+    }
+
     function renderStaff() {
       const editor = $("staffEditorPanel");
       const layout = $("staffView").querySelector(".layout-grid");
@@ -3712,7 +4326,7 @@
         return (!keyword || text.includes(keyword)) && (!position || staff.staffPosition === position) && (!app || (staff.apps || []).includes(app));
       }).map(staff => `
         <tr>
-          <td><strong>${escapeHtml(staff.name)}</strong></td>
+          <td>${renderPersonName(staff)}</td>
           <td>${escapeHtml(staff.loginId || "-")}</td>
           <td>${escapeHtml(staff.staffPosition || "-")}</td>
           <td><span class="status ${statusClass(staff.status)}">${staff.status === "ACTIVE" ? "재직" : "퇴사/비활성"}</span></td>
@@ -3777,7 +4391,7 @@
     function setView(view) {
       state.view = view;
       document.querySelectorAll(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === view));
-      ["dashboard", "students", "teachers", "staff", "queue", "settings"].forEach(name => {
+      ["dashboard", "students", "teachers", "staff", "icons", "queue", "settings"].forEach(name => {
         $(`${name}View`).classList.toggle("hidden", name !== view);
       });
       const titles = {
@@ -3785,6 +4399,7 @@
         students: ["학생 상태 관리", "등록, 중지, 복귀, 보류, 퇴원 상태를 students 문서에 저장합니다."],
         teachers: ["강사 계정 관리", "users, userProfiles, userAppAccess, loginAliases 문서를 업데이트합니다."],
         staff: ["실무자 계정 관리", "휴대폰 로그인, 근무 정보, 학원 웹앱 접근 권한을 관리합니다."],
+        icons: ["아이콘 관리", "인물, 학교, 과목 아이콘을 Firebase 공통 자산으로 관리합니다."],
         queue: ["반영 대기열", "운영자가 검증한 요청만 Firestore에 직접 저장합니다."],
         settings: ["연동 상태", "S-LMS와 동일한 Firebase 프로젝트와 관리자 세션을 사용합니다."]
       };
@@ -3799,6 +4414,7 @@
       renderStudents();
       renderTeachers();
       renderStaff();
+      renderIconLibrary();
       renderQueue();
       renderAudits();
       if (state.view === "settings") renderSettings();
@@ -3895,6 +4511,10 @@
             openStaffEditor(staff);
           }
         }
+        const iconTab = event.target.closest("[data-icon-category]");
+        if (iconTab) setIconCategory(iconTab.dataset.iconCategory);
+        const iconDelete = event.target.closest("[data-icon-delete]");
+        if (iconDelete) deleteSharedIcon(iconDelete.dataset.iconDelete);
       });
       document.body.addEventListener("change", event => {
         if (event.target.matches("[data-queue-check]")) {
@@ -3905,6 +4525,7 @@
       ["studentSearch", "studentStatusFilter", "studentSchoolFilter"].forEach(id => $(id).addEventListener("input", renderStudents));
       ["teacherSearch", "teacherRoleFilter", "teacherAppFilter"].forEach(id => $(id).addEventListener("input", renderTeachers));
       ["staffSearch", "staffPositionFilter", "staffAppFilter"].forEach(id => $(id).addEventListener("input", renderStaff));
+      ["iconSearchInput", "iconCategoryFilter"].forEach(id => $(id).addEventListener("input", renderIconLibrary));
       $("studentBirthYearInput").addEventListener("input", updateStudentGradeHelper);
       $("authPasswordInput").addEventListener("keydown", event => { if (event.key === "Enter") login(); });
       $("loginButton").addEventListener("click", login);
@@ -3977,6 +4598,18 @@
       $("staffLoginInput").addEventListener("input", () => {
         if (!state.editingStaffUid) $("staffPasswordInput").value = canonicalLoginId($("staffLoginInput").value);
       });
+      $("iconFileInput").addEventListener("change", event => selectIconFile(event.target.files && event.target.files[0]));
+      $("uploadIconButton").addEventListener("click", uploadIconFromForm);
+      $("seedStaffIconsButton").addEventListener("click", seedStaffPositionIcons);
+      ["dragenter", "dragover"].forEach(type => $("iconDropzone").addEventListener(type, event => {
+        event.preventDefault();
+        $("iconDropzone").classList.add("dragging");
+      }));
+      ["dragleave", "drop"].forEach(type => $("iconDropzone").addEventListener(type, event => {
+        event.preventDefault();
+        $("iconDropzone").classList.remove("dragging");
+      }));
+      $("iconDropzone").addEventListener("drop", event => selectIconFile(event.dataTransfer.files && event.dataTransfer.files[0]));
       $("saveSettingsButton").addEventListener("click", () => {
         setSettings({
           operator: $("operatorInput").value.trim(),
@@ -3991,7 +4624,9 @@
     const staffPositionOptions = STAFF_POSITIONS.map(position => `<option value="${position}">${position}</option>`).join("");
     $("staffPositionInput").innerHTML = staffPositionOptions;
     $("staffPositionFilter").innerHTML = `<option value="">전체 직급</option>${staffPositionOptions}`;
+    populateIconPersonTargets();
     bindEvents();
+    setIconCategory("PERSON");
     setView("dashboard");
     initFirebase().then(async () => {
       const auth = await getAuth();
