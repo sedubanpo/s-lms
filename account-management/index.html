@@ -1500,7 +1500,8 @@
         const button = $(id);
         if (!button) return;
         button.disabled = state.loading;
-        button.textContent = queueBusy ? "저장 중..." : "선택 요청 저장";
+        const staffFormActive = id === "submitQueueButton" && state.view === "staff" && state.staffEditorOpen;
+        button.textContent = queueBusy ? "저장 중..." : (staffFormActive ? "실무자 계정 저장" : "선택 요청 저장");
       });
       document.querySelectorAll("[data-student-merge], [data-resolve-student-review], [data-queue-grade-rollover], [data-retry-teacher-provision]").forEach(button => {
         button.disabled = state.loading;
@@ -2517,6 +2518,7 @@
       state.staffEditorOpen = false;
       resetStaffForm();
       renderStaff();
+      updateBusyState();
     }
 
     function openStaffEditor(staff) {
@@ -2548,6 +2550,7 @@
       }
       updateStaffTenurePreview();
       renderStaff();
+      updateBusyState();
       $("staffNameInput").focus();
     }
 
@@ -2570,10 +2573,6 @@
       }
       if (terminationDate && terminationDate < hireDate) {
         toast("퇴사일은 입사일보다 빠를 수 없습니다.");
-        return;
-      }
-      if (!workDays.length) {
-        toast("근무 요일을 하나 이상 선택해 주세요.");
         return;
       }
       const apps = {
@@ -2619,8 +2618,17 @@
         requiredCollections: ["users", "userProfiles", "userAppAccess", "loginAliases"]
       });
       if (!existing) state.teacherProvisionSecrets[item.id] = password;
-      closeStaffEditor();
       await autoSubmitQueuedItem(item);
+      if (item.status === "COMMITTED") closeStaffEditor();
+      else render();
+    }
+
+    async function handlePrimarySave() {
+      if (state.view === "staff" && state.staffEditorOpen) {
+        await queueStaffFromForm();
+        return;
+      }
+      await submitQueue();
     }
 
     async function queueTeacherFromForm() {
@@ -3906,7 +3914,7 @@
       $("queueTeacherButton").addEventListener("click", queueTeacherFromForm);
       $("queueStaffButton").addEventListener("click", queueStaffFromForm);
       $("exportQueueButton").addEventListener("click", exportQueue);
-      $("submitQueueButton").addEventListener("click", submitQueue);
+      $("submitQueueButton").addEventListener("click", handlePrimarySave);
       $("submitQueueButton2").addEventListener("click", submitQueue);
       $("clearQueueButton").addEventListener("click", () => {
         state.queue = [];
