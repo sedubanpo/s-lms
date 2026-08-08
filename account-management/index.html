@@ -24,6 +24,7 @@
     }
 
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
 
     body {
       margin: 0;
@@ -230,6 +231,163 @@
       min-height: 30px;
       padding: 0 9px;
       font-size: 0.7rem;
+    }
+
+    .id-disclosure summary {
+      width: fit-content;
+      cursor: pointer;
+      color: #36506f;
+      font-size: 0.7rem;
+      font-weight: 900;
+      list-style-position: inside;
+    }
+
+    .id-disclosure[open] summary {
+      margin-bottom: 5px;
+    }
+
+    .id-value {
+      display: block;
+      max-width: 180px;
+      overflow-wrap: anywhere;
+      white-space: normal;
+      font-size: 0.68rem;
+      line-height: 1.35;
+    }
+
+    .student-editor-panel {
+      position: sticky;
+      top: 12px;
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+    }
+
+    .student-editor-panel[hidden] {
+      display: none;
+    }
+
+    .layout-grid.single-column {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .student-edit-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .history-section {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .history-section h4 {
+      margin: 0 0 4px;
+      color: #17365d;
+      font-size: 0.82rem;
+      font-weight: 950;
+    }
+
+    .history-table-wrap {
+      max-height: 260px;
+      margin-top: 10px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .history-table {
+      min-width: 560px;
+      font-size: 0.7rem;
+    }
+
+    .history-table th,
+    .history-table td {
+      padding: 8px;
+      white-space: normal;
+      vertical-align: top;
+    }
+
+    dialog.bulk-dialog {
+      width: min(900px, calc(100vw - 32px));
+      max-height: calc(100vh - 32px);
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--ink);
+      box-shadow: 0 24px 70px rgba(8, 26, 52, 0.24);
+    }
+
+    dialog.bulk-dialog::backdrop {
+      background: rgba(8, 26, 52, 0.42);
+    }
+
+    .bulk-dialog-body {
+      padding: 16px;
+    }
+
+    .bulk-dialog-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: 14px;
+    }
+
+    .bulk-paste {
+      min-height: 250px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bulk-preview {
+      min-height: 250px;
+      max-height: 360px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbff;
+    }
+
+    .bulk-preview-empty {
+      display: grid;
+      min-height: 248px;
+      place-items: center;
+      padding: 24px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    .bulk-preview-list {
+      display: grid;
+      gap: 0;
+    }
+
+    .bulk-preview-row {
+      display: grid;
+      grid-template-columns: minmax(130px, 0.9fr) minmax(0, 1.5fr) 34px;
+      gap: 8px;
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.7rem;
+      line-height: 1.45;
+    }
+
+    .bulk-preview-row.error {
+      background: #fff7f7;
+      color: #b91c1c;
+    }
+
+    .bulk-dialog-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      background: #fbfdff;
     }
 
     .button:disabled {
@@ -770,6 +928,15 @@
       .auth-strip .field.password {
         width: min(100%, 240px);
       }
+
+      .bulk-dialog-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .student-editor-panel {
+        position: static;
+        max-height: none;
+      }
     }
   </style>
 </head>
@@ -867,7 +1034,10 @@
           <section class="panel">
             <div class="panel-head">
               <div><h3>학생 목록</h3><p>등록, 중지, 복귀 상태를 관리합니다.</p></div>
-              <button class="button primary" id="newStudentButton">학생 등록 요청</button>
+              <div class="row-actions">
+                <button class="button" id="openStudentContactBulkButton">연락처 설정</button>
+                <button class="button primary" id="newStudentButton">학생 등록 요청</button>
+              </div>
             </div>
             <div class="panel-body">
               <div id="studentIdentityReviewPanel" class="danger-note" style="margin-bottom:14px;"></div>
@@ -880,14 +1050,14 @@
               </div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th style="width:120px;">학생명</th><th style="width:190px;">학생 대표 ID</th><th style="width:120px;">학교</th><th style="width:78px;">생년</th><th style="width:110px;">학년</th><th style="width:90px;">상태</th><th>메모</th><th style="width:250px;">작업</th></tr></thead>
+                  <thead><tr><th style="width:120px;">학생명</th><th style="width:90px;">대표 ID</th><th style="width:120px;">학교</th><th style="width:78px;">생년</th><th style="width:110px;">학년</th><th style="width:90px;">상태</th><th>메모</th><th style="width:190px;">작업</th></tr></thead>
                   <tbody id="studentRows"></tbody>
                 </table>
               </div>
             </div>
           </section>
-          <aside class="panel">
-              <div class="panel-head"><div><h3>학생 변경 요청</h3><p>Firestore students 문서에 직접 저장할 payload를 만듭니다.</p></div></div>
+          <aside class="panel student-editor-panel" id="studentEditorPanel" hidden>
+              <div class="panel-head"><div><h3 id="studentEditorTitle">학생 변경 요청</h3><p>학생 정보를 확인하고 변경 내용을 저장합니다.</p></div><button class="button" id="closeStudentEditorButton">닫기</button></div>
             <div class="panel-body">
               <form id="studentForm" class="form-grid" onsubmit="return false;">
                 <div class="form-field"><label>학생명</label><input class="field" id="studentNameInput" autocomplete="off"></div>
@@ -904,11 +1074,51 @@
                   <button class="button primary" id="queueStudentButton">학생 등록/수정 대기열 포함</button>
                   <p class="help">입력 후 대기열에 추가하고, 관리자 세션이면 해당 요청만 즉시 Firestore에 반영합니다. 실패한 요청은 대기열에 남아 재시도할 수 있습니다.</p>
                 </div>
+                <div class="form-field full student-edit-actions" id="studentDeleteAction" hidden>
+                  <span class="help">학생 문서를 삭제하면 성적·로그 참조는 자동 삭제되지 않습니다.</span>
+                  <button class="button danger" type="button" id="deleteEditingStudentButton">학생 삭제</button>
+                </div>
               </form>
+              <section class="history-section" id="studentHistorySection" hidden>
+                <h4>변경 이력</h4>
+                <p class="help" id="studentHistorySummary">선택한 학생의 변경 기록을 불러옵니다.</p>
+                <div class="history-table-wrap">
+                  <table class="history-table">
+                    <thead><tr><th style="width:120px;">일자</th><th style="width:110px;">변경</th><th>내용</th><th style="width:110px;">변경자</th></tr></thead>
+                    <tbody id="studentHistoryRows"></tbody>
+                  </table>
+                </div>
+              </section>
             </div>
           </aside>
         </div>
       </section>
+
+      <dialog class="bulk-dialog" id="studentContactBulkDialog" aria-labelledby="studentContactBulkTitle">
+        <div class="panel-head">
+          <div><h3 id="studentContactBulkTitle">학생·학부모 연락처 일괄 입력</h3><p>스프레드시트의 4개 열을 그대로 붙여넣어 여러 학생의 연락처를 갱신합니다.</p></div>
+          <button class="button" type="button" id="closeStudentContactBulkButton">닫기</button>
+        </div>
+        <div class="bulk-dialog-body">
+          <div class="bulk-dialog-grid">
+            <div class="form-field">
+              <label for="studentContactBulkInput">학생명 또는 대표 ID · 학생 연락처 · 부 연락처 · 모 연락처</label>
+              <textarea class="textarea bulk-paste" id="studentContactBulkInput" spellcheck="false" placeholder="장지우&#9;01012345678&#9;01023456789&#9;01034567890"></textarea>
+              <p class="help">첫 열은 학생명 또는 대표 ID입니다. 동명이인은 대표 ID를 사용하세요. 빈 연락처는 기존 값을 유지합니다.</p>
+            </div>
+            <div>
+              <div class="bulk-preview" id="studentContactBulkPreview"><div class="bulk-preview-empty">내용을 붙여넣으면 학생 일치 여부와 연락처 형식을 먼저 확인합니다.</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="bulk-dialog-footer">
+          <span class="help" id="studentContactBulkSummary">검증할 내용이 없습니다.</span>
+          <div class="row-actions">
+            <button class="button" type="button" id="validateStudentContactBulkButton">내용 확인</button>
+            <button class="button primary" type="button" id="applyStudentContactBulkButton" disabled>일괄 반영</button>
+          </div>
+        </div>
+      </dialog>
 
       <section id="teachersView" class="hidden">
         <div class="layout-grid">
@@ -1062,6 +1272,10 @@
       loadingType: "",
       loadingMessage: "",
       editingStudentId: "",
+      studentEditorOpen: false,
+      studentHistory: [],
+      studentHistoryLoading: false,
+      studentContactBulkRows: [],
       editingTeacherUid: "",
       teacherProvisionSecrets: {},
       studentIdentityReviewExpanded: false
@@ -1126,7 +1340,7 @@
         overlay.classList.toggle("show", Boolean(state.loading));
         overlay.setAttribute("aria-hidden", state.loading ? "false" : "true");
       }
-      if ($("busyTitle")) $("busyTitle").textContent = state.loadingType === "merge" ? "대표 ID 통합 중" : state.loadingType === "queue" ? "선택 요청 저장 중" : "처리 중입니다";
+      if ($("busyTitle")) $("busyTitle").textContent = state.loadingType === "merge" ? "대표 ID 통합 중" : state.loadingType === "queue" ? "선택 요청 저장 중" : state.loadingType === "bulk" ? "연락처 일괄 반영 중" : "처리 중입니다";
       if ($("busyMessage")) $("busyMessage").textContent = state.loadingMessage || "Firestore와 연동 데이터를 확인하고 있습니다. 잠시만 기다려 주세요.";
       const queueBusy = state.loading && state.loadingType === "queue";
       ["submitQueueButton", "submitQueueButton2"].forEach(id => {
@@ -1477,7 +1691,9 @@
         mergedInto: data.mergedInto || "",
         memo: data.memo || data.note || data.statusMemo || "",
         updatedAt: data.updatedAt || "",
-        updatedAtMs: Number(data.updatedAtMs || 0)
+        updatedAtMs: Number(data.updatedAtMs || 0),
+        updatedBy: data.updatedBy || "",
+        updatedByName: data.updatedByName || data.operatorName || ""
       };
     }
 
@@ -1852,6 +2068,141 @@
       helper.innerHTML = `<strong>${info.birthYear}년생 · ${info.gradeLabel}</strong>${currentAcademicYear()}년 1월 1일 기준입니다. ${transitionText}`;
     }
 
+    const STUDENT_CHANGE_FIELDS = {
+      name: "학생명",
+      school: "학교",
+      birthYear: "생년",
+      grade: "학년",
+      status: "상태",
+      studentContact: "학생 연락처",
+      fatherContact: "부 연락처",
+      motherContact: "모 연락처",
+      memo: "메모"
+    };
+
+    function studentAuditSnapshot(student) {
+      const source = student || {};
+      return Object.keys(STUDENT_CHANGE_FIELDS).reduce((snapshot, key) => {
+        snapshot[key] = String(source[key] || "").trim();
+        return snapshot;
+      }, {});
+    }
+
+    function studentChangedFields(before, after) {
+      const previous = before || {};
+      const next = after || {};
+      return Object.keys(STUDENT_CHANGE_FIELDS).filter(key => String(previous[key] || "") !== String(next[key] || ""));
+    }
+
+    function resetStudentForm() {
+      state.editingStudentId = "";
+      $("studentForm").reset();
+      updateStudentGradeHelper();
+    }
+
+    function closeStudentEditor() {
+      state.studentEditorOpen = false;
+      state.studentHistory = [];
+      state.studentHistoryLoading = false;
+      resetStudentForm();
+      renderStudents();
+    }
+
+    function openStudentEditor(student) {
+      state.studentEditorOpen = true;
+      state.studentHistory = [];
+      state.studentHistoryLoading = Boolean(student);
+      if (!student) {
+        resetStudentForm();
+        renderStudents();
+        $("studentNameInput").focus();
+        return;
+      }
+      state.editingStudentId = student.representativeId || student.studentId;
+      $("studentNameInput").value = student.name;
+      $("studentSchoolInput").value = student.school;
+      $("studentBirthYearInput").value = student.birthYear || "";
+      $("studentGradeInput").value = student.grade;
+      $("studentStatusInput").value = student.status;
+      $("studentContactInput").value = student.studentContact || student.studentPhone || "";
+      $("studentFatherContactInput").value = student.fatherContact || student.fatherPhone || "";
+      $("studentMotherContactInput").value = student.motherContact || student.motherPhone || "";
+      $("studentMemoInput").value = student.memo || "";
+      updateStudentGradeHelper();
+      renderStudents();
+      loadStudentChangeHistory(student);
+    }
+
+    function auditTimestamp(value) {
+      if (!value) return "";
+      if (typeof value.toDate === "function") return value.toDate();
+      if (value.seconds) return new Date(value.seconds * 1000);
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? "" : date;
+    }
+
+    function renderStudentHistory() {
+      const section = $("studentHistorySection");
+      if (!section) return;
+      section.hidden = !state.editingStudentId;
+      if (!state.editingStudentId) return;
+      if (state.studentHistoryLoading) {
+        $("studentHistorySummary").textContent = "변경 기록을 불러오는 중입니다.";
+        $("studentHistoryRows").innerHTML = `<tr><td colspan="4">불러오는 중...</td></tr>`;
+        return;
+      }
+      $("studentHistorySummary").textContent = state.studentHistory.length
+        ? `최근 변경 기록 ${state.studentHistory.length}건입니다.`
+        : "저장된 변경 기록이 없습니다.";
+      $("studentHistoryRows").innerHTML = state.studentHistory.map(entry => {
+        const date = auditTimestamp(entry.createdAt || entry.updatedAt);
+        const before = entry.before || {};
+        const after = entry.after || {};
+        const fields = Array.isArray(entry.changedFields) && entry.changedFields.length
+          ? entry.changedFields
+          : studentChangedFields(before, after);
+        const detail = fields.map(key => `${STUDENT_CHANGE_FIELDS[key] || key}: ${before[key] || "-"} → ${after[key] || "-"}`).join(" / ") || entry.summary || "학생 정보 저장";
+        return `<tr><td>${date ? escapeHtml(date.toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })) : "-"}</td><td>${escapeHtml(entry.changeLabel || (entry.type === "student-delete" ? "삭제" : entry.changeType === "contact-bulk" ? "연락처 일괄" : "정보 변경"))}</td><td>${escapeHtml(detail)}</td><td>${escapeHtml(entry.operatorName || entry.updatedByName || entry.operatorUid || entry.updatedBy || "-")}</td></tr>`;
+      }).join("") || `<tr><td colspan="4">저장된 변경 기록이 없습니다.</td></tr>`;
+    }
+
+    async function loadStudentChangeHistory(student) {
+      const selectedId = String(student.representativeId || student.studentId || "");
+      const selectedIds = new Set(studentIdsForRecord(student));
+      try {
+        const db = await getDb();
+        let snapshot;
+        try {
+          snapshot = await db.collection(COLLECTIONS.audits).orderBy("createdAt", "desc").limit(300).get();
+        } catch (error) {
+          snapshot = await db.collection(COLLECTIONS.audits).limit(300).get();
+        }
+        state.studentHistory = snapshot.docs.map(doc => Object.assign({ auditId: doc.id }, doc.data() || {})).filter(entry => {
+          const ids = [entry.studentId, entry.canonicalStudentId].concat(entry.studentIdAliases || []).map(value => String(value || ""));
+          if (ids.some(id => selectedIds.has(id))) return true;
+          const summary = normalizeStudentIdentityPart(entry.summary || entry.studentName || "");
+          return summary.includes(normalizeStudentIdentityPart(student.name)) && (!student.school || summary.includes(normalizeStudentIdentityPart(student.school)));
+        }).sort((a, b) => Number(auditTimestamp(b.createdAt || b.updatedAt) || 0) - Number(auditTimestamp(a.createdAt || a.updatedAt) || 0)).slice(0, 40);
+        if (!state.studentHistory.length && student.updatedAt) {
+          state.studentHistory = [{
+            type: "student",
+            changeLabel: "최근 저장",
+            summary: "현재 학생 문서에 기록된 마지막 저장 정보",
+            updatedAt: student.updatedAt,
+            updatedBy: student.updatedBy,
+            updatedByName: student.updatedByName
+          }];
+        }
+      } catch (error) {
+        state.studentHistory = [];
+      } finally {
+        if (state.editingStudentId === selectedId) {
+          state.studentHistoryLoading = false;
+          renderStudentHistory();
+        }
+      }
+    }
+
     async function queueStudentFromForm() {
       const name = $("studentNameInput").value.trim();
       const school = $("studentSchoolInput").value.trim();
@@ -1871,6 +2222,7 @@
         toast("생년은 1990년 이후의 4자리 연도로 입력해 주세요.");
         return;
       }
+      const previousStudent = state.students.find(student => studentIdsForRecord(student).includes(state.editingStudentId));
       const draft = {
         studentId: state.editingStudentId,
         name,
@@ -1900,11 +2252,10 @@
       const item = queueRequest("student", `${name} · ${school} ${gradeSummary} · ${statusLabel(status)}`, {
         action: "upsertStudentStatus",
         student: draft,
+        previousStudent: previousStudent ? studentAuditSnapshot(previousStudent) : null,
         requiredCollections: ["students"]
       });
-      state.editingStudentId = "";
-      $("studentForm").reset();
-      updateStudentGradeHelper();
+      closeStudentEditor();
       await autoSubmitQueuedItem(item);
     }
 
@@ -2252,6 +2603,10 @@
 
     async function writeRequestAndAudit(db, item, result, now) {
       const operator = state.operator || {};
+      const student = item.type === "student" ? (item.payload.student || {}) : null;
+      const before = item.type === "student" ? (item.payload.previousStudent || {}) : null;
+      const after = item.type === "student" ? studentAuditSnapshot(student) : null;
+      const changedFields = item.type === "student" ? studentChangedFields(before, after) : [];
       const requestPayload = {
         id: item.id,
         type: item.type,
@@ -2273,7 +2628,7 @@
       }
       await Promise.all([
         db.collection(COLLECTIONS.requests).doc(item.id).set(requestPayload),
-        db.collection(COLLECTIONS.audits).doc(requestId("audit")).set({
+        db.collection(COLLECTIONS.audits).doc(requestId("audit")).set(Object.assign({
           requestId: item.id,
           type: item.type,
           summary: item.summary,
@@ -2282,7 +2637,17 @@
           operatorUid: operator.uid || "",
           operatorName: operator.name || "",
           createdAt: now
-        })
+        }, item.type === "student" ? {
+          changeType: before && Object.keys(before).length ? "student-update" : "student-create",
+          changeLabel: before && Object.keys(before).length ? "정보 변경" : "신규 등록",
+          studentId: result.documentId || student.studentId || "",
+          canonicalStudentId: result.documentId || student.canonicalStudentId || student.studentId || "",
+          studentName: student.name || "",
+          school: student.school || "",
+          before,
+          after,
+          changedFields
+        } : {}))
       ]);
     }
 
@@ -2335,6 +2700,7 @@
             result.supabaseStudentId = provisioned.supabaseStudentId;
             result.provisioningStages = provisioned.stages;
             result.committedTargets = ["firestore", "supabase"];
+            await writeRequestAndAudit(db, item, result, now);
             applyCommittedItem(item, result, now);
             continue;
           }
@@ -2502,6 +2868,25 @@
         return true;
       });
       return Array.from(new Set(candidates.flatMap(studentIdsForRecord)));
+    }
+
+    function hasDuplicateStudentDocuments(studentId) {
+      const selected = findRawStudentById(studentId);
+      if (!selected) return false;
+      const nameKey = normalizeStudentIdentityPart(selected.name);
+      const schoolKey = normalizeStudentIdentityPart(selected.school);
+      const matchingDocuments = state.rawStudents.filter(student => {
+        if (student.isAlias || student.identityStatus === "ALIAS") return false;
+        if (normalizeStudentIdentityPart(student.name) !== nameKey) return false;
+        if (schoolKey && normalizeStudentIdentityPart(student.school) !== schoolKey) return false;
+        return true;
+      });
+      if (new Set(matchingDocuments.map(student => student.docId || student.studentId)).size > 1) return true;
+      return pendingIdentityReviews().some(review => {
+        if (normalizeStudentIdentityPart(review.studentName) !== nameKey) return false;
+        if (schoolKey && review.school && normalizeStudentIdentityPart(review.school) !== schoolKey) return false;
+        return identityReviewCandidateIds(review).length > 1;
+      });
     }
 
     async function mergeStudentIdentity(options) {
@@ -2726,6 +3111,7 @@
         ]);
         addLocalAudit("학생 문서 삭제", label);
         await loadStudentData(db);
+        closeStudentEditor();
         render();
         toast("학생 문서를 삭제했습니다.");
       } catch (error) {
@@ -2733,6 +3119,149 @@
         toast("삭제 실패: " + (error.message || error));
       } finally {
         state.loading = false;
+      }
+    }
+
+    function parseDelimitedRow(line) {
+      if (line.includes("\t")) return line.split("\t").map(value => value.trim());
+      const cells = [];
+      let value = "";
+      let quoted = false;
+      for (let index = 0; index < line.length; index += 1) {
+        const character = line[index];
+        if (character === '"' && quoted && line[index + 1] === '"') {
+          value += '"';
+          index += 1;
+        } else if (character === '"') {
+          quoted = !quoted;
+        } else if (character === "," && !quoted) {
+          cells.push(value.trim());
+          value = "";
+        } else {
+          value += character;
+        }
+      }
+      cells.push(value.trim());
+      return cells;
+    }
+
+    function validContact(value) {
+      if (!value) return true;
+      const normalized = normalizePhone(value);
+      return /^0\d{9,10}$/.test(normalized);
+    }
+
+    function findBulkContactStudent(identifier) {
+      const target = String(identifier || "").trim();
+      const byId = state.students.filter(student => studentIdsForRecord(student).includes(target));
+      if (byId.length === 1) return { student: byId[0] };
+      const nameKey = normalizeStudentIdentityPart(target);
+      const byName = state.students.filter(student => normalizeStudentIdentityPart(student.name) === nameKey);
+      if (byName.length === 1) return { student: byName[0] };
+      if (byName.length > 1) return { error: "동명이인입니다. 대표 ID를 입력하세요." };
+      return { error: "일치하는 학생이 없습니다." };
+    }
+
+    function validateStudentContactBulk() {
+      const lines = $("studentContactBulkInput").value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      state.studentContactBulkRows = lines.map((line, index) => {
+        const cells = parseDelimitedRow(line);
+        const first = String(cells[0] || "").trim();
+        if (index === 0 && /학생명|대표\s*id|student/i.test(first)) return null;
+        if (!first) return { line: index + 1, identifier: "-", error: "학생명 또는 대표 ID가 비어 있습니다." };
+        const match = findBulkContactStudent(first);
+        const contacts = [cells[1] || "", cells[2] || "", cells[3] || ""];
+        if (cells.length > 4) return { line: index + 1, identifier: first, error: "열은 4개까지만 입력할 수 있습니다." };
+        if (!contacts.some(Boolean)) return { line: index + 1, identifier: first, error: "변경할 연락처를 하나 이상 입력하세요." };
+        if (contacts.some(value => !validContact(value))) return { line: index + 1, identifier: first, error: "전화번호는 0으로 시작하는 10~11자리 숫자여야 합니다." };
+        if (match.error) return { line: index + 1, identifier: first, error: match.error };
+        return {
+          line: index + 1,
+          identifier: first,
+          student: match.student,
+          studentContact: contacts[0] ? normalizePhone(contacts[0]) : "",
+          fatherContact: contacts[1] ? normalizePhone(contacts[1]) : "",
+          motherContact: contacts[2] ? normalizePhone(contacts[2]) : ""
+        };
+      }).filter(Boolean);
+      renderStudentContactBulkPreview();
+      return state.studentContactBulkRows;
+    }
+
+    function renderStudentContactBulkPreview() {
+      const rows = state.studentContactBulkRows;
+      const errors = rows.filter(row => row.error);
+      const valid = rows.filter(row => !row.error);
+      $("applyStudentContactBulkButton").disabled = !rows.length || Boolean(errors.length) || state.loading;
+      $("studentContactBulkSummary").textContent = !rows.length
+        ? "검증할 내용이 없습니다."
+        : errors.length ? `${rows.length}건 중 ${errors.length}건을 확인해 주세요.` : `${valid.length}명의 연락처를 반영할 수 있습니다.`;
+      $("studentContactBulkPreview").innerHTML = rows.map(row => row.error
+        ? `<div class="bulk-preview-row error"><strong>${escapeHtml(row.identifier)}</strong><span>${escapeHtml(row.error)}</span><small>${row.line}행</small></div>`
+        : `<div class="bulk-preview-row"><strong>${escapeHtml(row.student.name)} · ${escapeHtml(row.student.school || "-")}</strong><span>학생 ${escapeHtml(row.studentContact || "유지")} / 부 ${escapeHtml(row.fatherContact || "유지")} / 모 ${escapeHtml(row.motherContact || "유지")}</span><small>${row.line}행</small></div>`
+      ).join("") || `<div class="bulk-preview-empty">내용을 붙여넣으면 학생 일치 여부와 연락처 형식을 먼저 확인합니다.</div>`;
+    }
+
+    async function applyStudentContactBulk() {
+      if (!state.isAdmin) {
+        toast("관리자 권한으로 로그인해야 일괄 반영할 수 있습니다.");
+        return;
+      }
+      const rows = validateStudentContactBulk();
+      if (!rows.length || rows.some(row => row.error)) return;
+      const duplicateIds = rows.map(row => row.student.representativeId || row.student.studentId);
+      if (new Set(duplicateIds).size !== duplicateIds.length) {
+        toast("같은 학생이 두 번 입력되어 있습니다.");
+        return;
+      }
+      setBusy("bulk", `${rows.length}명의 학생·학부모 연락처를 반영하고 변경 이력을 기록하고 있습니다.`);
+      try {
+        const db = await getDb();
+        const now = new Date().toISOString();
+        const operator = state.operator || {};
+        for (let start = 0; start < rows.length; start += 200) {
+          const batch = db.batch();
+          rows.slice(start, start + 200).forEach(row => {
+            const student = row.student;
+            const documentId = String(student.docId || student.representativeId || student.studentId);
+            const before = studentAuditSnapshot(student);
+            const patch = { updatedAt: now, updatedAtMs: Date.now(), updatedBy: operator.uid || "", updatedByName: operator.name || "" };
+            if (row.studentContact) Object.assign(patch, { studentContact: row.studentContact, studentPhone: row.studentContact });
+            if (row.fatherContact) Object.assign(patch, { fatherContact: row.fatherContact, fatherPhone: row.fatherContact });
+            if (row.motherContact) Object.assign(patch, { motherContact: row.motherContact, motherPhone: row.motherContact });
+            const after = studentAuditSnapshot(Object.assign({}, student, patch));
+            batch.set(db.collection(COLLECTIONS.students).doc(documentId), patch, { merge: true });
+            batch.set(db.collection(COLLECTIONS.audits).doc(requestId("audit")), {
+              type: "student",
+              changeType: "contact-bulk",
+              changeLabel: "연락처 일괄",
+              summary: `${student.name} · 연락처 일괄 변경`,
+              studentId: documentId,
+              canonicalStudentId: student.representativeId || student.studentId || documentId,
+              studentName: student.name,
+              school: student.school || "",
+              before,
+              after,
+              changedFields: studentChangedFields(before, after),
+              operatorUid: operator.uid || "",
+              operatorName: operator.name || "",
+              createdAt: now
+            });
+          });
+          await batch.commit();
+        }
+        await loadStudentData(db);
+        $("studentContactBulkDialog").close();
+        $("studentContactBulkInput").value = "";
+        state.studentContactBulkRows = [];
+        addLocalAudit("연락처 일괄 반영", `${rows.length}명의 학생·학부모 연락처를 갱신했습니다.`);
+        render();
+        toast(`${rows.length}명의 연락처를 반영했습니다.`);
+      } catch (error) {
+        addLocalAudit("연락처 일괄 반영 실패", error.message || String(error));
+        toast("일괄 반영 실패: " + (error.message || error));
+      } finally {
+        clearBusy();
       }
     }
 
@@ -2760,6 +3289,12 @@
     function renderStudents() {
       renderStudentIdentityReviews();
       renderStudentGradeRolloverPanel();
+      const editor = $("studentEditorPanel");
+      const layout = $("studentsView").querySelector(".layout-grid");
+      editor.hidden = !state.studentEditorOpen;
+      layout.classList.toggle("single-column", !state.studentEditorOpen);
+      $("studentEditorTitle").textContent = state.editingStudentId ? "학생 변경 요청" : "학생 등록 요청";
+      $("studentDeleteAction").hidden = !state.editingStudentId;
       const keyword = ($("studentSearch")?.value || "").trim().toLowerCase();
       const status = $("studentStatusFilter")?.value || "";
       const school = $("studentSchoolFilter")?.value || "";
@@ -2773,11 +3308,11 @@
         return (!keyword || text.includes(keyword)) && (!status || student.status === status) && (!school || student.school === school);
       }).map(student => {
         const representativeId = student.representativeId || student.studentId || "";
-        const candidateCount = mergeCandidateIdsForStudent(representativeId).length;
+        const showMerge = hasDuplicateStudentDocuments(representativeId);
         return `
         <tr>
           <td>${escapeHtml(student.name)}</td>
-          <td><strong>${escapeHtml(representativeId || "-")}</strong><br><span class="help">${escapeHtml(studentIdTypeLabel(representativeId))}</span></td>
+          <td><details class="id-disclosure"><summary>ID 보기</summary><strong class="id-value">${escapeHtml(representativeId || "-")}</strong><span class="help">${escapeHtml(studentIdTypeLabel(representativeId))}</span></details></td>
           <td>${escapeHtml(student.school)}</td>
           <td>${escapeHtml(displayBirthYear(student))}</td>
           <td><strong>${escapeHtml(student.grade || "-")}</strong><br><span class="help">${escapeHtml(studentGradeDisplay(student))}</span></td>
@@ -2786,14 +3321,14 @@
           <td>
             <div class="row-actions">
               <button class="button" data-student-edit="${escapeHtml(student.studentId)}">상태 변경</button>
-              <button class="button primary" data-student-merge="${escapeHtml(representativeId)}"${candidateCount < 2 ? " disabled" : ""}>대표 통합</button>
-              <button class="button danger" data-student-delete="${escapeHtml(student.docId || student.studentId)}">삭제</button>
+              ${showMerge ? `<button class="button primary" data-student-merge="${escapeHtml(representativeId)}">대표 통합</button>` : ""}
             </div>
           </td>
         </tr>
       `;
       }).join("");
       $("studentRows").innerHTML = rows || `<tr><td colspan="8">${state.isAdmin ? "조건에 맞는 학생이 없습니다." : "관리자 로그인 후 Firestore 학생 목록을 불러옵니다."}</td></tr>`;
+      renderStudentHistory();
     }
 
     function renderTeachers() {
@@ -2930,29 +3465,15 @@
         }
         const studentEdit = event.target.closest("[data-student-edit]");
         if (studentEdit) {
-          const student = state.students.find(item => item.studentId === studentEdit.dataset.studentEdit);
+          const student = state.students.find(item => studentIdsForRecord(item).includes(studentEdit.dataset.studentEdit));
           if (student) {
-            state.editingStudentId = student.studentId;
-            $("studentNameInput").value = student.name;
-            $("studentSchoolInput").value = student.school;
-            $("studentBirthYearInput").value = student.birthYear || "";
-            $("studentGradeInput").value = student.grade;
-            $("studentStatusInput").value = student.status;
-            $("studentContactInput").value = student.studentContact || student.studentPhone || "";
-            $("studentFatherContactInput").value = student.fatherContact || student.fatherPhone || "";
-            $("studentMotherContactInput").value = student.motherContact || student.motherPhone || "";
-            $("studentMemoInput").value = student.memo || "";
-            updateStudentGradeHelper();
             setView("students");
+            openStudentEditor(student);
           }
         }
         const studentMerge = event.target.closest("[data-student-merge]");
         if (studentMerge) {
           mergeStudentFromList(studentMerge.dataset.studentMerge);
-        }
-        const studentDelete = event.target.closest("[data-student-delete]");
-        if (studentDelete) {
-          deleteStudentDocument(studentDelete.dataset.studentDelete);
         }
         const gradeRollover = event.target.closest("[data-queue-grade-rollover]");
         if (gradeRollover) {
@@ -3031,11 +3552,28 @@
         renderTeachers();
       });
       $("newStudentButton").addEventListener("click", () => {
-        state.editingStudentId = "";
-        $("studentForm").reset();
-        updateStudentGradeHelper();
-        $("studentNameInput").focus();
+        openStudentEditor(null);
       });
+      $("closeStudentEditorButton").addEventListener("click", closeStudentEditor);
+      $("deleteEditingStudentButton").addEventListener("click", () => {
+        if (state.editingStudentId) deleteStudentDocument(state.editingStudentId);
+      });
+      $("openStudentContactBulkButton").addEventListener("click", () => {
+        state.studentContactBulkRows = [];
+        renderStudentContactBulkPreview();
+        $("studentContactBulkDialog").showModal();
+        $("studentContactBulkInput").focus();
+      });
+      $("closeStudentContactBulkButton").addEventListener("click", () => $("studentContactBulkDialog").close());
+      $("studentContactBulkDialog").addEventListener("click", event => {
+        if (event.target === $("studentContactBulkDialog")) $("studentContactBulkDialog").close();
+      });
+      $("studentContactBulkInput").addEventListener("input", () => {
+        clearTimeout(validateStudentContactBulk.timer);
+        validateStudentContactBulk.timer = setTimeout(validateStudentContactBulk, 180);
+      });
+      $("validateStudentContactBulkButton").addEventListener("click", validateStudentContactBulk);
+      $("applyStudentContactBulkButton").addEventListener("click", applyStudentContactBulk);
       $("newTeacherButton").addEventListener("click", () => {
         state.editingTeacherUid = "";
         $("teacherForm").reset();
