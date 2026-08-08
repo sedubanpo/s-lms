@@ -277,6 +277,42 @@
       gap: 8px;
     }
 
+    .weekday-selector {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .weekday-selector label {
+      display: grid;
+      min-height: 38px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #ffffff;
+      color: #36506f;
+      font-size: 0.72rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .weekday-selector input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .weekday-selector label:has(input:checked) {
+      border-color: #2563eb;
+      background: #eff6ff;
+      color: #1d4ed8;
+      box-shadow: inset 0 0 0 1px #2563eb;
+    }
+
+    .tenure-value {
+      font-variant-numeric: tabular-nums;
+    }
+
     .history-section {
       margin-top: 16px;
       padding-top: 14px;
@@ -902,21 +938,81 @@
 
     @media (max-width: 900px) {
       .app-shell {
+        min-width: 0;
         grid-template-columns: 1fr;
       }
 
       .sidebar {
         position: relative;
+        width: 100%;
+        max-width: 100vw;
+        height: auto;
         min-height: auto;
+        padding: 12px;
+        overflow: hidden;
+      }
+
+      .brand {
+        margin-bottom: 8px;
+      }
+
+      .nav-group {
+        display: flex;
+        gap: 7px;
+        margin-top: 8px;
+        overflow-x: auto;
+        scrollbar-width: thin;
+      }
+
+      .nav-label {
+        display: none;
+      }
+
+      .nav-button {
+        width: auto;
+        min-width: max-content;
+        margin-bottom: 4px;
       }
 
       .sidebar-note {
-        position: static;
-        margin-top: 18px;
+        display: none;
       }
 
       .main {
+        width: 100%;
+        max-width: 100vw;
+        min-width: 0;
         padding: 16px;
+        overflow: hidden;
+      }
+
+      .layout-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .panel,
+      .panel-body,
+      .topbar,
+      .top-actions,
+      .auth-strip {
+        min-width: 0;
+      }
+
+      .layout-grid > *,
+      .form-field,
+      .field,
+      .select,
+      .textarea {
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      .toolbar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .toolbar > :first-child {
+        grid-column: 1 / -1;
       }
 
       .auth-strip {
@@ -937,6 +1033,10 @@
         position: static;
         max-height: none;
       }
+
+      .weekday-selector {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
     }
   </style>
 </head>
@@ -956,6 +1056,7 @@
         <button class="nav-button active" data-view="dashboard">운영 대시보드 <small>동기화</small></button>
         <button class="nav-button" data-view="students">학생 상태 관리 <small>등록/중지</small></button>
         <button class="nav-button" data-view="teachers">강사 계정 관리 <small>계정/권한</small></button>
+        <button class="nav-button" data-view="staff">실무자 계정 관리 <small>근무/권한</small></button>
         <button class="nav-button" data-view="queue">반영 대기열 <small>감사</small></button>
         <button class="nav-button" data-view="settings">연동 상태 <small>Firebase</small></button>
       </nav>
@@ -990,6 +1091,7 @@
           <article class="metric"><span>활성 학생</span><strong id="metricActiveStudents">0</strong><small>Firestore students</small></article>
           <article class="metric"><span>중지/휴원</span><strong id="metricPausedStudents">0</strong><small>상태 변경 검토 대상</small></article>
           <article class="metric"><span>강사 계정</span><strong id="metricTeachers">0</strong><small>users / userProfiles</small></article>
+          <article class="metric"><span>실무자 계정</span><strong id="metricStaff">0</strong><small>데스크포털 근무자</small></article>
           <article class="metric"><span>저장 대기</span><strong id="metricQueue">0</strong><small>Firestore 직접 저장 요청</small></article>
           <article class="metric"><span>검증 필요</span><strong id="metricReview">0</strong><small>중복/누락 확인</small></article>
         </div>
@@ -1130,7 +1232,7 @@
             <div class="panel-body">
               <div class="toolbar">
                 <input class="field" id="teacherSearch" placeholder="강사명, 로그인 ID, 과목 검색">
-                <select class="select" id="teacherRoleFilter"><option value="">전체 직급</option><option value="ADMIN">관리자</option><option value="STAFF">실무자</option><option value="INSTRUCTOR">강사</option><option value="DISABLED">비활성</option></select>
+                <select class="select" id="teacherRoleFilter"><option value="">전체 직급</option><option value="ADMIN">관리자</option><option value="INSTRUCTOR">강사</option><option value="DISABLED">비활성</option></select>
                 <select class="select" id="teacherAppFilter"><option value="">전체 앱 권한</option><option value="teacherPortal">강사 포털</option><option value="sLms">S-LMS</option><option value="deskPortal">데스크</option><option value="liveTimetable">라이브</option></select>
                 <button class="button" id="clearTeacherFilters">필터 초기화</button>
               </div>
@@ -1149,7 +1251,7 @@
                 <div class="form-field"><label>이름</label><input class="field" id="teacherNameInput" autocomplete="off"></div>
                 <div class="form-field"><label>로그인 ID</label><input class="field" id="teacherLoginInput" inputmode="numeric" autocomplete="off"></div>
                 <div class="form-field"><label>과목/부서</label><input class="field" id="teacherSubjectInput" autocomplete="off"></div>
-                <div class="form-field"><label>직급</label><select class="select" id="teacherRoleInput"><option value="INSTRUCTOR">강사</option><option value="STAFF">실무자</option><option value="ADMIN">관리자</option><option value="DISABLED">비활성</option></select></div>
+                <div class="form-field"><label>직급</label><select class="select" id="teacherRoleInput"><option value="INSTRUCTOR">강사</option><option value="ADMIN">관리자</option><option value="DISABLED">비활성</option></select></div>
                 <div class="form-field"><label>상태</label><select class="select" id="teacherStatusInput"><option value="ACTIVE">활성</option><option value="DISABLED">비활성</option></select></div>
                 <div class="form-field"><label>새 비밀번호</label><input class="field password" id="teacherPasswordInput" type="password" autocomplete="new-password" placeholder="신규는 미입력 시 로그인 ID"></div>
                 <div class="form-field"><label>Auth 작업</label><select class="select" id="teacherAuthActionInput"><option value="">없음</option><option value="PROVISION_ACCOUNT">신규 계정 전체 생성</option><option value="RESET_PASSWORD">비밀번호 변경 필요</option><option value="DISABLE_AUTH_USER">Auth 사용자 비활성 필요</option></select></div>
@@ -1165,6 +1267,52 @@
                   <button class="button primary" id="queueTeacherButton">강사 변경 대기열 추가</button>
                   <p class="help">신규 강사는 Auth, custom claim, Firestore, Supabase 권한 연결이 모두 완료된 뒤에만 생성 완료로 표시합니다.</p>
                 </div>
+              </form>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="staffView" class="hidden">
+        <div class="layout-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <div><h3>실무자 계정</h3><p>근무 정보와 학원 웹앱 접근 권한을 관리합니다.</p></div>
+              <button class="button primary" id="newStaffButton">실무자 계정 추가</button>
+            </div>
+            <div class="panel-body">
+              <div class="toolbar">
+                <input class="field" id="staffSearch" placeholder="이름, 휴대폰 번호, 직급 검색">
+                <select class="select" id="staffPositionFilter"><option value="">전체 직급</option></select>
+                <select class="select" id="staffAppFilter"><option value="">전체 앱 권한</option><option value="deskPortal">데스크포털</option><option value="sLms">S-LMS</option><option value="teacherPortal">강사포털</option><option value="liveTimetable">라이브시간표</option><option value="synchroS">싱크로에스</option></select>
+                <button class="button" id="clearStaffFilters">필터 초기화</button>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th style="width:110px;">이름</th><th style="width:135px;">로그인 ID</th><th style="width:90px;">직급</th><th style="width:95px;">상태</th><th style="width:130px;">근속 기간</th><th style="width:150px;">근무 요일</th><th>앱 권한</th><th style="width:90px;">작업</th></tr></thead>
+                  <tbody id="staffRows"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+          <aside class="panel student-editor-panel" id="staffEditorPanel" hidden>
+            <div class="panel-head"><div><h3 id="staffEditorTitle">실무자 계정 추가</h3><p>Auth와 권한 연결이 모두 완료된 뒤 저장됩니다.</p></div><button class="button" id="closeStaffEditorButton">닫기</button></div>
+            <div class="panel-body">
+              <form id="staffForm" class="form-grid" onsubmit="return false;">
+                <div class="form-field"><label>이름</label><input class="field" id="staffNameInput" autocomplete="off"></div>
+                <div class="form-field"><label>로그인 ID</label><input class="field" id="staffLoginInput" inputmode="tel" autocomplete="off" placeholder="010-0000-0000"></div>
+                <div class="form-field"><label>직급</label><select class="select" id="staffPositionInput"></select></div>
+                <div class="form-field"><label>상태</label><select class="select" id="staffStatusInput"><option value="ACTIVE">활성</option><option value="DISABLED">비활성</option></select></div>
+                <div class="form-field"><label>입사일</label><input class="field" id="staffHireDateInput" type="date"></div>
+                <div class="form-field"><label>퇴사일</label><input class="field" id="staffTerminationDateInput" type="date"></div>
+                <div class="form-field full"><div class="form-note"><strong>근속 기간</strong><span class="tenure-value" id="staffTenurePreview">입사일을 입력하면 자동으로 계산합니다.</span></div></div>
+                <div class="form-field full"><label>초기 비밀번호</label><input class="field password" id="staffPasswordInput" type="password" readonly autocomplete="new-password" placeholder="신규 계정은 휴대폰 번호로 자동 설정"></div>
+                <div class="form-field full"><div class="form-note"><strong>로그인 안내</strong>신규 계정의 아이디와 초기 비밀번호는 휴대폰 번호입니다. 실무자는 데스크포털 로그인 후 본인 비밀번호를 변경할 수 있습니다.</div></div>
+                <div class="form-field full"><label>근무 요일</label><div class="weekday-selector" id="staffWorkdaySelector"><label><input type="checkbox" value="MON">월</label><label><input type="checkbox" value="TUE">화</label><label><input type="checkbox" value="WED">수</label><label><input type="checkbox" value="THU">목</label><label><input type="checkbox" value="FRI">금</label><label><input type="checkbox" value="SAT">토</label><label><input type="checkbox" value="SUN">일</label></div></div>
+                <div class="form-field full"><label>앱 권한</label><div class="sync-lanes"><label><input type="checkbox" id="staffAppDesk" checked> 데스크포털</label><label><input type="checkbox" id="staffAppSLms"> S-LMS</label><label><input type="checkbox" id="staffAppTeacher"> 강사포털</label><label><input type="checkbox" id="staffAppLive"> 라이브시간표</label><label><input type="checkbox" id="staffAppSynchro"> 싱크로에스</label></div></div>
+                <div class="form-field full"><label>세부 권한</label><div class="sync-lanes"><label><input type="checkbox" id="staffPermManageAccounts"> 계정 관리</label><label><input type="checkbox" id="staffPermEditGrades"> 성적 입력</label><label><input type="checkbox" id="staffPermDeleteGrades"> 성적 삭제</label><label><input type="checkbox" id="staffPermManageMaterials"> 자료 관리</label><label><input type="checkbox" id="staffPermManageSchedules"> 일정 관리</label><label><input type="checkbox" id="staffPermManagePayroll"> 급여 관리</label></div></div>
+                <div class="form-field full"><label>특이사항</label><textarea class="textarea" id="staffMemoInput" placeholder="근무 관련 특이사항과 인수인계 메모"></textarea></div>
+                <div class="form-field full"><button class="button primary" id="queueStaffButton">실무자 계정 저장</button><p class="help">Firebase Auth, custom claim, Firestore, Supabase 연결을 단계별로 확인하며 부분 실패 시 대기열에서 재시도할 수 있습니다.</p></div>
               </form>
             </div>
           </aside>
@@ -1233,6 +1381,8 @@
     };
     const TEACHER_PROVISION_URL = "https://asia-northeast3-fir-lms-prod.cloudfunctions.net/provisionTeacherAccount";
     const STUDENT_PROVISION_URL = "https://asia-northeast3-fir-lms-prod.cloudfunctions.net/provisionStudentAccount";
+    const STAFF_POSITIONS = ["대표", "원장", "부원장", "센터장", "실장", "과장", "대리", "주임", "사원"];
+    const WORKDAY_LABELS = { MON: "월", TUE: "화", WED: "수", THU: "목", FRI: "금", SAT: "토", SUN: "일" };
     const COLLECTIONS = {
       students: "students",
       users: "users",
@@ -1262,6 +1412,7 @@
       identityMappings: [],
       identityReviews: [],
       teachers: [],
+      staff: [],
       queue: [],
       audits: [],
       authUser: null,
@@ -1277,6 +1428,8 @@
       studentHistoryLoading: false,
       studentContactBulkRows: [],
       editingTeacherUid: "",
+      editingStaffUid: "",
+      staffEditorOpen: false,
       teacherProvisionSecrets: {},
       studentIdentityReviewExpanded: false
     };
@@ -1352,12 +1505,13 @@
       document.querySelectorAll("[data-student-merge], [data-resolve-student-review], [data-queue-grade-rollover], [data-retry-teacher-provision]").forEach(button => {
         button.disabled = state.loading;
       });
-      ["queueStudentButton", "queueTeacherButton"].forEach(id => {
+      ["queueStudentButton", "queueTeacherButton", "queueStaffButton"].forEach(id => {
         const button = $(id);
         if (!button) return;
         button.disabled = state.loading;
         if (id === "queueStudentButton") button.textContent = queueBusy ? "학생 정보 반영 중..." : "학생 등록/수정 대기열 포함";
         if (id === "queueTeacherButton") button.textContent = queueBusy ? "강사 계정 반영 중..." : "강사 변경 대기열 추가";
+        if (id === "queueStaffButton") button.textContent = queueBusy ? "실무자 계정 반영 중..." : "실무자 계정 저장";
       });
     }
 
@@ -1844,7 +1998,7 @@
       const access = {};
       profilesSnap.docs.forEach(doc => profiles[doc.id] = doc.data() || {});
       accessSnap.docs.forEach(doc => access[doc.id] = doc.data() || {});
-      state.teachers = usersSnap.docs.map(doc => {
+      const accounts = usersSnap.docs.map(doc => {
           const user = doc.data() || {};
           const profile = profiles[doc.id] || {};
           const links = profile.links || {};
@@ -1860,11 +2014,18 @@
             workPageUrl: profile.workPageUrl || profile.workPageLink || profile.workUrl || links.workPage || "",
             dailyHoursUrl: profile.dailyHoursUrl || profile.dailyHoursLink || profile.dailyHoursUrlLink || links.dailyHours || "",
             profileImageUrl: profile.profileImageUrl || profile.profileImage || profile.photoURL || "",
+            staffPosition: user.staffPosition || profile.staffPosition || "",
+            hireDate: user.hireDate || profile.hireDate || "",
+            terminationDate: user.terminationDate || profile.terminationDate || "",
+            workDays: Array.isArray(user.workDays) ? user.workDays : (Array.isArray(profile.workDays) ? profile.workDays : []),
+            memo: user.note || profile.note || "",
             apps: appsToArray(accessDoc.apps || {}),
             appMap: accessDoc.apps || {},
             permissions: accessDoc.permissions || {}
           };
         }).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+      state.staff = accounts.filter(account => account.role === "STAFF");
+      state.teachers = accounts.filter(account => account.role !== "STAFF");
     }
 
     async function loadFirestoreData() {
@@ -1877,7 +2038,7 @@
           loadTeacherData(db)
         ]);
         const pendingReviewCount = state.identityReviews.filter(item => item.status === "PENDING").length;
-        addLocalAudit("Firestore 로드", `대표 학생 ${state.students.length}명, 계정 ${state.teachers.length}건, 학생 ID 검토 ${pendingReviewCount}건을 불러왔습니다.${hiddenDuplicateCount ? ` 별칭/중복 문서 ${hiddenDuplicateCount}건을 숨겼습니다.` : ""}`);
+        addLocalAudit("Firestore 로드", `대표 학생 ${state.students.length}명, 강사 ${state.teachers.length}명, 실무자 ${state.staff.length}명, 학생 ID 검토 ${pendingReviewCount}건을 불러왔습니다.${hiddenDuplicateCount ? ` 별칭/중복 문서 ${hiddenDuplicateCount}건을 숨겼습니다.` : ""}`);
       } catch (error) {
         addLocalAudit("Firestore 로드 실패", error.message || String(error));
         toast("Firestore 로드 실패: " + (error.message || error));
@@ -2312,6 +2473,156 @@
       toast(queuedCount ? `${queuedCount}건의 학년 갱신 요청을 대기열에 추가했습니다.` : "이미 대기열에 있는 학생은 중복 추가하지 않았습니다.");
     }
 
+    function calculateTenure(hireDate, terminationDate) {
+      if (!hireDate) return "입사일 미입력";
+      const start = new Date(`${hireDate}T00:00:00`);
+      const end = terminationDate ? new Date(`${terminationDate}T00:00:00`) : new Date();
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return "기간 확인 필요";
+      let months = (end.getFullYear() - start.getFullYear()) * 12 + end.getMonth() - start.getMonth();
+      if (end.getDate() < start.getDate()) months -= 1;
+      if (months < 1) {
+        const days = Math.max(0, Math.floor((end - start) / 86400000));
+        return `${days}일`;
+      }
+      const years = Math.floor(months / 12);
+      const remainMonths = months % 12;
+      return [years ? `${years}년` : "", remainMonths ? `${remainMonths}개월` : ""].filter(Boolean).join(" ");
+    }
+
+    function updateStaffTenurePreview() {
+      const hireDate = $("staffHireDateInput").value;
+      const terminationDate = $("staffTerminationDateInput").value;
+      $("staffTenurePreview").textContent = calculateTenure(hireDate, terminationDate);
+    }
+
+    function selectedStaffWorkDays() {
+      return Array.from($("staffWorkdaySelector").querySelectorAll("input:checked")).map(input => input.value);
+    }
+
+    function setStaffWorkDays(days) {
+      const selected = new Set(days || []);
+      $("staffWorkdaySelector").querySelectorAll("input").forEach(input => input.checked = selected.has(input.value));
+    }
+
+    function resetStaffForm() {
+      state.editingStaffUid = "";
+      $("staffForm").reset();
+      $("staffPositionInput").value = "사원";
+      $("staffAppDesk").checked = true;
+      setStaffWorkDays([]);
+      updateStaffTenurePreview();
+    }
+
+    function closeStaffEditor() {
+      state.staffEditorOpen = false;
+      resetStaffForm();
+      renderStaff();
+    }
+
+    function openStaffEditor(staff) {
+      state.staffEditorOpen = true;
+      resetStaffForm();
+      if (staff) {
+        const permissions = staff.permissions || {};
+        state.editingStaffUid = staff.uid;
+        $("staffNameInput").value = staff.name || "";
+        $("staffLoginInput").value = staff.loginId || "";
+        $("staffPositionInput").value = staff.staffPosition || "사원";
+        $("staffStatusInput").value = staff.status || "ACTIVE";
+        $("staffHireDateInput").value = staff.hireDate || "";
+        $("staffTerminationDateInput").value = staff.terminationDate || "";
+        $("staffPasswordInput").value = "";
+        setStaffWorkDays(staff.workDays || []);
+        $("staffAppDesk").checked = (staff.apps || []).includes("deskPortal");
+        $("staffAppSLms").checked = (staff.apps || []).includes("sLms");
+        $("staffAppTeacher").checked = (staff.apps || []).includes("teacherPortal");
+        $("staffAppLive").checked = (staff.apps || []).includes("liveTimetable");
+        $("staffAppSynchro").checked = (staff.apps || []).includes("synchroS");
+        $("staffPermManageAccounts").checked = Boolean(permissions.canManageAccounts);
+        $("staffPermEditGrades").checked = Boolean(permissions.canEditGrades);
+        $("staffPermDeleteGrades").checked = Boolean(permissions.canDeleteGrades);
+        $("staffPermManageMaterials").checked = Boolean(permissions.canManageMaterials);
+        $("staffPermManageSchedules").checked = Boolean(permissions.canManageSchedules);
+        $("staffPermManagePayroll").checked = Boolean(permissions.canManagePayroll);
+        $("staffMemoInput").value = staff.memo || "";
+      }
+      updateStaffTenurePreview();
+      renderStaff();
+      $("staffNameInput").focus();
+    }
+
+    async function queueStaffFromForm() {
+      const name = $("staffNameInput").value.trim();
+      const loginId = canonicalLoginId($("staffLoginInput").value);
+      const staffPosition = $("staffPositionInput").value;
+      const status = $("staffStatusInput").value;
+      const hireDate = $("staffHireDateInput").value;
+      const terminationDate = $("staffTerminationDateInput").value;
+      const workDays = selectedStaffWorkDays();
+      const memo = $("staffMemoInput").value.trim();
+      if (!name || !/^010\d{8}$/.test(loginId)) {
+        toast("이름과 010으로 시작하는 휴대폰 번호를 확인해 주세요.");
+        return;
+      }
+      if (!hireDate) {
+        toast("입사일을 입력해 주세요.");
+        return;
+      }
+      if (terminationDate && terminationDate < hireDate) {
+        toast("퇴사일은 입사일보다 빠를 수 없습니다.");
+        return;
+      }
+      if (!workDays.length) {
+        toast("근무 요일을 하나 이상 선택해 주세요.");
+        return;
+      }
+      const apps = {
+        deskPortal: $("staffAppDesk").checked,
+        sLms: $("staffAppSLms").checked,
+        teacherPortal: $("staffAppTeacher").checked,
+        liveTimetable: $("staffAppLive").checked,
+        synchroS: $("staffAppSynchro").checked
+      };
+      if (!Object.values(apps).some(Boolean)) {
+        toast("접근 가능한 웹앱을 하나 이상 선택해 주세요.");
+        return;
+      }
+      const permissions = {
+        canManageAccounts: $("staffPermManageAccounts").checked,
+        canEditGrades: $("staffPermEditGrades").checked,
+        canDeleteGrades: $("staffPermDeleteGrades").checked,
+        canManageMaterials: $("staffPermManageMaterials").checked,
+        canManageSchedules: $("staffPermManageSchedules").checked,
+        canManagePayroll: $("staffPermManagePayroll").checked
+      };
+      const existing = state.editingStaffUid || (state.staff.find(item => item.loginId === loginId) || {}).uid || "";
+      const password = existing ? "" : loginId;
+      const item = queueRequest("teacher", `${name} · ${staffPosition} · ${loginId}`, {
+        action: "upsertTeacherMetadata",
+        accountKind: "staff",
+        teacher: {
+          uid: existing,
+          name,
+          loginId,
+          subject: "운영",
+          role: "STAFF",
+          status,
+          staffPosition,
+          hireDate,
+          terminationDate,
+          workDays,
+          memo,
+          apps,
+          permissions,
+          authAction: existing ? "" : "PROVISION_ACCOUNT"
+        },
+        requiredCollections: ["users", "userProfiles", "userAppAccess", "loginAliases"]
+      });
+      if (!existing) state.teacherProvisionSecrets[item.id] = password;
+      closeStaffEditor();
+      await autoSubmitQueuedItem(item);
+    }
+
     async function queueTeacherFromForm() {
       const name = $("teacherNameInput").value.trim();
       const loginId = canonicalLoginId($("teacherLoginInput").value);
@@ -2485,7 +2796,7 @@
       const apps = Object.assign(defaultApps(draft.role), draft.apps || {});
       const permissions = Object.assign(defaultPermissions(draft.role), draft.permissions || {});
       await Promise.all([
-        db.collection(COLLECTIONS.users).doc(uid).set({
+        db.collection(COLLECTIONS.users).doc(uid).set(Object.assign({
           uid,
           loginId: draft.loginId,
           email,
@@ -2495,8 +2806,15 @@
           phoneLast4: String(draft.loginId || "").slice(-4),
           updatedAt: now,
           updatedBy: user.uid || ""
-        }, { merge: true }),
-        db.collection(COLLECTIONS.userProfiles).doc(uid).set({
+        }, draft.role === "STAFF" ? {
+          accountType: "STAFF",
+          staffPosition: draft.staffPosition || "",
+          hireDate: draft.hireDate || "",
+          terminationDate: draft.terminationDate || "",
+          workDays: draft.workDays || [],
+          note: draft.memo || ""
+        } : {}), { merge: true }),
+        db.collection(COLLECTIONS.userProfiles).doc(uid).set(Object.assign({
           uid,
           displayName: draft.name,
           instructorId: draft.loginId,
@@ -2517,7 +2835,14 @@
           },
           updatedAt: now,
           updatedBy: user.uid || ""
-        }, { merge: true }),
+        }, draft.role === "STAFF" ? {
+          accountType: "STAFF",
+          staffPosition: draft.staffPosition || "",
+          hireDate: draft.hireDate || "",
+          terminationDate: draft.terminationDate || "",
+          workDays: draft.workDays || [],
+          note: draft.memo || ""
+        } : {}), { merge: true }),
         db.collection(COLLECTIONS.userAppAccess).doc(uid).set({
           uid,
           apps,
@@ -2585,15 +2910,22 @@
         workPageUrl: draft.workPageUrl || "",
         dailyHoursUrl: draft.dailyHoursUrl || "",
         profileImageUrl: draft.profileImageUrl || "",
+        staffPosition: draft.staffPosition || "",
+        hireDate: draft.hireDate || "",
+        terminationDate: draft.terminationDate || "",
+        workDays: draft.workDays || [],
+        memo: draft.memo || "",
         apps: appsToArray(appMap),
         appMap,
         permissions: Object.assign(defaultPermissions(draft.role), draft.permissions || {})
       };
       const previousUid = String(draft.previousMetadataUid || "").trim();
-      state.teachers = state.teachers
-        .filter(existing => existing.uid !== uid && (!previousUid || existing.uid !== previousUid))
-        .concat(teacher)
-        .sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+      const target = draft.role === "STAFF" ? state.staff : state.teachers;
+      const opposite = draft.role === "STAFF" ? state.teachers : state.staff;
+      const updated = target.filter(existing => existing.uid !== uid && (!previousUid || existing.uid !== previousUid)).concat(teacher).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+      opposite.splice(0, opposite.length, ...opposite.filter(existing => existing.uid !== uid && (!previousUid || existing.uid !== previousUid)));
+      if (draft.role === "STAFF") state.staff = updated;
+      else state.teachers = updated;
     }
 
     function applyCommittedItem(item, result, now) {
@@ -3269,6 +3601,7 @@
       $("metricActiveStudents").textContent = state.students.filter(s => s.active !== false && s.status === "ACTIVE").length;
       $("metricPausedStudents").textContent = state.students.filter(s => s.status !== "ACTIVE").length;
       $("metricTeachers").textContent = state.teachers.length;
+      $("metricStaff").textContent = state.staff.length;
       $("metricQueue").textContent = state.queue.length;
       $("metricReview").textContent = state.queue.filter(q => q.status !== "COMMITTED").length + pendingIdentityReviews().length;
     }
@@ -3276,7 +3609,7 @@
     function renderDashboardQueue() {
       const rows = state.queue.slice(0, 8).map(item => `
         <tr>
-          <td>${item.type === "teacher" ? "강사" : "학생"}</td>
+          <td>${item.type === "teacher" ? (item.payload && item.payload.accountKind === "staff" ? "실무자" : "강사") : "학생"}</td>
           <td>${escapeHtml(item.summary)}</td>
           <td>${escapeHtml((state.operator && state.operator.name) || settings().operator || "운영자")}</td>
           <td><span class="status ${statusClass(item.status)}">${item.status === "DRAFT" ? "검토 대기" : statusLabel(item.status)}</span></td>
@@ -3352,6 +3685,37 @@
       $("teacherRows").innerHTML = rows || `<tr><td colspan="7">${state.isAdmin ? "조건에 맞는 강사 계정이 없습니다." : "관리자 로그인 후 Firestore 계정 목록을 불러옵니다."}</td></tr>`;
     }
 
+    function appAccessLabel(app) {
+      return { deskPortal: "데스크", sLms: "S-LMS", teacherPortal: "강사포털", liveTimetable: "라이브", synchroS: "싱크로에스" }[app] || app;
+    }
+
+    function renderStaff() {
+      const editor = $("staffEditorPanel");
+      const layout = $("staffView").querySelector(".layout-grid");
+      editor.hidden = !state.staffEditorOpen;
+      layout.classList.toggle("single-column", !state.staffEditorOpen);
+      $("staffEditorTitle").textContent = state.editingStaffUid ? "실무자 계정 수정" : "실무자 계정 추가";
+      const keyword = ($("staffSearch")?.value || "").trim().toLowerCase();
+      const position = $("staffPositionFilter")?.value || "";
+      const app = $("staffAppFilter")?.value || "";
+      const rows = state.staff.filter(staff => {
+        const text = [staff.name, staff.loginId, staff.staffPosition, staff.memo].join(" ").toLowerCase();
+        return (!keyword || text.includes(keyword)) && (!position || staff.staffPosition === position) && (!app || (staff.apps || []).includes(app));
+      }).map(staff => `
+        <tr>
+          <td><strong>${escapeHtml(staff.name)}</strong></td>
+          <td>${escapeHtml(staff.loginId || "-")}</td>
+          <td>${escapeHtml(staff.staffPosition || "-")}</td>
+          <td><span class="status ${statusClass(staff.status)}">${staff.status === "ACTIVE" ? "재직" : "퇴사/비활성"}</span></td>
+          <td class="tenure-value">${escapeHtml(calculateTenure(staff.hireDate, staff.terminationDate))}</td>
+          <td>${escapeHtml((staff.workDays || []).map(day => WORKDAY_LABELS[day] || day).join(" · ") || "-")}</td>
+          <td>${escapeHtml((staff.apps || []).map(appAccessLabel).join(", ") || "-")}</td>
+          <td><button class="button" data-staff-edit="${escapeHtml(staff.uid)}">편집</button></td>
+        </tr>
+      `).join("");
+      $("staffRows").innerHTML = rows || `<tr><td colspan="8">${state.isAdmin ? "조건에 맞는 실무자 계정이 없습니다." : "관리자 로그인 후 실무자 계정을 불러옵니다."}</td></tr>`;
+    }
+
     function renderProvisionStages(item) {
       const stages = item.provisioningStages || {};
       const definitions = item.type === "teacher" ? [
@@ -3378,7 +3742,7 @@
       const rows = state.queue.map(item => `
         <tr>
           <td><input type="checkbox" data-queue-check="${escapeHtml(item.id)}" ${state.selectedQueueIds[item.id] ? "checked" : ""}></td>
-          <td>${item.type === "teacher" ? "강사" : "학생"}</td>
+          <td>${item.type === "teacher" ? (item.payload && item.payload.accountKind === "staff" ? "실무자" : "강사") : "학생"}</td>
           <td>${escapeHtml(item.summary)}<br><span class="help">${escapeHtml(item.lastError || item.id)}</span></td>
           <td>${renderProvisionStages(item)}</td>
           <td><span class="status ${statusClass(item.status)}">${item.status === "DRAFT" ? "검토 대기" : statusLabel(item.status)}</span></td>
@@ -3404,13 +3768,14 @@
     function setView(view) {
       state.view = view;
       document.querySelectorAll(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === view));
-      ["dashboard", "students", "teachers", "queue", "settings"].forEach(name => {
+      ["dashboard", "students", "teachers", "staff", "queue", "settings"].forEach(name => {
         $(`${name}View`).classList.toggle("hidden", name !== view);
       });
       const titles = {
         dashboard: ["운영 대시보드", "학생 상태와 강사 계정 메타데이터를 Firestore에서 직접 관리합니다."],
         students: ["학생 상태 관리", "등록, 중지, 복귀, 보류, 퇴원 상태를 students 문서에 저장합니다."],
         teachers: ["강사 계정 관리", "users, userProfiles, userAppAccess, loginAliases 문서를 업데이트합니다."],
+        staff: ["실무자 계정 관리", "휴대폰 로그인, 근무 정보, 학원 웹앱 접근 권한을 관리합니다."],
         queue: ["반영 대기열", "운영자가 검증한 요청만 Firestore에 직접 저장합니다."],
         settings: ["연동 상태", "S-LMS와 동일한 Firebase 프로젝트와 관리자 세션을 사용합니다."]
       };
@@ -3424,6 +3789,7 @@
       renderDashboardQueue();
       renderStudents();
       renderTeachers();
+      renderStaff();
       renderQueue();
       renderAudits();
       if (state.view === "settings") renderSettings();
@@ -3512,6 +3878,14 @@
             setView("teachers");
           }
         }
+        const staffEdit = event.target.closest("[data-staff-edit]");
+        if (staffEdit) {
+          const staff = state.staff.find(item => item.uid === staffEdit.dataset.staffEdit);
+          if (staff) {
+            setView("staff");
+            openStaffEditor(staff);
+          }
+        }
       });
       document.body.addEventListener("change", event => {
         if (event.target.matches("[data-queue-check]")) {
@@ -3521,6 +3895,7 @@
       });
       ["studentSearch", "studentStatusFilter", "studentSchoolFilter"].forEach(id => $(id).addEventListener("input", renderStudents));
       ["teacherSearch", "teacherRoleFilter", "teacherAppFilter"].forEach(id => $(id).addEventListener("input", renderTeachers));
+      ["staffSearch", "staffPositionFilter", "staffAppFilter"].forEach(id => $(id).addEventListener("input", renderStaff));
       $("studentBirthYearInput").addEventListener("input", updateStudentGradeHelper);
       $("authPasswordInput").addEventListener("keydown", event => { if (event.key === "Enter") login(); });
       $("loginButton").addEventListener("click", login);
@@ -3528,6 +3903,7 @@
       $("refreshFirebaseButton").addEventListener("click", loadFirestoreData);
       $("queueStudentButton").addEventListener("click", queueStudentFromForm);
       $("queueTeacherButton").addEventListener("click", queueTeacherFromForm);
+      $("queueStaffButton").addEventListener("click", queueStaffFromForm);
       $("exportQueueButton").addEventListener("click", exportQueue);
       $("submitQueueButton").addEventListener("click", submitQueue);
       $("submitQueueButton2").addEventListener("click", submitQueue);
@@ -3550,6 +3926,12 @@
         $("teacherRoleFilter").value = "";
         $("teacherAppFilter").value = "";
         renderTeachers();
+      });
+      $("clearStaffFilters").addEventListener("click", () => {
+        $("staffSearch").value = "";
+        $("staffPositionFilter").value = "";
+        $("staffAppFilter").value = "";
+        renderStaff();
       });
       $("newStudentButton").addEventListener("click", () => {
         openStudentEditor(null);
@@ -3579,6 +3961,13 @@
         $("teacherForm").reset();
         $("teacherNameInput").focus();
       });
+      $("newStaffButton").addEventListener("click", () => openStaffEditor(null));
+      $("closeStaffEditorButton").addEventListener("click", closeStaffEditor);
+      $("staffHireDateInput").addEventListener("input", updateStaffTenurePreview);
+      $("staffTerminationDateInput").addEventListener("input", updateStaffTenurePreview);
+      $("staffLoginInput").addEventListener("input", () => {
+        if (!state.editingStaffUid) $("staffPasswordInput").value = canonicalLoginId($("staffLoginInput").value);
+      });
       $("saveSettingsButton").addEventListener("click", () => {
         setSettings({
           operator: $("operatorInput").value.trim(),
@@ -3590,6 +3979,9 @@
     }
 
     loadState();
+    const staffPositionOptions = STAFF_POSITIONS.map(position => `<option value="${position}">${position}</option>`).join("");
+    $("staffPositionInput").innerHTML = staffPositionOptions;
+    $("staffPositionFilter").innerHTML = `<option value="">전체 직급</option>${staffPositionOptions}`;
     bindEvents();
     setView("dashboard");
     initFirebase().then(async () => {
