@@ -31,11 +31,7 @@
       min-height: 100vh;
       font-family: "Noto Sans KR", system-ui, sans-serif;
       color: var(--ink);
-      background:
-        linear-gradient(rgba(225, 233, 244, 0.62) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(225, 233, 244, 0.62) 1px, transparent 1px),
-        linear-gradient(145deg, #f7faff 0%, #eef5f7 52%, #fbf7f2 100%);
-      background-size: 28px 28px, 28px 28px, auto;
+      background: #f3f6fa;
     }
 
     button, input, select, textarea {
@@ -476,7 +472,7 @@
 
     .metric-grid {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 10px;
       margin-bottom: 14px;
     }
@@ -510,6 +506,261 @@
       color: #7a8ca3;
       font-size: 0.68rem;
       font-weight: 750;
+    }
+
+    .dashboard-tabs {
+      display: inline-grid;
+      grid-template-columns: repeat(3, minmax(100px, 1fr));
+      gap: 4px;
+      margin-bottom: 14px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #eef3f9;
+    }
+
+    .dashboard-tab {
+      min-height: 36px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #526a87;
+      font-size: 0.76rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .dashboard-tab:hover {
+      color: var(--navy);
+    }
+
+    .dashboard-tab:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.25);
+      outline-offset: 2px;
+    }
+
+    .dashboard-tab.active {
+      background: #ffffff;
+      color: var(--navy);
+      box-shadow: 0 2px 7px rgba(22, 42, 74, 0.08);
+    }
+
+    .dashboard-section-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .dashboard-section-grid + .dashboard-section-grid {
+      margin-top: 14px;
+    }
+
+    .dashboard-chart-panel {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .dashboard-chart-panel h3 {
+      margin: 0;
+      color: var(--navy);
+      font-size: 0.88rem;
+      font-weight: 950;
+    }
+
+    .dashboard-chart-panel > p {
+      margin: 4px 0 14px;
+      color: var(--muted);
+      font-size: 0.7rem;
+      font-weight: 760;
+      line-height: 1.45;
+    }
+
+    .distribution-layout {
+      display: grid;
+      grid-template-columns: 156px minmax(0, 1fr);
+      gap: 18px;
+      align-items: center;
+    }
+
+    .donut-chart {
+      position: relative;
+      width: 148px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: conic-gradient(#dbe4ef 0 100%);
+    }
+
+    .donut-chart::after {
+      content: "";
+      position: absolute;
+      inset: 28px;
+      border-radius: 50%;
+      background: #ffffff;
+    }
+
+    .donut-total {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: grid;
+      place-content: center;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .donut-total strong {
+      color: var(--navy);
+      font-family: "Sora", sans-serif;
+      font-size: 1.22rem;
+    }
+
+    .donut-total span {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 0.64rem;
+      font-weight: 800;
+    }
+
+    .chart-legend {
+      display: grid;
+      gap: 8px;
+    }
+
+    .legend-row {
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr) auto auto;
+      gap: 7px;
+      align-items: center;
+      min-width: 0;
+      font-size: 0.7rem;
+      font-weight: 800;
+    }
+
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    .legend-row span:nth-child(2) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .legend-value,
+    .legend-share {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .legend-share {
+      min-width: 42px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .trend-chart {
+      width: 100%;
+      min-height: 210px;
+      overflow: hidden;
+    }
+
+    .trend-chart svg {
+      display: block;
+      width: 100%;
+      height: 210px;
+    }
+
+    .trend-chart text {
+      fill: #71839a;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .dashboard-list {
+      display: grid;
+      gap: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .dashboard-list-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 42px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #edf2f7;
+      font-size: 0.7rem;
+      font-weight: 800;
+    }
+
+    .dashboard-list-row:last-child {
+      border-bottom: 0;
+    }
+
+    .dashboard-list-row strong,
+    .dashboard-list-row span {
+      display: block;
+    }
+
+    .dashboard-list-row span {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 0.65rem;
+    }
+
+    .dashboard-empty {
+      min-height: 148px;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .attendance-summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .attendance-summary > div {
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbff;
+    }
+
+    .attendance-summary span,
+    .attendance-summary strong {
+      display: block;
+    }
+
+    .attendance-summary span {
+      color: var(--muted);
+      font-size: 0.66rem;
+      font-weight: 800;
+    }
+
+    .attendance-summary strong {
+      margin-top: 3px;
+      color: #17365d;
+      font-size: 0.76rem;
+      font-weight: 950;
+      font-variant-numeric: tabular-nums;
     }
 
     .toolbar {
@@ -1153,6 +1404,10 @@
       .icon-library-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+
+      .metric-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 900px) {
@@ -1230,6 +1485,10 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .toolbar > :first-child {
         grid-column: 1 / -1;
       }
@@ -1260,6 +1519,20 @@
       .icon-workspace,
       .icon-library-head {
         grid-template-columns: 1fr;
+      }
+
+      .dashboard-section-grid,
+      .distribution-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .donut-chart {
+        margin: 0 auto;
+      }
+
+      .dashboard-tabs {
+        display: grid;
+        width: 100%;
       }
 
       .icon-library-grid {
@@ -1325,7 +1598,103 @@
           <article class="metric"><span>검증 필요</span><strong id="metricReview">0</strong><small>중복/누락 확인</small></article>
         </div>
 
-        <div class="layout-grid">
+        <div class="dashboard-tabs" role="tablist" aria-label="운영 대시보드 분류">
+          <button class="dashboard-tab active" type="button" role="tab" aria-selected="true" aria-controls="dashboardStudentPanel" data-dashboard-tab="students">학생</button>
+          <button class="dashboard-tab" type="button" role="tab" aria-selected="false" aria-controls="dashboardTeacherPanel" data-dashboard-tab="teachers">강사</button>
+          <button class="dashboard-tab" type="button" role="tab" aria-selected="false" aria-controls="dashboardStaffPanel" data-dashboard-tab="staff">실무자</button>
+        </div>
+
+        <section id="dashboardStudentPanel" role="tabpanel" data-dashboard-panel="students">
+          <div class="dashboard-section-grid">
+            <article class="dashboard-chart-panel">
+              <h3>등록 학생 학교 구성</h3>
+              <p>현재 등록 상태 학생의 학교별 인원과 비율입니다.</p>
+              <div class="distribution-layout">
+                <div class="donut-chart" id="studentSchoolDonut"><div class="donut-total"><strong>0</strong><span>등록 학생</span></div></div>
+                <div class="chart-legend" id="studentSchoolLegend"></div>
+              </div>
+            </article>
+            <article class="dashboard-chart-panel">
+              <h3>학생 상태</h3>
+              <p>등록, 중지, 복귀 예정, 보류, 퇴원 현황입니다.</p>
+              <div class="chart-legend" id="studentStatusLegend"></div>
+            </article>
+          </div>
+          <div class="dashboard-section-grid">
+            <article class="dashboard-chart-panel">
+              <h3>월별 최초 등원 추이</h3>
+              <p id="studentEnrollmentSummary">최근 6개월의 최초 등원 기록을 집계합니다.</p>
+              <div class="trend-chart" id="studentEnrollmentTrend"></div>
+            </article>
+            <article class="dashboard-chart-panel">
+              <h3>복귀 예정 학생</h3>
+              <p>가까운 복귀 예정일부터 최대 8명을 표시합니다.</p>
+              <div id="scheduledReturnList"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="dashboardTeacherPanel" role="tabpanel" data-dashboard-panel="teachers" hidden>
+          <div class="dashboard-section-grid">
+            <article class="dashboard-chart-panel">
+              <h3>등록 강사 과목 구성</h3>
+              <p>국어, 수학, 영어, 사회, 과학, 기타 순으로 집계합니다.</p>
+              <div class="distribution-layout">
+                <div class="donut-chart" id="teacherSubjectDonut"><div class="donut-total"><strong>0</strong><span>등록 강사</span></div></div>
+                <div class="chart-legend" id="teacherSubjectLegend"></div>
+              </div>
+            </article>
+            <article class="dashboard-chart-panel">
+              <h3>웹앱 접근 권한</h3>
+              <p>강사에게 활성화된 앱별 계정 수입니다.</p>
+              <div class="chart-legend" id="teacherAppLegend"></div>
+            </article>
+          </div>
+          <div class="dashboard-section-grid">
+            <article class="dashboard-chart-panel">
+              <h3>계정 상태</h3>
+              <p>현재 등록 계정과 비활성 계정을 구분합니다.</p>
+              <div class="chart-legend" id="teacherStatusLegend"></div>
+            </article>
+            <article class="dashboard-chart-panel">
+              <h3>과목별 강사</h3>
+              <p>업무 정렬 순서대로 등록 강사를 확인합니다.</p>
+              <div id="teacherRosterSummary"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="dashboardStaffPanel" role="tabpanel" data-dashboard-panel="staff" hidden>
+          <div class="dashboard-section-grid">
+            <article class="dashboard-chart-panel">
+              <h3>직급 구성</h3>
+              <p>재직 실무자를 조직의 직급 순서로 집계합니다.</p>
+              <div class="distribution-layout">
+                <div class="donut-chart" id="staffPositionDonut"><div class="donut-total"><strong>0</strong><span>재직 실무자</span></div></div>
+                <div class="chart-legend" id="staffPositionLegend"></div>
+              </div>
+            </article>
+            <article class="dashboard-chart-panel">
+              <h3>근무 요일 가용 인원</h3>
+              <p>요일별로 근무하도록 설정된 재직 실무자 수입니다.</p>
+              <div class="chart-legend" id="staffWorkdayLegend"></div>
+            </article>
+          </div>
+          <div class="dashboard-section-grid">
+            <article class="dashboard-chart-panel">
+              <h3>근속 구간</h3>
+              <p>입사일을 입력한 재직 실무자의 근속 분포입니다.</p>
+              <div class="chart-legend" id="staffTenureLegend"></div>
+            </article>
+            <article class="dashboard-chart-panel">
+              <h3>실무자 현황</h3>
+              <p>직급 순서와 현재 근속 기간을 함께 표시합니다.</p>
+              <div id="staffRosterSummary"></div>
+            </article>
+          </div>
+        </section>
+
+        <div class="layout-grid" style="margin-top:14px;">
           <section class="panel">
             <div class="panel-head">
               <div><h3>오늘 처리할 작업</h3><p>학생 추가, 상태 변경, 강사·실무자 계정 변경을 단일 대기열로 관리합니다.</p></div>
@@ -1381,7 +1750,7 @@
               </div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th style="width:120px;">학생명</th><th style="width:90px;">대표 ID</th><th style="width:120px;">학교</th><th style="width:78px;">생년</th><th style="width:110px;">학년</th><th style="width:90px;">상태</th><th>메모</th><th style="width:190px;">작업</th></tr></thead>
+                  <thead><tr><th style="width:120px;">학생명</th><th style="width:90px;">대표 ID</th><th style="width:120px;">학교</th><th style="width:78px;">생년</th><th style="width:110px;">학년</th><th style="width:90px;">상태</th><th style="width:110px;">등원 경과</th><th>메모</th><th style="width:190px;">작업</th></tr></thead>
                   <tbody id="studentRows"></tbody>
                 </table>
               </div>
@@ -1396,9 +1765,12 @@
                 <div class="form-field"><label>생년</label><input class="field" id="studentBirthYearInput" inputmode="numeric" placeholder="예: 2010" autocomplete="off"></div>
                 <div class="form-field"><label>학년</label><input class="field" id="studentGradeInput" autocomplete="off"></div>
                 <div class="form-field"><label>상태</label><select class="select" id="studentStatusInput"><option value="ACTIVE">등록</option><option value="PAUSED">중지</option><option value="RETURNING">복귀 예정</option><option value="HOLD">보류</option><option value="STOPPED">퇴원</option></select></div>
+                <div class="form-field" id="studentScheduledReturnField" hidden><label for="studentScheduledReturnInput">복귀 예정일</label><input class="field" id="studentScheduledReturnInput" type="date"><span class="help">해당 날짜 오전에 자동으로 등록 상태로 전환됩니다.</span></div>
+                <div class="form-field"><label for="studentFirstAttendanceInput">최초 등원일</label><input class="field" id="studentFirstAttendanceInput" type="date"><span class="help">첫 등원일을 기준으로 경과 일수를 계산합니다.</span></div>
                 <div class="form-field"><label>학생 연락처</label><input class="field" id="studentContactInput" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000"></div>
                 <div class="form-field"><label>부 연락처</label><input class="field" id="studentFatherContactInput" inputmode="tel" autocomplete="off" placeholder="010-0000-0000"></div>
                 <div class="form-field"><label>모 연락처</label><input class="field" id="studentMotherContactInput" inputmode="tel" autocomplete="off" placeholder="010-0000-0000"></div>
+                <div class="form-field full"><div class="attendance-summary" id="studentAttendanceSummary"><div><span>등원 경과</span><strong>최초 등원일 미입력</strong></div><div><span>복귀 일정</span><strong>예약 없음</strong></div></div></div>
                 <div class="form-field full"><div class="form-note" id="studentGradeHelper"><strong>생년 기반 학년 자동 계산</strong>생년을 입력하면 1월 1일 기준 학년을 계산해 학년 입력값에 반영합니다.</div></div>
                 <div class="form-field full"><label>메모</label><textarea class="textarea" id="studentMemoInput" placeholder="상태 변경 사유, 복귀 예정일, 중복 확인 메모"></textarea></div>
                 <div class="form-field full">
@@ -1467,7 +1839,7 @@
               </div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th style="width:120px;">강사명</th><th style="width:130px;">로그인 ID</th><th style="width:130px;">인증 방식</th><th style="width:95px;">직급</th><th style="width:90px;">상태</th><th>앱 권한</th><th style="width:120px;">작업</th></tr></thead>
+                  <thead><tr><th style="width:120px;">강사명</th><th style="width:130px;">로그인 ID</th><th style="width:130px;">인증 방식</th><th style="width:100px;">과목</th><th style="width:95px;">직급</th><th style="width:90px;">상태</th><th>앱 권한</th><th style="width:120px;">작업</th></tr></thead>
                   <tbody id="teacherRows"></tbody>
                 </table>
               </div>
@@ -1565,7 +1937,7 @@
                 <label class="icon-dropzone" id="iconDropzone">
                   <input id="iconFileInput" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">
                   <span>
-                    <img class="icon-preview" id="iconPreview" alt="선택한 아이콘 미리보기" hidden>
+                    <img class="icon-preview" id="iconPreview" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="선택한 아이콘 미리보기" hidden>
                     <strong id="iconFilePrompt">이미지 파일 선택</strong>
                     <span>PNG, JPG, WebP, SVG · 최대 2MB</span>
                   </span>
@@ -1666,6 +2038,9 @@
     const TEACHER_PROVISION_URL = "https://asia-northeast3-fir-lms-prod.cloudfunctions.net/provisionTeacherAccount";
     const STUDENT_PROVISION_URL = "https://asia-northeast3-fir-lms-prod.cloudfunctions.net/provisionStudentAccount";
     const STAFF_POSITIONS = ["대표", "원장", "부원장", "센터장", "실장", "과장", "대리", "주임", "사원"];
+    const SUBJECT_ORDER = ["국어", "수학", "영어", "사회", "과학", "기타"];
+    const STUDENT_STATUS_ORDER = ["ACTIVE", "RETURNING", "PAUSED", "HOLD", "STOPPED"];
+    const DASHBOARD_COLORS = ["#2563eb", "#0f766e", "#b45309", "#7c3aed", "#be123c", "#475569", "#0891b2"];
     const STAFF_ICON_STYLES = {
       "대표": { label: "표", color: "#7c3aed" },
       "원장": { label: "원", color: "#0f766e" },
@@ -1732,7 +2107,8 @@
       iconPreviewUrl: "",
       iconUploading: false,
       teacherProvisionSecrets: {},
-      studentIdentityReviewExpanded: false
+      studentIdentityReviewExpanded: false,
+      dashboardTab: "students"
     };
 
     function $(id) { return document.getElementById(id); }
@@ -1880,7 +2256,7 @@
     function statusLabel(status) {
       if (status === "ACTIVE") return "등록";
       if (status === "PAUSED") return "중지";
-      if (status === "RETURNING") return "복귀";
+      if (status === "RETURNING") return "복귀 예정";
       if (status === "HOLD") return "보류";
       if (status === "STOPPED") return "퇴원";
       if (status === "DISABLED") return "비활성";
@@ -2109,6 +2485,67 @@
       }
     }
 
+    function dateFromValue(value) {
+      if (!value) return null;
+      if (typeof value.toDate === "function") return value.toDate();
+      if (value.seconds) return new Date(value.seconds * 1000);
+      const text = String(value).trim();
+      const date = /^\d{4}-\d{2}-\d{2}$/.test(text) ? new Date(`${text}T00:00:00+09:00`) : new Date(value);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function normalizeDateInput(value) {
+      const date = dateFromValue(value);
+      if (!date) return "";
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Seoul",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(date).reduce((result, part) => Object.assign(result, { [part.type]: part.value }), {});
+      return `${parts.year}-${parts.month}-${parts.day}`;
+    }
+
+    function todayDateInput() {
+      return normalizeDateInput(new Date());
+    }
+
+    function attendanceElapsedDays(value) {
+      const start = dateFromValue(value);
+      const today = dateFromValue(todayDateInput());
+      if (!start || !today) return null;
+      return Math.max(0, Math.floor((today.getTime() - start.getTime()) / 86400000) + 1);
+    }
+
+    function attendanceElapsedLabel(value) {
+      const days = attendanceElapsedDays(value);
+      return days === null ? "미입력" : days === 0 ? "등원 예정" : `${days.toLocaleString("ko-KR")}일째`;
+    }
+
+    function studentSortComparator(a, b) {
+      const aRank = STUDENT_STATUS_ORDER.indexOf(a.status);
+      const bRank = STUDENT_STATUS_ORDER.indexOf(b.status);
+      const normalizedARank = aRank < 0 ? STUDENT_STATUS_ORDER.length : aRank;
+      const normalizedBRank = bRank < 0 ? STUDENT_STATUS_ORDER.length : bRank;
+      return normalizedARank - normalizedBRank || String(a.name).localeCompare(String(b.name), "ko");
+    }
+
+    function subjectCategory(value) {
+      const text = String(value || "").replace(/\s+/g, "");
+      return SUBJECT_ORDER.find(subject => subject !== "기타" && text.includes(subject)) || "기타";
+    }
+
+    function teacherSortComparator(a, b) {
+      const activeDifference = (a.status === "ACTIVE" ? 0 : 1) - (b.status === "ACTIVE" ? 0 : 1);
+      return activeDifference || SUBJECT_ORDER.indexOf(subjectCategory(a.subject)) - SUBJECT_ORDER.indexOf(subjectCategory(b.subject)) || String(a.name).localeCompare(String(b.name), "ko");
+    }
+
+    function staffSortComparator(a, b) {
+      const aRank = STAFF_POSITIONS.indexOf(a.staffPosition);
+      const bRank = STAFF_POSITIONS.indexOf(b.staffPosition);
+      return (aRank < 0 ? STAFF_POSITIONS.length : aRank) - (bRank < 0 ? STAFF_POSITIONS.length : bRank) || String(a.name).localeCompare(String(b.name), "ko");
+    }
+
     function normalizeStudent(doc) {
       const data = doc.data ? (doc.data() || {}) : doc;
       const status = String(data.status || (data.active === false || data.isActive === false ? "PAUSED" : "ACTIVE")).toUpperCase();
@@ -2146,8 +2583,13 @@
         fatherPhone: data.fatherPhone || data.fatherContact || "",
         motherContact: data.motherContact || data.motherPhone || "",
         motherPhone: data.motherPhone || data.motherContact || "",
+        firstAttendanceDate: normalizeDateInput(data.firstAttendanceDate || data.firstAttendedAt || data.registeredAt || ""),
+        scheduledReturnDate: normalizeDateInput(data.scheduledReturnDate || data.returnDate || ""),
+        returnedAt: data.returnedAt || "",
+        registeredAt: data.registeredAt || "",
+        createdAt: data.createdAt || "",
         status: ["INACTIVE", "SUSPENDED"].includes(status) ? "PAUSED" : status,
-        active: data.active !== false && data.isActive !== false && !["PAUSED", "STOPPED", "DISABLED", "INACTIVE"].includes(status),
+        active: status === "ACTIVE" || status === "RETURNED",
         identityStatus: String(data.identityStatus || "").toUpperCase(),
         isAlias: data.isAlias === true || String(data.identityStatus || "").toUpperCase() === "ALIAS",
         mergedInto: data.mergedInto || "",
@@ -2292,7 +2734,7 @@
         });
         state.rawStudents = normalizedStudents;
         const visibleStudents = normalizedStudents.filter(student => !student.isAlias && student.identityStatus !== "ALIAS");
-        state.students = dedupeStudents(visibleStudents).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+        state.students = dedupeStudents(visibleStudents).sort(studentSortComparator);
       return Math.max(0, normalizedStudents.length - state.students.length);
     }
 
@@ -2331,9 +2773,9 @@
             appMap: accessDoc.apps || {},
             permissions: accessDoc.permissions || {}
           };
-        }).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
-      state.staff = accounts.filter(account => account.role === "STAFF");
-      state.teachers = accounts.filter(account => account.role !== "STAFF");
+        });
+      state.staff = accounts.filter(account => account.role === "STAFF").sort(staffSortComparator);
+      state.teachers = accounts.filter(account => account.role !== "STAFF").sort(teacherSortComparator);
     }
 
     function normalizeIconAsset(doc) {
@@ -2574,6 +3016,8 @@
       studentContact: "학생 연락처",
       fatherContact: "부 연락처",
       motherContact: "모 연락처",
+      firstAttendanceDate: "최초 등원일",
+      scheduledReturnDate: "복귀 예정일",
       memo: "메모"
     };
 
@@ -2591,10 +3035,28 @@
       return Object.keys(STUDENT_CHANGE_FIELDS).filter(key => String(previous[key] || "") !== String(next[key] || ""));
     }
 
+    function studentHistoryFieldValue(key, value) {
+      if (key === "status") return value ? statusLabel(value) : "-";
+      return String(value || "-");
+    }
+
     function resetStudentForm() {
       state.editingStudentId = "";
       $("studentForm").reset();
       updateStudentGradeHelper();
+      updateStudentLifecycleFields();
+    }
+
+    function updateStudentLifecycleFields() {
+      const returning = $("studentStatusInput").value === "RETURNING";
+      $("studentScheduledReturnField").hidden = !returning;
+      $("studentScheduledReturnInput").required = returning;
+      const firstAttendanceDate = $("studentFirstAttendanceInput").value;
+      const scheduledReturnDate = $("studentScheduledReturnInput").value;
+      const elapsed = attendanceElapsedLabel(firstAttendanceDate);
+      $("studentAttendanceSummary").innerHTML = `
+        <div><span>등원 경과</span><strong>${escapeHtml(firstAttendanceDate ? `${firstAttendanceDate} · ${elapsed}` : "최초 등원일 미입력")}</strong></div>
+        <div><span>복귀 일정</span><strong>${escapeHtml(returning && scheduledReturnDate ? `${scheduledReturnDate} 자동 등록` : "예약 없음")}</strong></div>`;
     }
 
     function closeStudentEditor() {
@@ -2621,11 +3083,14 @@
       $("studentBirthYearInput").value = student.birthYear || "";
       $("studentGradeInput").value = student.grade;
       $("studentStatusInput").value = student.status;
+      $("studentScheduledReturnInput").value = student.scheduledReturnDate || "";
+      $("studentFirstAttendanceInput").value = student.firstAttendanceDate || "";
       $("studentContactInput").value = student.studentContact || student.studentPhone || "";
       $("studentFatherContactInput").value = student.fatherContact || student.fatherPhone || "";
       $("studentMotherContactInput").value = student.motherContact || student.motherPhone || "";
       $("studentMemoInput").value = student.memo || "";
       updateStudentGradeHelper();
+      updateStudentLifecycleFields();
       renderStudents();
       loadStudentChangeHistory(student);
     }
@@ -2658,7 +3123,7 @@
         const fields = Array.isArray(entry.changedFields) && entry.changedFields.length
           ? entry.changedFields
           : studentChangedFields(before, after);
-        const detail = fields.map(key => `${STUDENT_CHANGE_FIELDS[key] || key}: ${before[key] || "-"} → ${after[key] || "-"}`).join(" / ") || entry.summary || "학생 정보 저장";
+        const detail = fields.map(key => `${STUDENT_CHANGE_FIELDS[key] || key}: ${studentHistoryFieldValue(key, before[key])} → ${studentHistoryFieldValue(key, after[key])}`).join(" / ") || entry.summary || "학생 정보 저장";
         return `<tr><td>${date ? escapeHtml(date.toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })) : "-"}</td><td>${escapeHtml(entry.changeLabel || (entry.type === "student-delete" ? "삭제" : entry.changeType === "contact-bulk" ? "연락처 일괄" : "정보 변경"))}</td><td>${escapeHtml(detail)}</td><td>${escapeHtml(entry.operatorName || entry.updatedByName || entry.operatorUid || entry.updatedBy || "-")}</td></tr>`;
       }).join("") || `<tr><td colspan="4">저장된 변경 기록이 없습니다.</td></tr>`;
     }
@@ -2707,6 +3172,8 @@
       const gradeInfo = gradeInfoFromBirthYear(birthYear);
       const grade = (gradeInfo && gradeInfo.grade) || $("studentGradeInput").value.trim();
       const status = $("studentStatusInput").value;
+      const scheduledReturnDate = status === "RETURNING" ? $("studentScheduledReturnInput").value : "";
+      const firstAttendanceDate = $("studentFirstAttendanceInput").value;
       const studentContact = $("studentContactInput").value.trim();
       const fatherContact = $("studentFatherContactInput").value.trim();
       const motherContact = $("studentMotherContactInput").value.trim();
@@ -2717,6 +3184,21 @@
       }
       if ($("studentBirthYearInput").value.trim() && !birthYear) {
         toast("생년은 1990년 이후의 4자리 연도로 입력해 주세요.");
+        return;
+      }
+      if (status === "RETURNING" && !scheduledReturnDate) {
+        toast("복귀 예정일을 선택해 주세요.");
+        $("studentScheduledReturnInput").focus();
+        return;
+      }
+      if (scheduledReturnDate && scheduledReturnDate < todayDateInput()) {
+        toast("복귀 예정일은 오늘 이후로 선택해 주세요.");
+        $("studentScheduledReturnInput").focus();
+        return;
+      }
+      if (firstAttendanceDate && firstAttendanceDate > todayDateInput()) {
+        toast("최초 등원일은 오늘 이후로 설정할 수 없습니다.");
+        $("studentFirstAttendanceInput").focus();
         return;
       }
       const previousStudent = state.students.find(student => studentIdsForRecord(student).includes(state.editingStudentId));
@@ -2732,6 +3214,8 @@
         gradeCalculatedForYear: gradeInfo ? gradeInfo.calculatedForYear : "",
         gradeAutoManaged: Boolean(gradeInfo),
         status,
+        scheduledReturnDate,
+        firstAttendanceDate,
         studentContact,
         studentPhone: studentContact,
         fatherContact,
@@ -2784,6 +3268,8 @@
           motherContact: student.motherContact || student.motherPhone || "",
           motherPhone: student.motherContact || student.motherPhone || "",
           status: student.status || "ACTIVE",
+          scheduledReturnDate: student.scheduledReturnDate || "",
+          firstAttendanceDate: student.firstAttendanceDate || "",
           memo: student.memo || ""
         };
         if (validateStudentQueueDraft(draft)) continue;
@@ -3220,7 +3706,7 @@
     function applyCommittedStudent(item, result, now) {
       const draft = item.payload.student || {};
       const studentId = result.documentId || draft.studentId;
-      const active = draft.status === "ACTIVE" || draft.status === "RETURNING";
+      const active = draft.status === "ACTIVE" || draft.status === "RETURNED";
       const normalized = normalizeStudent(Object.assign({}, draft, {
         id: studentId,
         studentId,
@@ -3236,7 +3722,7 @@
       state.rawStudents = state.rawStudents.filter(student => !studentIdMatches(student, studentId));
       state.rawStudents.push(normalized);
       const visibleStudents = state.rawStudents.filter(student => !student.isAlias && student.identityStatus !== "ALIAS");
-      state.students = dedupeStudents(visibleStudents).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+      state.students = dedupeStudents(visibleStudents).sort(studentSortComparator);
     }
 
     function applyCommittedTeacher(item, result) {
@@ -3266,7 +3752,7 @@
       const previousUid = String(draft.previousMetadataUid || "").trim();
       const target = draft.role === "STAFF" ? state.staff : state.teachers;
       const opposite = draft.role === "STAFF" ? state.teachers : state.staff;
-      const updated = target.filter(existing => existing.uid !== uid && (!previousUid || existing.uid !== previousUid)).concat(teacher).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+      const updated = target.filter(existing => existing.uid !== uid && (!previousUid || existing.uid !== previousUid)).concat(teacher).sort(draft.role === "STAFF" ? staffSortComparator : teacherSortComparator);
       opposite.splice(0, opposite.length, ...opposite.filter(existing => existing.uid !== uid && (!previousUid || existing.uid !== previousUid)));
       if (draft.role === "STAFF") state.staff = updated;
       else state.teachers = updated;
@@ -3941,6 +4427,187 @@
       }
     }
 
+    function countBy(items, keyResolver) {
+      return items.reduce((counts, item) => {
+        const key = keyResolver(item) || "미입력";
+        counts[key] = (counts[key] || 0) + 1;
+        return counts;
+      }, {});
+    }
+
+    function chartEntries(counts, preferredOrder) {
+      const keys = preferredOrder
+        ? preferredOrder.filter(key => counts[key]).concat(Object.keys(counts).filter(key => !preferredOrder.includes(key)).sort((a, b) => a.localeCompare(b, "ko")))
+        : Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b, "ko"));
+      return keys.map((label, index) => ({ label, value: counts[label], color: DASHBOARD_COLORS[index % DASHBOARD_COLORS.length] }));
+    }
+
+    function renderChartLegend(targetId, entries, total, options = {}) {
+      const target = $(targetId);
+      if (!target) return;
+      if (!entries.length || !total) {
+        target.innerHTML = `<div class="dashboard-empty">${escapeHtml(options.emptyMessage || "집계할 데이터가 없습니다.")}</div>`;
+        return;
+      }
+      target.innerHTML = entries.map(entry => `
+        <div class="legend-row">
+          <span class="legend-swatch" style="background:${entry.color}"></span>
+          <span title="${escapeHtml(entry.label)}">${escapeHtml(entry.label)}</span>
+          <strong class="legend-value">${Number(entry.value).toLocaleString("ko-KR")}</strong>
+          <span class="legend-share">${Math.round(entry.value / total * 100)}%</span>
+        </div>`).join("");
+    }
+
+    function renderDonut(targetId, entries, total, totalLabel) {
+      const target = $(targetId);
+      if (!target) return;
+      let cursor = 0;
+      const segments = total ? entries.map(entry => {
+        const start = cursor;
+        cursor += entry.value / total * 100;
+        return `${entry.color} ${start}% ${cursor}%`;
+      }).join(", ") : "#dbe4ef 0 100%";
+      target.style.background = `conic-gradient(${segments})`;
+      target.innerHTML = `<div class="donut-total"><strong>${Number(total).toLocaleString("ko-KR")}</strong><span>${escapeHtml(totalLabel)}</span></div>`;
+    }
+
+    function recentMonthKeys(monthCount = 6) {
+      const now = new Date();
+      return Array.from({ length: monthCount }, (_, index) => {
+        const date = new Date(now.getFullYear(), now.getMonth() - (monthCount - 1 - index), 1);
+        return { key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`, label: `${date.getMonth() + 1}월` };
+      });
+    }
+
+    function renderTrendChart(targetId, values) {
+      const target = $(targetId);
+      if (!target) return;
+      const width = 640;
+      const height = 210;
+      const padding = { left: 34, right: 18, top: 18, bottom: 34 };
+      const max = Math.max(1, ...values.map(item => item.value));
+      const usableWidth = width - padding.left - padding.right;
+      const usableHeight = height - padding.top - padding.bottom;
+      const points = values.map((item, index) => ({
+        ...item,
+        x: padding.left + (values.length === 1 ? usableWidth / 2 : usableWidth * index / (values.length - 1)),
+        y: padding.top + usableHeight - usableHeight * item.value / max
+      }));
+      const line = points.map(point => `${point.x},${point.y}`).join(" ");
+      const gridLines = [0, 0.5, 1].map(ratio => {
+        const y = padding.top + usableHeight * ratio;
+        const value = Math.round(max * (1 - ratio));
+        return `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="#e5edf6"/><text x="4" y="${y + 4}">${value}</text>`;
+      }).join("");
+      target.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(values.map(item => `${item.label} ${item.value}명`).join(", "))}">
+        ${gridLines}
+        <polyline points="${line}" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        ${points.map(point => `<circle cx="${point.x}" cy="${point.y}" r="4" fill="#ffffff" stroke="#2563eb" stroke-width="3"/><text x="${point.x}" y="${height - 10}" text-anchor="middle">${escapeHtml(point.label)}</text><text x="${point.x}" y="${Math.max(12, point.y - 10)}" text-anchor="middle">${point.value}</text>`).join("")}
+      </svg>`;
+    }
+
+    function setDashboardTab(tab) {
+      state.dashboardTab = ["students", "teachers", "staff"].includes(tab) ? tab : "students";
+      document.querySelectorAll("[data-dashboard-tab]").forEach(button => {
+        const selected = button.dataset.dashboardTab === state.dashboardTab;
+        button.classList.toggle("active", selected);
+        button.setAttribute("aria-selected", String(selected));
+        button.tabIndex = selected ? 0 : -1;
+      });
+      document.querySelectorAll("[data-dashboard-panel]").forEach(panel => panel.hidden = panel.dataset.dashboardPanel !== state.dashboardTab);
+    }
+
+    function renderStudentDashboard() {
+      const activeStudents = state.students.filter(student => student.status === "ACTIVE");
+      const schoolCounts = countBy(activeStudents, student => student.school || "학교 미입력");
+      let schoolEntries = chartEntries(schoolCounts);
+      if (schoolEntries.length > 6) {
+        const otherValue = schoolEntries.slice(5).reduce((sum, entry) => sum + entry.value, 0);
+        schoolEntries = schoolEntries.slice(0, 5).concat({ label: "기타 학교", value: otherValue, color: DASHBOARD_COLORS[5] });
+      }
+      renderDonut("studentSchoolDonut", schoolEntries, activeStudents.length, "등록 학생");
+      renderChartLegend("studentSchoolLegend", schoolEntries, activeStudents.length, { emptyMessage: "등록 상태 학생이 없습니다." });
+
+      const statusCounts = countBy(state.students, student => student.status || "미입력");
+      const statusEntries = chartEntries(statusCounts, STUDENT_STATUS_ORDER).map((entry, index) => ({ ...entry, label: statusLabel(entry.label), color: DASHBOARD_COLORS[index % DASHBOARD_COLORS.length] }));
+      renderChartLegend("studentStatusLegend", statusEntries, state.students.length, { emptyMessage: "학생 상태 데이터가 없습니다." });
+
+      const months = recentMonthKeys();
+      const enrollmentCounts = Object.fromEntries(months.map(month => [month.key, 0]));
+      let missingDates = 0;
+      state.students.forEach(student => {
+        const date = normalizeDateInput(student.firstAttendanceDate || student.registeredAt || student.createdAt);
+        if (!date) {
+          missingDates += 1;
+          return;
+        }
+        const monthKey = date.slice(0, 7);
+        if (Object.prototype.hasOwnProperty.call(enrollmentCounts, monthKey)) enrollmentCounts[monthKey] += 1;
+      });
+      const trendValues = months.map(month => ({ label: month.label, value: enrollmentCounts[month.key] }));
+      renderTrendChart("studentEnrollmentTrend", trendValues);
+      $("studentEnrollmentSummary").textContent = `최근 6개월 최초 등원 ${trendValues.reduce((sum, item) => sum + item.value, 0)}명 · 날짜 미입력 ${missingDates}명`;
+
+      const returns = state.students.filter(student => student.status === "RETURNING" && student.scheduledReturnDate).sort((a, b) => a.scheduledReturnDate.localeCompare(b.scheduledReturnDate) || a.name.localeCompare(b.name, "ko")).slice(0, 8);
+      $("scheduledReturnList").innerHTML = returns.length ? `<div class="dashboard-list">${returns.map(student => `<div class="dashboard-list-row"><div><strong>${escapeHtml(student.name)}</strong><span>${escapeHtml(student.school || "학교 미입력")} · ${escapeHtml(studentGradeDisplay(student))}</span></div><span class="status pending">${escapeHtml(student.scheduledReturnDate)}</span></div>`).join("")}</div>` : `<div class="dashboard-empty">복귀 예정 학생이 없습니다.</div>`;
+    }
+
+    function renderTeacherDashboard() {
+      const activeTeachers = state.teachers.filter(teacher => teacher.status === "ACTIVE");
+      const subjectCounts = countBy(activeTeachers, teacher => subjectCategory(teacher.subject));
+      const subjectEntries = chartEntries(subjectCounts, SUBJECT_ORDER);
+      renderDonut("teacherSubjectDonut", subjectEntries, activeTeachers.length, "등록 강사");
+      renderChartLegend("teacherSubjectLegend", subjectEntries, activeTeachers.length, { emptyMessage: "등록 강사가 없습니다." });
+
+      const apps = ["sLms", "teacherPortal", "deskPortal", "liveTimetable", "synchroS"];
+      const appEntries = apps.map((app, index) => ({ label: appAccessLabel(app), value: activeTeachers.filter(teacher => (teacher.apps || []).includes(app)).length, color: DASHBOARD_COLORS[index] })).filter(entry => entry.value);
+      renderChartLegend("teacherAppLegend", appEntries, Math.max(1, activeTeachers.length), { emptyMessage: "설정된 앱 권한이 없습니다." });
+
+      const teacherStatusCounts = { 등록: activeTeachers.length, 비활성: Math.max(0, state.teachers.length - activeTeachers.length) };
+      renderChartLegend("teacherStatusLegend", chartEntries(teacherStatusCounts, ["등록", "비활성"]), state.teachers.length, { emptyMessage: "강사 계정이 없습니다." });
+
+      const roster = activeTeachers.slice().sort(teacherSortComparator);
+      $("teacherRosterSummary").innerHTML = roster.length ? `<div class="dashboard-list">${roster.slice(0, 10).map(teacher => `<div class="dashboard-list-row"><div><strong>${escapeHtml(teacher.name)}</strong><span>${escapeHtml(teacher.subject || "과목 미입력")}</span></div><span class="status active">${escapeHtml(subjectCategory(teacher.subject))}</span></div>`).join("")}</div>` : `<div class="dashboard-empty">등록 강사가 없습니다.</div>`;
+    }
+
+    function tenureMonths(hireDate) {
+      const start = dateFromValue(hireDate);
+      if (!start) return null;
+      const end = new Date();
+      return Math.max(0, (end.getFullYear() - start.getFullYear()) * 12 + end.getMonth() - start.getMonth());
+    }
+
+    function renderStaffDashboard() {
+      const activeStaff = state.staff.filter(staff => staff.status === "ACTIVE").sort(staffSortComparator);
+      const positionCounts = countBy(activeStaff, staff => staff.staffPosition || "직급 미입력");
+      const positionEntries = chartEntries(positionCounts, STAFF_POSITIONS);
+      renderDonut("staffPositionDonut", positionEntries, activeStaff.length, "재직 실무자");
+      renderChartLegend("staffPositionLegend", positionEntries, activeStaff.length, { emptyMessage: "재직 실무자가 없습니다." });
+
+      const workdayEntries = Object.keys(WORKDAY_LABELS).map((day, index) => ({ label: `${WORKDAY_LABELS[day]}요일`, value: activeStaff.filter(staff => (staff.workDays || []).includes(day)).length, color: DASHBOARD_COLORS[index % DASHBOARD_COLORS.length] })).filter(entry => entry.value);
+      renderChartLegend("staffWorkdayLegend", workdayEntries, Math.max(1, activeStaff.length), { emptyMessage: "근무 요일이 설정되지 않았습니다." });
+
+      const tenureCounts = { "1년 미만": 0, "1~3년": 0, "3~5년": 0, "5년 이상": 0, "입사일 미입력": 0 };
+      activeStaff.forEach(staff => {
+        const months = tenureMonths(staff.hireDate);
+        if (months === null) tenureCounts["입사일 미입력"] += 1;
+        else if (months < 12) tenureCounts["1년 미만"] += 1;
+        else if (months < 36) tenureCounts["1~3년"] += 1;
+        else if (months < 60) tenureCounts["3~5년"] += 1;
+        else tenureCounts["5년 이상"] += 1;
+      });
+      renderChartLegend("staffTenureLegend", chartEntries(tenureCounts, Object.keys(tenureCounts)).filter(entry => entry.value), activeStaff.length, { emptyMessage: "근속 정보를 집계할 수 없습니다." });
+
+      $("staffRosterSummary").innerHTML = activeStaff.length ? `<div class="dashboard-list">${activeStaff.map(staff => `<div class="dashboard-list-row"><div><strong>${escapeHtml(staff.name)}</strong><span>${escapeHtml(calculateTenure(staff.hireDate, staff.terminationDate))}</span></div><span class="status active">${escapeHtml(staff.staffPosition || "미입력")}</span></div>`).join("")}</div>` : `<div class="dashboard-empty">재직 실무자가 없습니다.</div>`;
+    }
+
+    function renderDashboardAnalytics() {
+      setDashboardTab(state.dashboardTab);
+      renderStudentDashboard();
+      renderTeacherDashboard();
+      renderStaffDashboard();
+    }
+
     function renderMetrics() {
       $("metricActiveStudents").textContent = state.students.filter(s => s.active !== false && s.status === "ACTIVE").length;
       $("metricPausedStudents").textContent = state.students.filter(s => s.status !== "ACTIVE").length;
@@ -3983,7 +4650,7 @@
       const rows = state.students.filter(student => {
         const text = [student.name, student.school, student.grade, student.birthYear, student.gradeLabel, student.memo, student.representativeId].concat(student.studentIdAliases || []).join(" ").toLowerCase();
         return (!keyword || text.includes(keyword)) && (!status || student.status === status) && (!school || student.school === school);
-      }).map(student => {
+      }).sort(studentSortComparator).map(student => {
         const representativeId = student.representativeId || student.studentId || "";
         const showMerge = hasDuplicateStudentDocuments(representativeId);
         return `
@@ -3994,6 +4661,7 @@
           <td>${escapeHtml(displayBirthYear(student))}</td>
           <td><strong>${escapeHtml(student.grade || "-")}</strong><br><span class="help">${escapeHtml(studentGradeDisplay(student))}</span></td>
           <td><span class="status ${statusClass(student.status)}">${statusLabel(student.status)}</span></td>
+          <td>${escapeHtml(attendanceElapsedLabel(student.firstAttendanceDate))}${student.firstAttendanceDate ? `<br><span class="help">${escapeHtml(student.firstAttendanceDate)}</span>` : ""}</td>
           <td>${escapeHtml(student.memo || "-")}</td>
           <td>
             <div class="row-actions">
@@ -4004,7 +4672,7 @@
         </tr>
       `;
       }).join("");
-      $("studentRows").innerHTML = rows || `<tr><td colspan="8">${state.isAdmin ? "조건에 맞는 학생이 없습니다." : "관리자 로그인 후 Firestore 학생 목록을 불러옵니다."}</td></tr>`;
+      $("studentRows").innerHTML = rows || `<tr><td colspan="9">${state.isAdmin ? "조건에 맞는 학생이 없습니다." : "관리자 로그인 후 Firestore 학생 목록을 불러옵니다."}</td></tr>`;
       renderStudentHistory();
     }
 
@@ -4015,18 +4683,19 @@
       const rows = state.teachers.filter(teacher => {
         const text = [teacher.name, teacher.loginId, teacher.subject, teacher.role, teacher.uid].join(" ").toLowerCase();
         return (!keyword || text.includes(keyword)) && (!role || teacher.role === role) && (!app || (teacher.apps || []).includes(app));
-      }).map(teacher => `
+      }).sort(teacherSortComparator).map(teacher => `
         <tr>
           <td>${escapeHtml(teacher.name)}</td>
           <td>${escapeHtml(teacher.loginId)}</td>
           <td><span class="status active">Firebase Auth</span></td>
+          <td>${escapeHtml(subjectCategory(teacher.subject))}${teacher.subject && subjectCategory(teacher.subject) !== teacher.subject ? `<br><span class="help">${escapeHtml(teacher.subject)}</span>` : ""}</td>
           <td>${roleLabel(teacher.role)}</td>
           <td><span class="status ${statusClass(teacher.status)}">${statusLabel(teacher.status)}</span></td>
           <td>${escapeHtml((teacher.apps || []).join(", ") || "-")}</td>
           <td><button class="button" data-teacher-edit="${escapeHtml(teacher.uid)}">편집</button></td>
         </tr>
       `).join("");
-      $("teacherRows").innerHTML = rows || `<tr><td colspan="7">${state.isAdmin ? "조건에 맞는 강사 계정이 없습니다." : "관리자 로그인 후 Firestore 계정 목록을 불러옵니다."}</td></tr>`;
+      $("teacherRows").innerHTML = rows || `<tr><td colspan="8">${state.isAdmin ? "조건에 맞는 강사 계정이 없습니다." : "관리자 로그인 후 Firestore 계정 목록을 불러옵니다."}</td></tr>`;
     }
 
     function appAccessLabel(app) {
@@ -4095,7 +4764,7 @@
       state.iconPreviewUrl = "";
       $("iconFileInput").value = "";
       $("iconPreview").hidden = true;
-      $("iconPreview").removeAttribute("src");
+      $("iconPreview").src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
       $("iconFilePrompt").textContent = "이미지 파일 선택";
       $("iconDisplayNameInput").value = "";
       $("iconAliasesInput").value = "";
@@ -4324,7 +4993,7 @@
       const rows = state.staff.filter(staff => {
         const text = [staff.name, staff.loginId, staff.staffPosition, staff.memo].join(" ").toLowerCase();
         return (!keyword || text.includes(keyword)) && (!position || staff.staffPosition === position) && (!app || (staff.apps || []).includes(app));
-      }).map(staff => `
+      }).sort(staffSortComparator).map(staff => `
         <tr>
           <td>${renderPersonName(staff)}</td>
           <td>${escapeHtml(staff.loginId || "-")}</td>
@@ -4410,6 +5079,7 @@
 
     function render() {
       renderMetrics();
+      renderDashboardAnalytics();
       renderDashboardQueue();
       renderStudents();
       renderTeachers();
@@ -4437,6 +5107,8 @@
       document.body.addEventListener("click", event => {
         const shortcut = event.target.closest("[data-view-shortcut]");
         if (shortcut) setView(shortcut.dataset.viewShortcut);
+        const dashboardTab = event.target.closest("[data-dashboard-tab]");
+        if (dashboardTab) setDashboardTab(dashboardTab.dataset.dashboardTab);
         const reviewToggle = event.target.closest("[data-toggle-student-review]");
         if (reviewToggle) {
           state.studentIdentityReviewExpanded = !state.studentIdentityReviewExpanded;
@@ -4522,11 +5194,24 @@
           saveState();
         }
       });
+      document.body.addEventListener("keydown", event => {
+        const tab = event.target.closest("[data-dashboard-tab]");
+        if (!tab || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        const tabs = Array.from(document.querySelectorAll("[data-dashboard-tab]"));
+        const current = tabs.indexOf(tab);
+        const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+        tabs[next].focus();
+        setDashboardTab(tabs[next].dataset.dashboardTab);
+      });
       ["studentSearch", "studentStatusFilter", "studentSchoolFilter"].forEach(id => $(id).addEventListener("input", renderStudents));
       ["teacherSearch", "teacherRoleFilter", "teacherAppFilter"].forEach(id => $(id).addEventListener("input", renderTeachers));
       ["staffSearch", "staffPositionFilter", "staffAppFilter"].forEach(id => $(id).addEventListener("input", renderStaff));
       ["iconSearchInput", "iconCategoryFilter"].forEach(id => $(id).addEventListener("input", renderIconLibrary));
       $("studentBirthYearInput").addEventListener("input", updateStudentGradeHelper);
+      $("studentStatusInput").addEventListener("change", updateStudentLifecycleFields);
+      $("studentScheduledReturnInput").addEventListener("input", updateStudentLifecycleFields);
+      $("studentFirstAttendanceInput").addEventListener("input", updateStudentLifecycleFields);
       $("authPasswordInput").addEventListener("keydown", event => { if (event.key === "Enter") login(); });
       $("loginButton").addEventListener("click", login);
       $("logoutButton").addEventListener("click", logout);
