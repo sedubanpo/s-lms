@@ -932,6 +932,41 @@
       background: #eff6ff;
     }
 
+    tr.attendance-upcoming td {
+      background: #fffaf0;
+      border-bottom-color: #fde7b1;
+    }
+
+    tr.attendance-imminent td {
+      background: #fff3dc;
+      border-bottom-color: #f6cf7d;
+    }
+
+    tr.attendance-upcoming:hover td,
+    tr.attendance-imminent:hover td {
+      background: #ffefcf;
+    }
+
+    .attendance-countdown {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 2px 7px;
+      border: 1px solid #f2ce7c;
+      border-radius: 999px;
+      background: #fff7df;
+      color: #9a5b08;
+      font-size: 0.68rem;
+      font-weight: 950;
+      font-variant-numeric: tabular-nums;
+    }
+
+    tr.attendance-imminent .attendance-countdown {
+      border-color: #e8ad3c;
+      background: #ffe8b8;
+      color: #7c4200;
+    }
+
     .status {
       display: inline-flex;
       align-items: center;
@@ -1793,7 +1828,7 @@
                 <div class="form-field"><label>학년</label><input class="field" id="studentGradeInput" autocomplete="off"></div>
                 <div class="form-field"><label>상태</label><select class="select" id="studentStatusInput"><option value="ACTIVE">등록</option><option value="PAUSED">중지</option><option value="RETURNING">복귀 예정</option><option value="HOLD">보류</option><option value="STOPPED">퇴원</option></select></div>
                 <div class="form-field" id="studentScheduledReturnField" hidden><label for="studentScheduledReturnInput">복귀 예정일</label><input class="field" id="studentScheduledReturnInput" type="date"><span class="help">해당 날짜가 되면 다음 15분 주기 내 등록 상태로 자동 전환됩니다.</span></div>
-                <div class="form-field"><label for="studentFirstAttendanceInput">최초 등원일</label><input class="field" id="studentFirstAttendanceInput" type="date"><span class="help">첫 등원일을 기준으로 경과 일수를 계산합니다.</span></div>
+                <div class="form-field"><label for="studentFirstAttendanceInput">최초 등원일</label><input class="field" id="studentFirstAttendanceInput" type="date"><span class="help">예정일도 입력할 수 있습니다. 미래 날짜는 디데이, 등원 후에는 경과 일수로 표시됩니다.</span></div>
                 <div class="form-field"><label>학생 연락처</label><input class="field" id="studentContactInput" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000"></div>
                 <div class="form-field"><label>부 연락처</label><input class="field" id="studentFatherContactInput" inputmode="tel" autocomplete="off" placeholder="010-0000-0000"></div>
                 <div class="form-field"><label>모 연락처</label><input class="field" id="studentMotherContactInput" inputmode="tel" autocomplete="off" placeholder="010-0000-0000"></div>
@@ -2544,9 +2579,30 @@
       return Math.max(0, Math.floor((today.getTime() - start.getTime()) / 86400000) + 1);
     }
 
+    function attendanceDayOffset(value) {
+      const start = dateFromValue(value);
+      const today = dateFromValue(todayDateInput());
+      if (!start || !today) return null;
+      return Math.round((start.getTime() - today.getTime()) / 86400000);
+    }
+
+    function attendancePresentation(value) {
+      const offset = attendanceDayOffset(value);
+      if (offset === null) return { label: "미입력", kind: "missing", rowClass: "" };
+      if (offset > 0) {
+        return {
+          label: `D-${offset}`,
+          kind: "scheduled",
+          rowClass: offset <= 2 ? "attendance-imminent" : (offset <= 7 ? "attendance-upcoming" : "")
+        };
+      }
+      if (offset === 0) return { label: "D-DAY", kind: "scheduled", rowClass: "attendance-imminent" };
+      const elapsedDays = attendanceElapsedDays(value);
+      return { label: `${elapsedDays.toLocaleString("ko-KR")}일째`, kind: "elapsed", rowClass: "" };
+    }
+
     function attendanceElapsedLabel(value) {
-      const days = attendanceElapsedDays(value);
-      return days === null ? "미입력" : days === 0 ? "등원 예정" : `${days.toLocaleString("ko-KR")}일째`;
+      return attendancePresentation(value).label;
     }
 
     function studentSortComparator(a, b) {
@@ -3228,11 +3284,6 @@
       if (scheduledReturnDate && scheduledReturnDate < todayDateInput()) {
         toast("복귀 예정일은 오늘 이후로 선택해 주세요.");
         $("studentScheduledReturnInput").focus();
-        return;
-      }
-      if (firstAttendanceDate && firstAttendanceDate > todayDateInput()) {
-        toast("최초 등원일은 오늘 이후로 설정할 수 없습니다.");
-        $("studentFirstAttendanceInput").focus();
         return;
       }
       const previousStudent = state.students.find(student => studentIdsForRecord(student).includes(state.editingStudentId));
@@ -4694,15 +4745,16 @@
       }).sort(studentSortComparator).map(student => {
         const representativeId = student.representativeId || student.studentId || "";
         const showMerge = hasDuplicateStudentDocuments(representativeId);
+        const attendance = attendancePresentation(student.firstAttendanceDate);
         return `
-        <tr>
+        <tr class="${attendance.rowClass}"${attendance.rowClass ? ` title="최초 등원일 ${escapeHtml(student.firstAttendanceDate)} · ${escapeHtml(attendance.label)}"` : ""}>
           <td>${escapeHtml(student.name)}</td>
           <td><details class="id-disclosure"><summary>ID 보기</summary><strong class="id-value">${escapeHtml(representativeId || "-")}</strong><span class="help">${escapeHtml(studentIdTypeLabel(representativeId))}</span></details></td>
           <td>${escapeHtml(student.school)}</td>
           <td>${escapeHtml(displayBirthYear(student))}</td>
           <td><strong>${escapeHtml(student.grade || "-")}</strong><br><span class="help">${escapeHtml(studentGradeDisplay(student))}</span></td>
           <td><span class="status ${statusClass(student.status)}">${statusLabel(student.status)}</span></td>
-          <td>${escapeHtml(attendanceElapsedLabel(student.firstAttendanceDate))}${student.firstAttendanceDate ? `<br><span class="help">${escapeHtml(student.firstAttendanceDate)}</span>` : ""}</td>
+          <td>${attendance.kind === "scheduled" ? `<span class="attendance-countdown">${escapeHtml(attendance.label)}</span>` : escapeHtml(attendance.label)}${student.firstAttendanceDate ? `<br><span class="help">${escapeHtml(student.firstAttendanceDate)}</span>` : ""}</td>
           <td>${escapeHtml(student.memo || "-")}</td>
           <td>
             <div class="row-actions">
