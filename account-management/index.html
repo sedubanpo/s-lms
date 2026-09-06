@@ -5446,6 +5446,13 @@
         const jobLabels = { AWAITING_RELEASE: "자동 생성 활성화 검증 대기", READY: "생성 대기", RUNNING: "생성 전 검사 중", REVIEW_REQUIRED: "학생 정보 또는 학교 연결 검토 필요", PUBLIC_CREATE_IN_FLIGHT: "학부모용 생성 요청 중 · 재생성 금지", PUBLIC_CREATED: "학부모용 생성됨 · 내부 생성 대기", INTERNAL_CREATE_IN_FLIGHT: "내부 생성 요청 중 · 재생성 금지", TEMPLATE_REVIEW_REQUIRED: "두 페이지 생성됨 · 템플릿 검토 필요", RESULT_REVIEW_REQUIRED: "생성 결과 확인 필요 · 재생성 금지", BOUND: "페이지 연결 확정됨" };
         $("notionStudentReviewResult").insertAdjacentHTML("afterbegin", `<p role="status">노션 등록 작업: ${escapeHtml(jobLabels[job.status] || "작업 상태 확인 필요")}</p>`);
       }
+      const schoolReview = studentNotionResult.schoolReview;
+      const schoolControls = schoolReview ? ["internal", "public"].map(kind => {
+        const group = schoolReview.groups[kind];
+        const saved = schoolReview.mapping?.[`${kind}PageId`];
+        return `<label>${kind === "internal" ? "내부 학교" : "학부모용 학교"}<select id="notionSchool-${kind}" ${saved || notionBindingRequest ? "disabled" : ""}><option value="">학교 페이지 선택</option>${group.candidates.map((p, i) => `<option value="${escapeHtml(p.id)}" ${saved === p.id ? "selected" : ""}>후보 ${i + 1} · ${escapeHtml(p.id)}</option>`).join("")}</select></label>` + group.candidates.map((p, i) => `<p><a href="https://app.notion.com/p/${encodeURIComponent(p.id)}" target="_blank" rel="noopener noreferrer">${kind === "internal" ? "내부" : "학부모용"} 학교 후보 ${i + 1} 열기</a></p>`).join("") + (group.incomplete ? "<p>학교 후보 조회가 완전하지 않아 저장할 수 없습니다.</p>" : "");
+      }).join("") : "";
+      $("notionStudentReviewResult").insertAdjacentHTML("beforeend", `<h4>학교 관계형 연결</h4><button type="button" id="inspectNotionSchools" ${notionBindingRequest ? "disabled" : ""}>학교 연결 조회</button>${schoolReview ? `<p>${escapeHtml(schoolReview.schoolName)} · ${schoolReview.mapping ? "학교 연결 저장됨" : "학교 연결 미확정"}</p>${schoolControls}` : ""}${schoolReview && !schoolReview.mapping ? `<p><label><input type="checkbox" id="notionSchoolConfirmed">선택한 두 학교 페이지를 같은 학교명에 사용할 것을 확인했습니다.</label></p><button type="button" id="saveNotionSchools" ${notionBindingRequest || Object.values(schoolReview.groups).some(g => g.incomplete || !g.candidates.length) ? "disabled" : ""}>학교 연결 저장</button>` : ""}`);
       if (studentNotionResult.binding) {
         const binding = studentNotionResult.binding;
         $("notionStudentReviewResult").innerHTML += `<p>연결 확정: ${escapeHtml(binding.confirmedAt || "")} · ${escapeHtml(binding.confirmedBy || "")}</p>`;
@@ -5458,6 +5465,35 @@
         const ready = notionBindingSelection.internal && notionBindingSelection.public && notionBindingAcknowledged && !notionBindingRequest;
         $("notionStudentReviewResult").innerHTML += `<p><label><input type="checkbox" id="notionBindingAcknowledgement" ${notionBindingAcknowledged ? "checked" : ""} ${notionBindingRequest ? "disabled" : ""}> 불일치·복수 후보를 검토했으며, 선택한 두 페이지가 이 학생의 페이지임을 확인했습니다.</label></p><button class="button primary" type="button" id="confirmNotionBindingButton" ${ready ? "" : "disabled"}>연결 확정 저장</button>`;
       }
+    }
+
+    async function manageNotionSchools(action) {
+      if (!state.isAdmin || !state.authUser || !studentNotionResult || notionBindingRequest || studentNotionRequest) return;
+      const body = { action, studentDocId: $("notionStudentSelect").value };
+      if (action === "save") {
+        if (!$("notionSchoolConfirmed")?.checked || !$("notionSchool-internal")?.value || !$("notionSchool-public")?.value) {
+          studentNotionError = "학교 페이지 두 개를 선택하고 확인란을 체크해 주세요.";
+          $("notionReviewStatus").textContent = studentNotionError;
+          return;
+        }
+        Object.assign(body, { confirmed: true, schoolName: studentNotionResult.schoolReview.schoolName, internalPageId: $("notionSchool-internal").value, publicPageId: $("notionSchool-public").value });
+      }
+      const controller = new AbortController(), revision = authRevision, user = state.authUser;
+      notionBindingRequest = controller;
+      studentNotionError = "";
+      renderNotionStudentReview();
+      const current = () => notionBindingRequest === controller && revision === authRevision && state.isAdmin && state.authUser === user;
+      const timeout = setTimeout(() => controller.abort(), 180000);
+      try {
+        const token = await user.getIdToken();
+        if (!current() || controller.signal.aborted) return;
+        const response = await fetch("https://asia-northeast3-fir-lms-prod.cloudfunctions.net/manageNotionSchoolMapping", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(body), signal: controller.signal, cache: "no-store" });
+        const result = await response.json();
+        if (!response.ok) {
+          if (current()) studentNotionError = result.code === "MAPPING_ALREADY_EXISTS" ? "이미 다른 학교 연결이 저장되어 있습니다. 다시 조회해 주세요." : "학교 연결을 확인하지 못했습니다. 다시 조회해 주세요.";
+        } else if (current()) studentNotionResult.schoolReview = result;
+      } catch { if (current()) studentNotionError = "처리 결과를 확인하지 못했습니다. 학교 연결을 다시 조회해 주세요."; }
+      finally { clearTimeout(timeout); if (notionBindingRequest === controller) { notionBindingRequest = null; renderNotionStudentReview(); } }
     }
 
     async function confirmNotionBinding() {
@@ -5594,6 +5630,8 @@
       });
       document.body.addEventListener("click", event => {
         if (event.target.closest("#confirmNotionBindingButton")) confirmNotionBinding();
+        if (event.target.closest("#inspectNotionSchools")) manageNotionSchools("inspect");
+        if (event.target.closest("#saveNotionSchools")) manageNotionSchools("save");
       });
       $("reviewNotionStudentButton").addEventListener("click", reviewNotionStudent);
       $("notionStudentSearch").addEventListener("input", () => { resetNotionStudentReview(); populateNotionStudents(); });
