@@ -38,6 +38,12 @@
     #studentDataTable td:first-child { position:sticky; left:0; z-index:1; background:var(--panel); }
     #studentDataTable th:first-child { position:sticky; left:0; z-index:2; }
     #studentDataTable .notion-health { min-width:0; }
+    .student-school { display:flex; align-items:center; gap:6px; min-width:0; }
+    .student-school-logo { width:24px; height:24px; flex:0 0 24px; object-fit:contain; }
+    .student-school-label { min-width:0; overflow-wrap:anywhere; }
+    .student-grade-result { display:block; margin-top:4px; color:var(--muted); font-size:11px; }
+    #studentGuideText { width:100%; min-height:280px; max-height:55vh; resize:vertical; white-space:pre-wrap; }
+    #studentGuideStatus { white-space:normal; overflow-wrap:anywhere; }
     .student-memo { display:block; max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     #studentNotionResult { margin:12px 0; padding:12px 0; border-block:1px solid var(--line); }
     #studentNotionResult h4 { margin:0 0 8px; font-size:14px; }
@@ -1851,7 +1857,7 @@
               </div>
               <div class="table-wrap">
                 <table id="studentDataTable">
-                  <thead><tr><th style="width:100px;">학생명</th><th style="width:80px;">대표 ID</th><th style="width:100px;">학교</th><th style="width:100px;">생년 / 생일</th><th style="width:100px;">학년</th><th style="width:75px;">상태</th><th style="width:110px;">등원 경과</th><th style="width:105px;">재원생 DB</th><th style="width:105px;">공개 DB</th><th style="width:120px;">메모</th><th style="width:200px;">작업</th></tr></thead>
+                  <thead><tr><th style="width:100px;">이름</th><th style="width:80px;">대표 ID</th><th style="width:145px;">학교학년</th><th style="width:90px;">생년</th><th style="width:75px;">상태</th><th style="width:110px;">등원 경과</th><th style="width:105px;">재원생 DB</th><th style="width:105px;">공개 DB</th><th style="width:130px;">수업일지 안내</th><th style="width:120px;">메모</th><th style="width:200px;">작업</th></tr></thead>
                   <tbody id="studentRows"></tbody>
                 </table>
               </div>
@@ -1897,6 +1903,15 @@
           </aside>
         </div>
       </section>
+
+      <dialog class="bulk-dialog" id="studentGuideDialog" aria-labelledby="studentGuideTitle">
+        <div class="panel-head"><h3 id="studentGuideTitle">수업일지 안내</h3><button class="button" type="button" id="closeStudentGuide">닫기</button></div>
+        <div class="bulk-dialog-body">
+          <p id="studentGuideStatus" role="status" aria-live="polite"></p>
+          <textarea class="textarea" id="studentGuideText" aria-label="학부모 안내 문구" readonly hidden></textarea>
+        </div>
+        <div class="bulk-dialog-footer"><button class="button" type="button" id="retryStudentGuide">다시 불러오기</button><button class="button primary" type="button" id="copyStudentGuide" disabled>안내 문구 복사</button></div>
+      </dialog>
 
       <dialog class="bulk-dialog" id="studentContactBulkDialog" aria-labelledby="studentContactBulkTitle">
         <div class="panel-head">
@@ -2159,6 +2174,7 @@
     };
     const TEACHER_PROVISION_URL = "https://asia-northeast3-fir-lms-prod.cloudfunctions.net/provisionTeacherAccount";
     const STUDENT_PROVISION_URL = "https://asia-northeast3-fir-lms-prod.cloudfunctions.net/provisionStudentAccount";
+    const STUDENT_NOTION_DETAILS_URL = "https://asia-northeast3-fir-lms-prod.cloudfunctions.net/manageNotionStudentDetails";
     const STAFF_POSITIONS = ["대표", "원장", "부원장", "센터장", "실장", "과장", "대리", "주임", "사원"];
     const SUBJECT_ORDER = ["국어", "수학", "영어", "사회", "과학", "기타"];
     const STUDENT_STATUS_ORDER = ["ACTIVE", "RETURNING", "PAUSED", "HOLD", "STOPPED"];
@@ -2529,6 +2545,10 @@
 
     async function refreshAuthState() {
       const revision = ++authRevision;
+      studentGuideRevision++;
+      if ($("studentGuideDialog").open) $("studentGuideDialog").close();
+      $("studentGuideText").value = "";
+      $("copyStudentGuide").disabled = true;
       resetNotionInspection();
       try {
         const auth = await getAuth();
@@ -2836,6 +2856,7 @@
         birthDate: data.birthDate || data.dateOfBirth || data.birthday || "",
         birthYearEstimated: data.birthYearEstimated === true,
         notionHealth: data.notionHealth || null,
+        notionGradeSync: data.notionGradeSync || null,
         birthYearNumber: data.birthYearNumber || (normalizeBirthYear(data.birthYear) ? Number(data.birthYear) : ""),
         schoolLevel: data.schoolLevel || "",
         gradeLabel: data.gradeLabel || "",
@@ -3828,7 +3849,7 @@
       item.payload.student.canonicalStudentId = student.studentId;
       const response = await fetch(STUDENT_PROVISION_URL, {
         method: "POST",
-        signal: AbortSignal.timeout(120000),
+        signal: AbortSignal.timeout(330000),
         headers: {
           Authorization: `Bearer ${idToken}`,
           "Content-Type": "application/json"
@@ -4009,7 +4030,8 @@
       const draft = item.payload.student || {};
       const studentId = result.documentId || draft.studentId;
       const active = draft.status === "ACTIVE" || draft.status === "RETURNED";
-      const normalized = normalizeStudent(Object.assign({}, draft, {
+      const existing = state.students.find(s => s.docId === studentId || studentIdMatches(s, studentId));
+      const normalized = normalizeStudent(Object.assign({}, existing || {}, draft, {
         id: studentId,
         studentId,
         canonicalStudentId: studentId,
@@ -4018,6 +4040,7 @@
         studentName: draft.name,
         active,
         isActive: active,
+        notionGradeSync: result.notionGradeSync || existing?.notionGradeSync || null,
         updatedAt: now,
         updatedAtMs: Date.now()
       }));
@@ -4153,6 +4176,7 @@
         return;
       }
       let activeItem = null;
+      let notionGradePending = 0;
       try {
         setBusy("queue", `${selected.length}건의 계정 요청을 단계별로 처리하고 있습니다.`);
         const db = await getDb();
@@ -4165,6 +4189,8 @@
             result.documentId = provisioned.studentId;
             result.supabaseStudentId = provisioned.supabaseStudentId;
             result.provisioningStages = provisioned.stages;
+            result.notionGradeSync = provisioned.notionGradeSync || null;
+            if (result.notionGradeSync && result.notionGradeSync.status !== "SYNCED") notionGradePending++;
             result.committedTargets = ["firestore", "supabase"];
             await writeRequestAndAudit(db, item, result, now);
             item.status = "COMMITTED";
@@ -4199,7 +4225,7 @@
         addLocalAudit("계정 요청 완료", `${selected.length}건의 선택 요청을 완료했습니다.`);
         saveState();
         render();
-        toast("선택 요청을 저장했습니다.");
+        toast(notionGradePending ? `학생 정보는 저장했습니다. ${notionGradePending}명의 노션 학년은 확인이 필요합니다.` : "선택 요청을 저장했습니다.");
       } catch (error) {
         if (activeItem && activeItem.status !== "COMMITTED") {
           if (activeItem.status !== "PARTIAL") activeItem.status = "FAILED";
@@ -5039,6 +5065,84 @@
         renderStudents();
       }
     }
+    function renderStudentSchool(student) {
+      const key = normalizedIconName(student.school);
+      const icon = state.icons.find(item => item.category === "SCHOOL" && item.status === "ACTIVE" &&
+        [item.displayName, item.lookupKey.replace(/^school:/, ""), ...item.aliases].some(name => normalizedIconName(name) === key));
+      const url = icon?.imageUrl && /^https:\/\//i.test(icon.imageUrl) ? icon.imageUrl : "";
+      const grade = String(student.grade || "").trim();
+      const label = `${student.school || "학교 미입력"}${grade ? grade : ""}`;
+      const sync = student.notionGradeSync;
+      const synced = sync?.status === "SYNCED" && String(sync.grade) === grade;
+      return `<span class="student-school">${url ? `<img class="student-school-logo" src="${escapeHtml(url)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="student-school-logo" aria-hidden="true"></span>'}<span class="student-school-label">${escapeHtml(label)}</span></span>${sync ? `<span class="student-grade-result">${synced ? "노션 학년 반영 완료" : "노션 학년 확인 필요"}</span>` : ""}`;
+    }
+
+    function notionDetailsError(code) {
+      if (["BINDING_REQUIRED", "BINDING_REVIEW_REQUIRED", "NAME_REVIEW_REQUIRED", "STUDENT_ID_REVIEW_REQUIRED"].includes(code)) return "학생 연결을 먼저 확인해 주세요. ‘연결 검사’에서 상세 검토할 수 있습니다.";
+      if (code === "GUIDE_NOT_FOUND") return "학부모용 페이지에 카톡 안내 자동문구가 없습니다.";
+      if (["GRADE_REVIEW_REQUIRED", "GRADE_SCHEMA_REVIEW_REQUIRED"].includes(code)) return "학생 학년과 노션의 학년 항목 형식을 확인해 주세요.";
+      if (code === "SYNC_BUSY") return "학년 반영이 진행 중입니다. 잠시 후 다시 확인해 주세요.";
+      if (["STUDENT_CHANGED", "NOTION_CHANGED"].includes(code)) return "처리 중 학생 정보가 바뀌었습니다. 새로고침 후 다시 반영해 주세요.";
+      return "노션 응답을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+    }
+
+    async function requestStudentDetails(id, action) {
+      if (!state.isAdmin) throw Error("관리자 로그인이 필요합니다.");
+      const auth = await getAuth();
+      if (!auth.currentUser) throw Error("관리자 로그인이 필요합니다.");
+      const response = await fetch(STUDENT_NOTION_DETAILS_URL, {
+        method: "POST", signal: AbortSignal.timeout(330000),
+        headers: { Authorization: `Bearer ${await auth.currentUser.getIdToken()}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ studentDocId: id, action })
+      });
+      const data = await response.json();
+      if (!response.ok) throw Error(notionDetailsError(data.code));
+      return data;
+    }
+
+    let studentGuideId = "", studentGuideRevision = 0;
+    async function showStudentGuide(id) {
+      const student = state.students.find(s => s.docId === id);
+      if (!student) return;
+      const revision = ++studentGuideRevision, authAtStart = authRevision;
+      studentGuideId = id;
+      $("studentGuideTitle").textContent = `${student.name} · 수업일지 안내`;
+      $("studentGuideText").value = "";
+      $("studentGuideText").hidden = true;
+      $("studentGuideStatus").textContent = "학부모용 페이지의 안내 문구를 불러오고 있습니다.";
+      $("copyStudentGuide").disabled = true;
+      $("retryStudentGuide").disabled = true;
+      if (!$("studentGuideDialog").open) $("studentGuideDialog").showModal();
+      try {
+        const data = await requestStudentDetails(id, "guide");
+        if (revision !== studentGuideRevision || authAtStart !== authRevision || !state.isAdmin || !$("studentGuideDialog").open) return;
+        $("studentGuideText").value = data.guide;
+        $("studentGuideText").hidden = false;
+        $("studentGuideStatus").textContent = "재원생DB-학부모용 · 카톡 안내 자동문구";
+        $("copyStudentGuide").disabled = false;
+      } catch (error) {
+        if (revision === studentGuideRevision && authAtStart === authRevision) $("studentGuideStatus").textContent = error.message;
+      } finally {
+        if (revision === studentGuideRevision) $("retryStudentGuide").disabled = false;
+      }
+    }
+
+    async function retryStudentGrade(id, button) {
+      if (state.loading || button.disabled) return;
+      const student = state.students.find(s => s.docId === id);
+      if (!student || !confirm(`${student.name} 학생의 현재 학년(${student.grade || "미입력"})을 연결된 노션 두 페이지에 반영할까요?`)) return;
+      const revision = authRevision;
+      button.disabled = true;
+      try {
+        const { sync } = await requestStudentDetails(id, "sync-grade");
+        if (revision !== authRevision || !state.isAdmin) return;
+        for (const row of [...state.students, ...state.rawStudents]) if (row.docId === id) row.notionGradeSync = sync;
+        renderStudents();
+        toast(sync.status === "SYNCED" ? "노션 두 페이지의 학년을 확인했습니다." : notionDetailsError(sync.code));
+      } catch (error) { toast(error.message); }
+      finally { button.disabled = false; }
+    }
+
     function renderStudents() {
       renderStudentIdentityReviews();
       renderStudentGradeRolloverPanel();
@@ -5070,18 +5174,19 @@
         <tr class="${attendance.rowClass}"${attendance.rowClass ? ` title="최초 등원일 ${escapeHtml(student.firstAttendanceDate)} · ${escapeHtml(attendance.label)}"` : ""}>
           <td>${escapeHtml(student.name)}</td>
           <td><details class="id-disclosure"><summary>ID 보기</summary><strong class="id-value">${escapeHtml(representativeId || "-")}</strong><span class="help">${escapeHtml(studentIdTypeLabel(representativeId))}</span></details></td>
-          <td>${escapeHtml(student.school)}</td>
-          <td>${escapeHtml(student.birthDate || displayBirthYear(student))}${student.birthYearEstimated ? '<br><span class="help">학년 기준 추정</span>' : ""}</td>
-          <td><strong>${escapeHtml(student.grade || "-")}</strong><br><span class="help">${escapeHtml(studentGradeDisplay(student))}</span></td>
+          <td>${renderStudentSchool(student)}</td>
+          <td title="${escapeHtml(student.birthDate || "")}">${escapeHtml(student.birthDate ? student.birthDate.slice(0, 4) : displayBirthYear(student))}${student.birthYearEstimated ? '<br><span class="help">학년 기준 추정</span>' : ""}</td>
           <td><span class="status ${statusClass(student.status)}">${statusLabel(student.status)}</span></td>
           <td>${attendance.kind === "scheduled" ? `<span class="attendance-countdown">${escapeHtml(attendance.label)}</span>` : escapeHtml(attendance.label)}${student.firstAttendanceDate ? `<br><span class="help">${escapeHtml(student.firstAttendanceDate)}</span>` : ""}</td>
           <td>${notionHealthBadge(student, "internal")}</td>
           <td>${notionHealthBadge(student, "public")}</td>
+          <td><button class="button" data-student-guide="${escapeHtml(student.docId)}">안내 문구 보기</button></td>
           <td><span class="student-memo" title="${escapeHtml(student.memo || "-")}">${escapeHtml(student.memo || "-")}</span></td>
           <td>
             <div class="row-actions">
               <button class="button" data-student-edit="${escapeHtml(student.studentId)}">상태 변경</button>
               <button class="button notion-check-button" data-notion-check="${escapeHtml(student.docId)}" ${studentHealthBusy ? "disabled" : ""}>연결 검사</button>
+              <button class="button" data-student-grade-sync="${escapeHtml(student.docId)}">노션 학년 반영</button>
               ${showMerge ? `<button class="button primary" data-student-merge="${escapeHtml(representativeId)}">대표 통합</button>` : ""}
             </div>
           </td>
@@ -5751,6 +5856,22 @@
     }
 
     function bindEvents() {
+      document.addEventListener("error", event => {
+        if (event.target.matches?.(".student-school-logo")) event.target.style.visibility = "hidden";
+      }, true);
+      $("closeStudentGuide").addEventListener("click", () => $("studentGuideDialog").close());
+      $("studentGuideDialog").addEventListener("close", () => { studentGuideRevision++; $("studentGuideText").value = ""; $("copyStudentGuide").disabled = true; });
+      $("retryStudentGuide").addEventListener("click", () => showStudentGuide(studentGuideId));
+      $("copyStudentGuide").addEventListener("click", async () => {
+        if (!state.isAdmin || !$("studentGuideText").value) return;
+        try {
+          await navigator.clipboard.writeText($("studentGuideText").value);
+          $("studentGuideStatus").textContent = "안내 문구를 복사했습니다.";
+        } catch {
+          $("studentGuideText").focus(); $("studentGuideText").select();
+          $("studentGuideStatus").textContent = "클립보드에 접근할 수 없습니다. 선택된 문구를 직접 복사해 주세요.";
+        }
+      });
       document.body.addEventListener("change", event => {
         if (event.target.matches("[data-notion-kind]")) {
           notionBindingSelection[event.target.dataset.notionKind] = event.target.value;
@@ -5814,6 +5935,10 @@
           retryProvision(provisionRetry.dataset.retryProvision);
         }
         const studentEdit = event.target.closest("[data-student-edit]");
+        const studentGuide = event.target.closest("[data-student-guide]");
+        if (studentGuide) showStudentGuide(studentGuide.dataset.studentGuide);
+        const studentGradeSync = event.target.closest("[data-student-grade-sync]");
+        if (studentGradeSync) retryStudentGrade(studentGradeSync.dataset.studentGradeSync, studentGradeSync);
         const notionCheck = event.target.closest("[data-notion-check]");
         if (notionCheck) checkStudentNotion([notionCheck.dataset.notionCheck]);
         const notionFill = event.target.closest("[data-notion-fill]");
