@@ -2543,6 +2543,12 @@
       };
     }
 
+window.SeduHubAdapter={
+ async signIn(token,uid){const auth=await getAuth();await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+  const credential=await auth.signInWithCustomToken(token);if(credential.user.uid!==uid)throw Error('Identity mismatch');
+  const operator=await readOperatorProfile(uid);if(!operator.isAdmin)throw Error('Account management access denied');await refreshAuthState();
+ },async signOut(){await (await getAuth()).signOut();await refreshAuthState();}
+};
     async function refreshAuthState() {
       const revision = ++authRevision;
       studentGuideRevision++;
@@ -6149,5 +6155,6 @@
       renderAuthState();
     }).catch(error => renderAuthState(error.message || String(error)));
   </script>
+<script type="module" src="hub-start.mjs"></script>
 </body>
 </html>
