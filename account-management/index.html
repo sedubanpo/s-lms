@@ -5353,6 +5353,7 @@ window.SeduHubAdapter={
     }
 
     function renderTeacherProfiles() {
+      const focusedUid = document.activeElement?.dataset?.teacherProfile;
       const teachers = state.isAdmin ? state.teachers.slice().sort(teacherSortComparator) : [];
       if (!teachers.some(teacher => teacher.uid === state.teacherProfileUid)) {
         resetTeacherProfileFile(); state.teacherProfileUid = teachers[0]?.uid || "";
@@ -5367,6 +5368,7 @@ window.SeduHubAdapter={
       $("teacherProfileCount").textContent = `등록 ${teachers.filter(teacher => teacherProfileAsset(teacher.uid)).length} / 전체 ${teachers.length}명`;
       $("teacherProfileGrid").innerHTML = rows.map(teacher => `<button type="button" class="profile-card" data-teacher-profile="${escapeHtml(teacher.uid)}" aria-pressed="${teacher.uid === state.teacherProfileUid}" aria-label="${escapeHtml(teacher.name)} 프로필 선택 ${escapeHtml(teacher.loginId || teacher.uid)}"><span class="profile-photo">${profilePhoto(teacher)}</span><strong>${escapeHtml(teacher.name)}</strong><span class="help">${escapeHtml(teacher.subject || "과목 미입력")} · ${escapeHtml(statusLabel(teacher.status))}</span><span class="help">${escapeHtml(teacher.loginId || teacher.uid)}</span><span class="help">${teacherProfileAsset(teacher.uid) ? "등록됨" : "미등록"}</span></button>`).join("") || `<p class="help">${state.isAdmin ? "조건에 맞는 강사 계정이 없습니다." : "관리자 로그인 후 강사 프로필을 불러옵니다."}</p>`;
       updateTeacherProfileControls();
+      if (focusedUid) Array.from(document.querySelectorAll("[data-teacher-profile]")).find(button => button.dataset.teacherProfile === focusedUid)?.focus();
     }
 
     async function saveTeacherProfile() {
