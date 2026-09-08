@@ -37,8 +37,8 @@
     @media (prefers-reduced-motion:reduce) { .notion-health.is-fresh::before { animation:none; } }
     #studentDataTable { min-width:1220px; table-layout:fixed; }
     #studentDataTable td { overflow-wrap:anywhere; white-space:normal; }
-    #studentDataTable td:first-child { position:sticky; left:0; z-index:1; background:var(--panel); }
-    #studentDataTable th:first-child { position:sticky; left:0; z-index:2; }
+    #studentRows > tr:not(.student-history-detail) > td:first-child { position:sticky; left:0; z-index:1; background:var(--panel); }
+    #studentDataTable > thead > tr > th:first-child { position:sticky; left:0; z-index:2; }
     #studentDataTable .notion-health { min-width:0; }
     .student-school { display:flex; align-items:center; gap:6px; min-width:0; }
     .student-school-logo { width:24px; height:24px; flex:0 0 24px; object-fit:contain; }
@@ -1702,6 +1702,22 @@
       .nav-button { min-width:max-content; }
       .top-actions { width:100%; }
     }
+    .student-status-tabs { display:flex; flex-wrap:wrap; gap:4px; border-bottom:1px solid var(--line, #dce3ed); margin:12px 0; }
+    .student-status-tabs button { display:inline-flex; align-items:center; gap:6px; border:0; border-bottom:2px solid transparent; background:transparent; padding:10px 12px; color:#566273; font:inherit; cursor:pointer; }
+    .student-status-tabs button[aria-selected="true"] { color:#1956c7; border-bottom-color:#1956c7; font-weight:700; }
+    .student-status-tabs button span { font-size:11px; font-variant-numeric:tabular-nums; }
+    .student-mono-icon { width:15px; height:15px; flex:0 0 15px; vertical-align:middle; }
+    #studentDataTable .status { display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
+    .student-gender { display:inline-flex; gap:0; }
+    .student-gender button { width:30px; height:30px; padding:0; border:1px solid #d7deea; background:#fff; color:#657084; cursor:pointer; }
+    .student-gender button:first-child { border-radius:4px 0 0 4px; }
+    .student-gender button:last-child { border-radius:0 4px 4px 0; }
+    .student-gender button[aria-pressed="true"] { background:#e7efff; color:#1554c0; border-color:#1554c0; font-weight:700; }
+    .student-gender button:disabled { opacity:.55; cursor:wait; }
+    .student-action { width:30px; height:30px; min-height:30px; min-width:30px; padding:0; display:inline-flex; justify-content:center; align-items:center; }
+    .student-history-detail > td { background:#f6f8fc; padding:16px; }
+    .student-history-detail table { width:100%; min-width:600px; table-layout:auto; }
+    .student-history-detail td { white-space:normal; overflow-wrap:anywhere; }
   </style>
 </head>
 <body>
@@ -1916,13 +1932,14 @@
               <section id="studentNotionResult" hidden aria-label="학생 연결 검사 결과"></section>
               <div class="toolbar">
                 <input class="field" id="studentSearch" placeholder="학생명, 학교, 학년 검색">
-                <select class="select" id="studentStatusFilter"><option value="">전체 상태</option><option value="ACTIVE">등록</option><option value="PAUSED">중지</option><option value="RETURNING">복귀 예정</option></select>
+                <select class="select" id="studentStatusFilter" hidden><option value="">전체 상태</option><option value="ACTIVE" selected>등록</option><option value="PAUSED">중지</option><option value="RETURNING">복귀 예정</option><option value="HOLD">보류</option><option value="STOPPED">퇴원</option></select>
                 <select class="select" id="studentSchoolFilter"><option value="">전체 학교</option></select>
                 <button class="button" id="clearStudentFilters">필터 초기화</button>
               </div>
+              <div id="studentStatusTabs" role="tablist" aria-label="학생 상태" class="student-status-tabs"></div>
               <div class="table-wrap">
                 <table id="studentDataTable">
-                  <thead><tr><th style="width:100px;">이름</th><th style="width:80px;">대표 ID</th><th style="width:145px;">학교학년</th><th style="width:90px;">생년</th><th style="width:75px;">상태</th><th style="width:110px;">등원 경과</th><th style="width:105px;">재원생 DB</th><th style="width:105px;">공개 DB</th><th style="width:130px;">수업일지 안내</th><th style="width:120px;">메모</th><th style="width:200px;">작업</th></tr></thead>
+                  <thead><tr><th style="width:120px;">이름</th><th style="width:85px;">성별</th><th style="width:145px;">학교학년</th><th style="width:90px;">생년</th><th style="width:100px;">상태</th><th style="width:110px;">등원 경과</th><th style="width:105px;">재원생 DB</th><th style="width:105px;">공개 DB</th><th style="width:130px;">수업일지 안내</th><th style="width:120px;">메모</th><th style="width:165px;">작업</th></tr></thead>
                   <tbody id="studentRows"></tbody>
                 </table>
               </div>
@@ -2979,6 +2996,7 @@ window.SeduHubAdapter={
         .map(value => String(value || "").trim())
         .filter(Boolean)));
       return {
+        gender: ["male", "female"].includes(data.gender) ? data.gender : "",
         studentId: data.studentId || data.id || doc.id || "",
         docId: doc.id || data.studentId || data.id || "",
         canonicalStudentId: data.canonicalStudentId || "",
@@ -3440,6 +3458,7 @@ window.SeduHubAdapter={
     }
 
     const STUDENT_CHANGE_FIELDS = {
+      gender: "성별",
       name: "학생명",
       school: "학교",
       birthYear: "생년",
@@ -3468,6 +3487,7 @@ window.SeduHubAdapter={
     }
 
     function studentHistoryFieldValue(key, value) {
+      if (key === "gender") return value === "male" ? "남" : value === "female" ? "여" : "미선택";
       if (key === "status") return value ? statusLabel(value) : "-";
       return String(value || "-");
     }
@@ -4234,7 +4254,7 @@ window.SeduHubAdapter={
       const operator = state.operator || {};
       const student = item.type === "student" ? (item.payload.student || {}) : null;
       const before = item.type === "student" ? (item.payload.previousStudent || {}) : null;
-      const after = item.type === "student" ? studentAuditSnapshot(student) : null;
+      const after = item.type === "student" ? studentAuditSnapshot({ gender: before.gender || "", ...student }) : null;
       const changedFields = item.type === "student" ? studentChangedFields(before, after) : [];
       const requestPayload = {
         id: item.id,
@@ -5285,7 +5305,84 @@ window.SeduHubAdapter={
       finally { button.disabled = false; }
     }
 
+    const studentStatusIcons = { ACTIVE: "user-check", PAUSED: "pause", RETURNING: "rotate-ccw", HOLD: "clock", STOPPED: "log-out" };
+    let inlineHistoryId = "", inlineHistoryRevision = 0, inlineHistoryHtml = "";
+    let studentGenderSaving = false;
+
+    function studentMonoIcon(name) {
+      return `<img class="student-mono-icon" src="./assets/navigation/${name}.svg" alt="">`;
+    }
+
+    async function saveStudentGender(student, gender) {
+      if (!state.isAdmin || studentGenderSaving || !["male", "female"].includes(gender)) return;
+      studentGenderSaving = true;
+      renderStudents();
+      const operator = { ...(state.operator || {}) };
+      const uid = state.authUser?.uid;
+      try {
+        const db = await getDb();
+        const ref = db.collection(COLLECTIONS.students).doc(student.docId);
+        const auditRef = db.collection(COLLECTIONS.audits).doc(requestId("audit"));
+        await db.runTransaction(async transaction => {
+          const snapshot = await transaction.get(ref);
+          if (!snapshot.exists) throw new Error("학생 문서를 찾을 수 없습니다.");
+          const before = studentAuditSnapshot(snapshot.data());
+          if (before.gender === gender) return;
+          const now = new Date().toISOString();
+          transaction.update(ref, { gender, updatedAt: now, updatedAtMs: Date.now(), updatedBy: uid || "", updatedByName: operator.name || "" });
+          transaction.set(auditRef, {
+            type: "student", changeType: "student-gender", changeLabel: "성별 변경",
+            studentId: student.docId, canonicalStudentId: student.representativeId || student.studentId,
+            studentName: student.name, before, after: { ...before, gender }, changedFields: ["gender"],
+            operatorUid: uid || "", operatorName: operator.name || "", createdAt: now
+          });
+        });
+        if (state.isAdmin && state.authUser?.uid === uid) {
+          student.gender = gender;
+          toast("성별을 저장했습니다.");
+          if (inlineHistoryId === student.docId) loadInlineStudentHistory(student);
+        }
+      } catch (error) {
+        toast("성별 저장 실패: " + error.message);
+      } finally {
+        studentGenderSaving = false;
+        renderStudents();
+      }
+    }
+
+    async function loadInlineStudentHistory(student) {
+      const revision = ++inlineHistoryRevision;
+      const uid = state.authUser?.uid;
+      inlineHistoryHtml = '<tr><td colspan="4">불러오는 중...</td></tr>';
+      renderStudents();
+      try {
+        const db = await getDb(), entries = new Map(), ids = studentIdsForRecord(student);
+        for (let offset = 0; offset < ids.length; offset += 10) {
+          const group = ids.slice(offset, offset + 10);
+          const snapshots = await Promise.all([
+            db.collection(COLLECTIONS.audits).where("studentId", "in", group).get(),
+            db.collection(COLLECTIONS.audits).where("canonicalStudentId", "in", group).get(),
+            db.collection(COLLECTIONS.audits).where("studentIdAliases", "array-contains-any", group).get()
+          ]);
+          snapshots.forEach(snap => snap.docs.forEach(doc => entries.set(doc.id, doc.data())));
+        }
+        if (revision !== inlineHistoryRevision || !state.isAdmin || state.authUser?.uid !== uid) return;
+        inlineHistoryHtml = [...entries.values()].sort((a,b) => Number(auditTimestamp(b.createdAt || b.updatedAt) || 0) - Number(auditTimestamp(a.createdAt || a.updatedAt) || 0)).slice(0,40).map(entry => {
+          const before = entry.before || {}, after = entry.after || {};
+          const fields = entry.changedFields?.length ? entry.changedFields : studentChangedFields(before, after);
+          const detail = fields.map(key => `${STUDENT_CHANGE_FIELDS[key] || key}: ${studentHistoryFieldValue(key,before[key])} → ${studentHistoryFieldValue(key,after[key])}`).join(" / ") || entry.summary || "학생 정보 저장";
+          const date = auditTimestamp(entry.createdAt || entry.updatedAt);
+          return `<tr><td>${escapeHtml(date ? date.toLocaleString("ko-KR") : "-")}</td><td>${escapeHtml(entry.changeLabel || "정보 변경")}</td><td>${escapeHtml(detail)}</td><td>${escapeHtml(entry.operatorName || entry.updatedByName || "-")}</td></tr>`;
+        }).join("") || '<tr><td colspan="4">저장된 변경 기록이 없습니다.</td></tr>';
+      } catch {
+        if (revision !== inlineHistoryRevision) return;
+        inlineHistoryHtml = `<tr><td colspan="4">이력을 불러오지 못했습니다. <button class="button" data-history-retry="${escapeHtml(student.docId)}">다시 시도</button></td></tr>`;
+      }
+      if (revision === inlineHistoryRevision) renderStudents();
+    }
+
     function renderStudents() {
+      if (!state.isAdmin) { inlineHistoryId = ""; inlineHistoryHtml = ""; ++inlineHistoryRevision; }
       renderStudentIdentityReviews();
       renderStudentGradeRolloverPanel();
       const editor = $("studentEditorPanel");
@@ -5296,6 +5393,7 @@ window.SeduHubAdapter={
       $("studentDeleteAction").hidden = !state.editingStudentId;
       const keyword = ($("studentSearch")?.value || "").trim().toLowerCase();
       const status = $("studentStatusFilter")?.value || "";
+      $("studentStatusTabs").innerHTML = ["ACTIVE", "PAUSED", "RETURNING", "HOLD", "STOPPED", ""].map(key => `<button type="button" role="tab" aria-selected="${key === status}" data-student-tab="${key}">${key ? studentMonoIcon(studentStatusIcons[key]) : ""}${key ? statusLabel(key) : "전체"}<span>${state.students.filter(student => !key || student.status === key).length}</span></button>`).join("");
       const school = $("studentSchoolFilter")?.value || "";
       const schools = [...new Set(state.students.map(s => s.school).filter(Boolean))].sort();
       const currentSchool = $("studentSchoolFilter")?.value || "";
@@ -5314,11 +5412,11 @@ window.SeduHubAdapter={
         const attendance = attendancePresentation(student.firstAttendanceDate);
         return `
         <tr class="${attendance.rowClass}"${attendance.rowClass ? ` title="최초 등원일 ${escapeHtml(student.firstAttendanceDate)} · ${escapeHtml(attendance.label)}"` : ""}>
-          <td>${escapeHtml(student.name)}</td>
-          <td><details class="id-disclosure"><summary>ID 보기</summary><strong class="id-value">${escapeHtml(representativeId || "-")}</strong><span class="help">${escapeHtml(studentIdTypeLabel(representativeId))}</span></details></td>
+          <td><span class="person-name">${["male", "female"].includes(student.gender) ? `<img class="person-icon" src="${escapeHtml(state.icons.find(icon => icon.lookupKey === `student-gender:${student.gender}`)?.imageUrl || `./assets/student-${student.gender}.svg`)}" alt="" onerror="this.hidden=true">` : ""}${escapeHtml(student.name)}</span></td>
+          <td><div class="student-gender" role="group" aria-label="${escapeHtml(student.name)} 성별">${["male", "female"].map(gender => `<button type="button" data-student-gender="${gender}" data-student-doc="${escapeHtml(student.docId)}" aria-pressed="${student.gender === gender}" ${studentGenderSaving || !state.isAdmin ? "disabled" : ""}>${gender === "male" ? "남" : "여"}</button>`).join("")}</div></td>
           <td>${renderStudentSchool(student)}</td>
           <td title="${escapeHtml(student.birthDate || "")}">${escapeHtml(student.birthDate ? student.birthDate.slice(0, 4) : displayBirthYear(student))}${student.birthYearEstimated ? '<br><span class="help">학년 기준 추정</span>' : ""}</td>
-          <td><span class="status ${statusClass(student.status)}">${statusLabel(student.status)}</span></td>
+          <td><span class="status ${statusClass(student.status)}">${studentMonoIcon(studentStatusIcons[student.status] || "clock")}${statusLabel(student.status)}</span></td>
           <td>${attendance.kind === "scheduled" ? `<span class="attendance-countdown">${escapeHtml(attendance.label)}</span>` : escapeHtml(attendance.label)}${student.firstAttendanceDate ? `<br><span class="help">${escapeHtml(student.firstAttendanceDate)}</span>` : ""}</td>
           <td>${notionHealthBadge(student, "internal")}</td>
           <td>${notionHealthBadge(student, "public")}</td>
@@ -5326,13 +5424,15 @@ window.SeduHubAdapter={
           <td><span class="student-memo" title="${escapeHtml(student.memo || "-")}">${escapeHtml(student.memo || "-")}</span></td>
           <td>
             <div class="row-actions">
-              <button class="button" data-student-edit="${escapeHtml(student.studentId)}">상태 변경</button>
-              <button class="button notion-check-button" data-notion-check="${escapeHtml(student.docId)}" ${studentHealthBusy ? "disabled" : ""}>연결 검사</button>
-              <button class="button" data-student-grade-sync="${escapeHtml(student.docId)}">노션 학년 반영</button>
-              ${showMerge ? `<button class="button primary" data-student-merge="${escapeHtml(representativeId)}">대표 통합</button>` : ""}
+              <button class="button student-action" title="학생 정보·상태 변경" aria-label="학생 정보·상태 변경" data-student-edit="${escapeHtml(student.studentId)}">${studentMonoIcon("pencil")}</button>
+              <button class="button student-action notion-check-button" title="연결 검사" aria-label="연결 검사" data-notion-check="${escapeHtml(student.docId)}" ${studentHealthBusy ? "disabled" : ""}>${studentMonoIcon("link")}</button>
+              <button class="button student-action" title="노션 학년 반영" aria-label="노션 학년 반영" data-student-grade-sync="${escapeHtml(student.docId)}">${studentMonoIcon("refresh-cw")}</button>
+              <button class="button student-action" title="이력 보기" aria-label="이력 보기" aria-expanded="${inlineHistoryId === student.docId}" data-student-history="${escapeHtml(student.docId)}">${studentMonoIcon("history")}</button>
+              ${showMerge ? `<button class="button student-action" title="대표 통합" aria-label="대표 통합" data-student-merge="${escapeHtml(representativeId)}">${studentMonoIcon("merge")}</button>` : ""}
             </div>
           </td>
         </tr>
+        ${inlineHistoryId === student.docId ? `<tr class="student-history-detail"><td colspan="11"><strong>${escapeHtml(student.name)} · 변경 이력</strong><p class="help">대표 ID: ${escapeHtml(representativeId)} · 최근 40건</p><table aria-label="${escapeHtml(student.name)} 변경 이력"><thead><tr><th>일시</th><th>변경 유형</th><th>변경 내용</th><th>처리자</th></tr></thead><tbody>${inlineHistoryHtml}</tbody></table></td></tr>` : ""}
       `;
       }).join("");
       $("studentRows").innerHTML = rows || `<tr><td colspan="11">${state.isAdmin ? "조건에 맞는 학생이 없습니다." : "관리자 로그인 후 Firestore 학생 목록을 불러옵니다."}</td></tr>`;
@@ -6232,6 +6332,27 @@ window.SeduHubAdapter={
         if (event.target.closest("[data-retry-student-history]")) {
           const student = state.students.find(item => studentIdMatches(item, state.editingStudentId));
           if (student) loadStudentChangeHistory(student);
+        }
+        const studentTab = event.target.closest("[data-student-tab]");
+        if (studentTab) {
+          $("studentStatusFilter").value = studentTab.dataset.studentTab;
+          inlineHistoryId = ""; ++inlineHistoryRevision;
+          renderStudents();
+        }
+        const genderButton = event.target.closest("[data-student-gender]");
+        if (genderButton) {
+          const student = state.students.find(item => item.docId === genderButton.dataset.studentDoc);
+          if (student) saveStudentGender(student, genderButton.dataset.studentGender);
+        }
+        const historyButton = event.target.closest("[data-student-history], [data-history-retry]");
+        if (historyButton && state.isAdmin) {
+          const id = historyButton.dataset.studentHistory || historyButton.dataset.historyRetry;
+          if (inlineHistoryId === id && !historyButton.dataset.historyRetry) {
+            inlineHistoryId = ""; ++inlineHistoryRevision; renderStudents();
+          } else {
+            const student = state.students.find(item => item.docId === id);
+            if (student) { inlineHistoryId = id; loadInlineStudentHistory(student); }
+          }
         }
         const shortcut = event.target.closest("[data-view-shortcut]");
         if (shortcut) setView(shortcut.dataset.viewShortcut);

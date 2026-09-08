@@ -15,4 +15,7 @@ when the icon is decorative. Preserve the name if an image fails to load.
 
 Use only explicitly recorded gender values. Never infer gender from a name or photo.
 For missing, undisclosed or other values, omit this icon or use a neutral fallback.
-This change does not add gender data to student records or modify other webapps.
+Account Management saves explicit selections to `students/{documentId}.gender` as
+`male` or `female`, together with an audit record in the same transaction. Missing
+values remain unselected. Other webapps must read this field; they are not modified
+by this release.
