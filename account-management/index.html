@@ -1141,6 +1141,28 @@
       box-shadow: 0 2px 7px rgba(22, 42, 74, 0.08);
     }
 
+    .profile-workspace { display:grid; grid-template-columns:240px minmax(0,1fr); gap:24px; align-items:start; }
+    .profile-editor { display:grid; gap:12px; min-width:0; }
+    .profile-roster { min-width:0; }
+    .profile-preview { width:160px; height:160px; display:grid; place-items:center; justify-self:center; }
+    .profile-preview img { width:160px; height:160px; object-fit:contain; border-radius:8px; }
+    .profile-preview .person-icon-fallback { width:160px; height:160px; font-size:2rem; }
+    .profile-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+    .profile-card { display:grid; justify-items:center; align-content:start; gap:8px; padding:16px; min-width:0; border:1px solid var(--line); border-radius:8px; background:white; color:var(--navy); text-align:center; }
+    .profile-card[aria-pressed="true"] { border-color:var(--blue); background:#eff6ff; }
+    .profile-card:hover { border-color:var(--blue); }
+    .profile-card .profile-photo { width:88px; height:88px; display:grid; place-items:center; }
+    .profile-photo img, .profile-photo .person-icon-fallback { width:88px; height:88px; object-fit:contain; border-radius:8px; }
+    .profile-photo .person-icon-fallback { font-size:1.5rem; }
+    .profile-card strong, .profile-card span, #teacherProfileStatus { overflow-wrap:anywhere; }
+    .profile-editor input[type="file"] { width:100%; min-width:0; font-size:.75rem; }
+    .person-icon-fallback[hidden], .person-icon[hidden] { display:none; }
+    @media (max-width:760px) {
+      .profile-workspace { grid-template-columns:minmax(0,1fr); }
+      .profile-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .profile-roster .icon-library-head { grid-template-columns:minmax(0,1fr); }
+    }
+
     .icon-upload-box {
       display: grid;
       gap: 12px;
@@ -1655,6 +1677,7 @@
         <button class="nav-button active" data-view="dashboard">운영 대시보드 <small>동기화</small></button>
         <button class="nav-button" data-view="students">학생 상태 관리 <small>등록/중지</small></button>
         <button class="nav-button" data-view="teachers">강사 계정 관리 <small>계정/권한</small></button>
+        <button class="nav-button" data-view="teacherProfiles">강사 프로필 <small>사진</small></button>
         <button class="nav-button" data-view="staff">실무자 계정 관리 <small>근무/권한</small></button>
         <button class="nav-button" data-view="icons">아이콘 관리 <small>공통 자산</small></button>
         <button class="nav-button" data-view="queue">반영 대기열 <small>감사</small></button>
@@ -2090,6 +2113,31 @@
         </section>
       </section>
 
+      <section id="teacherProfilesView" class="hidden">
+        <div class="panel-head"><h3>강사 프로필</h3><span class="help" id="teacherProfileCount"></span></div>
+        <div class="panel-body profile-workspace">
+          <form id="teacherProfileForm" class="profile-editor" onsubmit="return false;">
+            <div class="form-field"><label for="teacherProfileTarget">강사 계정</label><select class="select" id="teacherProfileTarget"></select></div>
+            <div id="teacherProfilePreview" class="profile-preview" aria-label="프로필 미리보기"></div>
+            <label for="teacherProfileFile">프로필 사진</label>
+            <input id="teacherProfileFile" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" aria-label="강사 프로필 사진 파일">
+            <span class="help">PNG, JPG, WebP, SVG · 최대 2MB</span>
+            <progress class="icon-progress" id="teacherProfileProgress" max="100" value="0" aria-label="프로필 업로드 진행률" hidden></progress>
+            <button class="button primary" id="saveTeacherProfile" type="button">프로필 저장</button>
+            <button class="button" id="resetTeacherProfile" type="button">선택 취소</button>
+            <button class="button" id="deleteTeacherProfile" type="button">등록 사진 삭제</button>
+            <p class="help" id="teacherProfileStatus" role="status" aria-live="polite"></p>
+          </form>
+          <div class="profile-roster">
+            <div class="icon-library-head">
+              <input class="field" id="teacherProfileSearch" placeholder="강사명, 과목, 로그인 ID 검색" aria-label="강사 프로필 검색">
+              <select class="select" id="teacherProfileFilter" aria-label="프로필 등록 상태"><option value="">전체 프로필</option><option value="registered">등록됨</option><option value="missing">미등록</option></select>
+            </div>
+            <div id="teacherProfileGrid" class="profile-grid"></div>
+          </div>
+        </div>
+      </section>
+
       <section id="queueView" class="hidden">
         <section class="panel">
           <div class="panel-head">
@@ -2331,6 +2379,7 @@
         if (id === "queueStaffButton") button.textContent = queueBusy ? "실무자 계정 반영 중..." : "실무자 계정 저장";
       });
       ["refreshFirebaseButton", "logoutButton", "loginButton"].forEach(id => $(id).disabled = state.loading || state.iconUploading);
+      updateTeacherProfileControls();
     }
 
     function setBusy(type, message) {
@@ -2696,6 +2745,8 @@ window.SeduHubAdapter={
       resetNotionInspection();
       ["students", "rawStudents", "identityMappings", "identityReviews", "teachers", "staff", "icons", "studentHistory", "studentContactBulkRows"].forEach(key => state[key] = []);
       state.teacherProvisionSecrets = {};
+      resetTeacherProfileFile();
+      state.teacherProfileUid = "";
       state.studentEditorOpen = false;
       state.staffEditorOpen = false;
       state.editingStudentId = "";
@@ -2713,6 +2764,7 @@ window.SeduHubAdapter={
       renderTeachers();
       renderStaff();
       renderIconLibrary();
+      renderTeacherProfiles();
       renderDashboardAnalytics();
       renderDashboardQueue();
       renderQueue();
@@ -5213,7 +5265,7 @@ window.SeduHubAdapter={
         return (!keyword || text.includes(keyword)) && (!role || teacher.role === role) && (!app || (teacher.apps || []).includes(app));
       }).sort(teacherSortComparator).map(teacher => `
         <tr>
-          <td>${escapeHtml(teacher.name)}</td>
+          <td>${renderPersonName(teacher)}</td>
           <td>${escapeHtml(teacher.loginId)}</td>
           <td><span class="status active">Firebase Auth</span></td>
           <td>${escapeHtml(subjectCategory(teacher.subject))}${teacher.subject && subjectCategory(teacher.subject) !== teacher.subject ? `<br><span class="help">${escapeHtml(teacher.subject)}</span>` : ""}</td>
@@ -5236,6 +5288,109 @@ window.SeduHubAdapter={
 
     function iconCategorySlug(category) {
       return { PERSON: "people", SCHOOL: "schools", SUBJECT: "subjects" }[category] || "other";
+    }
+
+    function teacherProfileAsset(uid) {
+      return state.icons.find(icon => icon.category === "PERSON" && icon.lookupKey === `user:${uid}` && icon.status !== "DELETED") || null;
+    }
+
+    function profilePhoto(teacher) {
+      const icon = teacherProfileAsset(teacher.uid);
+      const fallback = `<span class="person-icon-fallback" ${icon ? "hidden" : ""} aria-hidden="true">${escapeHtml(String(teacher.name || "?").slice(0,1))}</span>`;
+      return (icon ? `<img src="${escapeHtml(icon.imageUrl)}" alt="" onerror="this.hidden=true;this.nextElementSibling.hidden=false">` : "") + fallback;
+    }
+
+    function resetTeacherProfileFile() {
+      ++teacherProfileFileRevision;
+      if (state.teacherProfilePreviewUrl) URL.revokeObjectURL(state.teacherProfilePreviewUrl);
+      state.teacherProfileFile = null;
+      state.teacherProfilePreviewUrl = "";
+      $("teacherProfileFile").value = "";
+    }
+
+    let teacherProfileFileRevision = 0;
+    async function selectTeacherProfileFile(file) {
+      if (!file || state.iconUploading || !state.isAdmin) return;
+      resetTeacherProfileFile();
+      const revision = teacherProfileFileRevision;
+      const status = $("teacherProfileStatus");
+      if (!["image/png","image/jpeg","image/webp","image/svg+xml"].includes(file.type) || file.size > 2*1024*1024 || !file.size) {
+        status.textContent = "PNG, JPG, WebP, SVG 형식의 2MB 이하 이미지 파일을 선택해 주세요.";
+        renderTeacherProfiles(); return;
+      }
+      const url = URL.createObjectURL(file);
+      try {
+        const image = new Image(); image.src = url; await image.decode();
+        if (revision !== teacherProfileFileRevision) { URL.revokeObjectURL(url); return; }
+        state.teacherProfileFile = file; state.teacherProfilePreviewUrl = url;
+        status.textContent = `${file.name} · 저장 전`;
+      } catch (error) {
+        URL.revokeObjectURL(url);
+        if (revision !== teacherProfileFileRevision) return;
+        status.textContent = "이미지를 읽을 수 없습니다. 다른 파일을 선택해 주세요.";
+      }
+      renderTeacherProfiles();
+    }
+
+    function selectTeacherProfile(uid) {
+      if (state.iconUploading || state.loading) return;
+      if (state.teacherProfileFile && uid !== state.teacherProfileUid && !confirm("선택한 사진을 취소하고 다른 강사를 선택할까요?")) {
+        $("teacherProfileTarget").value = state.teacherProfileUid; return;
+      }
+      if (uid !== state.teacherProfileUid) resetTeacherProfileFile();
+      state.teacherProfileUid = uid;
+      $("teacherProfileStatus").textContent = "";
+      renderTeacherProfiles();
+    }
+
+    function updateTeacherProfileControls() {
+      const busy = state.iconUploading || state.loading || !state.isAdmin;
+      const selected = state.teachers.some(teacher => teacher.uid === state.teacherProfileUid);
+      ["teacherProfileTarget","teacherProfileFile","resetTeacherProfile"].forEach(id => $(id).disabled = busy || !selected);
+      $("saveTeacherProfile").disabled = busy || !selected || !state.teacherProfileFile;
+      $("deleteTeacherProfile").disabled = busy || !teacherProfileAsset(state.teacherProfileUid);
+      document.querySelectorAll("[data-teacher-profile]").forEach(button => button.disabled = busy);
+    }
+
+    function renderTeacherProfiles() {
+      const teachers = state.isAdmin ? state.teachers.slice().sort(teacherSortComparator) : [];
+      if (!teachers.some(teacher => teacher.uid === state.teacherProfileUid)) {
+        resetTeacherProfileFile(); state.teacherProfileUid = teachers[0]?.uid || "";
+      }
+      $("teacherProfileTarget").innerHTML = teachers.length ? teachers.map(teacher => `<option value="${escapeHtml(teacher.uid)}">${escapeHtml(teacher.name)} · ${escapeHtml(teacher.subject || "과목 미입력")} · ${escapeHtml(teacher.loginId || teacher.uid)}</option>`).join("") : '<option value="">강사 계정 없음</option>';
+      $("teacherProfileTarget").value = state.teacherProfileUid;
+      const current = teachers.find(teacher => teacher.uid === state.teacherProfileUid);
+      $("teacherProfilePreview").innerHTML = state.teacherProfilePreviewUrl ? `<img src="${escapeHtml(state.teacherProfilePreviewUrl)}" alt="저장할 프로필 사진">` : current ? profilePhoto(current) : "";
+      const keyword = $("teacherProfileSearch").value.trim().toLowerCase();
+      const filter = $("teacherProfileFilter").value;
+      const rows = teachers.filter(teacher => (!keyword || [teacher.name,teacher.subject,teacher.loginId].join(" ").toLowerCase().includes(keyword)) && (!filter || Boolean(teacherProfileAsset(teacher.uid)) === (filter === "registered")));
+      $("teacherProfileCount").textContent = `등록 ${teachers.filter(teacher => teacherProfileAsset(teacher.uid)).length} / 전체 ${teachers.length}명`;
+      $("teacherProfileGrid").innerHTML = rows.map(teacher => `<button type="button" class="profile-card" data-teacher-profile="${escapeHtml(teacher.uid)}" aria-pressed="${teacher.uid === state.teacherProfileUid}" aria-label="${escapeHtml(teacher.name)} 프로필 선택 ${escapeHtml(teacher.loginId || teacher.uid)}"><span class="profile-photo">${profilePhoto(teacher)}</span><strong>${escapeHtml(teacher.name)}</strong><span class="help">${escapeHtml(teacher.subject || "과목 미입력")} · ${escapeHtml(statusLabel(teacher.status))}</span><span class="help">${escapeHtml(teacher.loginId || teacher.uid)}</span><span class="help">${teacherProfileAsset(teacher.uid) ? "등록됨" : "미등록"}</span></button>`).join("") || `<p class="help">${state.isAdmin ? "조건에 맞는 강사 계정이 없습니다." : "관리자 로그인 후 강사 프로필을 불러옵니다."}</p>`;
+      updateTeacherProfileControls();
+    }
+
+    async function saveTeacherProfile() {
+      if (state.iconUploading || state.loading || !state.isAdmin) return;
+      const teacher = state.teachers.find(item => item.uid === state.teacherProfileUid);
+      const file = state.teacherProfileFile;
+      if (!teacher || !file) return;
+      if (teacherProfileAsset(teacher.uid) && !confirm(`${teacher.name} 강사의 등록 사진을 교체할까요?`)) return;
+      const status = $("teacherProfileStatus"), progress = $("teacherProfileProgress");
+      let saved = false;
+      try {
+        setIconUploadBusy(true); progress.hidden = false; progress.value = 0;
+        status.textContent = `${teacher.name} 프로필 저장 중...`;
+        await saveSharedIconFile(file, {category:"PERSON",targetType:"USER",lookupKey:`user:${teacher.uid}`,displayName:teacher.name,aliases:[],source:"TEACHER_PROFILE_UPLOAD"}, 0, 100, progress);
+        saved = true;
+        await loadIconData(await getDb());
+        resetTeacherProfileFile();
+        status.textContent = `${teacher.name} 프로필을 저장했습니다.`;
+        render();
+      } catch (error) {
+        status.textContent = saved ? "저장은 완료했지만 목록을 불러오지 못했습니다. Firestore 새로고침으로 확인해 주세요." : `저장 실패: ${error.message || error}. 다시 시도해 주세요.`;
+      } finally {
+        progress.hidden = true; setIconUploadBusy(false); renderTeacherProfiles();
+      }
     }
 
     function iconCategoryLabel(category) {
@@ -5329,16 +5484,16 @@ window.SeduHubAdapter={
       updateBusyState();
     }
 
-    function uploadTaskPromise(task, progressStart, progressSpan) {
+    function uploadTaskPromise(task, progressStart, progressSpan, progress = $("iconUploadProgress")) {
       return new Promise((resolve, reject) => {
         task.on("state_changed", snapshot => {
           const ratio = snapshot.totalBytes ? snapshot.bytesTransferred / snapshot.totalBytes : 0;
-          $("iconUploadProgress").value = progressStart + ratio * progressSpan;
+          progress.value = progressStart + ratio * progressSpan;
         }, reject, () => resolve(task.snapshot));
       });
     }
 
-    async function saveSharedIconFile(file, descriptor, progressStart = 0, progressSpan = 100) {
+    async function saveSharedIconFile(file, descriptor, progressStart = 0, progressSpan = 100, progress = $("iconUploadProgress")) {
       if (!state.isAdmin) throw new Error("관리자 로그인 후 아이콘을 업로드할 수 있습니다.");
       const db = await getDb();
       const storage = await getStorage();
@@ -5351,7 +5506,7 @@ window.SeduHubAdapter={
         contentType: file.type,
         customMetadata: { lookupKey: descriptor.lookupKey, category: descriptor.category }
       });
-      await uploadTaskPromise(task, progressStart, progressSpan * 0.82);
+      await uploadTaskPromise(task, progressStart, progressSpan * 0.82, progress);
       const imageUrl = await storageRef.getDownloadURL();
       const now = firebase.firestore.FieldValue.serverTimestamp();
       await db.collection(COLLECTIONS.sharedIcons).doc(documentId).set({
@@ -5372,7 +5527,7 @@ window.SeduHubAdapter={
         createdAt: existing ? (existing.createdAt || now) : now,
         source: descriptor.source || "UPLOAD"
       }, { merge: true });
-      $("iconUploadProgress").value = progressStart + progressSpan;
+      progress.value = progressStart + progressSpan;
       if (existing && existing.storagePath && existing.storagePath !== storagePath) {
         try { await storage.ref(existing.storagePath).delete(); } catch (error) { if (error.code !== "storage/object-not-found") console.warn(error); }
       }
@@ -5475,7 +5630,7 @@ window.SeduHubAdapter={
       const icon = sharedIconForPerson(person);
       const positionStyle = STAFF_ICON_STYLES[person.staffPosition] || { label: String(person.name || "?").slice(0, 1), color: "#475569" };
       const visual = icon && icon.imageUrl
-        ? `<img class="person-icon" src="${escapeHtml(icon.imageUrl)}" alt="${escapeHtml(icon.displayName)}">`
+        ? `<img class="person-icon" src="${escapeHtml(icon.imageUrl)}" alt="" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="person-icon-fallback" hidden aria-hidden="true">${escapeHtml(positionStyle.label)}</span>`
         : `<span class="person-icon-fallback" style="background:${positionStyle.color}18;color:${positionStyle.color};border-color:${positionStyle.color}40;" aria-hidden="true">${escapeHtml(positionStyle.label)}</span>`;
       return `<span class="person-name">${visual}<strong>${escapeHtml(person.name)}</strong></span>`;
     }
@@ -5817,13 +5972,14 @@ window.SeduHubAdapter={
     function setView(view) {
       state.view = view;
       document.querySelectorAll(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === view));
-      ["dashboard", "students", "teachers", "staff", "icons", "queue", "settings"].forEach(name => {
+      ["dashboard", "students", "teachers", "teacherProfiles", "staff", "icons", "queue", "settings"].forEach(name => {
         $(`${name}View`).classList.toggle("hidden", name !== view);
       });
       const titles = {
         dashboard: ["운영 대시보드", "학생 상태와 강사·실무자 계정 메타데이터를 Firestore에서 직접 관리합니다."],
         students: ["학생 상태 관리", "등록, 중지, 복귀, 보류, 퇴원 상태를 students 문서에 저장합니다."],
         teachers: ["강사 계정 관리", "users, userProfiles, userAppAccess, loginAliases 문서를 업데이트합니다."],
+        teacherProfiles: ["강사 프로필", ""],
         staff: ["실무자 계정 관리", "휴대폰 로그인, 근무 정보, 학원 웹앱 접근 권한을 관리합니다."],
         icons: ["아이콘 관리", "인물, 학교, 과목 아이콘을 Firebase 공통 자산으로 관리합니다."],
         queue: ["반영 대기열", "운영자가 검증한 요청만 Firestore에 직접 저장합니다."],
@@ -5843,6 +5999,7 @@ window.SeduHubAdapter={
       }
       if (state.view === "students") renderStudents();
       if (state.view === "teachers") renderTeachers();
+      if (state.view === "teacherProfiles") renderTeacherProfiles();
       if (state.view === "staff") renderStaff();
       if (state.view === "icons") renderIconLibrary();
       if (state.view === "queue") renderQueue();
@@ -6120,6 +6277,26 @@ window.SeduHubAdapter={
         if (!state.editingStaffUid) $("staffPasswordInput").value = canonicalLoginId($("staffLoginInput").value);
       });
       $("iconFileInput").addEventListener("change", event => selectIconFile(event.target.files && event.target.files[0]));
+      $("teacherProfileFile").addEventListener("change", event => selectTeacherProfileFile(event.target.files[0]));
+      $("teacherProfileTarget").addEventListener("change", event => selectTeacherProfile(event.target.value));
+      ["teacherProfileSearch","teacherProfileFilter"].forEach(id => $(id).addEventListener("input", renderTeacherProfiles));
+      $("teacherProfileGrid").addEventListener("click", event => {
+        const button = event.target.closest("[data-teacher-profile]");
+        if (button) selectTeacherProfile(button.dataset.teacherProfile);
+      });
+      $("saveTeacherProfile").addEventListener("click", saveTeacherProfile);
+      $("resetTeacherProfile").addEventListener("click", () => {
+        resetTeacherProfileFile(); $("teacherProfileStatus").textContent = ""; renderTeacherProfiles();
+      });
+      $("deleteTeacherProfile").addEventListener("click", async () => {
+        const icon = teacherProfileAsset(state.teacherProfileUid);
+        if (!icon || state.iconUploading || state.loading) return;
+        await deleteSharedIcon(icon.id);
+        if (!teacherProfileAsset(state.teacherProfileUid)) {
+          resetTeacherProfileFile(); $("teacherProfileStatus").textContent = "등록 사진을 삭제했습니다.";
+        }
+        renderTeacherProfiles();
+      });
       $("uploadIconButton").addEventListener("click", uploadIconFromForm);
       $("seedStaffIconsButton").addEventListener("click", seedStaffPositionIcons);
       ["dragenter", "dragover"].forEach(type => $("iconDropzone").addEventListener(type, event => {
