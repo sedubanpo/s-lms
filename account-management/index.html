@@ -1711,7 +1711,6 @@
         <button class="nav-button active" data-view="dashboard">운영 대시보드 <small>동기화</small></button>
         <button class="nav-button" data-view="students">학생 상태 관리 <small>등록/중지</small></button>
         <button class="nav-button" data-view="teachers">강사 계정 관리 <small>계정/권한</small></button>
-        <button class="nav-button" data-view="teacherProfiles">인물 프로필 <small>강사·실무자</small></button>
         <button class="nav-button" data-view="staff">실무자 계정 관리 <small>근무/권한</small></button>
         <button class="nav-button" data-view="icons">아이콘 관리 <small>공통 자산</small></button>
         <button class="nav-button" data-view="queue">반영 대기열 <small>감사</small></button>
@@ -2055,6 +2054,10 @@
               <button class="button primary" id="newStaffButton">실무자 계정 추가</button>
             </div>
             <div class="panel-body">
+              <div class="icon-tabs" role="tablist" aria-label="실무자 재직 상태" style="margin-bottom:12px;">
+                <button class="icon-tab active" type="button" role="tab" aria-selected="true" data-staff-status="ACTIVE">재직 <span id="activeStaffCount">0</span></button>
+                <button class="icon-tab" type="button" role="tab" aria-selected="false" data-staff-status="INACTIVE">퇴사·비활성 <span id="inactiveStaffCount">0</span></button>
+              </div>
               <div class="toolbar">
                 <input class="field" id="staffSearch" placeholder="이름, 휴대폰 번호, 직급 검색">
                 <select class="select" id="staffPositionFilter"><option value="">전체 직급</option></select>
@@ -2149,14 +2152,16 @@
       </section>
 
       <section id="teacherProfilesView" class="hidden">
+        <section class="panel">
         <div class="panel-head"><h3>프로필 및 아이콘</h3><span class="help" id="teacherProfileCount"></span></div>
-        <div class="profile-tabs icon-tabs" role="tablist" aria-label="아이콘 분류">
+        <div class="panel-body">
+        <div class="icon-tabs" role="tablist" aria-label="아이콘 분류">
           <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-return="PERSON">직급 아이콘</button>
           <button class="icon-tab active" type="button" role="tab" aria-selected="true" data-open-profiles>인물 프로필</button>
           <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-return="SCHOOL">학교 엠블럼</button>
           <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-return="SUBJECT">과목 아이콘</button>
         </div>
-        <div class="panel-body profile-workspace">
+        <div class="profile-workspace" style="margin-top:12px;">
           <form id="teacherProfileForm" class="profile-editor" onsubmit="return false;">
             <div class="form-field"><label for="teacherProfileTarget">인물 선택</label><select class="select" id="teacherProfileTarget"></select></div>
             <div id="teacherProfilePreview" class="profile-preview" aria-label="프로필 미리보기"></div>
@@ -2178,6 +2183,8 @@
             <div id="teacherProfileGrid" class="profile-grid"></div>
           </div>
         </div>
+        </div>
+        </section>
       </section>
 
       <section id="queueView" class="hidden">
@@ -2330,6 +2337,7 @@
       editingTeacherUid: "",
       editingStaffUid: "",
       staffEditorOpen: false,
+      staffStatusTab: "ACTIVE",
       iconCategory: "PERSON",
       iconFile: null,
       iconPreviewUrl: "",
@@ -5726,9 +5734,18 @@ window.SeduHubAdapter={
       const keyword = ($("staffSearch")?.value || "").trim().toLowerCase();
       const position = $("staffPositionFilter")?.value || "";
       const app = $("staffAppFilter")?.value || "";
+      const activeCount = state.staff.filter(staff => staff.status === "ACTIVE").length;
+      $("activeStaffCount").textContent = activeCount;
+      $("inactiveStaffCount").textContent = state.staff.length - activeCount;
+      document.querySelectorAll("[data-staff-status]").forEach(button => {
+        const selected = button.dataset.staffStatus === state.staffStatusTab;
+        button.classList.toggle("active", selected);
+        button.setAttribute("aria-selected", String(selected));
+      });
       const rows = state.staff.filter(staff => {
         const text = [staff.name, staff.loginId, staff.staffPosition, staff.memo].join(" ").toLowerCase();
-        return (!keyword || text.includes(keyword)) && (!position || staff.staffPosition === position) && (!app || (staff.apps || []).includes(app));
+        const matchesStatus = (staff.status === "ACTIVE") === (state.staffStatusTab === "ACTIVE");
+        return matchesStatus && (!keyword || text.includes(keyword)) && (!position || staff.staffPosition === position) && (!app || (staff.apps || []).includes(app));
       }).sort(staffSortComparator).map(staff => `
         <tr>
           <td>${renderPersonName(staff)}</td>
@@ -6020,7 +6037,8 @@ window.SeduHubAdapter={
 
     function setView(view) {
       state.view = view;
-      document.querySelectorAll(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === view));
+      const navigationView = view === "teacherProfiles" ? "icons" : view;
+      document.querySelectorAll(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === navigationView));
       ["dashboard", "students", "teachers", "teacherProfiles", "staff", "icons", "queue", "settings"].forEach(name => {
         $(`${name}View`).classList.toggle("hidden", name !== view);
       });
@@ -6028,7 +6046,7 @@ window.SeduHubAdapter={
         dashboard: ["운영 대시보드", "학생 상태와 강사·실무자 계정 메타데이터를 Firestore에서 직접 관리합니다."],
         students: ["학생 상태 관리", "등록, 중지, 복귀, 보류, 퇴원 상태를 students 문서에 저장합니다."],
         teachers: ["강사 계정 관리", "users, userProfiles, userAppAccess, loginAliases 문서를 업데이트합니다."],
-        teacherProfiles: ["인물 프로필", ""],
+        teacherProfiles: ["아이콘 관리", ""],
         staff: ["실무자 계정 관리", "휴대폰 로그인, 근무 정보, 학원 웹앱 접근 권한을 관리합니다."],
         icons: ["아이콘 관리", ""],
         queue: ["반영 대기열", "운영자가 검증한 요청만 Firestore에 직접 저장합니다."],
@@ -6285,11 +6303,16 @@ window.SeduHubAdapter={
         renderTeachers();
       });
       $("clearStaffFilters").addEventListener("click", () => {
+        state.staffStatusTab = "ACTIVE";
         $("staffSearch").value = "";
         $("staffPositionFilter").value = "";
         $("staffAppFilter").value = "";
         renderStaff();
       });
+      document.querySelectorAll("[data-staff-status]").forEach(button => button.addEventListener("click", () => {
+        state.staffStatusTab = button.dataset.staffStatus;
+        renderStaff();
+      }));
       $("newStudentButton").addEventListener("click", () => {
         openStudentEditor(null);
       });
