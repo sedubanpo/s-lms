@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>에스에듀 계정 관리</title>
-  <link rel="icon" type="image/png" href="./academy-logo.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=20260909">
+  <link rel="icon" type="image/svg+xml" sizes="any" href="./favicon.svg?v=20260909">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20260909">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
@@ -162,11 +164,16 @@
     }
 
     .nav-button small {
+      margin-left: auto;
       color: inherit;
       opacity: 0.74;
       font-size: 0.68rem;
       font-weight: 500;
     }
+    .nav-button { justify-content:flex-start; gap:8px; }
+    .nav-icon { width:17px; height:17px; flex:0 0 17px; opacity:.7; }
+    .nav-button.active .nav-icon { opacity:1; }
+    .nav-button small { font-size:10px; }
 
     .sidebar-note {
       position: absolute;
@@ -1710,13 +1717,13 @@
 
       <nav class="nav-group" aria-label="계정 관리 메뉴">
         <p class="nav-label">운영 메뉴</p>
-        <button class="nav-button active" data-view="dashboard">운영 대시보드 <small>동기화</small></button>
-        <button class="nav-button" data-view="students">학생 상태 관리 <small>등록/중지</small></button>
-        <button class="nav-button" data-view="teachers">강사 계정 관리 <small>계정/권한</small></button>
-        <button class="nav-button" data-view="staff">실무자 계정 관리 <small>근무/권한</small></button>
-        <button class="nav-button" data-view="icons">아이콘 관리 <small>공통 자산</small></button>
-        <button class="nav-button" data-view="queue">반영 대기열 <small>감사</small></button>
-        <button class="nav-button" data-view="settings">연동 상태 <small>Firebase</small></button>
+        <button class="nav-button active" data-view="dashboard"><img class="nav-icon" src="./assets/navigation/layout-dashboard.svg" alt="">운영 대시보드 <small>동기화</small></button>
+        <button class="nav-button" data-view="students"><img class="nav-icon" src="./assets/navigation/graduation-cap.svg" alt="">학생 상태 관리 <small>등록/중지</small></button>
+        <button class="nav-button" data-view="teachers"><img class="nav-icon" src="./assets/navigation/contact-round.svg" alt="">강사 계정 관리 <small>계정/권한</small></button>
+        <button class="nav-button" data-view="staff"><img class="nav-icon" src="./assets/navigation/briefcase-business.svg" alt="">실무자 계정 관리 <small>근무/권한</small></button>
+        <button class="nav-button" data-view="icons"><img class="nav-icon" src="./assets/navigation/images.svg" alt="">아이콘 관리 <small>공통 자산</small></button>
+        <button class="nav-button" data-view="queue"><img class="nav-icon" src="./assets/navigation/list-checks.svg" alt="">반영 대기열 <small>감사</small></button>
+        <button class="nav-button" data-view="settings"><img class="nav-icon" src="./assets/navigation/plug-zap.svg" alt="">연동 상태 <small>Firebase</small></button>
       </nav>
 
       <div class="sidebar-note">
@@ -2112,6 +2119,7 @@
             <div class="icon-tabs" role="tablist" aria-label="아이콘 분류">
               <button class="icon-tab active" type="button" role="tab" aria-selected="true" data-icon-category="PERSON">직급 아이콘</button>
               <button class="icon-tab" type="button" role="tab" aria-selected="false" data-open-profiles>인물 프로필</button>
+              <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-category="STUDENT">학생 아이콘</button>
               <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-category="SCHOOL">학교 엠블럼</button>
               <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-category="SUBJECT">과목 아이콘</button>
             </div>
@@ -2133,6 +2141,10 @@
                   <label for="iconNamedTargetInput" id="iconNamedTargetLabel">학교명</label>
                   <input class="field" id="iconNamedTargetInput" autocomplete="off" placeholder="예: 세화고">
                 </div>
+                <div class="form-field" id="iconStudentTargetField" hidden>
+                  <label for="iconStudentTargetInput">학생 구분</label>
+                  <select class="select" id="iconStudentTargetInput"><option value="male">남학생</option><option value="female">여학생</option></select>
+                </div>
                 <div class="form-field" id="iconVariantField" hidden>
                   <label for="iconVariantInput">배경</label>
                   <select class="select" id="iconVariantInput"><option value="background">배경색 있음</option><option value="transparent">배경 없음 · 투명</option></select>
@@ -2153,7 +2165,7 @@
               <div>
                 <div class="icon-library-head">
                   <input class="field" id="iconSearchInput" placeholder="이름, 연결 키 검색">
-                  <select class="select" id="iconCategoryFilter"><option value="">전체 분류</option><option value="PERSON">직급 아이콘</option><option value="SCHOOL">학교 엠블럼</option><option value="SUBJECT">과목 아이콘</option></select>
+                  <select class="select" id="iconCategoryFilter"><option value="">전체 분류</option><option value="PERSON">직급 아이콘</option><option value="STUDENT">학생 아이콘</option><option value="SCHOOL">학교 엠블럼</option><option value="SUBJECT">과목 아이콘</option></select>
                 </div>
                 <div class="icon-library-grid" id="iconLibraryGrid"></div>
               </div>
@@ -2169,6 +2181,7 @@
         <div class="icon-tabs" role="tablist" aria-label="아이콘 분류">
           <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-return="PERSON">직급 아이콘</button>
           <button class="icon-tab active" type="button" role="tab" aria-selected="true" data-open-profiles>인물 프로필</button>
+          <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-return="STUDENT">학생 아이콘</button>
           <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-return="SCHOOL">학교 엠블럼</button>
           <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-return="SUBJECT">과목 아이콘</button>
         </div>
@@ -3191,7 +3204,7 @@ window.SeduHubAdapter={
       const data = doc.data() || {};
       return {
         id: doc.id,
-        category: String(data.category || "").toUpperCase(),
+        category: String(data.lookupKey || "").startsWith("student-gender:") ? "STUDENT" : String(data.category || "").toUpperCase(),
         targetType: data.targetType || "NAMED",
         lookupKey: data.lookupKey || "",
         displayName: data.displayName || data.lookupKey || doc.id,
@@ -5392,7 +5405,7 @@ window.SeduHubAdapter={
     }
 
     function iconCategorySlug(category) {
-      return { PERSON: "people", SCHOOL: "schools", SUBJECT: "subjects" }[category] || "other";
+      return { PERSON: "people", STUDENT: "people", SCHOOL: "schools", SUBJECT: "subjects" }[category] || "other";
     }
 
     function teacherProfileAsset(uid) {
@@ -5506,10 +5519,15 @@ window.SeduHubAdapter={
     }
 
     function iconCategoryLabel(category) {
-      return { PERSON: "직급 아이콘", SCHOOL: "학교 엠블럼", SUBJECT: "과목 아이콘" }[category] || category;
+      return { PERSON: "직급 아이콘", STUDENT: "학생 아이콘", SCHOOL: "학교 엠블럼", SUBJECT: "과목 아이콘" }[category] || category;
     }
 
     function iconTargetDescriptor() {
+      if (state.iconCategory === "STUDENT") {
+        const gender = $("iconStudentTargetInput").value;
+        if (!["male", "female"].includes(gender)) throw new Error("학생 구분을 선택해 주세요.");
+        return {lookupKey:`student-gender:${gender}`, targetType:"NAMED", displayName:gender === "male" ? "남학생" : "여학생"};
+      }
       if (state.iconCategory === "PERSON") {
         const select = $("iconPersonTargetInput");
         const lookupKey = select.value;
@@ -5547,7 +5565,9 @@ window.SeduHubAdapter={
         button.setAttribute("aria-selected", String(active));
       });
       $("iconPersonTargetField").hidden = category !== "PERSON";
-      $("iconNamedTargetField").hidden = category === "PERSON";
+      $("iconNamedTargetField").hidden = category === "PERSON" || category === "STUDENT";
+      $("iconStudentTargetField").hidden = category !== "STUDENT";
+      if (category === "STUDENT" && !$("iconStudentTargetInput").value) $("iconStudentTargetInput").value = "male";
       $("iconVariantField").hidden = category !== "SUBJECT";
       $("iconNamedTargetLabel").textContent = category === "SCHOOL" ? "학교명" : "과목명";
       $("iconNamedTargetInput").placeholder = category === "SCHOOL" ? "예: 세화고" : "예: 수학";
@@ -5559,7 +5579,7 @@ window.SeduHubAdapter={
       state.editingIconId = "";
       $("uploadIconButton").textContent = "아이콘 업로드";
       $("cancelIconEditButton").hidden = true;
-      ["iconPersonTargetInput", "iconNamedTargetInput", "iconVariantInput"].forEach(id => $(id).disabled = false);
+      ["iconPersonTargetInput", "iconNamedTargetInput", "iconVariantInput", "iconStudentTargetInput"].forEach(id => $(id).disabled = false);
       state.iconFile = null;
       if (state.iconPreviewUrl) URL.revokeObjectURL(state.iconPreviewUrl);
       state.iconPreviewUrl = "";
@@ -5628,7 +5648,7 @@ window.SeduHubAdapter={
       const now = firebase.firestore.FieldValue.serverTimestamp();
       await db.collection(COLLECTIONS.sharedIcons).doc(documentId).set({
         schemaVersion: 1,
-        category: descriptor.category,
+        category: descriptor.category === "STUDENT" ? "PERSON" : descriptor.category,
         targetType: descriptor.targetType,
         lookupKey: descriptor.lookupKey,
         displayName: descriptor.displayName,
@@ -6465,9 +6485,10 @@ window.SeduHubAdapter={
         if (!icon) return;
         resetIconUploadForm(); setIconCategory(icon.category); state.editingIconId = icon.id;
         $("iconPersonTargetInput").value = icon.lookupKey;
+        if (icon.category === "STUDENT") $("iconStudentTargetInput").value = icon.lookupKey.replace(/^student-gender:/, "");
         $("iconNamedTargetInput").value = icon.lookupKey.replace(/^(school|subject):/, "").replace(/:transparent$/, "");
         $("iconVariantInput").value = icon.lookupKey.endsWith(":transparent") ? "transparent" : "background";
-        ["iconPersonTargetInput", "iconNamedTargetInput", "iconVariantInput"].forEach(id => $(id).disabled = true);
+        ["iconPersonTargetInput", "iconNamedTargetInput", "iconVariantInput", "iconStudentTargetInput"].forEach(id => $(id).disabled = true);
         $("iconDisplayNameInput").value = icon.displayName; $("iconAliasesInput").value = (icon.aliases || []).join(", ");
         $("iconPreview").src = icon.imageUrl; $("iconPreview").hidden = false;
         $("iconFilePrompt").textContent = "이미지 교체"; $("uploadIconButton").textContent = "수정 저장";

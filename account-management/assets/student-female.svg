@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <title>Female student</title>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#e5f5ef"/>
+  <path d="M34 79V39c0-20 13-29 30-29s30 9 30 29v40Z" fill="#334559"/>
+  <path d="M27 113V99c0-19 16-29 37-29s37 10 37 29v14" fill="#268d79"/>
+  <path d="m51 76 13 14 13-14-7-7H58Z" fill="#fff"/>
+  <path d="m60 89 4-4 4 4-2 18h-4Z" fill="#17584c"/>
+  <ellipse cx="64" cy="48" rx="24" ry="29" fill="#f5d6bb"/>
+  <path d="M39 47V34c4-17 16-22 25-22 19 0 26 13 25 31-15-1-24-8-27-15-4 10-14 16-23 19Z" fill="#334559"/>
+  <path d="M57 62q7 6 14 0" fill="none" stroke="#ac7660" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="55" cy="49" r="2" fill="#334559"/><circle cx="73" cy="49" r="2" fill="#334559"/>
+</svg>
