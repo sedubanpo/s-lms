@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>에스에듀 계정 관리</title>
-  <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20260907">
+  <link rel="icon" type="image/png" href="./academy-logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
@@ -17,11 +17,11 @@
       --amber: #d97706;
       --red: #dc2626;
       --ink: #102033;
-      --muted: #64748b;
-      --line: #dbe5f3;
+      --muted: #566375;
+      --line: #e1e5eb;
       --panel: #ffffff;
-      --soft: #f4f7fb;
-      --shadow: 0 16px 42px rgba(15, 35, 66, 0.12);
+      --soft: #f6f7f9;
+      --shadow: 0 3px 12px rgba(15, 35, 66, 0.06);
     }
 
     * { box-sizing: border-box; }
@@ -58,7 +58,7 @@
       min-height: 100vh;
       font-family: "Noto Sans KR", system-ui, sans-serif;
       color: var(--ink);
-      background: #f3f6fa;
+      background: var(--soft);
     }
 
     button, input, select, textarea {
@@ -73,7 +73,7 @@
       min-width: 1180px;
       min-height: 100vh;
       display: grid;
-      grid-template-columns: 252px minmax(0, 1fr);
+      grid-template-columns: 228px minmax(0, 1fr);
     }
 
     .sidebar {
@@ -81,9 +81,10 @@
       top: 0;
       height: 100vh;
       padding: 18px;
-      background: linear-gradient(180deg, #082b57 0%, #0d3c74 100%);
-      color: #eaf3ff;
-      box-shadow: 10px 0 30px rgba(8, 43, 87, 0.2);
+      background: var(--panel);
+      color: var(--ink);
+      border-right: 1px solid var(--line);
+      box-shadow: none;
     }
 
     .brand {
@@ -96,29 +97,30 @@
     .brand-mark {
       width: 42px;
       height: 42px;
-      border-radius: 12px;
+      border-radius: 0;
       display: grid;
       place-items: center;
       background: #ffffff;
       color: var(--navy);
       font-family: "Sora", sans-serif;
       font-weight: 800;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 8px 18px rgba(0,0,0,0.14);
+      object-fit: contain;
+      box-shadow: none;
     }
 
     .brand h1 {
       margin: 0;
       font-size: 1rem;
-      font-weight: 900;
+      font-weight: 700;
       line-height: 1.2;
     }
 
     .brand span {
       display: block;
       margin-top: 3px;
-      color: #b8c9de;
+      color: var(--muted);
       font-size: 0.76rem;
-      font-weight: 700;
+      font-weight: 500;
     }
 
     .nav-group {
@@ -127,10 +129,10 @@
 
     .nav-label {
       margin: 0 0 8px;
-      color: #9fb4cc;
+      color: var(--muted);
       font-size: 0.68rem;
       font-weight: 900;
-      letter-spacing: 0.08em;
+      letter-spacing: 0;
     }
 
     .nav-button {
@@ -140,29 +142,30 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      margin-bottom: 7px;
+      margin-bottom: 4px;
       padding: 9px 10px;
-      border: 1px solid rgba(213, 228, 246, 0.16);
-      border-radius: 9px;
-      background: rgba(255, 255, 255, 0.08);
-      color: #eaf3ff;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: #374354;
       text-align: left;
       font-size: 0.82rem;
-      font-weight: 850;
+      font-weight: 500;
     }
 
     .nav-button.active {
-      border-color: rgba(255,255,255,0.54);
-      background: #ffffff;
+      border-color: #dce8f8;
+      background: #edf4ff;
       color: var(--navy);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.16);
+      box-shadow: none;
+      font-weight: 700;
     }
 
     .nav-button small {
       color: inherit;
       opacity: 0.74;
       font-size: 0.68rem;
-      font-weight: 900;
+      font-weight: 500;
     }
 
     .sidebar-note {
@@ -170,11 +173,10 @@
       left: 18px;
       right: 18px;
       bottom: 18px;
-      padding: 12px;
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 12px;
-      background: rgba(255,255,255,0.08);
-      color: #d6e6f9;
+      padding: 12px 0;
+      border-top: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
       font-size: 0.72rem;
       line-height: 1.5;
       font-weight: 700;
@@ -204,7 +206,7 @@
       margin: 5px 0 0;
       color: var(--muted);
       font-size: 0.82rem;
-      font-weight: 750;
+      font-weight: 500;
     }
 
     .top-actions {
@@ -227,9 +229,9 @@
       background: #ffffff;
       color: #27405f;
       font-size: 0.78rem;
-      font-weight: 900;
+      font-weight: 600;
       white-space: nowrap;
-      box-shadow: 0 2px 7px rgba(22, 42, 74, 0.05);
+      box-shadow: none;
     }
 
     .button.primary {
@@ -1659,25 +1661,57 @@
         grid-template-columns: 1fr;
       }
     }
+    /* Shared administrative surfaces retain their existing layouts and actions. */
+    .panel { border:0; border-radius:0; box-shadow:none; background:var(--panel); }
+    .panel-head { background:var(--panel); }
+    .panel-head h3, .icon-tab, .icon-asset-copy strong, .profile-card strong { font-weight:700; }
+    .panel-head p, .help, .field, .select, .textarea, .icon-asset-copy span, td { font-weight:500; }
+    .button, th, .form-field label, .auth-state { font-weight:600; }
+    .profile-editor > label { font-size:.78rem; font-weight:600; }
+    .icon-upload-box { border:0; border-radius:0; background:transparent; padding:0 18px 0 0; border-right:1px solid var(--line); }
+    .icon-tabs { background:transparent; border-bottom:1px solid var(--line); border-radius:0; padding:0; display:flex; flex-wrap:wrap; gap:4px; }
+    .icon-tab { min-height:40px; border-radius:0; color:var(--muted); border-bottom:2px solid transparent; }
+    .icon-tab.active { border-bottom-color:var(--blue); color:var(--blue); box-shadow:none; background:transparent; }
+    .profile-tabs { margin:0 16px; }
+    .profile-role-filter { display:flex; align-items:center; gap:12px; margin:0 0 16px; font-size:.78rem; color:var(--muted); }
+    .profile-role-filter .select { width:150px; }
+    .profile-card { box-shadow:none; }
+    .auth-strip { border:0; background:transparent; padding:0; }
+    .topbar { padding-bottom:16px; border-bottom:1px solid var(--line); }
+    .top-actions { row-gap:10px; }
+    .nav-button:hover { background:var(--soft); }
+    .nav-button.active:hover { background:#edf4ff; }
+    @media (min-width:901px) {
+      .sidebar { display:flex; flex-direction:column; }
+      .nav-group { flex:1; min-height:0; overflow-y:auto; }
+      .sidebar-note { position:static; margin-top:16px; flex:none; }
+    }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:2px solid var(--blue); outline-offset:3px; }
+    @media (max-width:900px) {
+      .sidebar { border-right:0; border-bottom:1px solid var(--line); }
+      .icon-upload-box { padding:0; border-right:0; }
+      .nav-button { min-width:max-content; }
+      .top-actions { width:100%; }
+    }
   </style>
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark">S</div>
+        <img class="brand-mark" src="./academy-logo.png" alt="에스에듀">
         <div>
           <h1>계정 관리</h1>
-          <span>Firebase 직접 저장 콘솔</span>
+          <span>에스에듀 · 운영 관리</span>
         </div>
       </div>
 
       <nav class="nav-group" aria-label="계정 관리 메뉴">
-        <p class="nav-label">WORKSPACE</p>
+        <p class="nav-label">운영 메뉴</p>
         <button class="nav-button active" data-view="dashboard">운영 대시보드 <small>동기화</small></button>
         <button class="nav-button" data-view="students">학생 상태 관리 <small>등록/중지</small></button>
         <button class="nav-button" data-view="teachers">강사 계정 관리 <small>계정/권한</small></button>
-        <button class="nav-button" data-view="teacherProfiles">강사 프로필 <small>사진</small></button>
+        <button class="nav-button" data-view="teacherProfiles">인물 프로필 <small>강사·실무자</small></button>
         <button class="nav-button" data-view="staff">실무자 계정 관리 <small>근무/권한</small></button>
         <button class="nav-button" data-view="icons">아이콘 관리 <small>공통 자산</small></button>
         <button class="nav-button" data-view="queue">반영 대기열 <small>감사</small></button>
@@ -1685,7 +1719,7 @@
       </nav>
 
       <div class="sidebar-note">
-        Firebase Web SDK로 Firestore에 직접 저장합니다. 학생·강사·실무자 계정의 조회와 변경은 Firebase를 단일 기준으로 사용합니다.
+        에스에듀 계정 관리
       </div>
     </aside>
 
@@ -2062,12 +2096,13 @@
       <section id="iconsView" class="hidden">
         <section class="panel">
           <div class="panel-head">
-            <div><h3>공통 아이콘 라이브러리</h3><p>등록한 아이콘을 데스크포털, S-LMS, 라이브시간표, 싱크로에스에서 같은 연결 키로 사용합니다.</p></div>
+            <div><h3>프로필 및 아이콘</h3></div>
             <button class="button" id="seedStaffIconsButton">직급 기본 아이콘 적용</button>
           </div>
           <div class="panel-body">
             <div class="icon-tabs" role="tablist" aria-label="아이콘 분류">
-              <button class="icon-tab active" type="button" role="tab" aria-selected="true" data-icon-category="PERSON">인물 아이콘</button>
+              <button class="icon-tab active" type="button" role="tab" aria-selected="true" data-icon-category="PERSON">직급 아이콘</button>
+              <button class="icon-tab" type="button" role="tab" aria-selected="false" data-open-profiles>인물 프로필</button>
               <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-category="SCHOOL">학교 엠블럼</button>
               <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-category="SUBJECT">과목 아이콘</button>
             </div>
@@ -2104,7 +2139,7 @@
               <div>
                 <div class="icon-library-head">
                   <input class="field" id="iconSearchInput" placeholder="이름, 연결 키 검색">
-                  <select class="select" id="iconCategoryFilter"><option value="">전체 분류</option><option value="PERSON">인물 아이콘</option><option value="SCHOOL">학교 엠블럼</option><option value="SUBJECT">과목 아이콘</option></select>
+                  <select class="select" id="iconCategoryFilter"><option value="">전체 분류</option><option value="PERSON">직급 아이콘</option><option value="SCHOOL">학교 엠블럼</option><option value="SUBJECT">과목 아이콘</option></select>
                 </div>
                 <div class="icon-library-grid" id="iconLibraryGrid"></div>
               </div>
@@ -2114,13 +2149,19 @@
       </section>
 
       <section id="teacherProfilesView" class="hidden">
-        <div class="panel-head"><h3>강사 프로필</h3><span class="help" id="teacherProfileCount"></span></div>
+        <div class="panel-head"><h3>프로필 및 아이콘</h3><span class="help" id="teacherProfileCount"></span></div>
+        <div class="profile-tabs icon-tabs" role="tablist" aria-label="아이콘 분류">
+          <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-return="PERSON">직급 아이콘</button>
+          <button class="icon-tab active" type="button" role="tab" aria-selected="true" data-open-profiles>인물 프로필</button>
+          <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-return="SCHOOL">학교 엠블럼</button>
+          <button class="icon-tab" type="button" role="tab" aria-selected="false" data-icon-return="SUBJECT">과목 아이콘</button>
+        </div>
         <div class="panel-body profile-workspace">
           <form id="teacherProfileForm" class="profile-editor" onsubmit="return false;">
-            <div class="form-field"><label for="teacherProfileTarget">강사 계정</label><select class="select" id="teacherProfileTarget"></select></div>
+            <div class="form-field"><label for="teacherProfileTarget">인물 선택</label><select class="select" id="teacherProfileTarget"></select></div>
             <div id="teacherProfilePreview" class="profile-preview" aria-label="프로필 미리보기"></div>
             <label for="teacherProfileFile">프로필 사진</label>
-            <input id="teacherProfileFile" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" aria-label="강사 프로필 사진 파일">
+            <input id="teacherProfileFile" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" aria-label="인물 프로필 사진 파일">
             <span class="help">PNG, JPG, WebP, SVG · 최대 2MB</span>
             <progress class="icon-progress" id="teacherProfileProgress" max="100" value="0" aria-label="프로필 업로드 진행률" hidden></progress>
             <button class="button primary" id="saveTeacherProfile" type="button">프로필 저장</button>
@@ -2130,9 +2171,10 @@
           </form>
           <div class="profile-roster">
             <div class="icon-library-head">
-              <input class="field" id="teacherProfileSearch" placeholder="강사명, 과목, 로그인 ID 검색" aria-label="강사 프로필 검색">
+              <input class="field" id="teacherProfileSearch" placeholder="이름, 과목, 직급 검색" aria-label="인물 프로필 검색">
               <select class="select" id="teacherProfileFilter" aria-label="프로필 등록 상태"><option value="">전체 프로필</option><option value="registered">등록됨</option><option value="missing">미등록</option></select>
             </div>
+            <div class="profile-role-filter"><label for="profileRoleFilter">계정 구분</label><select class="select" id="profileRoleFilter"><option value="">전체 인물</option><option value="teacher">강사·관리자</option><option value="staff">실무자</option></select></div>
             <div id="teacherProfileGrid" class="profile-grid"></div>
           </div>
         </div>
@@ -2772,6 +2814,8 @@ window.SeduHubAdapter={
     }
 
     function renderAuthState(message) {
+      ["authEmailInput", "authPasswordInput", "loginButton"].forEach(id => $(id).hidden = Boolean(state.isAdmin));
+      $("logoutButton").hidden = !state.authUser;
       renderNotionInspection();
       renderNotionStudentReview();
       const el = $("authStateText");
@@ -5294,6 +5338,10 @@ window.SeduHubAdapter={
       return state.icons.find(icon => icon.category === "PERSON" && icon.lookupKey === `user:${uid}` && icon.status !== "DELETED") || null;
     }
 
+    function profilePeople() {
+      return [...state.teachers, ...state.staff];
+    }
+
     function profilePhoto(teacher) {
       const icon = teacherProfileAsset(teacher.uid);
       const fallback = `<span class="person-icon-fallback" ${icon ? "hidden" : ""} aria-hidden="true">${escapeHtml(String(teacher.name || "?").slice(0,1))}</span>`;
@@ -5334,7 +5382,7 @@ window.SeduHubAdapter={
 
     function selectTeacherProfile(uid) {
       if (state.iconUploading || state.loading) return;
-      if (state.teacherProfileFile && uid !== state.teacherProfileUid && !confirm("선택한 사진을 취소하고 다른 강사를 선택할까요?")) {
+      if (state.teacherProfileFile && uid !== state.teacherProfileUid && !confirm("선택한 사진을 취소하고 다른 인물을 선택할까요?")) {
         $("teacherProfileTarget").value = state.teacherProfileUid; return;
       }
       if (uid !== state.teacherProfileUid) resetTeacherProfileFile();
@@ -5345,7 +5393,7 @@ window.SeduHubAdapter={
 
     function updateTeacherProfileControls() {
       const busy = state.iconUploading || state.loading || !state.isAdmin;
-      const selected = state.teachers.some(teacher => teacher.uid === state.teacherProfileUid);
+      const selected = profilePeople().some(teacher => teacher.uid === state.teacherProfileUid);
       ["teacherProfileTarget","teacherProfileFile","resetTeacherProfile"].forEach(id => $(id).disabled = busy || !selected);
       $("saveTeacherProfile").disabled = busy || !selected || !state.teacherProfileFile;
       $("deleteTeacherProfile").disabled = busy || !teacherProfileAsset(state.teacherProfileUid);
@@ -5354,29 +5402,30 @@ window.SeduHubAdapter={
 
     function renderTeacherProfiles() {
       const focusedUid = document.activeElement?.dataset?.teacherProfile;
-      const teachers = state.isAdmin ? state.teachers.slice().sort(teacherSortComparator) : [];
+      const teachers = state.isAdmin ? profilePeople().sort(teacherSortComparator) : [];
       if (!teachers.some(teacher => teacher.uid === state.teacherProfileUid)) {
         resetTeacherProfileFile(); state.teacherProfileUid = teachers[0]?.uid || "";
       }
-      $("teacherProfileTarget").innerHTML = teachers.length ? teachers.map(teacher => `<option value="${escapeHtml(teacher.uid)}">${escapeHtml(teacher.name)} · ${escapeHtml(teacher.subject || "과목 미입력")} · ${escapeHtml(teacher.loginId || teacher.uid)}</option>`).join("") : '<option value="">강사 계정 없음</option>';
+      $("teacherProfileTarget").innerHTML = teachers.length ? teachers.map(teacher => `<option value="${escapeHtml(teacher.uid)}">${escapeHtml(teacher.name)} · ${escapeHtml(teacher.staffPosition || teacher.subject || "과목 미입력")} · ${escapeHtml(teacher.loginId || teacher.uid)}</option>`).join("") : '<option value="">계정 없음</option>';
       $("teacherProfileTarget").value = state.teacherProfileUid;
       const current = teachers.find(teacher => teacher.uid === state.teacherProfileUid);
       $("teacherProfilePreview").innerHTML = state.teacherProfilePreviewUrl ? `<img src="${escapeHtml(state.teacherProfilePreviewUrl)}" alt="저장할 프로필 사진">` : current ? profilePhoto(current) : "";
       const keyword = $("teacherProfileSearch").value.trim().toLowerCase();
       const filter = $("teacherProfileFilter").value;
-      const rows = teachers.filter(teacher => (!keyword || [teacher.name,teacher.subject,teacher.loginId].join(" ").toLowerCase().includes(keyword)) && (!filter || Boolean(teacherProfileAsset(teacher.uid)) === (filter === "registered")));
+      const roleFilter = $("profileRoleFilter").value;
+      const rows = teachers.filter(teacher => (!roleFilter || (teacher.role === "STAFF" ? "staff" : "teacher") === roleFilter) && (!keyword || [teacher.name,teacher.subject,teacher.staffPosition,teacher.loginId].join(" ").toLowerCase().includes(keyword)) && (!filter || Boolean(teacherProfileAsset(teacher.uid)) === (filter === "registered")));
       $("teacherProfileCount").textContent = `등록 ${teachers.filter(teacher => teacherProfileAsset(teacher.uid)).length} / 전체 ${teachers.length}명`;
-      $("teacherProfileGrid").innerHTML = rows.map(teacher => `<button type="button" class="profile-card" data-teacher-profile="${escapeHtml(teacher.uid)}" aria-pressed="${teacher.uid === state.teacherProfileUid}" aria-label="${escapeHtml(teacher.name)} 프로필 선택 ${escapeHtml(teacher.loginId || teacher.uid)}"><span class="profile-photo">${profilePhoto(teacher)}</span><strong>${escapeHtml(teacher.name)}</strong><span class="help">${escapeHtml(teacher.subject || "과목 미입력")} · ${escapeHtml(statusLabel(teacher.status))}</span><span class="help">${escapeHtml(teacher.loginId || teacher.uid)}</span><span class="help">${teacherProfileAsset(teacher.uid) ? "등록됨" : "미등록"}</span></button>`).join("") || `<p class="help">${state.isAdmin ? "조건에 맞는 강사 계정이 없습니다." : "관리자 로그인 후 강사 프로필을 불러옵니다."}</p>`;
+      $("teacherProfileGrid").innerHTML = rows.map(teacher => `<button type="button" class="profile-card" data-teacher-profile="${escapeHtml(teacher.uid)}" aria-pressed="${teacher.uid === state.teacherProfileUid}" aria-label="${escapeHtml(teacher.name)} 프로필 선택 ${escapeHtml(teacher.loginId || teacher.uid)}"><span class="profile-photo">${profilePhoto(teacher)}</span><strong>${escapeHtml(teacher.name)}</strong><span class="help">${escapeHtml(teacher.staffPosition || teacher.subject || "과목 미입력")} · ${escapeHtml(statusLabel(teacher.status))}</span><span class="help">${escapeHtml(teacher.loginId || teacher.uid)}</span><span class="help">${teacherProfileAsset(teacher.uid) ? "등록됨" : "미등록"}</span></button>`).join("") || `<p class="help">${state.isAdmin ? "조건에 맞는 인물이 없습니다." : "관리자 로그인 후 인물 프로필을 불러옵니다."}</p>`;
       updateTeacherProfileControls();
       if (focusedUid) Array.from(document.querySelectorAll("[data-teacher-profile]")).find(button => button.dataset.teacherProfile === focusedUid)?.focus();
     }
 
     async function saveTeacherProfile() {
       if (state.iconUploading || state.loading || !state.isAdmin) return;
-      const teacher = state.teachers.find(item => item.uid === state.teacherProfileUid);
+      const teacher = profilePeople().find(item => item.uid === state.teacherProfileUid);
       const file = state.teacherProfileFile;
       if (!teacher || !file) return;
-      if (teacherProfileAsset(teacher.uid) && !confirm(`${teacher.name} 강사의 등록 사진을 교체할까요?`)) return;
+      if (teacherProfileAsset(teacher.uid) && !confirm(`${teacher.name}의 등록 사진을 교체할까요?`)) return;
       const status = $("teacherProfileStatus"), progress = $("teacherProfileProgress");
       let saved = false;
       try {
@@ -5396,7 +5445,7 @@ window.SeduHubAdapter={
     }
 
     function iconCategoryLabel(category) {
-      return { PERSON: "인물 아이콘", SCHOOL: "학교 엠블럼", SUBJECT: "과목 아이콘" }[category] || category;
+      return { PERSON: "직급 아이콘", SCHOOL: "학교 엠블럼", SUBJECT: "과목 아이콘" }[category] || category;
     }
 
     function iconTargetDescriptor() {
@@ -5422,9 +5471,7 @@ window.SeduHubAdapter={
       if (!select) return;
       const currentValue = select.value;
       const positionOptions = STAFF_POSITIONS.map(position => `<option value="staff-position:${escapeHtml(position)}">직급 · ${escapeHtml(position)}</option>`).join("");
-      const people = [].concat(state.staff || [], state.teachers || []).sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
-      const userOptions = people.map(person => `<option value="user:${escapeHtml(person.uid)}">사용자 · ${escapeHtml(person.name)}${person.staffPosition ? ` (${escapeHtml(person.staffPosition)})` : person.subject ? ` (${escapeHtml(person.subject)})` : ""}</option>`).join("");
-      select.innerHTML = `<optgroup label="실무자 직급">${positionOptions}</optgroup>${userOptions ? `<optgroup label="개별 사용자">${userOptions}</optgroup>` : ""}`;
+      select.innerHTML = `<optgroup label="실무자 직급">${positionOptions}</optgroup>`;
       if (Array.from(select.options).some(option => option.value === currentValue)) select.value = currentValue;
     }
 
@@ -5650,7 +5697,7 @@ window.SeduHubAdapter={
       const category = $("iconCategoryFilter")?.value || "";
       const icons = state.icons.filter(icon => {
         const text = [icon.displayName, icon.lookupKey].concat(icon.aliases || []).join(" ").toLowerCase();
-        return (!keyword || text.includes(keyword)) && (!category || icon.category === category);
+        return !icon.lookupKey.startsWith("user:") && (!keyword || text.includes(keyword)) && (!category || icon.category === category);
       });
       if (!icons.length) {
         grid.innerHTML = `<div class="icon-empty">${state.isAdmin ? "이 분류에 등록된 아이콘이 없습니다. 왼쪽에서 첫 아이콘을 업로드해 주세요." : "관리자 로그인 후 공통 아이콘을 불러옵니다."}</div>`;
@@ -5981,9 +6028,9 @@ window.SeduHubAdapter={
         dashboard: ["운영 대시보드", "학생 상태와 강사·실무자 계정 메타데이터를 Firestore에서 직접 관리합니다."],
         students: ["학생 상태 관리", "등록, 중지, 복귀, 보류, 퇴원 상태를 students 문서에 저장합니다."],
         teachers: ["강사 계정 관리", "users, userProfiles, userAppAccess, loginAliases 문서를 업데이트합니다."],
-        teacherProfiles: ["강사 프로필", ""],
+        teacherProfiles: ["인물 프로필", ""],
         staff: ["실무자 계정 관리", "휴대폰 로그인, 근무 정보, 학원 웹앱 접근 권한을 관리합니다."],
-        icons: ["아이콘 관리", "인물, 학교, 과목 아이콘을 Firebase 공통 자산으로 관리합니다."],
+        icons: ["아이콘 관리", ""],
         queue: ["반영 대기열", "운영자가 검증한 요청만 Firestore에 직접 저장합니다."],
         settings: ["연동 상태", "S-LMS와 동일한 Firebase 프로젝트와 관리자 세션을 사용합니다."]
       };
@@ -6281,7 +6328,22 @@ window.SeduHubAdapter={
       $("iconFileInput").addEventListener("change", event => selectIconFile(event.target.files && event.target.files[0]));
       $("teacherProfileFile").addEventListener("change", event => selectTeacherProfileFile(event.target.files[0]));
       $("teacherProfileTarget").addEventListener("change", event => selectTeacherProfile(event.target.value));
-      ["teacherProfileSearch","teacherProfileFilter"].forEach(id => $(id).addEventListener("input", renderTeacherProfiles));
+      ["teacherProfileSearch","teacherProfileFilter","profileRoleFilter"].forEach(id => $(id).addEventListener("input", renderTeacherProfiles));
+      document.querySelectorAll("[data-open-profiles]").forEach(button => button.addEventListener("click", () => {
+        setView("teacherProfiles"); $("teacherProfilesView").querySelector("[data-open-profiles]").focus();
+      }));
+      document.querySelectorAll("[data-icon-return]").forEach(button => button.addEventListener("click", () => {
+        setIconCategory(button.dataset.iconReturn); setView("icons"); $("iconsView").querySelector(`[data-icon-category="${button.dataset.iconReturn}"]`).focus();
+      }));
+      document.querySelectorAll(".icon-tabs").forEach(tabs => tabs.addEventListener("keydown", event => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        const buttons = Array.from(tabs.querySelectorAll("button"));
+        const index = buttons.indexOf(document.activeElement);
+        if (index < 0) return;
+        event.preventDefault();
+        const next = event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + buttons.length) % buttons.length;
+        buttons[next].focus(); buttons[next].click();
+      }));
       $("teacherProfileGrid").addEventListener("click", event => {
         const button = event.target.closest("[data-teacher-profile]");
         if (button) selectTeacherProfile(button.dataset.teacherProfile);
