@@ -2127,6 +2127,10 @@
                   <label for="iconNamedTargetInput" id="iconNamedTargetLabel">학교명</label>
                   <input class="field" id="iconNamedTargetInput" autocomplete="off" placeholder="예: 세화고">
                 </div>
+                <div class="form-field" id="iconVariantField" hidden>
+                  <label for="iconVariantInput">배경</label>
+                  <select class="select" id="iconVariantInput"><option value="background">배경색 있음</option><option value="transparent">배경 없음 · 투명</option></select>
+                </div>
                 <div class="form-field">
                   <label for="iconDisplayNameInput">표시 이름</label>
                   <input class="field" id="iconDisplayNameInput" autocomplete="off" placeholder="연결 대상 이름을 자동으로 사용합니다">
@@ -5471,7 +5475,9 @@ window.SeduHubAdapter={
       const rawName = $("iconNamedTargetInput").value.trim();
       if (!rawName) throw new Error(state.iconCategory === "SCHOOL" ? "학교명을 입력해 주세요." : "과목명을 입력해 주세요.");
       const prefix = state.iconCategory === "SCHOOL" ? "school" : "subject";
-      return { lookupKey: `${prefix}:${normalizedIconName(rawName)}`, targetType: "NAMED", displayName: rawName };
+      const isSubject = state.iconCategory === "SUBJECT";
+      const transparent = isSubject && $("iconVariantInput").value === "transparent";
+      return { lookupKey: `${prefix}:${normalizedIconName(rawName)}${transparent ? ":transparent" : ""}`, targetType: "NAMED", displayName: isSubject ? `${rawName} · ${transparent ? "투명" : "배경형"}` : rawName };
     }
 
     function populateIconPersonTargets() {
@@ -5492,6 +5498,7 @@ window.SeduHubAdapter={
       });
       $("iconPersonTargetField").hidden = category !== "PERSON";
       $("iconNamedTargetField").hidden = category === "PERSON";
+      $("iconVariantField").hidden = category !== "SUBJECT";
       $("iconNamedTargetLabel").textContent = category === "SCHOOL" ? "학교명" : "과목명";
       $("iconNamedTargetInput").placeholder = category === "SCHOOL" ? "예: 세화고" : "예: 수학";
       $("iconCategoryFilter").value = category;
