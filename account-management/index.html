@@ -1252,7 +1252,7 @@
     .icon-asset-card {
       min-width: 0;
       display: grid;
-      grid-template-columns: 52px minmax(0, 1fr) 32px;
+      grid-template-columns: 52px minmax(0, 1fr) 68px;
       gap: 10px;
       align-items: center;
       padding: 10px;
@@ -1306,6 +1306,8 @@
       padding: 0;
       color: var(--red);
     }
+    [data-icon-edit] { color: var(--muted); }
+    .teacher-subject-summary { display:block; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
     .person-name {
       display: inline-flex;
@@ -2003,15 +2005,19 @@
               <button class="button primary" id="newTeacherButton">강사 계정 요청</button>
             </div>
             <div class="panel-body">
+              <div class="icon-tabs" role="tablist" aria-label="강사 상태" style="margin-bottom:12px;">
+                <button class="icon-tab active" type="button" role="tab" aria-selected="true" data-teacher-status="ACTIVE">활성 <span id="activeTeacherCount">0</span></button>
+                <button class="icon-tab" type="button" role="tab" aria-selected="false" data-teacher-status="INACTIVE">비활성 <span id="inactiveTeacherCount">0</span></button>
+              </div>
               <div class="toolbar">
                 <input class="field" id="teacherSearch" placeholder="강사명, 로그인 ID, 과목 검색">
-                <select class="select" id="teacherRoleFilter"><option value="">전체 직급</option><option value="ADMIN">관리자</option><option value="INSTRUCTOR">강사</option><option value="DISABLED">비활성</option></select>
-                <select class="select" id="teacherAppFilter" aria-label="앱 권한 필터"><option value="">전체 앱 권한</option><option value="teacherPortal">강사 포털</option><option value="sLms">S-LMS</option><option value="deskPortal">데스크</option><option value="liveTimetable">라이브</option><option value="synchroS">싱크로에스</option></select>
+                <select class="select" id="teacherRoleFilter"><option value="">전체 직급</option><option value="ADMIN">관리자</option><option value="INSTRUCTOR">강사</option><option value="TEAM_LEAD">팀장</option></select>
+                <select id="teacherAppFilter" hidden><option value=""></option></select>
                 <button class="button" id="clearTeacherFilters">필터 초기화</button>
               </div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th style="width:120px;">강사명</th><th style="width:130px;">로그인 ID</th><th style="width:130px;">인증 방식</th><th style="width:100px;">과목</th><th style="width:95px;">직급</th><th style="width:90px;">상태</th><th>앱 권한</th><th style="width:120px;">작업</th></tr></thead>
+                  <thead><tr><th>강사명</th><th>로그인 ID</th><th>과목</th><th>가능 과목</th><th>직급</th><th>상태</th><th>작업</th></tr></thead>
                   <tbody id="teacherRows"></tbody>
                 </table>
               </div>
@@ -2024,7 +2030,8 @@
                 <div class="form-field"><label>이름</label><input class="field" id="teacherNameInput" autocomplete="off"></div>
                 <div class="form-field"><label>로그인 ID</label><input class="field" id="teacherLoginInput" inputmode="numeric" autocomplete="off"></div>
                 <div class="form-field"><label>과목/부서</label><input class="field" id="teacherSubjectInput" autocomplete="off"></div>
-                <div class="form-field"><label>직급</label><select class="select" id="teacherRoleInput"><option value="INSTRUCTOR">강사</option><option value="ADMIN">관리자</option><option value="DISABLED">비활성</option></select></div>
+                <div class="form-field"><label>직급</label><select class="select" id="teacherRoleInput"><option value="INSTRUCTOR">강사</option><option value="TEAM_LEAD">팀장</option><option value="ADMIN">관리자</option><option value="DISABLED">비활성</option></select></div>
+                <div class="form-field full"><label for="teacherSubjectsInput">가능 과목</label><input class="field" id="teacherSubjectsInput" list="teacherSubjectSuggestions" placeholder="예: 수학Ⅰ, 수학Ⅱ, 미적분" autocomplete="off"><datalist id="teacherSubjectSuggestions"></datalist></div>
                 <div class="form-field"><label>상태</label><select class="select" id="teacherStatusInput"><option value="ACTIVE">활성</option><option value="DISABLED">비활성</option></select></div>
                 <div class="form-field"><label>새 비밀번호</label><input class="field password" id="teacherPasswordInput" type="password" autocomplete="new-password" placeholder="신규는 미입력 시 로그인 ID"></div>
                 <div class="form-field"><label>Auth 작업</label><select class="select" id="teacherAuthActionInput"><option value="">없음</option><option value="PROVISION_ACCOUNT">신규 계정 전체 생성</option><option value="RESET_PASSWORD">비밀번호 변경 필요</option><option value="DISABLE_AUTH_USER">Auth 사용자 비활성 필요</option></select></div>
@@ -2100,7 +2107,6 @@
         <section class="panel">
           <div class="panel-head">
             <div><h3>프로필 및 아이콘</h3></div>
-            <button class="button" id="seedStaffIconsButton">직급 기본 아이콘 적용</button>
           </div>
           <div class="panel-body">
             <div class="icon-tabs" role="tablist" aria-label="아이콘 분류">
@@ -2141,6 +2147,7 @@
                 </div>
                 <progress class="icon-progress" id="iconUploadProgress" max="100" value="0" hidden></progress>
                 <button class="button primary" id="uploadIconButton" type="button">아이콘 업로드</button>
+                <button class="button" id="cancelIconEditButton" type="button" hidden>수정 취소</button>
                 <p class="help" id="iconUploadHelp">같은 연결 대상에 다시 올리면 새 파일로 교체됩니다.</p>
               </form>
               <div>
@@ -2342,6 +2349,7 @@
       editingStaffUid: "",
       staffEditorOpen: false,
       staffStatusTab: "ACTIVE",
+      teacherStatusTab: "ACTIVE",
       iconCategory: "PERSON",
       iconFile: null,
       iconPreviewUrl: "",
@@ -3157,6 +3165,8 @@ window.SeduHubAdapter={
             name: user.name || profile.displayName || doc.id,
             loginId: user.loginId || profile.instructorId || "",
             subject: profile.department || (profile.subjects || []).join(", ") || "",
+            teachableSubjects: Array.isArray(profile.teachableSubjects) ? profile.teachableSubjects : [],
+            teacherPosition: profile.teacherPosition || (/팀장/.test(profile.department || "") ? "TEAM_LEAD" : "INSTRUCTOR"),
             role: String(user.role || "INSTRUCTOR").toUpperCase(),
             status: user.status || "ACTIVE",
             lessonLogUrl: profile.lessonLogUrl || profile.lessonLogLink || profile.teachingLogUrl || links.lessonLog || "",
@@ -3885,7 +3895,10 @@ window.SeduHubAdapter={
       const name = $("teacherNameInput").value.trim();
       const loginId = canonicalLoginId($("teacherLoginInput").value);
       const subject = $("teacherSubjectInput").value.trim();
-      const role = $("teacherRoleInput").value;
+      const selectedRole = $("teacherRoleInput").value;
+      const role = selectedRole === "TEAM_LEAD" ? "INSTRUCTOR" : selectedRole;
+      const teacherPosition = selectedRole === "TEAM_LEAD" ? "TEAM_LEAD" : "INSTRUCTOR";
+      const teachableSubjects = readTeachableSubjects();
       const status = $("teacherStatusInput").value;
       let password = $("teacherPasswordInput").value.trim();
       let authAction = $("teacherAuthActionInput").value;
@@ -3933,7 +3946,7 @@ window.SeduHubAdapter={
       }
       const item = queueRequest("teacher", `${name} · ${roleLabel(role)} · ${loginId}`, {
         action: "upsertTeacherMetadata",
-        teacher: { uid: existing, name, loginId, subject, role, status, apps, permissions, authAction, lessonLogUrl, workPageUrl, dailyHoursUrl, profileImageUrl, memo },
+        teacher: { uid: existing, name, loginId, subject, role, teacherPosition, teachableSubjects, status, apps, permissions, authAction, lessonLogUrl, workPageUrl, dailyHoursUrl, profileImageUrl, memo },
         requiredCollections: ["users", "userProfiles", "userAppAccess", "loginAliases"]
       });
       if (!existing) state.teacherProvisionSecrets[item.id] = password;
@@ -4086,6 +4099,8 @@ window.SeduHubAdapter={
           displayName: draft.name,
           instructorId: draft.loginId,
           department: draft.subject,
+          ...(Object.hasOwn(draft, "teachableSubjects") ? { teachableSubjects: draft.teachableSubjects } : {}),
+          ...(Object.hasOwn(draft, "teacherPosition") ? { teacherPosition: draft.teacherPosition } : {}),
           subjects: draft.subject ? [draft.subject] : [],
           lessonLogUrl: draft.lessonLogUrl || "",
           lessonLogLink: draft.lessonLogUrl || "",
@@ -5312,26 +5327,60 @@ window.SeduHubAdapter={
       updateBusyState();
     }
 
+    function cleanTeacherSubject(value) {
+      return String(value || "").replace(/\s*팀장\s*/g, " ").trim();
+    }
+
+    function readTeachableSubjects() {
+      return [...new Set($("teacherSubjectsInput").value.split(/[,，\n]/).map(value => value.normalize("NFC").trim()).filter(Boolean))];
+    }
+
+    function renderSubjectSuggestions() {
+      const parts = $("teacherSubjectsInput").value.split(/[,，\n]/);
+      const query = parts.pop().trim().toLowerCase();
+      const prefix = parts.map(value => value.trim()).filter(Boolean);
+      const options = [...new Set(state.teachers.flatMap(teacher => teacher.teachableSubjects || []))];
+      $("teacherSubjectSuggestions").innerHTML = options.filter(value => value.toLowerCase().includes(query) && !prefix.includes(value)).sort((a,b) => a.localeCompare(b,"ko")).map(value => `<option value="${escapeHtml([...prefix,value].join(", "))}"></option>`).join("");
+    }
+
+    function teacherPositionValue(teacher) {
+      return teacher.role === "INSTRUCTOR" && (teacher.teacherPosition === "TEAM_LEAD" || (!teacher.teacherPosition && /팀장/.test(teacher.subject))) ? "TEAM_LEAD" : teacher.role;
+    }
+
+    function renderTeacherSubject(teacher) {
+      const subject = cleanTeacherSubject(teacher.subject);
+      const icon = state.icons.find(icon => icon.lookupKey === `subject:${normalizedIconName(subject)}`)
+        || state.icons.find(icon => icon.lookupKey === `subject:${normalizedIconName(subjectCategory(subject))}`);
+      return `<span class="person-name">${icon ? `<img class="person-icon" src="${escapeHtml(icon.imageUrl)}" alt="" onerror="this.hidden=true">` : ""}<span>${escapeHtml(subject || "-")}</span></span>`;
+    }
+
     function renderTeachers() {
+      renderSubjectSuggestions();
+      const count = state.teachers.filter(teacher => teacher.status === "ACTIVE").length;
+      $("activeTeacherCount").textContent = count;
+      $("inactiveTeacherCount").textContent = state.teachers.length - count;
+      document.querySelectorAll("[data-teacher-status]").forEach(button => {
+        const selected = button.dataset.teacherStatus === state.teacherStatusTab;
+        button.classList.toggle("active", selected); button.setAttribute("aria-selected", String(selected));
+      });
       const keyword = ($("teacherSearch")?.value || "").trim().toLowerCase();
       const role = $("teacherRoleFilter")?.value || "";
       const app = $("teacherAppFilter")?.value || "";
       const rows = state.teachers.filter(teacher => {
-        const text = [teacher.name, teacher.loginId, teacher.subject, teacher.role, teacher.uid].join(" ").toLowerCase();
-        return (!keyword || text.includes(keyword)) && (!role || teacher.role === role) && (!app || (teacher.apps || []).includes(app));
+        const text = [teacher.name, teacher.loginId, teacher.subject, teacher.role, teacher.uid, ...(teacher.teachableSubjects || [])].join(" ").toLowerCase();
+        return (teacher.status === "ACTIVE") === (state.teacherStatusTab === "ACTIVE") && (!keyword || text.includes(keyword)) && (!role || teacherPositionValue(teacher) === role) && (!app || (teacher.apps || []).includes(app));
       }).sort(teacherSortComparator).map(teacher => `
         <tr>
           <td>${renderPersonName(teacher)}</td>
           <td>${escapeHtml(teacher.loginId)}</td>
-          <td><span class="status active">Firebase Auth</span></td>
-          <td>${escapeHtml(subjectCategory(teacher.subject))}${teacher.subject && subjectCategory(teacher.subject) !== teacher.subject ? `<br><span class="help">${escapeHtml(teacher.subject)}</span>` : ""}</td>
-          <td>${roleLabel(teacher.role)}</td>
-          <td><span class="status ${statusClass(teacher.status)}">${statusLabel(teacher.status)}</span></td>
-          <td>${escapeHtml((teacher.apps || []).join(", ") || "-")}</td>
+          <td>${renderTeacherSubject(teacher)}</td>
+          <td><span class="help teacher-subject-summary" tabindex="0" title="${escapeHtml((teacher.teachableSubjects || []).join(", "))}" aria-label="${escapeHtml((teacher.teachableSubjects || []).join(", ") || "가능 과목 미입력")}">${escapeHtml((teacher.teachableSubjects || []).slice(0,2).join(", ") || "-")}${(teacher.teachableSubjects || []).length > 2 ? ` 외 ${teacher.teachableSubjects.length - 2}` : ""}</span></td>
+          <td>${teacherPositionValue(teacher) === "TEAM_LEAD" ? "팀장" : roleLabel(teacher.role)}</td>
+          <td><span class="status ${statusClass(teacher.status)}">${teacher.status === "ACTIVE" ? "활성" : "비활성"}</span></td>
           <td><button class="button" data-teacher-edit="${escapeHtml(teacher.uid)}">편집</button></td>
         </tr>
       `).join("");
-      $("teacherRows").innerHTML = rows || `<tr><td colspan="8">${state.isAdmin ? "조건에 맞는 강사 계정이 없습니다." : "관리자 로그인 후 Firestore 계정 목록을 불러옵니다."}</td></tr>`;
+      $("teacherRows").innerHTML = rows || `<tr><td colspan="7">${state.isAdmin ? "조건에 맞는 강사 계정이 없습니다." : "관리자 로그인 후 Firestore 계정 목록을 불러옵니다."}</td></tr>`;
     }
 
     function appAccessLabel(app) {
@@ -5490,6 +5539,7 @@ window.SeduHubAdapter={
     }
 
     function setIconCategory(category) {
+      if (state.editingIconId) resetIconUploadForm();
       state.iconCategory = category;
       document.querySelectorAll("[data-icon-category]").forEach(button => {
         const active = button.dataset.iconCategory === category;
@@ -5506,6 +5556,10 @@ window.SeduHubAdapter={
     }
 
     function resetIconUploadForm() {
+      state.editingIconId = "";
+      $("uploadIconButton").textContent = "아이콘 업로드";
+      $("cancelIconEditButton").hidden = true;
+      ["iconPersonTargetInput", "iconNamedTargetInput", "iconVariantInput"].forEach(id => $(id).disabled = false);
       state.iconFile = null;
       if (state.iconPreviewUrl) URL.revokeObjectURL(state.iconPreviewUrl);
       state.iconPreviewUrl = "";
@@ -5541,7 +5595,6 @@ window.SeduHubAdapter={
     function setIconUploadBusy(busy, message) {
       state.iconUploading = busy;
       $("uploadIconButton").disabled = busy;
-      $("seedStaffIconsButton").disabled = busy;
       $("iconUploadHelp").textContent = message || "같은 연결 대상에 다시 올리면 새 파일로 교체됩니다.";
       $("iconUploadProgress").hidden = !busy;
       if (!busy) $("iconUploadProgress").value = 0;
@@ -5601,6 +5654,16 @@ window.SeduHubAdapter={
       if (state.iconUploading) return;
       let failureMessage = "";
       try {
+        if (state.editingIconId) {
+          if (!state.isAdmin) throw new Error("관리자 로그인이 필요합니다.");
+          const icon = state.icons.find(icon => icon.id === state.editingIconId);
+          if (!icon) throw new Error("수정할 아이콘을 찾을 수 없습니다.");
+          const descriptor = { ...icon, displayName: $("iconDisplayNameInput").value.trim() || icon.displayName, aliases: $("iconAliasesInput").value.split(",").map(value => value.trim()).filter(Boolean) };
+          setIconUploadBusy(true);
+          if (state.iconFile) await saveSharedIconFile(state.iconFile, descriptor);
+          else await (await getDb()).collection(COLLECTIONS.sharedIcons).doc(icon.id).set({displayName:descriptor.displayName, aliases:descriptor.aliases, updatedAt:firebase.firestore.FieldValue.serverTimestamp(), updatedBy:state.authUser.uid, updatedByName:state.operator?.name || "관리자"}, {merge:true});
+          await loadIconData(await getDb()); resetIconUploadForm(); render(); toast("아이콘을 수정했습니다."); return;
+        }
         if (!state.iconFile) throw new Error("업로드할 이미지 파일을 선택해 주세요.");
         const target = iconTargetDescriptor();
         const aliases = $("iconAliasesInput").value.split(",").map(value => value.trim()).filter(Boolean);
@@ -5727,7 +5790,7 @@ window.SeduHubAdapter={
             <span title="${escapeHtml(icon.lookupKey)}">${escapeHtml(icon.lookupKey)}</span>
             <span>${escapeHtml(iconUpdatedLabel(icon.updatedAt))}${icon.updatedByName ? ` · ${escapeHtml(icon.updatedByName)}` : ""}</span>
           </div>
-          <button class="button icon-delete-button" type="button" data-icon-delete="${escapeHtml(icon.id)}" title="아이콘 삭제" aria-label="${escapeHtml(icon.displayName)} 아이콘 삭제">×</button>
+          <div style="display:flex;gap:4px;"><button class="button icon-delete-button" type="button" data-icon-edit="${escapeHtml(icon.id)}" title="아이콘 수정" aria-label="${escapeHtml(icon.displayName)} 아이콘 수정"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button><button class="button icon-delete-button" type="button" data-icon-delete="${escapeHtml(icon.id)}" title="아이콘 삭제" aria-label="${escapeHtml(icon.displayName)} 아이콘 삭제">×</button></div>
         </article>
       `).join("");
     }
@@ -6209,8 +6272,9 @@ window.SeduHubAdapter={
             state.editingTeacherUid = teacher.uid;
             $("teacherNameInput").value = teacher.name;
             $("teacherLoginInput").value = teacher.loginId;
-            $("teacherSubjectInput").value = teacher.subject || "";
-            $("teacherRoleInput").value = teacher.role;
+            $("teacherSubjectInput").value = cleanTeacherSubject(teacher.subject);
+            $("teacherRoleInput").value = teacher.role === "INSTRUCTOR" && teacher.teacherPosition === "TEAM_LEAD" ? "TEAM_LEAD" : teacher.role;
+            $("teacherSubjectsInput").value = (teacher.teachableSubjects || []).join(", ");
             $("teacherStatusInput").value = teacher.status;
             $("teacherPasswordInput").value = "";
             $("teacherAuthActionInput").value = "";
@@ -6304,6 +6368,7 @@ window.SeduHubAdapter={
         renderStudents();
       });
       $("clearTeacherFilters").addEventListener("click", () => {
+        state.teacherStatusTab = "ACTIVE";
         $("teacherSearch").value = "";
         $("teacherRoleFilter").value = "";
         $("teacherAppFilter").value = "";
@@ -6392,7 +6457,24 @@ window.SeduHubAdapter={
         renderTeacherProfiles();
       });
       $("uploadIconButton").addEventListener("click", uploadIconFromForm);
-      $("seedStaffIconsButton").addEventListener("click", seedStaffPositionIcons);
+      $("cancelIconEditButton").addEventListener("click", resetIconUploadForm);
+      $("iconLibraryGrid").addEventListener("click", event => {
+        const button = event.target.closest("[data-icon-edit]");
+        if (!button || state.iconUploading || state.loading) return;
+        const icon = state.icons.find(icon => icon.id === button.dataset.iconEdit);
+        if (!icon) return;
+        resetIconUploadForm(); setIconCategory(icon.category); state.editingIconId = icon.id;
+        $("iconPersonTargetInput").value = icon.lookupKey;
+        $("iconNamedTargetInput").value = icon.lookupKey.replace(/^(school|subject):/, "").replace(/:transparent$/, "");
+        $("iconVariantInput").value = icon.lookupKey.endsWith(":transparent") ? "transparent" : "background";
+        ["iconPersonTargetInput", "iconNamedTargetInput", "iconVariantInput"].forEach(id => $(id).disabled = true);
+        $("iconDisplayNameInput").value = icon.displayName; $("iconAliasesInput").value = (icon.aliases || []).join(", ");
+        $("iconPreview").src = icon.imageUrl; $("iconPreview").hidden = false;
+        $("iconFilePrompt").textContent = "이미지 교체"; $("uploadIconButton").textContent = "수정 저장";
+        $("cancelIconEditButton").hidden = false; $("iconDisplayNameInput").focus();
+      });
+      document.querySelectorAll("[data-teacher-status]").forEach(button => button.addEventListener("click", () => { state.teacherStatusTab = button.dataset.teacherStatus; renderTeachers(); }));
+      $("teacherSubjectsInput").addEventListener("input", renderSubjectSuggestions);
       ["dragenter", "dragover"].forEach(type => $("iconDropzone").addEventListener(type, event => {
         event.preventDefault();
         $("iconDropzone").classList.add("dragging");
