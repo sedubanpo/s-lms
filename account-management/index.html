@@ -2051,6 +2051,8 @@
             <div class="panel-head"><div><h3>강사 계정 요청</h3><p>Firestore 계정 문서와 로그인 alias를 갱신합니다.</p></div></div>
             <div class="panel-body">
               <form id="teacherForm" class="form-grid" onsubmit="return false;">
+                <div class="form-field"><label for="teacherBirthDateInput">생년월일 (선택)</label><input class="field" id="teacherBirthDateInput" type="date"></div>
+                <div class="form-field"><label for="teacherContactEmailInput">이메일 (선택)</label><input class="field" id="teacherContactEmailInput" type="email" autocomplete="email"></div>
                 <div class="form-field"><label>이름</label><input class="field" id="teacherNameInput" autocomplete="off"></div>
                 <div class="form-field"><label>로그인 ID</label><input class="field" id="teacherLoginInput" inputmode="numeric" autocomplete="off"></div>
                 <div class="form-field"><label>과목/부서</label><input class="field" id="teacherSubjectInput" autocomplete="off"></div>
@@ -2107,6 +2109,8 @@
             <div class="panel-head"><div><h3 id="staffEditorTitle">실무자 계정 추가</h3><p>Auth와 권한 연결이 모두 완료된 뒤 저장됩니다.</p></div><button class="button" id="closeStaffEditorButton">닫기</button></div>
             <div class="panel-body">
               <form id="staffForm" class="form-grid" onsubmit="return false;">
+                <div class="form-field"><label for="staffBirthDateInput">생년월일 (선택)</label><input class="field" id="staffBirthDateInput" type="date"></div>
+                <div class="form-field"><label for="staffContactEmailInput">이메일 (선택)</label><input class="field" id="staffContactEmailInput" type="email" autocomplete="email"></div>
                 <div class="form-field"><label>이름</label><input class="field" id="staffNameInput" autocomplete="off"></div>
                 <div class="form-field"><label>로그인 ID</label><input class="field" id="staffLoginInput" inputmode="tel" autocomplete="off" placeholder="010-0000-0000"></div>
                 <div class="form-field"><label>직급</label><select class="select" id="staffPositionInput"></select></div>
@@ -3204,6 +3208,8 @@ window.SeduHubAdapter={
             workPageUrl: profile.workPageUrl || profile.workPageLink || profile.workUrl || links.workPage || "",
             dailyHoursUrl: profile.dailyHoursUrl || profile.dailyHoursLink || profile.dailyHoursUrlLink || links.dailyHours || "",
             profileImageUrl: profile.profileImageUrl || profile.profileImage || profile.photoURL || "",
+            birthDate: profile.birthDate || "",
+            contactEmail: profile.contactEmail || "",
             staffPosition: user.staffPosition || profile.staffPosition || "",
             hireDate: user.hireDate || profile.hireDate || "",
             terminationDate: user.terminationDate || profile.terminationDate || "",
@@ -3815,6 +3821,8 @@ window.SeduHubAdapter={
         const permissions = staff.permissions || {};
         state.editingStaffUid = staff.uid;
         $("staffNameInput").value = staff.name || "";
+        $("staffBirthDateInput").value = staff.birthDate || "";
+        $("staffContactEmailInput").value = staff.contactEmail || "";
         $("staffLoginInput").value = staff.loginId || "";
         $("staffPositionInput").value = staff.staffPosition || "사원";
         $("staffStatusInput").value = staff.status || "ACTIVE";
@@ -3843,6 +3851,8 @@ window.SeduHubAdapter={
 
     async function queueStaffFromForm() {
       if (state.loading) return;
+      const optionalProfile = readOptionalAccountProfile("staff");
+      if (!optionalProfile) return;
       const name = $("staffNameInput").value.trim();
       const loginId = canonicalLoginId($("staffLoginInput").value);
       const staffPosition = $("staffPositionInput").value;
@@ -3889,6 +3899,7 @@ window.SeduHubAdapter={
         accountKind: "staff",
         teacher: {
           uid: existing,
+          ...optionalProfile,
           name,
           loginId,
           subject: "운영",
@@ -3923,8 +3934,18 @@ window.SeduHubAdapter={
       await submitQueue();
     }
 
+    function readOptionalAccountProfile(kind) {
+      const dateInput = $(kind + "BirthDateInput");
+      const emailInput = $(kind + "ContactEmailInput");
+      emailInput.value = emailInput.value.trim();
+      if (!dateInput.reportValidity() || !emailInput.reportValidity()) return null;
+      return { birthDate: dateInput.value, contactEmail: emailInput.value };
+    }
+
     async function queueTeacherFromForm() {
       if (state.loading) return;
+      const optionalProfile = readOptionalAccountProfile("teacher");
+      if (!optionalProfile) return;
       const name = $("teacherNameInput").value.trim();
       const loginId = canonicalLoginId($("teacherLoginInput").value);
       const subject = $("teacherSubjectInput").value.trim();
@@ -3979,7 +4000,7 @@ window.SeduHubAdapter={
       }
       const item = queueRequest("teacher", `${name} · ${roleLabel(role)} · ${loginId}`, {
         action: "upsertTeacherMetadata",
-        teacher: { uid: existing, name, loginId, subject, role, teacherPosition, teachableSubjects, status, apps, permissions, authAction, lessonLogUrl, workPageUrl, dailyHoursUrl, profileImageUrl, memo },
+        teacher: { uid: existing, ...optionalProfile, name, loginId, subject, role, teacherPosition, teachableSubjects, status, apps, permissions, authAction, lessonLogUrl, workPageUrl, dailyHoursUrl, profileImageUrl, memo },
         requiredCollections: ["users", "userProfiles", "userAppAccess", "loginAliases"]
       });
       if (!existing) state.teacherProvisionSecrets[item.id] = password;
@@ -4130,6 +4151,8 @@ window.SeduHubAdapter={
         db.collection(COLLECTIONS.userProfiles).doc(uid).set(Object.assign({
           uid,
           displayName: draft.name,
+          ...(Object.hasOwn(draft, "birthDate") ? { birthDate: draft.birthDate } : {}),
+          ...(Object.hasOwn(draft, "contactEmail") ? { contactEmail: draft.contactEmail } : {}),
           instructorId: draft.loginId,
           department: draft.subject,
           ...(Object.hasOwn(draft, "teachableSubjects") ? { teachableSubjects: draft.teachableSubjects } : {}),
@@ -4220,6 +4243,8 @@ window.SeduHubAdapter={
         uid,
         name: draft.name,
         loginId: draft.loginId,
+        birthDate: draft.birthDate || "",
+        contactEmail: draft.contactEmail || "",
         subject: draft.subject || "",
         role: draft.role,
         status: draft.status,
@@ -6412,6 +6437,8 @@ window.SeduHubAdapter={
             const permissions = teacher.permissions || {};
             state.editingTeacherUid = teacher.uid;
             $("teacherNameInput").value = teacher.name;
+            $("teacherBirthDateInput").value = teacher.birthDate || "";
+            $("teacherContactEmailInput").value = teacher.contactEmail || "";
             $("teacherLoginInput").value = teacher.loginId;
             $("teacherSubjectInput").value = cleanTeacherSubject(teacher.subject);
             $("teacherRoleInput").value = teacher.role === "INSTRUCTOR" && teacher.teacherPosition === "TEAM_LEAD" ? "TEAM_LEAD" : teacher.role;
