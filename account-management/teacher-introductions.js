@@ -5,6 +5,17 @@
   const canvas = el('introCanvas');
   const fields = ['Name', 'Subject', 'Education', 'Career', 'Introduction', 'Color'];
   let selected = null, photo = null, generation = 0, owner = '', loading = false;
+  let logo = null;
+  async function readImage(url) {
+    const response = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'reload' });
+    if (!response.ok) throw Error('image-response');
+    const objectUrl = URL.createObjectURL(await response.blob());
+    try {
+      const image = new Image(); image.src = objectUrl;
+      await image.decode();
+      return image;
+    } finally { URL.revokeObjectURL(objectUrl); }
+  }
   const style = document.createElement('style');
   style.textContent = `
     .intro-group { margin:24px 0; }
@@ -112,17 +123,19 @@
     try {
       const asset=teacherProfileAsset(teacher.uid);
       if(!asset?.imageUrl) throw Error('인물 프로필 사진을 먼저 등록해 주세요.');
-      const image=new Image();image.crossOrigin='anonymous';image.src=asset.imageUrl;
-      await image.decode();
+      const [image, brand] = await Promise.all([
+        readImage(asset.imageUrl),
+        logo ? Promise.resolve(logo) : readImage('./academy-logo.png')
+      ]);
       const color=edgeColor(image);
       if(revision!==generation || uid!==state.authUser?.uid || !state.isAdmin) return;
-      photo=image;el('introColor').value=color;
+      photo=image;logo=brand;el('introColor').value=color;
       await document.fonts.ready;
       if(revision!==generation) return;
       el('introStatus').textContent='';
     } catch(error) {
       if(revision!==generation) return;
-      el('introStatus').textContent=error.message.startsWith('인물')?error.message:'사진을 읽을 수 없습니다. 사진 접근 권한과 연결 상태를 확인한 뒤 다시 열어 주세요.';
+      el('introStatus').textContent=error.message.startsWith('인물')?error.message:'이미지를 불러오지 못했습니다. 사진 서버의 연결 또는 이미지 내보내기(CORS) 설정을 확인해 주세요. 관리자 로그인 권한과는 별개입니다.';
     } finally {
       if(revision===generation) {loading=false;draw();controls();}
     }
@@ -147,29 +160,34 @@
       return result;
     };
     const blocks=[
-      {text:el('introSubject').value,size:24,bold:true,gap:12},
-      {text:el('introName').value+' 선생님',size:48,bold:true,gap:30},
-      {text:el('introEducation').value,size:28,bold:true,gap:18},
-      {text:el('introCareer').value,size:24,gap:24},
-      {text:el('introIntroduction').value,size:25,gap:26}
+      {text:el('introSubject').value,size:22,bold:true,gap:14},
+      {text:el('introName').value+' 선생님',size:48,bold:true,gap:32},
+      {text:el('introEducation').value,size:27,bold:true,gap:22},
+      {text:el('introCareer').value,size:23,gap:24},
+      {text:el('introIntroduction').value,size:24,gap:28}
     ].filter(b=>b.text.trim()).map(b=>({...b,lines:wrap(b.text,b.size,b.bold)}));
     const textHeight=blocks.reduce((n,b)=>n+b.lines.length*b.size*1.5+b.gap,0);
     const photoHeight=photo?Math.min(760,Math.max(380,width*photo.naturalHeight/photo.naturalWidth)):380;
-    canvas.width=width;canvas.height=Math.ceil(182+textHeight+photoHeight);
+    canvas.width=width;canvas.height=Math.ceil(190+textHeight+photoHeight+76);
     const background=el('introColor').value;
     ctx.fillStyle=background;ctx.fillRect(0,0,width,canvas.height);
-    ctx.fillStyle='#257e6e';ctx.fillRect(0,0,width,128);
-    ctx.fillStyle='white';ctx.font=font(40,true);ctx.fillText('에스에듀 반포관 강사',margin,58);
-    ctx.font=font(21);ctx.fillText('학생에게 맞춘 수업, 선생님을 소개합니다',margin,98);
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,width,138);
+    if(logo) ctx.drawImage(logo,margin,30,76,76);
+    ctx.fillStyle='#094f98';ctx.font=font(32,true);ctx.fillText('에스에듀 반포관',margin+98,64);
+    ctx.fillStyle='#52616c';ctx.font=font(18);ctx.fillText('학생을 위한 맞춤 수업',margin+98,96);
+    ctx.fillStyle='#094f98';ctx.fillRect(margin,137,56,4);
     const rgb=background.match(/\w\w/g).map(v=>parseInt(v,16));
     ctx.fillStyle=rgb[0]*.299+rgb[1]*.587+rgb[2]*.114>145?'#182a24':'#ffffff';
-    let y=164;ctx.textBaseline='top';
+    let y=182;ctx.textBaseline='top';
     for(const b of blocks) {ctx.font=font(b.size,b.bold);for(const line of b.lines){ctx.fillText(line,margin,y);y+=b.size*1.5;}y+=b.gap;}
     if(photo) {
       const scale=Math.min(width/photo.naturalWidth,photoHeight/photo.naturalHeight);
       const w=photo.naturalWidth*scale,h=photo.naturalHeight*scale;
-      ctx.drawImage(photo,width-w,canvas.height-h,w,h);
+      ctx.drawImage(photo,width-w,canvas.height-76-h,w,h);
     }
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,canvas.height-76,width,76);
+    ctx.fillStyle='#094f98';ctx.font=font(18,true);ctx.fillText('에스에듀',margin,canvas.height-48);
+    ctx.fillStyle='#52616c';ctx.font=font(16);ctx.textAlign='right';ctx.fillText('강사 소개',width-margin,canvas.height-47);
   }
   function png() {
     if(!state.isAdmin || !selected || !photo || loading) return Promise.reject(Error('사진을 불러온 뒤 다시 시도해 주세요.'));
