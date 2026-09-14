@@ -1736,6 +1736,7 @@
         <button class="nav-button active" data-view="dashboard"><img class="nav-icon" src="./assets/navigation/layout-dashboard.svg" alt="">운영 대시보드 <small>동기화</small></button>
         <button class="nav-button" data-view="students"><img class="nav-icon" src="./assets/navigation/graduation-cap.svg" alt="">학생 상태 관리 <small>등록/중지</small></button>
         <button class="nav-button" data-view="teachers"><img class="nav-icon" src="./assets/navigation/contact-round.svg" alt="">강사 계정 관리 <small>계정/권한</small></button>
+        <button class="nav-button" data-view="introductions"><img class="nav-icon" src="./assets/navigation/images.svg" alt="">강사 소개 프로필</button>
         <button class="nav-button" data-view="staff"><img class="nav-icon" src="./assets/navigation/briefcase-business.svg" alt="">실무자 계정 관리 <small>근무/권한</small></button>
         <button class="nav-button" data-view="icons"><img class="nav-icon" src="./assets/navigation/images.svg" alt="">아이콘 관리 <small>공통 자산</small></button>
         <button class="nav-button" data-view="queue"><img class="nav-icon" src="./assets/navigation/list-checks.svg" alt="">반영 대기열 <small>감사</small></button>
@@ -2051,6 +2052,8 @@
             <div class="panel-head"><div><h3>강사 계정 요청</h3><p>Firestore 계정 문서와 로그인 alias를 갱신합니다.</p></div></div>
             <div class="panel-body">
               <form id="teacherForm" class="form-grid" onsubmit="return false;">
+                <div class="form-field full"><label for="teacherEducationInput">학력</label><textarea class="field" id="teacherEducationInput" rows="2" maxlength="1000"></textarea></div>
+                <div class="form-field full"><label for="teacherIntroductionInput">소개 문구</label><textarea class="field" id="teacherIntroductionInput" rows="4" maxlength="2000"></textarea></div>
                 <div class="form-field"><label for="teacherBirthDateInput">생년월일 (선택)</label><input class="field" id="teacherBirthDateInput" type="date"></div>
                 <div class="form-field"><label for="teacherContactEmailInput">이메일 (선택)</label><input class="field" id="teacherContactEmailInput" type="email" autocomplete="email"></div>
                 <div class="form-field"><label>이름</label><input class="field" id="teacherNameInput" autocomplete="off"></div>
@@ -2195,6 +2198,26 @@
         </section>
       </section>
 
+      <section id="introductionsView" class="hidden">
+        <div class="toolbar"><input class="field" id="introSearch" aria-label="강사 검색" placeholder="강사명, 과목 검색"></div>
+        <div id="introGroups"></div>
+        <dialog id="introDialog" aria-labelledby="introTitle">
+          <header class="intro-dialog-head"><h3 id="introTitle">강사 소개 프로필</h3><button type="button" class="button" id="introClose" aria-label="닫기" title="닫기">×</button></header>
+          <div class="intro-layout">
+            <form id="introForm" onsubmit="return false;">
+              <label for="introName">이름</label><input id="introName" class="field" maxlength="80">
+              <label for="introSubject">과목</label><input id="introSubject" class="field" maxlength="120">
+              <label for="introEducation">학력</label><textarea id="introEducation" class="field" rows="3" maxlength="1000"></textarea>
+              <label for="introCareer">경력 사항</label><textarea id="introCareer" class="field" rows="3" maxlength="1000"></textarea>
+              <label for="introIntroduction">소개 문구</label><textarea id="introIntroduction" class="field" rows="5" maxlength="2000"></textarea>
+              <label for="introColor">배경색</label><input type="color" id="introColor" value="#e4f0e8">
+              <div class="intro-actions"><button type="button" class="button" id="introReset">원본으로 되돌리기</button><button type="button" class="button primary" id="introDownload">PNG 다운로드</button><button type="button" class="button" id="introCopy">이미지 복사</button></div>
+              <p id="introStatus" role="status" aria-live="polite"></p>
+            </form>
+            <div class="intro-preview"><canvas id="introCanvas" aria-label="강사 소개 이미지 미리보기" role="img"></canvas></div>
+          </div>
+        </dialog>
+      </section>
       <section id="teacherProfilesView" class="hidden">
         <section class="panel">
         <div class="panel-head"><h3>프로필 및 아이콘</h3><span class="help" id="teacherProfileCount"></span></div>
@@ -3209,6 +3232,9 @@ window.SeduHubAdapter={
             dailyHoursUrl: profile.dailyHoursUrl || profile.dailyHoursLink || profile.dailyHoursUrlLink || links.dailyHours || "",
             profileImageUrl: profile.profileImageUrl || profile.profileImage || profile.photoURL || "",
             birthDate: profile.birthDate || "",
+            education: profile.education || "",
+            introduction: profile.introduction || "",
+            career: profile.career || "",
             contactEmail: profile.contactEmail || "",
             staffPosition: user.staffPosition || profile.staffPosition || "",
             hireDate: user.hireDate || profile.hireDate || "",
@@ -3946,6 +3972,8 @@ window.SeduHubAdapter={
       if (state.loading) return;
       const optionalProfile = readOptionalAccountProfile("teacher");
       if (!optionalProfile) return;
+      optionalProfile.education = $("teacherEducationInput").value.trim();
+      optionalProfile.introduction = $("teacherIntroductionInput").value.trim();
       const name = $("teacherNameInput").value.trim();
       const loginId = canonicalLoginId($("teacherLoginInput").value);
       const subject = $("teacherSubjectInput").value.trim();
@@ -4151,6 +4179,8 @@ window.SeduHubAdapter={
         db.collection(COLLECTIONS.userProfiles).doc(uid).set(Object.assign({
           uid,
           displayName: draft.name,
+          ...(Object.hasOwn(draft, "education") ? { education: draft.education } : {}),
+          ...(Object.hasOwn(draft, "introduction") ? { introduction: draft.introduction } : {}),
           ...(Object.hasOwn(draft, "birthDate") ? { birthDate: draft.birthDate } : {}),
           ...(Object.hasOwn(draft, "contactEmail") ? { contactEmail: draft.contactEmail } : {}),
           instructorId: draft.loginId,
@@ -4244,6 +4274,8 @@ window.SeduHubAdapter={
         name: draft.name,
         loginId: draft.loginId,
         birthDate: draft.birthDate || "",
+        education: draft.education || "",
+        introduction: draft.introduction || "",
         contactEmail: draft.contactEmail || "",
         subject: draft.subject || "",
         role: draft.role,
@@ -6254,7 +6286,7 @@ window.SeduHubAdapter={
       state.view = view;
       const navigationView = view === "teacherProfiles" ? "icons" : view;
       document.querySelectorAll(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === navigationView));
-      ["dashboard", "students", "teachers", "teacherProfiles", "staff", "icons", "queue", "settings"].forEach(name => {
+      ["dashboard", "students", "teachers", "teacherProfiles", "introductions", "staff", "icons", "queue", "settings"].forEach(name => {
         $(`${name}View`).classList.toggle("hidden", name !== view);
       });
       const titles = {
@@ -6262,6 +6294,7 @@ window.SeduHubAdapter={
         students: ["학생 상태 관리", "등록, 중지, 복귀, 보류, 퇴원 상태를 students 문서에 저장합니다."],
         teachers: ["강사 계정 관리", "users, userProfiles, userAppAccess, loginAliases 문서를 업데이트합니다."],
         teacherProfiles: ["아이콘 관리", ""],
+        introductions: ["강사 소개 프로필", ""],
         staff: ["실무자 계정 관리", "휴대폰 로그인, 근무 정보, 학원 웹앱 접근 권한을 관리합니다."],
         icons: ["아이콘 관리", ""],
         queue: ["반영 대기열", "운영자가 검증한 요청만 Firestore에 직접 저장합니다."],
@@ -6274,6 +6307,7 @@ window.SeduHubAdapter={
 
     function render() {
       renderMetrics();
+      if (typeof window !== "undefined" && window.renderTeacherIntroductions) window.renderTeacherIntroductions();
       if (state.view === "dashboard") {
         renderDashboardAnalytics();
         renderDashboardQueue();
@@ -6437,6 +6471,8 @@ window.SeduHubAdapter={
             const permissions = teacher.permissions || {};
             state.editingTeacherUid = teacher.uid;
             $("teacherNameInput").value = teacher.name;
+            $("teacherEducationInput").value = teacher.education || "";
+            $("teacherIntroductionInput").value = teacher.introduction || "";
             $("teacherBirthDateInput").value = teacher.birthDate || "";
             $("teacherContactEmailInput").value = teacher.contactEmail || "";
             $("teacherLoginInput").value = teacher.loginId;
@@ -6677,6 +6713,7 @@ window.SeduHubAdapter={
       renderAuthState();
     }).catch(error => renderAuthState(error.message || String(error)));
   </script>
+<script src="teacher-introductions.js"></script>
 <script type="module" src="hub-start.mjs"></script>
 </body>
 </html>
