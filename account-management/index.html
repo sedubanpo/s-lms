@@ -3226,6 +3226,7 @@ window.SeduHubAdapter={
             teachableSubjects: Array.isArray(profile.teachableSubjects) ? profile.teachableSubjects : [],
             teacherPosition: profile.teacherPosition || (/팀장/.test(profile.department || "") ? "TEAM_LEAD" : "INSTRUCTOR"),
             role: String(user.role || "INSTRUCTOR").toUpperCase(),
+            accountType: user.accountType || profile.accountType || "",
             status: user.status || "ACTIVE",
             lessonLogUrl: profile.lessonLogUrl || profile.lessonLogLink || profile.teachingLogUrl || links.lessonLog || "",
             workPageUrl: profile.workPageUrl || profile.workPageLink || profile.workUrl || links.workPage || "",
@@ -3246,8 +3247,8 @@ window.SeduHubAdapter={
             permissions: accessDoc.permissions || {}
           };
         });
-      destination.staff = accounts.filter(account => account.role === "STAFF").sort(staffSortComparator);
-      destination.teachers = accounts.filter(account => account.role !== "STAFF").sort(teacherSortComparator);
+      destination.staff = accounts.filter(account => account.role === "STAFF" || account.accountType === "STAFF").sort(staffSortComparator);
+      destination.teachers = accounts.filter(account => account.role !== "STAFF" && account.accountType !== "STAFF").sort(teacherSortComparator);
     }
 
     function normalizeIconAsset(doc) {
@@ -3929,7 +3930,7 @@ window.SeduHubAdapter={
           name,
           loginId,
           subject: "운영",
-          role: "STAFF",
+          role: state.staff.find(account => account.uid === existing)?.role || "STAFF",
           status,
           staffPosition,
           hireDate,
@@ -4271,6 +4272,7 @@ window.SeduHubAdapter={
       const appMap = Object.assign(defaultApps(draft.role), draft.apps || {});
       const teacher = {
         uid,
+        accountType: item.payload.accountKind === "staff" ? "STAFF" : "",
         name: draft.name,
         loginId: draft.loginId,
         birthDate: draft.birthDate || "",
@@ -4294,11 +4296,12 @@ window.SeduHubAdapter={
         permissions: Object.assign(defaultPermissions(draft.role), draft.permissions || {})
       };
       const previousUid = String(draft.previousMetadataUid || "").trim();
-      const target = draft.role === "STAFF" ? state.staff : state.teachers;
-      const opposite = draft.role === "STAFF" ? state.teachers : state.staff;
+      const isStaff = draft.role === "STAFF" || teacher.accountType === "STAFF";
+      const target = isStaff ? state.staff : state.teachers;
+      const opposite = isStaff ? state.teachers : state.staff;
       const updated = target.filter(existing => existing.uid !== uid && (!previousUid || existing.uid !== previousUid)).concat(teacher).sort(draft.role === "STAFF" ? staffSortComparator : teacherSortComparator);
       opposite.splice(0, opposite.length, ...opposite.filter(existing => existing.uid !== uid && (!previousUid || existing.uid !== previousUid)));
-      if (draft.role === "STAFF") state.staff = updated;
+      if (isStaff) state.staff = updated;
       else state.teachers = updated;
     }
 
