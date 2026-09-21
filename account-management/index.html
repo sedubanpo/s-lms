@@ -1720,7 +1720,7 @@
     .student-history-detail td { white-space:normal; overflow-wrap:anywhere; }
   </style>
   <script>window.ACCOUNTS_EMBEDDED=window.parent!==window&&new URL(location.href).searchParams.get('embed')==='intranet';if(window.ACCOUNTS_EMBEDDED)document.documentElement.classList.add('accounts-embedded');</script>
-  <link rel="stylesheet" href="embedded.css?v=20260921">
+  <link rel="stylesheet" href="embedded.css?v=20260921b">
 </head>
 <body>
   <div class="app-shell">
@@ -3327,6 +3327,7 @@ window.SeduHubAdapter={
     }
 
     function queueRequest(type, summary, payload) {
+      window.AccountsBridge?.saved(type);
       const item = {
         id: requestId(type),
         type,
@@ -4762,6 +4763,7 @@ window.SeduHubAdapter={
           });
         }
 
+        const reservedPermissionIds = new Set();
         const referenceCollections = [
           COLLECTIONS.logs,
           COLLECTIONS.grades,
@@ -4784,7 +4786,8 @@ window.SeduHubAdapter={
                 if (instructorId) {
                   const permissionId = `${canonicalStudentId}__${instructorId}`;
                   const permissionRef = db.collection(COLLECTIONS.permissions).doc(permissionId);
-                  if (!(await permissionRef.get()).exists) {
+                  if (!reservedPermissionIds.has(permissionId) && !(await permissionRef.get()).exists) {
+                    reservedPermissionIds.add(permissionId);
                     await queueSet(permissionRef, Object.assign({}, source, {
                       permissionId, studentId: canonicalStudentId, canonicalStudentId,
                       studentIdAliases: mergedAliases, sourcePermissionId: doc.id
@@ -6303,6 +6306,7 @@ window.SeduHubAdapter={
     }
 
     function setView(view) {
+      if (window.AccountsBridge && !window.AccountsBridge.allowView(view)) return;
       state.view = view;
       const navigationView = view === "teacherProfiles" ? "icons" : view;
       document.querySelectorAll(".nav-button").forEach(button => button.classList.toggle("active", button.dataset.view === navigationView));
@@ -6322,6 +6326,7 @@ window.SeduHubAdapter={
       };
       $("viewTitle").textContent = titles[view][0];
       $("viewSubtitle").textContent = titles[view][1];
+      window.AccountsBridge?.publish();
       render();
     }
 
@@ -6739,6 +6744,7 @@ window.SeduHubAdapter={
     }).catch(error => renderAuthState(error.message || String(error)));
   </script>
 <script src="teacher-introductions.js"></script>
+<script src="embedded-bridge.js?v=20260921b"></script>
 <script type="module" src="hub-start.mjs?v=20260921"></script>
 </body>
 </html>
