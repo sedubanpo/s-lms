@@ -33,6 +33,6 @@ html.accounts-embedded *{scrollbar-width:thin;scrollbar-color:#c7cbdb transparen
 html.accounts-embedded :is(.table-wrap,.history-table-wrap,.audit-list,.student-editor-panel){max-height:none;overflow:visible}
 html.accounts-embedded .table-wrap,html.accounts-embedded .history-table-wrap{overflow-x:auto}
 html.accounts-embedded .student-editor-panel{position:static}
-html.accounts-embedded dialog.bulk-dialog{position:fixed;top:calc(var(--host-top,0px) + 16px);bottom:auto;margin:0 auto;max-height:calc(var(--host-height,600px) - 32px);overflow:auto}
+html.accounts-embedded dialog.bulk-dialog,html.accounts-embedded #introDialog{position:fixed;top:calc(var(--host-top,0px) + 16px);bottom:auto;margin:0 auto;max-height:calc(var(--host-height,600px) - 32px);overflow:auto}
 html.accounts-embedded .busy-overlay{top:var(--host-top,0px);bottom:auto;height:var(--host-height,600px)}
 html.accounts-embedded .toast{top:calc(var(--host-top,0px) + 16px);bottom:auto}
