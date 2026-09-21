@@ -4778,6 +4778,20 @@ window.SeduHubAdapter={
             const snapshot = await db.collection(collectionName).where("studentId", "==", aliasId).get();
             for (const doc of snapshot.docs) {
               const source = doc.data() || {};
+              // Copy permissions before migrating their source. Preserve an existing canonical assignment.
+              if (collectionName === COLLECTIONS.permissions) {
+                const instructorId = String(source.instructorId || (doc.id.includes("__") ? doc.id.slice(doc.id.indexOf("__") + 2) : "")).trim();
+                if (instructorId) {
+                  const permissionId = `${canonicalStudentId}__${instructorId}`;
+                  const permissionRef = db.collection(COLLECTIONS.permissions).doc(permissionId);
+                  if (!(await permissionRef.get()).exists) {
+                    await queueSet(permissionRef, Object.assign({}, source, {
+                      permissionId, studentId: canonicalStudentId, canonicalStudentId,
+                      studentIdAliases: mergedAliases, sourcePermissionId: doc.id
+                    }));
+                  }
+                }
+              }
               await queueSet(doc.ref, {
                 studentId: canonicalStudentId,
                 canonicalStudentId,
@@ -4786,20 +4800,6 @@ window.SeduHubAdapter={
                 identityMigratedAt: now,
                 identityMigratedBy: "account-management"
               });
-              if (collectionName === COLLECTIONS.permissions) {
-                const instructorId = String(source.instructorId || (doc.id.includes("__") ? doc.id.slice(doc.id.indexOf("__") + 2) : "")).trim();
-                if (instructorId) {
-                  const permissionId = `${canonicalStudentId}__${instructorId}`;
-                  await queueSet(db.collection(COLLECTIONS.permissions).doc(permissionId), Object.assign({}, source, {
-                    permissionId,
-                    studentId: canonicalStudentId,
-                    canonicalStudentId,
-                    studentIdAliases: mergedAliases,
-                    instructorId,
-                    sourcePermissionId: doc.id
-                  }));
-                }
-              }
             }
           }
         }
