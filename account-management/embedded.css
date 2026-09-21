@@ -1,6 +1,7 @@
 html.accounts-embedded{--navy:#303952;--blue:#5958cb;--ink:#303952;--muted:#667088;--line:#e5e7f0;--panel:#fff;--soft:#f7f8fc;--shadow:none;color-scheme:light}
-html.accounts-embedded body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:var(--soft);font-size:13px;line-height:1.6}
-html.accounts-embedded .app-shell{display:block;min-width:0;min-height:100vh}
+html.accounts-embedded{overflow:hidden}
+html.accounts-embedded body{min-height:0;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:var(--soft);font-size:13px;line-height:1.6}
+html.accounts-embedded .app-shell{display:flow-root;min-width:0;min-height:0}
 html.accounts-embedded .sidebar{display:none}
 html.accounts-embedded .main{margin:0;width:100%;padding:0;min-width:0}
 html.accounts-embedded .topbar{padding:0 0 18px;margin:0;border:0;gap:12px;justify-content:flex-end;flex-wrap:wrap}
@@ -27,3 +28,11 @@ html.accounts-embedded .metric strong{color:var(--ink);font-variant-numeric:tabu
 html.accounts-embedded ::selection{background:#e4e1ff;color:#303952}
 html.accounts-embedded *{scrollbar-width:thin;scrollbar-color:#c7cbdb transparent}
 @media(max-width:700px){html.accounts-embedded .topbar{justify-content:flex-start;padding-bottom:12px}html.accounts-embedded .top-actions{width:100%;gap:6px}html.accounts-embedded .panel-head{padding:16px;flex-wrap:wrap}html.accounts-embedded td,html.accounts-embedded th{padding:12px}html.accounts-embedded .app-shell{min-width:0}}
+
+/* The intranet document owns vertical scrolling; tables retain horizontal overflow. */
+html.accounts-embedded :is(.table-wrap,.history-table-wrap,.audit-list,.student-editor-panel){max-height:none;overflow:visible}
+html.accounts-embedded .table-wrap,html.accounts-embedded .history-table-wrap{overflow-x:auto}
+html.accounts-embedded .student-editor-panel{position:static}
+html.accounts-embedded dialog.bulk-dialog{position:fixed;top:calc(var(--host-top,0px) + 16px);bottom:auto;margin:0 auto;max-height:calc(var(--host-height,600px) - 32px);overflow:auto}
+html.accounts-embedded .busy-overlay{top:var(--host-top,0px);bottom:auto;height:var(--host-height,600px)}
+html.accounts-embedded .toast{top:calc(var(--host-top,0px) + 16px);bottom:auto}
