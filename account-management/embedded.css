@@ -1,5 +1,5 @@
 html.accounts-embedded{--navy:#303952;--blue:#5958cb;--ink:#303952;--muted:#667088;--line:#e5e7f0;--panel:#fff;--soft:#f7f8fc;--shadow:none;color-scheme:light}
-html.accounts-embedded body{font-family:Inter,"Noto Sans KR",system-ui,sans-serif;background:var(--soft);font-size:13px;line-height:1.6}
+html.accounts-embedded body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:var(--soft);font-size:13px;line-height:1.6}
 html.accounts-embedded .app-shell{display:block;min-width:0;min-height:100vh}
 html.accounts-embedded .sidebar{display:none}
 html.accounts-embedded .main{margin:0;width:100%;padding:0;min-width:0}
