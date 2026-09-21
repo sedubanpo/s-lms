@@ -1719,6 +1719,8 @@
     .student-history-detail table { width:100%; min-width:600px; table-layout:auto; }
     .student-history-detail td { white-space:normal; overflow-wrap:anywhere; }
   </style>
+  <script>window.ACCOUNTS_EMBEDDED=window.parent!==window&&new URL(location.href).searchParams.get('embed')==='intranet';if(window.ACCOUNTS_EMBEDDED)document.documentElement.classList.add('accounts-embedded');</script>
+  <link rel="stylesheet" href="embedded.css?v=20260921">
 </head>
 <body>
   <div class="app-shell">
@@ -1763,7 +1765,7 @@
             <span class="auth-state" id="authStateText">로그인이 필요합니다.</span>
           </div>
           <button class="button" id="refreshFirebaseButton">Firestore 새로고침</button>
-          <button class="button" id="exportQueueButton">대기열 내보내기</button>
+          <button class="button" id="exportQueueButton">대기열 내보내기</button><button class="button" id="legacyQueueBackup" hidden>이전 대기열 백업</button>
           <button class="button primary" id="submitQueueButton">선택 요청 저장</button>
         </div>
       </header>
@@ -2330,6 +2332,11 @@
 
   <script>
     const STORAGE_KEY = "seduAccountManagementStateV2";
+    const ACCOUNTS_EMBEDDED=window.ACCOUNTS_EMBEDDED;
+    const AUTH_APP_NAME=ACCOUNTS_EMBEDDED?'account-management-intranet':'account-management';
+    let embeddedUid='',queueOwner='';
+    function accountActive(user){return user.active!==false&&user.isActive!==false&&user.disabled!==true&&(!user.status||user.status==='ACTIVE')&&!['INACTIVE','RETIRED','RESIGNED','TERMINATED','LEAVE','ON_LEAVE','퇴사','퇴직','휴직'].includes(user.employmentStatus);}
+
     const SETTINGS_KEY = "seduAccountManagementSettingsV2";
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyCFM21ZxgwIYwmjRPaAOp5bL9Kprqiyppg",
@@ -2419,8 +2426,9 @@
     function $(id) { return document.getElementById(id); }
 
     function loadState() {
+      if(!queueOwner)return;
       try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY+":"+queueOwner) || "{}");
         state.queue = Array.isArray(saved.queue) ? saved.queue.map(item => {
           const payload = Object.assign({}, item.payload || {});
           if (payload.teacher) {
@@ -2444,7 +2452,8 @@
     }
 
     function saveState() {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      if(!queueOwner||state.authUser?.uid!==queueOwner||!state.isAdmin)return;
+      try { localStorage.setItem(STORAGE_KEY+":"+queueOwner, JSON.stringify({
         queue: state.queue,
         audits: state.audits.slice(0, 40),
         selectedQueueIds: state.selectedQueueIds
@@ -2642,13 +2651,13 @@
     }
 
     async function initFirebase() {
-      if (state.firebaseReady) return firebase.app("account-management");
+      if (state.firebaseReady) return firebase.app(AUTH_APP_NAME);
       await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js", () => !!(window.firebase && firebase.initializeApp));
       await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js", () => !!(window.firebase && firebase.auth));
       await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js", () => !!(window.firebase && firebase.firestore));
       await loadScriptOnce("https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js", () => !!(window.firebase && firebase.storage));
       let app;
-      try { app = firebase.app("account-management"); } catch (error) { app = firebase.initializeApp(FIREBASE_CONFIG, "account-management"); }
+      try { app = firebase.app(AUTH_APP_NAME); } catch (error) { app = firebase.initializeApp(FIREBASE_CONFIG, AUTH_APP_NAME); }
       state.firebaseReady = true;
       return app;
     }
@@ -2707,15 +2716,15 @@
         role,
         permissions,
         apps: access.apps || {},
-        isAdmin: (!user.status || user.status === "ACTIVE") && (role === "ADMIN" || permissions.canManageAccounts === true)
+        isAdmin: accountActive(user) && (user.role === "ADMIN" || (ACCOUNTS_EMBEDDED && permissions.canManageAccounts === true))
       };
     }
 
 window.SeduHubAdapter={
  async signIn(token,uid){const auth=await getAuth();await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
   const credential=await auth.signInWithCustomToken(token);if(credential.user.uid!==uid)throw Error('Identity mismatch');
-  const operator=await readOperatorProfile(uid);if(!operator.isAdmin)throw Error('Account management access denied');await refreshAuthState();
- },async signOut(){await (await getAuth()).signOut();await refreshAuthState();}
+  const operator=await readOperatorProfile(uid);if(!operator.isAdmin)throw Error('Account management access denied');embeddedUid=uid;await refreshAuthState();
+ },async signOut(){embeddedUid='';await (await getAuth()).signOut();await refreshAuthState();}
 };
     async function refreshAuthState() {
       const revision = ++authRevision;
@@ -2727,6 +2736,8 @@ window.SeduHubAdapter={
       try {
         const auth = await getAuth();
         state.authUser = auth.currentUser || null;
+        if(ACCOUNTS_EMBEDDED&&state.authUser?.uid!==embeddedUid)state.authUser=null;
+        if(queueOwner!==(state.authUser?.uid||'')){state.isAdmin=false;state.operator=null;state.queue=[];state.audits=[];state.selectedQueueIds={};queueOwner='';clearAccountData();}
         if (!state.authUser) {
           state.operator = null;
           state.isAdmin = false;
@@ -2740,7 +2751,10 @@ window.SeduHubAdapter={
         state.isAdmin = Boolean(state.operator.isAdmin);
         if (!state.isAdmin) { clearAccountData(); render(); }
         renderAuthState();
-        if (state.isAdmin) await loadFirestoreData();
+        if (state.isAdmin) {
+          if(queueOwner!==state.authUser.uid){queueOwner=state.authUser.uid;loadState();}
+          await loadFirestoreData();
+        }
       } catch (error) {
         if (revision !== authRevision) return;
         state.isAdmin = false;
@@ -2861,6 +2875,7 @@ window.SeduHubAdapter={
     }
 
     function clearAccountData() {
+      state.queue=[];state.audits=[];state.selectedQueueIds={};queueOwner='';
       resetNotionInspection();
       ["students", "rawStudents", "identityMappings", "identityReviews", "teachers", "staff", "icons", "studentHistory", "studentContactBulkRows"].forEach(key => state[key] = []);
       state.teacherProvisionSecrets = {};
@@ -2890,11 +2905,13 @@ window.SeduHubAdapter={
       renderAudits();
     }
 
+    function hasLegacyQueue(){try{return Boolean(localStorage.getItem(STORAGE_KEY));}catch{return false;}}
     function renderAuthState(message) {
       ["authEmailInput", "authPasswordInput", "loginButton"].forEach(id => $(id).hidden = Boolean(state.isAdmin));
       $("logoutButton").hidden = !state.authUser;
       renderNotionInspection();
       renderNotionStudentReview();
+      $("legacyQueueBackup").hidden=!(state.isAdmin&&state.operator?.role==='ADMIN'&&hasLegacyQueue());
       const el = $("authStateText");
       if (!el) return;
       el.classList.remove("admin", "blocked");
@@ -6702,12 +6719,17 @@ window.SeduHubAdapter={
       });
     }
 
-    loadState();
     const staffPositionOptions = STAFF_POSITIONS.map(position => `<option value="${position}">${position}</option>`).join("");
     $("staffPositionInput").innerHTML = staffPositionOptions;
     $("staffPositionFilter").innerHTML = `<option value="">전체 직급</option>${staffPositionOptions}`;
     populateIconPersonTargets();
     bindEvents();
+    $('legacyQueueBackup').addEventListener('click',()=>{
+      if(!state.isAdmin||state.operator?.role!=='ADMIN')return;
+      const legacy=localStorage.getItem(STORAGE_KEY);if(!legacy)return;
+      const url=URL.createObjectURL(new Blob([legacy],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='계정관리-이전대기열-소유자확인필요.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      toast('이전 대기열을 백업했습니다. 작성자를 확인한 뒤 필요한 요청만 다시 입력하세요.');
+    });
     setIconCategory("PERSON");
     setView("dashboard");
     initFirebase().then(async () => {
@@ -6717,6 +6739,6 @@ window.SeduHubAdapter={
     }).catch(error => renderAuthState(error.message || String(error)));
   </script>
 <script src="teacher-introductions.js"></script>
-<script type="module" src="hub-start.mjs"></script>
+<script type="module" src="hub-start.mjs?v=20260921"></script>
 </body>
 </html>
