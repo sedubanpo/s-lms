@@ -2076,7 +2076,7 @@
                 <div class="form-field full"><label>메모</label><textarea class="textarea" id="teacherMemoInput" placeholder="계정 생성 사유, 권한 변경 사유, 비밀번호 전달 메모"></textarea></div>
                 <div class="form-field full">
                   <button class="button primary" id="queueTeacherButton">강사 변경 대기열 추가</button>
-                  <p class="help">신규 강사는 Auth, custom claim, Firestore, Supabase 권한 연결이 모두 완료된 뒤에만 생성 완료로 표시합니다.</p>
+                  <p class="help">신규 강사는 인증·계정 원장·강사 포털 시수 DB·싱크로에스 DB 연결을 모두 검증한 뒤에만 생성 완료로 표시합니다.</p>
                 </div>
               </form>
             </div>
@@ -2879,6 +2879,8 @@ window.SeduHubAdapter={
     }
 
     function clearAccountData() {
+      portalAccountChecks = [];
+      $("portalAccountsResult").textContent = "관리자 로그인 후 연결을 점검하세요.";
       state.queue=[];state.audits=[];state.selectedQueueIds={};queueOwner='';
       resetNotionInspection();
       ["students", "rawStudents", "identityMappings", "identityReviews", "teachers", "staff", "icons", "studentHistory", "studentContactBulkRows"].forEach(key => state[key] = []);
@@ -6052,11 +6054,13 @@ window.SeduHubAdapter={
       const button = $("inspectPortalAccountsButton");
       button.disabled = true;
       portalAccountChecks = [];
+      const auditUid = (await getAuth()).currentUser?.uid;
       try {
         const accounts = Array.from(new Map([...(state.teachers || []), ...(state.staff || [])].filter(row => row.uid).map(row => [row.uid, row])).values());
         for (let i = 0; i < accounts.length; i += 10) {
           $("portalAccountsResult").textContent = `${accounts.length}개 계정 중 ${i}개 점검 완료`;
           const rows = await portalAccountRequest(accounts.slice(i, i + 10).map(row => row.uid));
+          if ((await getAuth()).currentUser?.uid !== auditUid || !state.isAdmin) return;
           portalAccountChecks.push(...rows.map(row => ({ ...row, name: accounts.find(account => account.uid === row.uid)?.name || row.uid })));
         }
         renderPortalAccountChecks();
